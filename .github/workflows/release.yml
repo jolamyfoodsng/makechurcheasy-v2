@@ -1,0 +1,550 @@
+name: Release — Build & Publish
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Trigger: push a version tag (v*) — created automatically by auto-tag.yml
+# when you bump the version in package.json and push to main.
+#
+# Quick release workflow:
+#   1. npm run version:patch      (or :minor / :major)
+#   2. git add . && git commit -m "bump v0.X.Y" && git push
+#   3. auto-tag.yml creates the git tag automatically
+#   4. This workflow builds + publishes a GitHub Release with installers
+#
+# Manual trigger also available from GitHub → Actions → Release → Run workflow
+#
+# What it does:
+#   1. Builds Windows first
+#   2. Builds macOS after Windows has started/completed
+#   3. Signs update bundles with TAURI_SIGNING_PRIVATE_KEY
+#   4. Creates a GitHub Release with installers + latest.json (for auto-updater)
+#
+# Required secrets:
+#   TAURI_SIGNING_PRIVATE_KEY          — content of ~/.tauri/makechurcheasy.key
+#   TAURI_SIGNING_PRIVATE_KEY_PASSWORD — password for the signing key
+#   APPLE_CERTIFICATE                  — base64-encoded Developer ID Application .p12
+#   APPLE_CERTIFICATE_PASSWORD         — password used to export the .p12
+#   APPLE_KEYCHAIN_PASSWORD            — temporary CI keychain password
+#   APPLE_ID                           — Apple Developer account email
+#   APPLE_PASSWORD                     — Apple app-specific password
+#   APPLE_TEAM_ID                      — Apple Developer Team ID
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (e.g. v0.2.0)"
+        required: false
+      platform:
+        description: "Release platform target"
+        required: false
+        default: all
+        type: choice
+        options:
+          - all
+          - windows-only
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: true
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  OBS_BUNDLE_DOWNLOAD_TIMEOUT_MS: 1200000
+  OBS_BUNDLE_DOWNLOAD_ATTEMPTS: 3
+
+jobs:
+  # ── 1) Windows first ─────────────────────────────────────────────────────
+  publish-windows:
+    name: Build + Release (Windows-x64 first)
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: desktop
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.version || github.ref }}
+
+      # ── Node.js ──
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      # ── Rust ──
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Setup LLVM
+        id: llvm
+        uses: KyleMayes/install-llvm-action@v2
+        with:
+          version: "18"
+
+      - name: Install Ninja
+        uses: seanmiddleditch/gha-setup-ninja@v5
+
+      # Rust cache temporarily disabled while diagnosing llama-cpp CMake issues
+      # - name: Cache Rust
+      #   uses: swatinem/rust-cache@v2
+
+      # ── Clean stale CMake cache for llama-cpp-sys-2 ──
+      - name: Clean llama.cpp CMake cache
+        shell: pwsh
+        working-directory: desktop/src-tauri
+        run: |
+          cargo clean
+          Remove-Item -Recurse -Force target -ErrorAction SilentlyContinue
+
+      # ── Verify LLVM / libclang + resolve LIBCLANG_PATH ──
+      - name: Verify LLVM installation and resolve LIBCLANG_PATH
+        id: resolve-llvm
+        shell: pwsh
+        run: |
+          # Try action output first, then env var, then common install paths
+          $llvmPath = "${{ steps.llvm.outputs.LLVM_PATH }}"
+          if (-not $llvmPath) { $llvmPath = $env:LLVM_PATH }
+
+          if (-not $llvmPath) {
+            # Fallback: search common Windows LLVM install locations
+            $candidates = @(
+              "C:\Program Files\LLVM",
+              "C:\Program Files (x86)\LLVM",
+              "$env:USERPROFILE\scoop\apps\llvm\current"
+            )
+            foreach ($c in $candidates) {
+              if (Test-Path "$c\bin\libclang.dll") {
+                $llvmPath = $c
+                break
+              }
+            }
+          }
+
+          if (-not $llvmPath) {
+            throw "Cannot find LLVM installation. LLVM_PATH='$env:LLVM_PATH', action output='${{ steps.llvm.outputs.LLVM_PATH }}'"
+          }
+
+          $libclang = Join-Path $llvmPath "bin/libclang.dll"
+          if (-not (Test-Path $libclang)) {
+            throw "libclang.dll not found at $libclang"
+          }
+
+          Write-Host "LLVM_PATH=$llvmPath"
+          Write-Host "LIBCLANG_PATH=$llvmPath\bin"
+          Write-Host "LLVM verified: libclang.dll found"
+
+          # Export for downstream steps
+          echo "RESOLVED_LLVM_PATH=$llvmPath" >> $env:GITHUB_OUTPUT
+
+      # ── Install frontend deps ──
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Prepare bundled assets
+        run: node scripts/prepare-bundle-assets.cjs
+
+      - name: Verify bundled mobile web client
+        run: npm run mobile:web
+
+      - name: Apply production Tauri identity
+        run: node scripts/build-env-config.mjs
+        env:
+          VITE_APP_ENV: production
+
+      # ── Quality gate: typecheck before packaging ──
+      - name: Validate TypeScript
+        run: npx tsc --noEmit
+
+      # ── Sync version from git tag ──
+      - name: Set version from tag
+        shell: bash
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            TAG="${GITHUB_REF#refs/tags/v}"
+          elif [ -n "${{ github.event.inputs.version }}" ]; then
+            TAG="${{ github.event.inputs.version }}"
+            TAG="${TAG#v}"
+          else
+            echo "No version found, skipping"
+            exit 0
+          fi
+          echo "Setting version to $TAG"
+          node -e "
+            const fs = require('fs');
+            const conf = JSON.parse(fs.readFileSync('src-tauri/tauri.conf.json','utf8'));
+            conf.version = '$TAG';
+            fs.writeFileSync('src-tauri/tauri.conf.json', JSON.stringify(conf, null, 2) + '\n');
+          "
+
+      - name: Verify Ninja
+        shell: pwsh
+        run: |
+          ninja --version
+          cmake --version
+
+      - name: Check for stale CMake cache
+        shell: pwsh
+        run: |
+          Get-ChildItem -Path . -Recurse -Filter CMakeCache.txt |
+          ForEach-Object {
+            Write-Host "==== $($_.FullName) ===="
+            Select-String $_.FullName -Pattern "Visual Studio|2022|CMAKE_GENERATOR_INSTANCE|CMAKE_GENERATOR"
+          }
+
+      # ── Build + Release ──
+      - name: Build and release Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          TAURI_SIGNING_PUBLIC_KEY: ${{ secrets.TAURI_SIGNING_PUBLIC_KEY }}
+          VITE_UPDATER_TOKEN: ${{ secrets.UPDATER_GITHUB_TOKEN }}
+          VITE_APP_ENV: production
+          VITE_AUTH_API_URL: ${{ secrets.PROD_AUTH_API_URL || secrets.VITE_AUTH_API_URL }}
+          VITE_API_BASE_URL: ${{ secrets.PROD_API_BASE_URL || secrets.VITE_API_BASE_URL }}
+          VITE_WS_URL: ${{ secrets.PROD_WS_URL || secrets.VITE_WS_URL }}
+          VITE_SUBSCRIPTION_PUBLIC_KEY: ${{ secrets.VITE_SUBSCRIPTION_PUBLIC_KEY }}
+          VITE_ASSEMBLYAI_API_KEYS: ${{ secrets.VITE_ASSEMBLYAI_API_KEYS }}
+          VITE_ANALYTICS_ENDPOINT: ${{ secrets.VITE_ANALYTICS_ENDPOINT }}
+          VITE_ANALYTICS_TOKEN: ${{ secrets.VITE_ANALYTICS_TOKEN }}
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          LIBCLANG_PATH: ${{ steps.resolve-llvm.outputs.RESOLVED_LLVM_PATH }}/bin
+          CMAKE_GENERATOR: Ninja
+        with:
+          projectPath: desktop
+          tauriScript: npx tauri
+          args: --target x86_64-pc-windows-msvc
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || github.event.inputs.version || format('v{0}', 'latest') }}
+          releaseName: "MakeChurchEasy ${{ github.ref_type == 'tag' && github.ref_name || github.event.inputs.version || 'latest' }}"
+          releaseBody: |
+            ## MakeChurchEasy
+
+            ### Downloads
+            | Platform | File |
+            |----------|------|
+            | macOS (Apple Silicon) | `.dmg` (arm64) |
+            | macOS (Intel) | `.dmg` (x64) |
+            | Windows | `.exe` (NSIS installer) or `.msi` |
+
+            ### Auto-Update
+            Existing installations will automatically download and install this update on next launch.
+
+            ---
+            _Built automatically from commit ${{ github.sha }}_
+          releaseDraft: false
+          prerelease: false
+          includeUpdaterJson: true
+
+      - name: Verify Windows binary has no llama runtime DLL dependency
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem -Path src-tauri/target -Recurse -Filter "makechurcheasy.exe" -File | Select-Object -First 1
+          if (-not $exe) {
+            throw "Could not find built makechurcheasy.exe to inspect."
+          }
+          $llvmObjdump = Join-Path $env:LLVM_PATH "bin/llvm-objdump.exe"
+          if (-not (Test-Path $llvmObjdump)) {
+            throw "llvm-objdump.exe was not found at $llvmObjdump"
+          }
+          $deps = & $llvmObjdump -p $exe.FullName | Out-String
+          if ($deps -match "llama\.dll" -or $deps -match "ggml-base\.dll" -or $deps -match "ggml\.dll") {
+            Write-Host $deps
+            throw "Windows binary still depends on llama/ggml runtime DLLs."
+          }
+
+
+  # ── 2) macOS after Windows ───────────────────────────────────────────────
+  publish-other:
+    name: Build + Release (${{ matrix.label }})
+    needs: publish-windows
+    if: ${{ always() && needs.publish-windows.result != 'cancelled' && (github.event_name != 'workflow_dispatch' || github.event.inputs.platform != 'windows-only') }}
+    strategy:
+      fail-fast: false
+      # tauri-action updates the shared release/latest.json asset.
+      # Running these jobs in parallel can race on release asset replacement
+      # and cause 404s when one job deletes/recreates an asset mid-upload.
+      max-parallel: 1
+      matrix:
+        include:
+          - platform: macos-latest
+            target: aarch64-apple-darwin
+            label: macOS-arm64
+          - platform: macos-latest
+            target: x86_64-apple-darwin
+            label: macOS-x64
+
+    runs-on: ${{ matrix.platform }}
+    defaults:
+      run:
+        working-directory: desktop
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.version || github.ref }}
+
+      # ── Node.js ──
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      # ── Rust ──
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install macOS native build dependencies
+        id: macos-deps
+        shell: bash
+        run: |
+          brew install ninja openssl@3 pkg-config
+          OPENSSL_ROOT="$(brew --prefix openssl@3)"
+          {
+            echo "openssl_root=$OPENSSL_ROOT"
+          } >> "$GITHUB_OUTPUT"
+          {
+            echo "OPENSSL_ROOT_DIR=$OPENSSL_ROOT"
+            echo "CMAKE_PREFIX_PATH=$OPENSSL_ROOT"
+            echo "PKG_CONFIG_PATH=$OPENSSL_ROOT/lib/pkgconfig"
+            echo "CMAKE_GENERATOR=Ninja"
+          } >> "$GITHUB_ENV"
+          echo "OpenSSL root: $OPENSSL_ROOT"
+          test -f "$OPENSSL_ROOT/lib/libssl.dylib"
+          test -f "$OPENSSL_ROOT/lib/libcrypto.dylib"
+
+      # ── Rust cache ──
+      - name: Cache Rust
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/src-tauri
+          cache-on-failure: true
+
+      # ── Clean stale CMake cache for llama-cpp-sys-2 ──
+      - name: Clean llama.cpp CMake cache
+        shell: bash
+        working-directory: desktop/src-tauri
+        run: |
+          cargo clean -p llama-cpp-sys-2 || true
+          rm -rf target/${{ matrix.target }}/release/build/llama-cpp-sys-2-* target/release/build/llama-cpp-sys-2-* || true
+          find target -path "*/llama-cpp-sys-2-*/out/build" -type d -prune -exec rm -rf {} + || true
+          find target -name CMakeCache.txt -path "*/llama-cpp-sys-2-*" -delete || true
+
+      # ── Install frontend deps ──
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Prepare bundled assets
+        run: node scripts/prepare-bundle-assets.cjs
+
+      - name: Verify bundled mobile web client
+        run: npm run mobile:web
+
+      - name: Apply production Tauri identity
+        run: node scripts/build-env-config.mjs
+        env:
+          VITE_APP_ENV: production
+
+      # ── Quality gate: typecheck before packaging ──
+      - name: Validate TypeScript
+        run: npx tsc --noEmit
+
+      # ── Sync version from git tag ──
+      - name: Set version from tag
+        shell: bash
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            TAG="${GITHUB_REF#refs/tags/v}"
+          elif [ -n "${{ github.event.inputs.version }}" ]; then
+            TAG="${{ github.event.inputs.version }}"
+            TAG="${TAG#v}"
+          else
+            echo "No version found, skipping"
+            exit 0
+          fi
+          echo "Setting version to $TAG"
+          node -e "
+            const fs = require('fs');
+            const conf = JSON.parse(fs.readFileSync('src-tauri/tauri.conf.json','utf8'));
+            conf.version = '$TAG';
+            fs.writeFileSync('src-tauri/tauri.conf.json', JSON.stringify(conf, null, 2) + '\n');
+          "
+
+      - name: Verify macOS native build tools
+        shell: bash
+        run: |
+          ninja --version
+          cmake --version
+          pkg-config --modversion openssl
+          mkdir -p /tmp/verify-openssl
+          cat > /tmp/verify-openssl/CMakeLists.txt <<'CMAKE'
+          cmake_minimum_required(VERSION 3.20)
+          project(VerifyOpenSSL LANGUAGES C)
+          find_package(OpenSSL REQUIRED)
+          if (NOT TARGET OpenSSL::SSL)
+            message(FATAL_ERROR "OpenSSL::SSL target missing")
+          endif()
+          if (NOT TARGET OpenSSL::Crypto)
+            message(FATAL_ERROR "OpenSSL::Crypto target missing")
+          endif()
+          add_executable(verify-openssl main.c)
+          target_link_libraries(verify-openssl PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+          message(STATUS "OpenSSL targets verified")
+          CMAKE
+          printf 'int main(void) { return 0; }\n' > /tmp/verify-openssl/main.c
+          cmake -S /tmp/verify-openssl -B /tmp/verify-openssl/build -G Ninja
+          cmake --build /tmp/verify-openssl/build
+
+      - name: Import Apple Developer ID certificate
+        uses: Apple-Actions/import-codesign-certs@v7
+        with:
+          p12-file-base64: ${{ secrets.APPLE_CERTIFICATE }}
+          p12-password: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          create-keychain: true
+          keychain-password: ${{ secrets.APPLE_KEYCHAIN_PASSWORD }}
+
+      - name: Find Apple signing identity
+        id: apple-signing
+        shell: bash
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          IDENTITY="$(security find-identity -v -p codesigning | awk -F '"' '/Developer ID Application:/ && index($2, "(" ENVIRON["APPLE_TEAM_ID"] ")") { print $2; exit }')"
+          test -n "$IDENTITY" || { echo "Developer ID Application identity for the configured team was not found"; exit 1; }
+          echo "identity=$IDENTITY" >> "$GITHUB_OUTPUT"
+
+      # ── Build + Release ──
+      - name: Build and release Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          TAURI_SIGNING_PUBLIC_KEY: ${{ secrets.TAURI_SIGNING_PUBLIC_KEY }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ steps.apple-signing.outputs.identity }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+          VITE_UPDATER_TOKEN: ${{ secrets.UPDATER_GITHUB_TOKEN }}
+          VITE_APP_ENV: production
+          VITE_AUTH_API_URL: ${{ secrets.PROD_AUTH_API_URL || secrets.VITE_AUTH_API_URL }}
+          VITE_API_BASE_URL: ${{ secrets.PROD_API_BASE_URL || secrets.VITE_API_BASE_URL }}
+          VITE_WS_URL: ${{ secrets.PROD_WS_URL || secrets.VITE_WS_URL }}
+          VITE_SUBSCRIPTION_PUBLIC_KEY: ${{ secrets.VITE_SUBSCRIPTION_PUBLIC_KEY }}
+          VITE_ASSEMBLYAI_API_KEYS: ${{ secrets.VITE_ASSEMBLYAI_API_KEYS }}
+          VITE_ANALYTICS_ENDPOINT: ${{ secrets.VITE_ANALYTICS_ENDPOINT }}
+          VITE_ANALYTICS_TOKEN: ${{ secrets.VITE_ANALYTICS_TOKEN }}
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          OPENSSL_ROOT_DIR: ${{ steps.macos-deps.outputs.openssl_root }}
+          CMAKE_PREFIX_PATH: ${{ steps.macos-deps.outputs.openssl_root }}
+          PKG_CONFIG_PATH: ${{ steps.macos-deps.outputs.openssl_root }}/lib/pkgconfig
+          CMAKE_GENERATOR: Ninja
+          BUILD_DEBUG: 1
+        with:
+          projectPath: desktop
+          tauriScript: npx tauri
+          args: --target ${{ matrix.target }}
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || github.event.inputs.version || format('v{0}', 'latest') }}
+          releaseName: "MakeChurchEasy ${{ github.ref_type == 'tag' && github.ref_name || github.event.inputs.version || 'latest' }}"
+          releaseBody: |
+            ## MakeChurchEasy
+
+            ### Downloads
+            | Platform | File |
+            |----------|------|
+            | macOS (Apple Silicon) | `.dmg` (arm64) |
+            | macOS (Intel) | `.dmg` (x64) |
+            | Windows | `.exe` (NSIS installer) or `.msi` |
+
+            ### Auto-Update
+            Existing installations will automatically download and install this update on next launch.
+
+            ---
+            _Built automatically from commit ${{ github.sha }}_
+          releaseDraft: false
+          prerelease: false
+          includeUpdaterJson: true
+
+  # ── 3) Normalize updater manifest after all release assets exist ───────────
+  normalize-latest-json:
+    name: Normalize latest.json
+    needs:
+      - publish-windows
+      - publish-other
+    if: ${{ always() && needs.publish-windows.result == 'success' && (needs.publish-other.result == 'success' || needs.publish-other.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.version || github.ref }}
+
+      - name: Resolve release tag
+        id: release-tag
+        shell: bash
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+          elif [ -n "${{ github.event.inputs.version }}" ]; then
+            TAG="${{ github.event.inputs.version }}"
+          else
+            echo "No release tag found"
+            exit 1
+          fi
+          case "$TAG" in
+            v*) ;;
+            *) TAG="v$TAG" ;;
+          esac
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Download generated latest.json
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p /tmp/mce-release
+          gh release download "${{ steps.release-tag.outputs.tag }}" \
+            --repo "${{ github.repository }}" \
+            --pattern latest.json \
+            --dir /tmp/mce-release \
+            --clobber
+
+      - name: Normalize latest.json shape
+        working-directory: desktop
+        run: |
+          node scripts/normalize-update-json.cjs /tmp/mce-release/latest.json \
+            --out /tmp/mce-release/latest.json \
+            --source-repo "${{ github.repository }}" \
+            --target-repo "jolamyfoodsng/makechurcheasy-releases" \
+            --tag "${{ steps.release-tag.outputs.tag }}"
+
+      - name: Upload normalized latest.json
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ steps.release-tag.outputs.tag }}" \
+            /tmp/mce-release/latest.json \
+            --repo "${{ github.repository }}" \
+            --clobber

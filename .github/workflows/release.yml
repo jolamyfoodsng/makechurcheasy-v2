@@ -1,12 +1,12 @@
 name: Release — Build & Publish
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Trigger: push a version tag (v*) to jolamyfoodsng/makechurcheasy.
+# Trigger: push a version tag (v*) to jolamyfoodsng/makechurcheasy-v2.
 #
 # Quick release workflow (from desktop/):
 #   npm run release:patch      (or :minor / :major)
 #   → bumps desktop/package.json + tauri.conf.json, commits them, tags vX.Y.Z
-#     and pushes to the official MakeChurchEasy repository, which starts this workflow.
+#     and pushes to the V2 repository, which starts this workflow.
 #
 # Manual trigger also available from GitHub → Actions → Release → Run workflow
 #
@@ -70,7 +70,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          repository: jolamyfoodsng/makechurcheasy
+          repository: jolamyfoodsng/makechurcheasy-v2
           ref: ${{ github.event.inputs.version || github.ref }}
 
       # ── Node.js ──
@@ -308,7 +308,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          repository: jolamyfoodsng/makechurcheasy
+          repository: jolamyfoodsng/makechurcheasy-v2
           ref: ${{ github.event.inputs.version || github.ref }}
 
       # ── Node.js ──
@@ -553,7 +553,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          repository: jolamyfoodsng/makechurcheasy
+          repository: jolamyfoodsng/makechurcheasy-v2
           ref: ${{ github.event.inputs.version || github.ref }}
 
       - name: Resolve release tag

@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
  * release.cjs — bump the desktop version and publish a release from the
- * official MakeChurchEasy repository.
+ * MakeChurchEasy V2 repository.
  *
  *   npm run release:patch   (or :minor / :major)
  *
  * What it does:
- *   1. Checks the repo root (the folder above desktop/) is jolamyfoodsng/makechurcheasy.
+ *   1. Checks the repo root (the folder above desktop/) is jolamyfoodsng/makechurcheasy-v2.
  *   2. Bumps desktop/package.json and syncs tauri.conf.json.
  *   3. Commits the version files and release workflow metadata, tags vX.Y.Z,
  *      and pushes the branch and tag to origin. The tag starts the release workflow.
@@ -18,7 +18,7 @@ const { execFileSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 
-const EXPECTED_REPO = "jolamyfoodsng/makechurcheasy";
+const EXPECTED_REPO = "jolamyfoodsng/makechurcheasy-v2";
 const desktopDir = path.resolve(__dirname, "..");
 const repoRoot = path.resolve(desktopDir, "..");
 const bump = process.argv[2];

@@ -11,29 +11,29 @@ const outputRoot = path.join(projectRoot, "src-tauri", "resources", "ffmpeg");
 const cacheRoot = path.join(os.homedir(), ".cache", "makechurcheasy", "ffmpeg");
 const ffmpegVersion = "8.0.3";
 const releaseTag = "ffmpeg-8.0.3-build4";
-const releaseBase = `https://github.com/AtlasYang/ffmpeg-static-builds/releases/download/${releaseTag}`;
-const licenseUrl = "https://raw.githubusercontent.com/FFmpeg/FFmpeg/n8.0.3/COPYING.LGPLv2.1";
+const releaseBase = `https://github.com/jolamyfoodsng/makechurcheasy-v2/releases/download/${releaseTag}`;
+const licenseUrl = `${releaseBase}/COPYING.LGPLv2.1`;
 const licenseSha256 = "246041b6ecf9bc32d718a62c57877c78b5eb397b6467e74ed7ae2626ab189c30";
 
 const targets = {
   arm64: {
     folder: "macos-arm64",
     archive: "ffmpeg-8.0.3-macos-arm64.tar.gz",
-    archiveSha256: "26f6269b117a51c5fdfd3a870c4e0a62b99f0575740a3933fc3d852f0a3f80b1",
+    archiveSha256: "48e8b255af75fef75aa6415306fc9f0f5fe1a36cd483f31bdade41680421e51a",
     report: "ffmpeg-8.0.3-macos-arm64.configure.txt",
     reportSha256: "35e03b193478f2d5bca3a1ff0db92afade1dd2d616dc78946ae81907c0337222",
   },
   x64: {
     folder: "macos-x64",
     archive: "ffmpeg-8.0.3-macos-x64.tar.gz",
-    archiveSha256: "b84b4515aaf2fe443a76445f02d05544a384dcd46cc6059fb8a1a4f9aaa3035d",
+    archiveSha256: "789555b8f82a9386db0c63fc37678f9311bfa4a31f99966ad27de4f1e6ff3a2c",
     report: "ffmpeg-8.0.3-macos-x64.configure.txt",
     reportSha256: "b23147a6f4e7dd65abb8e312722d6dccffeea75c353c2cf78cf72f3369c26c56",
   },
   windows: {
     folder: "windows-x64",
     archive: "ffmpeg-8.0.3-win-x64.zip",
-    archiveSha256: "fd3473736674343cd1948eb45f28b46f377616432a5cc15eb896bdaabea506f2",
+    archiveSha256: "4ca8e1ddb71eaff78d2e0acb13437276d874ef3d7f6bfd03251819489a832663",
     report: "ffmpeg-8.0.3-win-x64.configure.txt",
     reportSha256: "6d0d6e37f261fb2a9ffc5bbd50db13256d6427f248496b34cc1e9be2e1f2ba06",
   },

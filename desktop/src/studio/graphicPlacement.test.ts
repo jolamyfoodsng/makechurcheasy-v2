@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 // Plain script shared with public/studio-output.html.
+// @ts-expect-error It is a plain script with no type declarations.
 import placement from "../../public/studio-graphic-placement.js";
 
 const { contentBox, offsets } = placement as {

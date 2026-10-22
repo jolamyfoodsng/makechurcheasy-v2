@@ -5,7 +5,7 @@
  * 1. Process scheduled plan changes (downgrades at period end)
  * 2. Expire grace periods (past_due → Free after GRACE_PERIOD_DAYS)
  * 3. Reconcile paid plans and expire stale access
- * 4. Send renewal reminders (7-day and 2-day) and expiry emails
+ * 4. Send renewal reminders (7-day, 2-day and 1-day) and expiry emails
  *
  * Protected by CRON_SECRET.
  */
@@ -1004,7 +1004,7 @@ export async function GET(req: NextRequest) {
       expiryEmailRetries,
     };
 
-    // ── 4. Send 7-day and 2-day expiry reminders ──────────────────────────────
+    // ── 4. Send 7-day, 2-day and 1-day expiry reminders ──────────────────────────────
     const reminderCandidates = await db
       .collection("subscriptions")
       .find({
@@ -1027,11 +1027,13 @@ export async function GET(req: NextRequest) {
       if (!user || !user.email || hasProtectedAccess(user, sub)) continue;
 
       const lifecycleWindow = getSubscriptionLifecycleWindow(sub.currentPeriodEnd, now.getTime());
-      if (lifecycleWindow !== "seven-day" && lifecycleWindow !== "two-day") continue;
+      if (lifecycleWindow !== "seven-day" && lifecycleWindow !== "two-day" && lifecycleWindow !== "one-day") continue;
 
-      const markerField = lifecycleWindow === "two-day"
-        ? "lifecycleReminder2For"
-        : "lifecycleReminder7For";
+      const markerField = lifecycleWindow === "one-day"
+        ? "lifecycleReminder1For"
+        : lifecycleWindow === "two-day"
+          ? "lifecycleReminder2For"
+          : "lifecycleReminder7For";
       if (sub[markerField] === expiryKey) continue;
 
       const daysLeft = subscriptionDaysLeft(sub.currentPeriodEnd, now.getTime());

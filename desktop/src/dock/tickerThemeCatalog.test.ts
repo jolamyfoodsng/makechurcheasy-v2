@@ -133,12 +133,13 @@ describe("tickerThemeCatalog", () => {
     expect(html).toContain('content: "✦";');
   });
 
-  it("shows the live time in the Sunrise Clock heading and keeps it ticking", () => {
-    const option = resolveDockTickerThemeOption("ticker-sunrise-clock");
+  it("lets the Sunrise heading show the live time instead of the heading text", () => {
+    const option = resolveDockTickerThemeOption("ticker-sunrise");
     expect(option?.source).toBe("permanent");
-    const html = renderDockTickerThemeHtml({
+    const render = (headingMode: "text" | "time") => renderDockTickerThemeHtml({
       option: option!,
-      heading: "",
+      heading: "This Week",
+      headingMode,
       messages: ["Welcome"],
       speed: 50,
       position: "bottom",
@@ -146,10 +147,29 @@ describe("tickerThemeCatalog", () => {
       divider: "theme",
       messageSpacing: 0,
     });
-    expect(html).toContain("data-live-clock");
-    expect(html).not.toContain("{{clock}}");
-    expect(html).toMatch(/data-live-clock>\d{1,2}[:.]\d{2}/);
-    expect(html).toContain("setInterval(t,1000)");
+    const time = render("time");
+    expect(time).toContain('data-heading="time"');
+    expect(time).toContain("data-live-clock");
+    expect(time).not.toContain("{{clock}}");
+    expect(time).toMatch(/data-live-clock>\d{1,2}[:.]\d{2}/);
+    expect(time).toContain("setInterval(t,1000)");
+    const text = render("text");
+    expect(text).toContain('data-heading="text"');
+    expect(text).toContain("This Week");
+  });
+
+  it("has one Sunrise ticker, not a separate Sunrise Clock", () => {
+    expect(resolveDockTickerThemeOption("ticker-sunrise")?.name).toBe("Sunrise");
+    expect(resolveDockTickerThemeOption("ticker-sunrise-clock")?.id).not.toBe("ticker-sunrise-clock");
+    expect(resolveDockTickerThemeOption("ticker-rotating-logo")?.id).not.toBe("ticker-rotating-logo");
+  });
+
+  it("scrolls pill tickers at a steady pixel speed that follows the Speed setting", () => {
+    const option = resolveDockTickerThemeOption("ticker-sunrise")!;
+    const render = (speed: number) => renderDockTickerThemeHtml({ option, heading: "H", messages: ["Hi"], speed, position: "bottom", loop: true });
+    expect(render(100)).toContain("var pps=320;");
+    expect(render(1)).toContain("var pps=60;");
+    expect(render(50)).toContain("var pps=180;");
   });
 
   it("formats presentation ticker text with the selected divider and spacing", () => {

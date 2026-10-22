@@ -20,6 +20,24 @@ export async function checkAndApplyScheduledDowngrade(userId: string, user: any)
   const scheduledMs = new Date(String(scheduledAt)).getTime();
   if (!Number.isFinite(scheduledMs) || scheduledMs > Date.now()) return user;
 
+  // A later payment moves the paid-until date forward. If the user doc says they are paid
+  // well past this marker (more than the 7-day grace later), the marker is left over from an
+  // earlier cancellation or downgrade request: drop it instead of downgrading a paying user.
+  const paidUntilMs = new Date(String(user?.subscriptionExpiresAt || "")).getTime();
+  if (Number.isFinite(paidUntilMs) && paidUntilMs > scheduledMs + 8 * 24 * 60 * 60 * 1000) {
+    try {
+      const client = await clientPromise;
+      const { ObjectId } = await import("mongodb");
+      await client.db().collection("users").updateOne(
+        { _id: new ObjectId(userId) },
+        { $unset: { scheduledDowngradeAt: "" } },
+      );
+    } catch {
+      // Best effort; the check above still protects this request.
+    }
+    return { ...user, scheduledDowngradeAt: undefined };
+  }
+
   // 7-day grace period: keep paid plan privileges active during the week
   const graceEndMs = scheduledMs + 7 * 24 * 60 * 60 * 1000;
   if (Date.now() < graceEndMs) {

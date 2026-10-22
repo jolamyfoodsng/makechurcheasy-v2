@@ -1293,7 +1293,7 @@ export function subscriptionExpiringSoonEmail(
 
   return {
     to: userEmail,
-    subject: `Your ${planName} subscription expires in ${daysLeft} days`,
+    subject: `Your ${planName} subscription expires ${daysLeft <= 1 ? "tomorrow" : `in ${daysLeft} days`}`,
     html: wrap(
       "Subscription expiring",
       `

@@ -46,6 +46,7 @@ import {
   DOCK_QUICK_SIZE_OPTIONS_FULLSCREEN,
   DOCK_QUICK_SIZE_OPTIONS_LOWER_THIRD,
 } from "../dockQuickSizePresets";
+import { layerThemeQuickDisplay, withLayerThemeQuickPatch } from "../layerThemeQuickPatch";
 import DockNotesTextTools from "../components/DockNotesTextTools";
 import { fuzzyFilter, fuzzyMatch } from "../../services/fuzzySearch";
 import DockSpellcheckTextarea from "../components/DockSpellcheckTextarea";
@@ -440,7 +441,7 @@ function getNoteQuickSettings(
     : getDockNotesThemeForMode(selectedLTTheme, "lower-third");
   const quickSettings = overlayMode === "fullscreen" ? fullscreenQuickSettings : lowerThirdQuickSettings;
   const fontSize = quickSettings?.fontSize ?? theme.settings.fontSize;
-  return {
+  return layerThemeQuickDisplay({
     fontSize: overlayMode === "fullscreen"
       ? fontSize
       : Math.max(LOWER_THIRD_FIT_MIN_FONT_SIZE, fontSize),
@@ -448,7 +449,7 @@ function getNoteQuickSettings(
     // Shown by the Bold / Italic buttons in the quick panel.
     fontWeight: quickSettings?.fontWeight ?? theme.settings.fontWeight,
     fontStyle: quickSettings?.fontStyle ?? theme.settings.fontStyle,
-  };
+  }, theme.settings.layout, { ...theme.settings, ...(quickSettings ?? {}) });
 }
 
 function resolveNotesOutputThemeSettings(
@@ -1414,6 +1415,17 @@ export default function DockNotesTab({
     const lowerThirdTheme = selectedLTThemeRef.current;
     let nextFullscreenSettings = fullscreenQuickSettings;
     let nextLowerThirdSettings = lowerThirdQuickSettings;
+    // A ready-made layer theme reads its own size / bold / italic fields, not the plain font settings.
+    const layerTheme = isFullscreen
+      ? getDockNotesThemeForMode(fullscreenTheme, "fullscreen")
+      : getDockNotesThemeForMode(lowerThirdTheme, "lower-third");
+    const layerCurrent = isFullscreen ? fullscreenQuickSettings : lowerThirdQuickSettings;
+    patch = withLayerThemeQuickPatch(patch, {
+      layout: layerTheme.settings.layout,
+      mode: isFullscreen ? "fullscreen" : "lower-third",
+      adjustSource: { ...layerTheme.settings, ...(layerCurrent ?? {}) },
+      previousFontSize: layerCurrent?.fontSize ?? layerTheme.settings.fontSize,
+    });
 
     if (isFullscreen) {
       const fullscreenBase = fullscreenQuickSettings

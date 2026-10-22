@@ -32,6 +32,7 @@ import { damerauLevenshteinDistance } from "../services/fuzzySearch";
 
 const translationCache = new Map<string, RawBibleData>();
 const corpusCache = new Map<string, BibleCorpusEntry[]>();
+const corpusBuilds = new Map<string, Promise<BibleCorpusEntry[]>>();
 const searchVocabularyCache = new Map<string, Map<string, number>>();
 const normalizedSearchVocabularyCache = new Map<string, Map<string, number>>();
 const rankedSearchCache = new Map<string, RankedSearchResult[]>();
@@ -45,31 +46,118 @@ interface CorpusSearchIndex {
 // downloaded translation is replaced or removed.
 const corpusSearchIndexes = new WeakMap<BibleCorpusEntry[], CorpusSearchIndex>();
 
-function getCorpusSearchIndex(corpus: BibleCorpusEntry[]): CorpusSearchIndex {
-  const cached = corpusSearchIndexes.get(corpus);
-  if (cached) return cached;
-  const index: CorpusSearchIndex = { tokens: new Map(), numbers: new Map(), references: new Map() };
-  const add = <T,>(map: Map<T, number[]>, key: T, id: number) => {
+function addEntryToSearchIndex(index: CorpusSearchIndex, entry: BibleCorpusEntry, id: number): void {
+  const add = <T,>(map: Map<T, number[]>, key: T, entryId: number) => {
     const ids = map.get(key);
-    if (ids) ids.push(id);
-    else map.set(key, [id]);
+    if (ids) ids.push(entryId);
+    else map.set(key, [entryId]);
   };
-  corpus.forEach((entry, id) => {
-    for (const token of entry.searchTokenSet ?? []) add(index.tokens, token, id);
-    const numbers = new Set([entry.chapter]);
-    for (let verse = entry.verse; verse <= entry.endVerse; verse++) numbers.add(verse);
-    for (const number of numbers) add(index.numbers, number, id);
-    add(index.references, `${normalizeSearchScopeBook(entry.book)} ${entry.chapter}:${entry.verse}`, id);
-  });
-  corpusSearchIndexes.set(corpus, index);
-  return index;
+  for (const token of entry.searchTokenSet ?? []) add(index.tokens, token, id);
+  const numbers = new Set([entry.chapter]);
+  for (let verse = entry.verse; verse <= entry.endVerse; verse++) numbers.add(verse);
+  for (const number of numbers) add(index.numbers, number, id);
+  add(index.references, `${normalizeSearchScopeBook(entry.book)} ${entry.chapter}:${entry.verse}`, id);
+}
+
+// Building the corpus, its index and the word list is a lot of work (about 93,000 entries for a
+// whole Bible). Done in one go it freezes the page for seconds on a slower PC, so the builders below
+// work in short slices and let the page paint and answer clicks in between.
+const SLICE_MS = 12;
+// A message-channel hop hands control back without setTimeout's 4 ms minimum, so slicing adds almost no time.
+const yieldToMain = (): Promise<void> => new Promise((resolve) => {
+  if (typeof MessageChannel === "undefined") {
+    setTimeout(resolve, 0);
+    return;
+  }
+  const channel = new MessageChannel();
+  channel.port1.onmessage = () => {
+    channel.port1.close();
+    resolve();
+  };
+  channel.port2.postMessage(null);
+});
+
+function createSlicer(): () => Promise<void> {
+  let sliceStart = performance.now();
+  return async () => {
+    if (performance.now() - sliceStart < SLICE_MS) return;
+    await yieldToMain();
+    sliceStart = performance.now();
+  };
+}
+
+const corpusIndexBuilds = new WeakMap<BibleCorpusEntry[], Promise<CorpusSearchIndex>>();
+
+/** Same index as getCorpusSearchIndex, built in slices. Callers share one build. */
+function getCorpusSearchIndexAsync(corpus: BibleCorpusEntry[]): Promise<CorpusSearchIndex> {
+  const cached = corpusSearchIndexes.get(corpus);
+  if (cached) return Promise.resolve(cached);
+  const pending = corpusIndexBuilds.get(corpus);
+  if (pending) return pending;
+  const build = (async () => {
+    const index: CorpusSearchIndex = { tokens: new Map(), numbers: new Map(), references: new Map() };
+    const slice = createSlicer();
+    for (let id = 0; id < corpus.length; id += 1) {
+      addEntryToSearchIndex(index, corpus[id], id);
+      if (id % 256 === 255) await slice();
+    }
+    corpusSearchIndexes.set(corpus, index);
+    return index;
+  })();
+  corpusIndexBuilds.set(corpus, build);
+  return build;
+}
+
+const vocabularyBuilds = new Map<string, Promise<void>>();
+
+/** Fills the (normalized) word lists in slices, so the synchronous lookups later find them ready. */
+function warmSearchVocabulary(translation: BibleTranslation, data: RawBibleData): Promise<void> {
+  const key = translation.toUpperCase();
+  if (searchVocabularyCache.has(key) && normalizedSearchVocabularyCache.has(key)) return Promise.resolve();
+  const pending = vocabularyBuilds.get(key);
+  if (pending) return pending;
+  const build = (async () => {
+    const slice = createSlicer();
+    let vocabulary = searchVocabularyCache.get(key);
+    if (!vocabulary) {
+      vocabulary = new Map<string, number>();
+      for (const book of BIBLE_BOOKS) {
+        const bookData = data[book];
+        if (!bookData) continue;
+        for (const chapterData of Object.values(bookData)) {
+          for (const text of Object.values(chapterData)) {
+            for (const token of normalizeSearchText(text).split(" ").filter(Boolean)) {
+              if (token.length < 2) continue;
+              vocabulary.set(token, (vocabulary.get(token) ?? 0) + 1);
+            }
+          }
+          await slice();
+        }
+      }
+      // A translation replaced or removed while this ran must not get the old words back.
+      if (translationCache.get(key) === data) searchVocabularyCache.set(key, vocabulary);
+    }
+    if (!normalizedSearchVocabularyCache.has(key)) {
+      const normalized = new Map<string, number>();
+      let count = 0;
+      for (const [token, tokenCount] of vocabulary) {
+        const keyToken = normalizeSearchToken(token);
+        normalized.set(keyToken, (normalized.get(keyToken) ?? 0) + tokenCount);
+        count += 1;
+        if (count % 1024 === 0) await slice();
+      }
+      if (translationCache.get(key) === data) normalizedSearchVocabularyCache.set(key, normalized);
+    }
+  })().finally(() => { vocabularyBuilds.delete(key); });
+  vocabularyBuilds.set(key, build);
+  return build;
 }
 
 /** Warm once while listening starts, so the first phrase can use the index. */
 export async function preloadBibleSearch(translation: BibleTranslation = "KJV"): Promise<void> {
   const data = await loadTranslation(translation);
-  getCorpusSearchIndex(await getBibleCorpus(translation, 3));
-  buildNormalizedSearchVocabulary(translation, data);
+  await getCorpusSearchIndexAsync(await getBibleCorpus(translation, 3));
+  await warmSearchVocabulary(translation, data);
 }
 
 export interface BibleCorpusEntry {
@@ -191,9 +279,15 @@ export function evictTranslationCache(t: string): void {
   searchVocabularyCache.delete(key);
   normalizedSearchVocabularyCache.delete(key);
   rankedSearchCache.clear();
+  vocabularyBuilds.delete(key);
   for (const cacheKey of [...corpusCache.keys()]) {
     if (cacheKey.startsWith(`${key}:`)) {
       corpusCache.delete(cacheKey);
+    }
+  }
+  for (const cacheKey of [...corpusBuilds.keys()]) {
+    if (cacheKey.startsWith(`${key}:`)) {
+      corpusBuilds.delete(cacheKey);
     }
   }
 }
@@ -762,7 +856,19 @@ function tokenizeSearch(value: string): string[] {
     : tokens.filter((token) => token.length > 1 || /^\d+$/.test(token));
 }
 
+// The same few thousand words are normalized again and again (a whole Bible is about 800,000 words),
+// and the result only depends on the word, so each word is worked out once.
+const normalizedSearchTokenCache = new Map<string, string>();
+
 function normalizeSearchToken(token: string): string {
+  const cached = normalizedSearchTokenCache.get(token);
+  if (cached !== undefined) return cached;
+  const result = computeNormalizedSearchToken(token);
+  normalizedSearchTokenCache.set(token, result);
+  return result;
+}
+
+function computeNormalizedSearchToken(token: string): string {
   const numericWord = numberSearchWord(token);
   if (numericWord) return normalizeSearchToken(numericWord);
 
@@ -1075,20 +1181,46 @@ function firstStrongTokenBonus(queryContent: string[], textContent: string[]): n
   return Math.max(0, 0.06 - index * 0.01);
 }
 
-function prepareCorpusSearchText(text: string): Pick<
-  BibleCorpusEntry,
-  "normalizedText" | "searchTokens" | "normalizedSearchTokens" | "searchTokenSet" | "searchContentTokens"
-> {
+type PreparedVerseSearchText = {
+  normalizedText: string;
+  searchTokens: string[];
+  normalizedSearchTokens: string[];
+  searchContentTokens: string[];
+};
+
+function prepareVerseSearchText(text: string): PreparedVerseSearchText {
   const normalizedText = normalizeSearchText(text);
   const searchTokens = normalizedText.split(" ").filter(Boolean);
   const normalizedSearchTokens = searchTokens.map((token) => normalizeSearchToken(token));
-
   return {
     normalizedText,
     searchTokens,
     normalizedSearchTokens,
+    searchContentTokens: normalizedSearchTokens.filter((token) => token.length > 1 && !SEARCH_STOP_WORDS.has(token)),
+  };
+}
+
+function joinPreparedSearchText(parts: PreparedVerseSearchText[]): Pick<
+  BibleCorpusEntry,
+  "normalizedText" | "searchTokens" | "normalizedSearchTokens" | "searchTokenSet" | "searchContentTokens"
+> {
+  if (parts.length === 1) {
+    const only = parts[0];
+    return {
+      normalizedText: only.normalizedText,
+      searchTokens: only.searchTokens,
+      normalizedSearchTokens: only.normalizedSearchTokens,
+      searchTokenSet: new Set(only.normalizedSearchTokens),
+      searchContentTokens: only.searchContentTokens,
+    };
+  }
+  const normalizedSearchTokens = parts.flatMap((part) => part.normalizedSearchTokens);
+  return {
+    normalizedText: parts.map((part) => part.normalizedText).filter(Boolean).join(" "),
+    searchTokens: parts.flatMap((part) => part.searchTokens),
+    normalizedSearchTokens,
     searchTokenSet: new Set(normalizedSearchTokens),
-    searchContentTokens: contentTokens(searchTokens),
+    searchContentTokens: parts.flatMap((part) => part.searchContentTokens),
   };
 }
 
@@ -1199,6 +1331,7 @@ async function searchBibleInTranslation(
     .map(parseSearchReference)
     .filter((target): target is NonNullable<typeof target> => Boolean(target));
   const results: RankedSearchResult[] = [];
+  await warmSearchVocabulary(translation, data);
   const repairedQuery = repairSearchQuery(query, translation, data);
   const normalizedVocabulary = buildNormalizedSearchVocabulary(translation, data);
   const spelledQuery = normalizeSearchText(query)
@@ -1231,7 +1364,7 @@ async function searchBibleInTranslation(
   // Look up words once, then score the most complete matches first. This is
   // lossless: the upper bound below only skips entries that cannot beat the
   // current results, even with every order/proximity bonus applied.
-  const index = getCorpusSearchIndex(corpus);
+  const index = await getCorpusSearchIndexAsync(corpus);
   const candidateCoverage = new Map<number, number>();
   for (const variant of queryVariants) {
     const weights = new Map<number, number>();
@@ -1454,20 +1587,31 @@ export async function preloadTranslation(
 /**
  * Build a cached verse/window corpus for fuzzy and semantic search.
  */
-export async function getBibleCorpus(
+export function getBibleCorpus(
   translation: BibleTranslation = "KJV",
   maxWindowSize = 3,
 ): Promise<BibleCorpusEntry[]> {
   const key = `${translation.toUpperCase()}:${maxWindowSize}`;
   const cached = corpusCache.get(key);
-  if (cached) return cached;
+  if (cached) return Promise.resolve(cached);
+  // A microphone preload, a search and the first transcript can ask together: they share one build.
+  const pending = corpusBuilds.get(key);
+  if (pending) return pending;
+  const build = buildBibleCorpus(translation, maxWindowSize, key).finally(() => {
+    if (corpusBuilds.get(key) === build) corpusBuilds.delete(key);
+  });
+  corpusBuilds.set(key, build);
+  return build;
+}
 
+async function buildBibleCorpus(
+  translation: BibleTranslation,
+  maxWindowSize: number,
+  key: string,
+): Promise<BibleCorpusEntry[]> {
   const data = await loadTranslation(translation);
   const entries: BibleCorpusEntry[] = [];
-  // A microphone preload and the first transcript can arrive together.
-  // Another caller may have built the corpus while this one awaited data.
-  const loaded = corpusCache.get(key);
-  if (loaded) return loaded;
+  const slice = createSlicer();
 
   for (const book of BIBLE_BOOKS) {
     const bookData = data[book];
@@ -1482,8 +1626,13 @@ export async function getBibleCorpus(
         }))
         .sort((a, b) => a.verse - b.verse);
 
+      // Each verse is normalized once. Words are normalized one by one, so a window of verses has
+      // exactly the words of its verses joined: the same entries as normalizing every window's text.
+      const prepared = verses.map((verse) => prepareVerseSearchText(verse.text));
+
       for (let index = 0; index < verses.length; index += 1) {
         let combinedText = "";
+        const windowParts: PreparedVerseSearchText[] = [];
 
         for (
           let windowSize = 1;
@@ -1492,10 +1641,11 @@ export async function getBibleCorpus(
         ) {
           const item = verses[index + windowSize - 1];
           combinedText = combinedText ? `${combinedText} ${item.text}` : item.text;
+          windowParts.push(prepared[index + windowSize - 1]);
 
           const startVerse = verses[index].verse;
           const endVerse = item.verse;
-          const searchText = prepareCorpusSearchText(combinedText);
+          const searchText = joinPreparedSearchText(windowParts);
           entries.push({
             book,
             chapter,
@@ -1511,9 +1661,11 @@ export async function getBibleCorpus(
           });
         }
       }
+      await slice();
     }
   }
 
-  corpusCache.set(key, entries);
+  // A translation replaced or removed while this ran must not be cached from its old text.
+  if (translationCache.get(translation.toUpperCase()) === data) corpusCache.set(key, entries);
   return entries;
 }

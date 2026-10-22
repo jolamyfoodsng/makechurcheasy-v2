@@ -14,6 +14,18 @@ describe("important words (*asterisks*)", () => {
     ]);
   });
 
+  it("takes a colour picked for some words", () => {
+    expect(parseEmphasis("The *[#facc15]Lord* is my *shepherd*")).toEqual([
+      { text: "The ", em: false },
+      { text: "Lord", em: true, color: "#facc15" },
+      { text: " is my ", em: false },
+      { text: "shepherd", em: true },
+    ]);
+    expect(stripEmphasis("The *[#facc15]Lord* is my shepherd")).toBe("The Lord is my shepherd");
+    // Only a hex colour counts; anything else is just text.
+    expect(parseEmphasis("*[red]Lord*").map((p) => p.color)).toEqual([undefined]);
+  });
+
   it("leaves text with no pair, a lone asterisk or spaced asterisks alone", () => {
     expect(parseEmphasis("Amazing grace")).toEqual([{ text: "Amazing grace", em: false }]);
     expect(parseEmphasis("a * b")).toEqual([{ text: "a * b", em: false }]);

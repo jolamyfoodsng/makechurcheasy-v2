@@ -125,6 +125,7 @@ import {
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { useTextUndoRedo } from "../useTextUndoRedo";
 import { pickLayoutAdjust } from "../../themes/layout/adjust";
+import { layerThemeQuickDisplay, withLayerThemeQuickPatch } from "../layerThemeQuickPatch";
 
 const DocumentSongImport = lazy(() => import("../../../others/SongImportFullprocess"));
 
@@ -2599,6 +2600,13 @@ function DockWorshipTab({
     const isFullscreen = fullscreenOnlyMode || overlayMode === "fullscreen";
     let nextFullscreenSettings = fullscreenQuickThemeSettings ?? defaultFullscreenQuickThemeSettings;
     let nextLowerThirdSettings = lowerThirdQuickThemeSettings ?? defaultLowerThirdQuickThemeSettings;
+    // A ready-made layer theme reads its own size / bold / italic fields, not the plain font settings.
+    patch = withLayerThemeQuickPatch(patch, {
+      layout: (isFullscreen ? baseFullscreenTheme : baseLowerThirdTheme)?.settings?.layout,
+      mode: isFullscreen ? "fullscreen" : "lower-third",
+      adjustSource: isFullscreen ? nextFullscreenSettings : nextLowerThirdSettings,
+      previousFontSize: (isFullscreen ? activeFullscreenQuickThemeSettings : activeLowerThirdQuickThemeSettings).fontSize,
+    });
 
     if (isFullscreen) {
       nextFullscreenSettings = {
@@ -2647,6 +2655,10 @@ function DockWorshipTab({
       setQuickSettingsRefreshNonce((current) => current + 1);
     }
   }, [
+    activeFullscreenQuickThemeSettings,
+    activeLowerThirdQuickThemeSettings,
+    baseFullscreenTheme,
+    baseLowerThirdTheme,
     defaultFullscreenQuickThemeSettings,
     defaultLowerThirdQuickThemeSettings,
     fullscreenOnlyMode,
@@ -5237,7 +5249,11 @@ function DockWorshipTab({
                 <DockOutputQuickActions
                   textLabel={t("worship.songText")}
                   lineLabel={t("worship.linesPerSlide")}
-                  settings={activeWorshipQuickSettings}
+                  settings={layerThemeQuickDisplay(
+                    activeWorshipQuickSettings,
+                    (isFullscreen ? baseFullscreenTheme : baseLowerThirdTheme)?.settings?.layout,
+                    activeWorshipQuickSettings,
+                  )}
                   lineCount={effectiveLinesPerSlide}
                   lineMode={effectiveAutoSplit ? "count" : "original"}
                   maxLineCount={MAX_LINES_PER_SLIDE}

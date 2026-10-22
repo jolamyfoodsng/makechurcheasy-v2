@@ -747,30 +747,54 @@ export async function downloadVerifiedUpdate(
 ): Promise<PreparedUpdate> {
   // Fail before a 100 MB download that could never be installed.
   if (detectPlatform() === "macos") await assertCanInstallInPlace();
-  if (update) {
-    try {
-      const release = await fetchLatestPublishedRelease();
-      if (isUpdateFromPublishedRelease(update, release)) {
-        try {
-          return await downloadSignedUpdate(update, onProgress);
-        } catch (error) {
-          console.warn("[updater] Signed update download failed; using published installer:", error);
-          logUpdateEvent("signed download failed, using installer", error);
-        }
-      } else {
-        console.warn(
-          `[updater] Ignoring stale update manifest v${update.version}; published release is v${release.version}`,
-        );
-      }
+  if (!update) {
+    logUpdateEvent("no signed update to install, using installer");
+    return downloadInstallerFromGitHub(onProgress);
+  }
+
+  let candidate: Update | null = update;
+  try {
+    const release = await fetchLatestPublishedRelease();
+    if (!isUpdateFromPublishedRelease(update, release)) {
+      // The app was already open when this update was found, and a newer release has come out
+      // since (the background check stops once it has found one). Ask again for the newest
+      // signed update, so the app still swaps itself and restarts instead of opening an installer.
+      console.warn(
+        `[updater] Update v${update.version} is out of date; published release is v${release.version}. Checking again.`,
+      );
+      logUpdateEvent(`update v${update.version} is out of date, published v${release.version}; checking again`);
       await update.close().catch(() => undefined);
-    } catch (error) {
-      console.warn("[updater] Could not validate signed update; using published installer:", error);
-      logUpdateEvent("could not validate signed update, using installer", error);
-      await update.close().catch(() => undefined);
+      candidate = await refreshSignedUpdate();
+      if (!candidate) logUpdateEvent("no matching signed update after checking again, using installer");
     }
+    if (candidate) {
+      try {
+        return await downloadSignedUpdate(candidate, onProgress);
+      } catch (error) {
+        console.warn("[updater] Signed update download failed; using published installer:", error);
+        logUpdateEvent("signed download failed, using installer", error);
+      }
+      await candidate.close().catch(() => undefined);
+    }
+  } catch (error) {
+    console.warn("[updater] Could not validate signed update; using published installer:", error);
+    logUpdateEvent("could not validate signed update, using installer", error);
+    await (candidate ?? update).close().catch(() => undefined);
   }
 
   return downloadInstallerFromGitHub(onProgress);
+}
+
+/** Ask the updater for the newest signed update and keep it only if it is the published release. */
+async function refreshSignedUpdate(): Promise<Update | null> {
+  clearPublishedReleaseCache();
+  const headers = getUpdaterHeaders();
+  const fresh = await check(headers ? { headers } : undefined);
+  if (!fresh) return null;
+  const release = await fetchLatestPublishedRelease();
+  if (isUpdateFromPublishedRelease(fresh, release)) return fresh;
+  await fresh.close().catch(() => undefined);
+  return null;
 }
 
 /**

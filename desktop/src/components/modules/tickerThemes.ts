@@ -54,8 +54,6 @@ export interface TickerThemeConfig {
   separatorChar: string;
   /** Whether bar has a gradient or solid bg */
   barStyle: "solid" | "gradient" | "glass";
-  /** Optional alternate renderer for ticker layouts that need custom markup */
-  layout?: "standard" | "rotating-logo";
 }
 
 // ---------------------------------------------------------------------------
@@ -131,29 +129,6 @@ export const TICKER_THEMES: TickerThemeConfig[] = [
     separatorChar: "◆",
     barStyle: "glass",
   },
-
-  // ── 6. Rotating Logo ──
-  {
-    id: "ticker-rotating-logo",
-    name: "Rotating Logo",
-    description: "Branded ticker where the church logo rotates in, the line opens, then text scrolls",
-    icon: "cached",
-    tags: ["logo", "brand", "animated"],
-    defaultColors: {
-      accent: "#1D4ED8",
-      accentText: "#FFFFFF",
-      barBg: "rgba(15, 23, 42, 0.92)",
-      barText: "#F8FAFC",
-      separator: "#F59E0B",
-    },
-    defaultHeading: "LIVE",
-    fontFamily: "'Inter', 'Segoe UI', sans-serif",
-    fontImport: "/fonts/google/google-fonts.css",
-    headingRadius: "0px",
-    separatorChar: "•",
-    barStyle: "solid",
-    layout: "rotating-logo",
-  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -172,8 +147,9 @@ export function generateTickerHTML(
   position: "top" | "bottom",
   loop: boolean = true,
   paused: boolean = false,
-  brandLogoUrl: string = "",
-  brandName: string = "",
+  // Kept so existing callers still compile; no built-in ticker uses a logo any more.
+  _brandLogoUrl: string = "",
+  _brandName: string = "",
   fontFamilyOverride?: string,
   dividerChar: string = theme.separatorChar,
   messageSpacing = 0,
@@ -202,23 +178,6 @@ export function generateTickerHTML(
       : theme.barStyle === "glass"
         ? `background: ${colors.barBg}; backdrop-filter: blur(16px) saturate(1.5); -webkit-backdrop-filter: blur(16px) saturate(1.5);`
         : `background: ${colors.barBg};`;
-
-  if (theme.layout === "rotating-logo") {
-    return generateRotatingLogoTickerHTML({
-      theme,
-      colors,
-      heading,
-      cycleContent,
-      loop,
-      paused,
-      position,
-      pxPerSecond,
-      brandLogoUrl,
-      brandName,
-      fontFamily,
-      messageSpacing: safeMessageSpacing,
-    });
-  }
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -403,278 +362,6 @@ html,body{background:transparent;overflow:hidden;width:100%;height:100%}
 </body>
 </html>`;
 }
-
-function generateRotatingLogoTickerHTML({
-  theme,
-  colors,
-  heading,
-  cycleContent,
-  loop,
-  paused,
-  position,
-  pxPerSecond,
-  brandLogoUrl,
-  brandName,
-  fontFamily,
-  messageSpacing,
-}: {
-  theme: TickerThemeConfig;
-  colors: TickerThemeColors;
-  heading: string;
-  cycleContent: string;
-  loop: boolean;
-  paused: boolean;
-  position: "top" | "bottom";
-  pxPerSecond: number;
-  brandLogoUrl: string;
-  brandName: string;
-  fontFamily: string;
-  messageSpacing: number;
-}): string {
-  const TICKER_BAR_HEIGHT_PX = 80;
-  const positionCSS = position === "top" ? "top: 0;" : "bottom: 0;";
-  const trimmedBrandName = brandName.trim();
-  const fallbackText = (trimmedBrandName || heading || "MCE")
-    .split(/\s+/)
-    .map((part) => part[0] ?? "")
-    .join("")
-    .slice(0, 3)
-    .toUpperCase() || "MCE";
-  const safeLogoUrl = brandLogoUrl.trim();
-
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-${theme.fontImport ? `<link rel="stylesheet" href="${theme.fontImport}">` : ""}
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{background:transparent;overflow:hidden;width:100%;height:100%}
-
-.logo-ticker{
-  position:fixed;left:0;right:0;${positionCSS}
-  height:${TICKER_BAR_HEIGHT_PX}px;
-  display:flex;align-items:center;
-  font-family:${fontFamily};
-  z-index:9999;
-  pointer-events:none;
-  filter:drop-shadow(0 10px 24px rgba(0,0,0,.34));
-}
-
-.logo-ticker__mark{
-  position:relative;
-  width:${TICKER_BAR_HEIGHT_PX}px;
-  height:${TICKER_BAR_HEIGHT_PX}px;
-  margin-left:10px;
-  border-radius:999px;
-  background:${colors.accent};
-  border:4px solid rgba(255,255,255,.92);
-  display:flex;align-items:center;justify-content:center;
-  overflow:hidden;
-  flex-shrink:0;
-  animation:logoTickerRise .9s cubic-bezier(.16,1,.3,1) both;
-  z-index:3;
-}
-
-.logo-ticker__mark img{
-  width:100%;height:100%;
-  object-fit:cover;
-  display:${safeLogoUrl ? "block" : "none"};
-}
-
-.logo-ticker__fallback{
-  display:${safeLogoUrl ? "none" : "flex"};
-  align-items:center;justify-content:center;
-  width:100%;height:100%;
-  color:${colors.accentText};
-  font-size:20px;
-  font-weight:900;
-}
-
-.logo-ticker__body{
-  position:relative;
-  flex:1;
-  min-width:0;
-  height:56px;
-  margin-left:-8px;
-  padding-left:24px;
-  padding-right:18px;
-  overflow:hidden;
-  background:${colors.barBg};
-  border:1px solid rgba(255,255,255,.16);
-  border-left:0;
-  border-radius:0 10px 10px 0;
-  transform-origin:left center;
-  animation:logoTickerBodyOpen .72s cubic-bezier(.16,1,.3,1) .42s both;
-}
-
-.logo-ticker__line{
-  position:absolute;left:24px;right:18px;
-  height:2px;
-  background:linear-gradient(90deg, ${colors.separator}, rgba(255,255,255,.12));
-  transform-origin:left center;
-  animation:logoTickerLineSpread .62s cubic-bezier(.16,1,.3,1) .55s both;
-}
-
-.logo-ticker__line--top{top:10px}
-.logo-ticker__line--bottom{bottom:10px}
-
-.logo-ticker__track-wrap{
-  position:relative;
-  height:100%;
-  display:flex;align-items:center;
-  overflow:hidden;
-  opacity:0;
-  animation:logoTickerTextIn .28s ease-out 1.08s forwards;
-}
-
-.logo-ticker__track{
-  display:flex;
-  align-items:center;
-  white-space:nowrap;
-  will-change:transform;
-  transform:translate3d(0,0,0);
-}
-
-.logo-ticker__half,
-.logo-ticker__cycle{
-  display:flex;
-  align-items:center;
-  white-space:nowrap;
-  flex-shrink:0;
-}
-
-.logo-ticker__half{padding-right:44px}
-
-.tk-msg{
-  color:${colors.barText};
-  font-size:34px;
-  font-weight:700;
-  padding:0 14px;
-  letter-spacing:0;
-}
-
-.tk-msg:not(:first-child){margin-left:${messageSpacing}px}
-
-.tk-sep{
-  color:${colors.separator};
-  font-size:18px;
-  font-weight:900;
-  opacity:.9;
-  padding:0 4px;
-}
-
-@keyframes logoTickerRise{
-  0%{opacity:0;transform:translateY(${position === "top" ? "-42px" : "42px"}) rotate(-95deg) scale(.72)}
-  68%{opacity:1;transform:translateY(0) rotate(8deg) scale(1.04)}
-  100%{opacity:1;transform:translateY(0) rotate(0deg) scale(1)}
-}
-
-@keyframes logoTickerBodyOpen{
-  0%{opacity:0;transform:scaleX(.05)}
-  100%{opacity:1;transform:scaleX(1)}
-}
-
-@keyframes logoTickerLineSpread{
-  0%{transform:scaleX(0);opacity:0}
-  100%{transform:scaleX(1);opacity:1}
-}
-
-@keyframes logoTickerTextIn{
-  from{opacity:0;transform:translateY(6px)}
-  to{opacity:1;transform:translateY(0)}
-}
-
-@keyframes logoTickerScroll{
-  0%{transform:translate3d(0,0,0)}
-  100%{transform:translate3d(calc(-1 * var(--logo-ticker-half-width, 50%)),0,0)}
-}
-</style>
-</head>
-<body>
-<div class="logo-ticker">
-  <div class="logo-ticker__mark">
-    <img src="${escapeHTML(safeLogoUrl)}" alt="">
-    <div class="logo-ticker__fallback">${escapeHTML(fallbackText)}</div>
-  </div>
-  <div class="logo-ticker__body">
-    <div class="logo-ticker__line logo-ticker__line--top"></div>
-    <div class="logo-ticker__line logo-ticker__line--bottom"></div>
-    <div class="logo-ticker__track-wrap" id="logoTickerWrap">
-      <div class="logo-ticker__track" id="logoTickerTrack"></div>
-    </div>
-  </div>
-</div>
-<template id="logoTickerTemplate">${cycleContent}</template>
-<script>
-(() => {
-  const wrap = document.getElementById("logoTickerWrap");
-  const track = document.getElementById("logoTickerTrack");
-  const template = document.getElementById("logoTickerTemplate");
-  if (!wrap || !track || !template) return;
-
-  const pxPerSecond = ${pxPerSecond.toFixed(2)};
-  const shouldLoop = ${loop ? "true" : "false"};
-  let resizeFrame = 0;
-
-  const buildTrack = () => {
-    track.innerHTML = "";
-    track.style.animation = "none";
-    void track.offsetWidth;
-
-    const wrapWidth = Math.max(wrap.clientWidth, 1);
-    const half = document.createElement("div");
-    half.className = "logo-ticker__half";
-    track.appendChild(half);
-
-    let copies = 0;
-    while (half.scrollWidth < wrapWidth * 2.2 && copies < 36) {
-      const cycle = document.createElement("div");
-      cycle.className = "logo-ticker__cycle";
-      cycle.innerHTML = template.innerHTML;
-      half.appendChild(cycle);
-      copies += 1;
-    }
-
-    if (copies === 0) {
-      const cycle = document.createElement("div");
-      cycle.className = "logo-ticker__cycle";
-      cycle.innerHTML = template.innerHTML;
-      half.appendChild(cycle);
-    }
-
-    const halfWidth = Math.max(half.scrollWidth, wrapWidth + 120);
-    const halfClone = half.cloneNode(true);
-    track.appendChild(halfClone);
-
-    track.style.setProperty("--logo-ticker-half-width", halfWidth + "px");
-    const duration = Math.max(8, halfWidth / pxPerSecond);
-    track.style.animationName = "logoTickerScroll";
-    track.style.animationDuration = duration + "s";
-    track.style.animationTimingFunction = "linear";
-    track.style.animationDelay = "1.2s";
-    track.style.animationIterationCount = shouldLoop ? "infinite" : "1";
-    track.style.animationFillMode = shouldLoop ? "none" : "forwards";
-    track.style.animationPlayState = ${paused ? '"paused"' : '"running"'};
-  };
-
-  const handleResize = () => {
-    cancelAnimationFrame(resizeFrame);
-    resizeFrame = requestAnimationFrame(buildTrack);
-  };
-
-  buildTrack();
-  window.addEventListener("resize", handleResize);
-})();
-</script>
-</body>
-</html>`;
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 
 function escapeHTML(str: string): string {
   return str

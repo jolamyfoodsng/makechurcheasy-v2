@@ -14,9 +14,9 @@ export type PresentationFeature = {
 export const presentationFeatures: PresentationFeature[] = [
   {
     id: "bible", label: "Bible", title: "The right verse.\nRight on time.",
-    copy: "Search and present Bible verses inside OBS Studio. Explore 10,000+ Bible translations, compare passages and translations side by side, and update scripture on screen in real time without leaving the dock.",
+    copy: "Search and present Bible verses inside OBS Studio. Explore 1,000+ Bible versions in 250+ languages, compare passages and translations side by side, and update scripture on screen in real time without leaving the dock.",
     image: "bible", alt: "MakeChurchEazy Bible dock with John 3:16 selected", note: "Search a reference. Select a verse. Present it.",
-    highlights: ["10,000+ Bible translations", "Verse and translation comparison", "Real-time scripture updates", "Full screen or lower third"],
+    highlights: ["1,000+ Bible versions in 250+ languages", "Verse and translation comparison", "Real-time scripture updates", "Full screen or lower third"],
     steps: [
       { title: "Find the passage", copy: "Enter a Bible reference in the search field, or move through the chapter to choose your verse." },
       { title: "Choose how it appears", copy: "Select your Bible version, theme and text size. Use a full screen presentation or a lower third over your video." },

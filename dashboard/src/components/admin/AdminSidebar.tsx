@@ -3,6 +3,7 @@
 import {
   LayoutDashboard,
   Users,
+  Contact,
   Landmark,
   CreditCard,
   Zap,
@@ -46,6 +47,7 @@ interface NavItem {
 const corePlatformItems: NavItem[] = [
   { path: "/admin", labelKey: "admin.sidebar.dashboard", icon: LayoutDashboard, exact: true },
   { path: "/admin/users", labelKey: "admin.sidebar.users", icon: Users },
+  { path: "/admin/contacts", label: "Contacts", icon: Contact },
   { path: "/admin/churches", labelKey: "admin.sidebar.churches", icon: Landmark },
   { path: "/admin/subscriptions", labelKey: "admin.sidebar.subscriptions", icon: CreditCard },
 ];

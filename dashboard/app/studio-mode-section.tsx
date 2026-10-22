@@ -10,7 +10,7 @@ import styles from "./homepage.module.css";
 const STUDIO_SCREENSHOT = "";
 
 const points = [
-  { icon: BookOpen, text: "Scripture from 10,000+ Bible translations" },
+  { icon: BookOpen, text: "Scripture from 1,000+ Bible versions in 250+ languages" },
   { icon: Music2, text: "Worship lyrics from your song library" },
   { icon: ImageIcon, text: "Pictures, videos and slides from your media" },
   { icon: Monitor, text: "Straight to a projector, TV or second screen" },

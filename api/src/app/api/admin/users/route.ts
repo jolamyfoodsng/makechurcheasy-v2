@@ -383,6 +383,7 @@ export async function GET(req: NextRequest) {
         scheduledDowngradeAt: u.scheduledDowngradeAt || null,
         activationMilestones: u.activationMilestones || null,
         reactivationOffer: reactivationOfferMap.get(id) || null,
+        zohoLists: u.zohoCampaigns?.inZoho ? (u.zohoCampaigns.lists || []) : null,
         usage: userUsage,
         activityScore: activity
           ? {

@@ -283,6 +283,29 @@ function nextEntryId(): string {
   return `e${++_entryId}`;
 }
 
+// ── Diagnostics: why did Verse AI stop or restart? ──────────────────────────
+// Every stop, restart and watchdog decision is logged with a timestamp and a snapshot of the state,
+// and the last 200 lines are kept. In the app's developer console, run  __verseAiDiag()  to copy them.
+const VAI_DIAG_LIMIT = 200;
+const vaiDiagLines: string[] = [];
+
+export function vaiDiag(event: string, detail: Record<string, unknown> = {}): void {
+  const line = `${new Date().toISOString()} ${event} ${JSON.stringify(detail)}`;
+  vaiDiagLines.push(line);
+  if (vaiDiagLines.length > VAI_DIAG_LIMIT) vaiDiagLines.shift();
+  console.info(`[VerseAI diag] ${line}`);
+}
+
+/** The line of the stack that called a stop, so the log says who asked for it. */
+function vaiCaller(): string {
+  const lines = (new Error().stack ?? "").split("\n").map((l) => l.trim()).filter(Boolean);
+  return lines.slice(3, 6).join(" <- ").slice(0, 400);
+}
+
+if (typeof window !== "undefined") {
+  (window as unknown as { __verseAiDiag?: () => string }).__verseAiDiag = () => vaiDiagLines.join("\n");
+}
+
 export class LmDockService {
   private initialized = false;
   private unsubscribeDock: (() => void) | null = null;
@@ -399,6 +422,30 @@ export class LmDockService {
   /** Throttle audio level notifications to avoid render storms. */
   private lastLevelNotifyAt = 0;
   private lastLevelValue = 0;
+  /** Diagnostics only: how many mic level events arrived since the speech service said Begin. */
+  private diagLevelEvents = 0;
+  private diagMaxLevel = 0;
+  private diagLastSummaryAt = 0;
+
+  /** A snapshot of everything that decides whether listening continues (for the diagnostic log). */
+  private diagState(): Record<string, unknown> {
+    const now = Date.now();
+    return {
+      status: this.snapshot.status,
+      keepListening: this.shouldKeepListening,
+      token: this.sessionToken,
+      sessionAgeS: this.sessionStartTime ? Math.round((now - this.sessionStartTime) / 1000) : null,
+      reconnectAttempts: this.reconnectAttempts,
+      audioRecoveryAttempts: this.audioRecoveryAttempts,
+      sinceConnectedS: this.audioConnectedAt ? Math.round((now - this.audioConnectedAt) / 1000) : null,
+      sinceLastLevelS: this.lastAudioSignalAt ? Math.round((now - this.lastAudioSignalAt) / 1000) : null,
+      levelEventsSinceBegin: this.diagLevelEvents,
+      maxLevelSinceBegin: Math.round(this.diagMaxLevel * 1000) / 1000,
+      sinceLastSpeechS: this.lastSpeechReceivedAt ? Math.round((now - this.lastSpeechReceivedAt) / 1000) : null,
+      inactivityPromptActive: this.inactivityPromptActive,
+      inactivityThresholdMin: Math.round(this.currentInactivityThresholdMs / 60_000),
+    };
+  }
 
   // ── Detection profile ─────────────────────────────────────────────────────
   /** Fixed sharp detection mode. Kept as a typed field for Rust/settings compatibility. */
@@ -1140,6 +1187,7 @@ export class LmDockService {
   // ── Start / Stop ────────────────────────────────────────────────────────
 
   private recoverFromUnexpectedStreamEnd(reason: string): void {
+    vaiDiag("stream ended unexpectedly", { reason, willRecover: this.shouldKeepListening && !this.reconnectTimer, ...this.diagState() });
     if (!this.shouldKeepListening || this.reconnectTimer) return;
 
     const isConfigurationFailure = /api key|unauthori[sz]ed|forbidden|invalid.*key/i.test(reason);
@@ -1189,6 +1237,7 @@ export class LmDockService {
       if (token !== this.sessionToken) return;
       if (this.snapshot.status === "connecting" || this.snapshot.status === "requesting-mic") {
         console.warn("[LmDockService] Connection watchdog timed out while waiting for speech service.");
+        vaiDiag("connection watchdog fired: no Begin from the speech service in time", this.diagState());
         this.shouldKeepListening = false;
         this.snapshot = {
           ...this.snapshot,
@@ -1227,10 +1276,15 @@ export class LmDockService {
       ) return;
 
       const connectedFor = Date.now() - this.audioConnectedAt;
+      if (Date.now() - this.diagLastSummaryAt >= 30_000) {
+        this.diagLastSummaryAt = Date.now();
+        vaiDiag("alive", this.diagState());
+      }
       if (connectedFor < LmDockService.AUDIO_SIGNAL_GRACE_MS) return;
       // The local capture callback has been observed. Long periods of silence
       // are valid and must not restart a pastor's session.
       if (this.lastAudioSignalAt >= this.audioConnectedAt) return;
+      vaiDiag("audio watchdog: no mic level events since the speech service said Begin", { graceMs: LmDockService.AUDIO_SIGNAL_GRACE_MS, ...this.diagState() });
       if (this.audioRecoveryAttempts >= LmDockService.MAX_AUDIO_RECOVERY_ATTEMPTS) {
         this.shouldKeepListening = false;
         this.snapshot = {
@@ -1403,6 +1457,7 @@ export class LmDockService {
       this.reconnectTimer = null;
     }
     console.log("[lmDockService] 🎤 startListening() called, micId:", micId, "currentStatus:", this.snapshot.status, "reconnect:", !!options.reconnect);
+    vaiDiag("startListening", { reconnect: !!options.reconnect, micId: micId ?? null, caller: vaiCaller(), ...this.diagState() });
     if (this.startInFlight) {
       return;
     }
@@ -1536,9 +1591,13 @@ export class LmDockService {
           (event) => {
           if (token !== this.sessionToken) return;
           const { status } = event.payload;
+          vaiDiag("native status event", { status, ...this.diagState() });
           if (status === "stopped-inactivity" || status === "stopped-screen-off") {
             this.handleNativeGuardStop(status === "stopped-screen-off" ? "screen-off" : "inactivity");
           } else if (status === "connected") {
+            this.diagLevelEvents = 0;
+            this.diagMaxLevel = 0;
+            this.diagLastSummaryAt = Date.now();
             this.reconnectAttempts = 0;
             this.stopConnectionWatchdog();
             this.startAudioSignalMonitor();
@@ -1580,6 +1639,8 @@ export class LmDockService {
           const level = event.payload.level;
           const now = Date.now();
           this.lastAudioSignalAt = now;
+          this.diagLevelEvents += 1;
+          if (level > this.diagMaxLevel) this.diagMaxLevel = level;
           if (level > 0.01) {
             this.audioRecoveryAttempts = 0;
           }
@@ -1643,6 +1704,7 @@ export class LmDockService {
           this.lastSessionRecycleAt = now;
           this.sessionStartTime = now;
           console.log("[LmDockService] Transparently recycling AssemblyAI stream after 15+ minutes during natural pause...");
+          vaiDiag("15-minute recycle during a pause", this.diagState());
           void this.startListening(this.activeMicId, { reconnect: true });
         }
       }, 100);
@@ -1717,6 +1779,7 @@ export class LmDockService {
 
   stopListening(): void {
     console.log("[LmDockService] 🛑 stopListening() called. Call stack:\n", new Error().stack);
+    vaiDiag("stopListening", { caller: vaiCaller(), ...this.diagState() });
     this.shouldKeepListening = false;
     this.activeMicId = undefined;
     this.reconnectAttempts = 0;
@@ -1817,6 +1880,7 @@ export class LmDockService {
 
     if (!this.inactivityPromptActive) {
       if (now - lastSpeech >= this.currentInactivityThresholdMs) {
+        vaiDiag("inactivity prompt shown (no speech for the threshold)", this.diagState());
         this.inactivityPromptActive = true;
         this.inactivityPromptExpiresAt = now + LmDockService.INACTIVITY_COUNTDOWN_S * 1000;
         this.snapshot = {
@@ -1874,6 +1938,7 @@ export class LmDockService {
 
   /** The native side already stopped the microphone (screen off or no answer to the prompt). */
   private handleNativeGuardStop(reason: "inactivity" | "screen-off"): void {
+    vaiDiag("native guard stopped the stream", { reason, ...this.diagState() });
     this.shouldKeepListening = false;
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
@@ -1894,6 +1959,7 @@ export class LmDockService {
   }
 
   stopDueToInactivity(): void {
+    vaiDiag("stopDueToInactivity", { caller: vaiCaller(), ...this.diagState() });
     this.inactivityPromptActive = false;
     this.inactivityPromptExpiresAt = 0;
     this.stopInactivityMonitor();
@@ -1934,6 +2000,7 @@ export class LmDockService {
   }
 
   private cleanup(): Promise<void> {
+    vaiDiag("cleanup (stops the native stream)", { caller: vaiCaller(), ...this.diagState() });
     // Unlisten Tauri event listeners
     this.transcriptUnlisten?.();
     this.transcriptUnlisten = null;

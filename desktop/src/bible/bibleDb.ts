@@ -337,6 +337,22 @@ async function writeInstalledTranslationToCentralDb(bible: InstalledBible): Prom
   }
 }
 
+/**
+ * Copies a Bible into the central database once per download. Doing it on every read re-saved the
+ * whole multi-megabyte Bible each time a translation was opened, which stalled the page.
+ */
+function mirrorToCentralDbOnce(bible: InstalledBible): void {
+  const flag = `mce-bible-central-mirror:${getTranslationKey(bible.abbr)}:${installedBibleTime(bible)}`;
+  try {
+    if (localStorage.getItem(flag)) return;
+  } catch {
+    // No local storage: fall through and copy.
+  }
+  void writeInstalledTranslationToCentralDb(bible).then(() => {
+    try { localStorage.setItem(flag, "1"); } catch { /* ignore */ }
+  });
+}
+
 async function deleteInstalledTranslationFromCentralDb(abbr: string): Promise<void> {
   try {
     await deleteRecord(STORES.BIBLE_TRANSLATIONS, getTranslationKey(abbr));
@@ -1026,6 +1042,26 @@ async function unpublishInstalledTranslationFromDock(abbr: string): Promise<void
   await postDockData("dock-bible-translations", existing.filter((entry) => getTranslationKey(entry.abbr) !== key));
 }
 
+let installedReconcileScheduled = false;
+
+/**
+ * The Dock's quick list on open: just the small shared list of installed Bibles. The full list reads
+ * every installed Bible's text and checks every verse of each, which freezes the Dock for a long time
+ * on a slower PC. That full check still runs, later and in the background, so nothing is lost.
+ * Falls back to the full list when the shared list is empty.
+ */
+export async function getInstalledTranslationsFast(): Promise<InstalledBibleMetadata[]> {
+  const shared = await readInstalledTranslationMetadataFromDockData();
+  if (shared.length === 0) return getInstalledTranslations();
+  if (!installedReconcileScheduled) {
+    installedReconcileScheduled = true;
+    setTimeout(() => {
+      void getInstalledTranslations().catch(() => { });
+    }, 10000);
+  }
+  return shared;
+}
+
 export async function getInstalledTranslations(): Promise<InstalledBibleMetadata[]> {
   if (!canLoadDockData()) return getInstalledTranslationsForDock();
   const installed = await getInstalledTranslationsWithData();
@@ -1045,7 +1081,7 @@ export async function getInstalledTranslation(
     db = await getDb();
     legacy = (await db.get("translations", key)) as InstalledBible | undefined;
     if (legacy && isCompleteBibleData(legacy.data)) {
-      writeInstalledTranslationToCentralDb(legacy).catch(() => { });
+      mirrorToCentralDbOnce(legacy);
       return { ...legacy, abbr: key };
     }
   } catch (err) {

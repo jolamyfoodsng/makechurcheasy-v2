@@ -17,6 +17,7 @@ import "../fonts.css";
 import "./dock.css";
 import "./dock-theme.css";
 import "./dock-auth.css";
+import { setUsagePage, startUsageTracking } from "../services/usageTracker";
 
 dockClient.init();
 
@@ -31,6 +32,9 @@ dockClient.onState((msg) => {
     }
   }
 });
+
+startUsageTracking("lm-dock");
+setUsagePage("verse-ai-dock");
 
 const el = document.getElementById("dock-root");
 if (el) {

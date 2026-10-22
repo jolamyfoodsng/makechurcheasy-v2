@@ -3,15 +3,12 @@ import {
   ArrowLeft,
   BookOpen,
   CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
   Clock3,
   ExternalLink,
   ListVideo,
   Play,
   RefreshCw,
   Search,
-  X,
 } from "../components/icons/NativeIcons";
 import {
   fetchTutorialCatalog,
@@ -34,36 +31,22 @@ function videoThumbnail(video: TutorialVideo): string | undefined {
   return videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : undefined;
 }
 
+/** Tutorials play on YouTube, in the person's own browser (a video embedded inside the app is refused by YouTube). */
+async function openInBrowser(url: string): Promise<void> {
+  if (!url) return;
+  try {
+    const { openUrl } = await import("@tauri-apps/plugin-opener");
+    await openUrl(url);
+  } catch {
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+}
+
 function progressLabel(completed: number, total: number): string {
   if (!total) return "No current videos yet";
   if (completed === total) return "Complete";
   if (completed === 0) return `${total} video${total === 1 ? "" : "s"}`;
   return `${completed} of ${total} complete`;
-}
-
-function renderTutorialDescription(text: string) {
-  const urlRegex = /(https?:\/\/[^\s]+)/g;
-  const parts = text.split(urlRegex);
-  return parts.map((part, index) => {
-    if (urlRegex.test(part)) {
-      return (
-        <a
-          key={index}
-          href={part}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="tutorial-link"
-          onClick={(e) => {
-            e.stopPropagation();
-            window.open(part, "_blank", "noopener,noreferrer");
-          }}
-        >
-          {part}
-        </a>
-      );
-    }
-    return part;
-  });
 }
 
 export default function TutorialsPage() {
@@ -72,7 +55,6 @@ export default function TutorialsPage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
   const [selectedPlaylist, setSelectedPlaylist] = useState<TutorialPlaylist | null>(null);
-  const [selectedVideo, setSelectedVideo] = useState<TutorialVideo | null>(null);
   const [loading, setLoading] = useState(playlists.length === 0);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -118,14 +100,6 @@ export default function TutorialsPage() {
     [selectedPlaylist],
   );
 
-  const currentVideoIndex = useMemo(
-    () => (selectedVideo ? currentVideos.findIndex((v) => v.videoId === selectedVideo.videoId) : -1),
-    [currentVideos, selectedVideo],
-  );
-
-  const hasPrev = currentVideoIndex > 0;
-  const hasNext = currentVideoIndex >= 0 && currentVideoIndex < currentVideos.length - 1;
-
   const currentPlaylistSummary = useMemo(() => {
     if (!selectedPlaylist) return { completed: 0, total: 0 };
     return getTutorialProgressSummary(selectedPlaylist, progress);
@@ -138,49 +112,22 @@ export default function TutorialsPage() {
     });
   }, []);
 
-  const selectVideo = useCallback((video: TutorialVideo) => {
-    setSelectedVideo(video);
+  const watchVideo = useCallback((video: TutorialVideo) => {
     markStarted(video);
+    void openInBrowser(video.youtubeUrl);
   }, [markStarted]);
 
   const openPlaylist = useCallback((playlist: TutorialPlaylist) => {
     setSelectedPlaylist(playlist);
-    setSelectedVideo(null);
   }, []);
-
-  const goToPrevVideo = useCallback(() => {
-    if (hasPrev) {
-      const prev = currentVideos[currentVideoIndex - 1];
-      setSelectedVideo(prev);
-      markStarted(prev);
-    }
-  }, [currentVideoIndex, currentVideos, hasPrev, markStarted]);
-
-  const goToNextVideo = useCallback(() => {
-    if (hasNext) {
-      const next = currentVideos[currentVideoIndex + 1];
-      setSelectedVideo(next);
-      markStarted(next);
-    }
-  }, [currentVideoIndex, currentVideos, hasNext, markStarted]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (selectedVideo) {
-        if (event.key === "Escape") {
-          setSelectedVideo(null);
-        } else if (event.key === "ArrowLeft" && hasPrev) {
-          goToPrevVideo();
-        } else if (event.key === "ArrowRight" && hasNext) {
-          goToNextVideo();
-        }
-      } else if (selectedPlaylist && event.key === "Escape") {
-        setSelectedPlaylist(null);
-      }
+      if (selectedPlaylist && event.key === "Escape") setSelectedPlaylist(null);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [goToNextVideo, goToPrevVideo, hasNext, hasPrev, selectedPlaylist, selectedVideo]);
+  }, [selectedPlaylist]);
 
   const setCompletion = useCallback((video: TutorialVideo, completed: boolean) => {
     setProgress((current) => setTutorialProgressStatus(current, video.videoId, completed ? "completed" : "started"));
@@ -190,10 +137,8 @@ export default function TutorialsPage() {
     if (!selectedPlaylist) return;
     const videos = getCurrentTutorialVideos(selectedPlaylist);
     if (!videos.length) return;
-    const nextVideo = videos.find((v) => progress[v.videoId]?.status !== "completed") || videos[0];
-    setSelectedVideo(nextVideo);
-    markStarted(nextVideo);
-  }, [markStarted, progress, selectedPlaylist]);
+    watchVideo(videos.find((v) => progress[v.videoId]?.status !== "completed") || videos[0]);
+  }, [progress, selectedPlaylist, watchVideo]);
 
   return (
     <div className="app-page tutorials-page">
@@ -290,13 +235,13 @@ export default function TutorialsPage() {
                   <article
                     key={video.videoId}
                     className={`tutorial-list-item ${isCompleted ? "is-complete" : ""}`}
-                    onClick={() => selectVideo(video)}
+                    onClick={() => watchVideo(video)}
                     role="button"
                     tabIndex={0}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
-                        selectVideo(video);
+                        watchVideo(video);
                       }
                     }}
                   >
@@ -337,11 +282,23 @@ export default function TutorialsPage() {
                         className="tutorial-item-play-btn"
                         onClick={(e) => {
                           e.stopPropagation();
-                          selectVideo(video);
+                          watchVideo(video);
+                        }}
+                        title="Opens on YouTube in your browser"
+                      >
+                        <ExternalLink size={14} />
+                        <span>Watch on YouTube</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={isCompleted ? "tutorial-action is-complete" : "tutorial-action"}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCompletion(video, !isCompleted);
                         }}
                       >
-                        <Play size={14} fill="currentColor" />
-                        <span>Play</span>
+                        <CheckCircle2 size={14} />
+                        <span>{isCompleted ? "Completed" : "Mark complete"}</span>
                       </button>
                     </div>
                   </article>
@@ -434,110 +391,6 @@ export default function TutorialsPage() {
           </>
         )}
       </div>
-
-      {/* ==================== 3RD LEVEL: VIDEO PLAYBACK MODAL ==================== */}
-      {selectedPlaylist && selectedVideo && (
-        <div
-          className="tutorials-modal-backdrop"
-          role="presentation"
-          onMouseDown={() => setSelectedVideo(null)}
-        >
-          <section
-            className="tutorials-modal tutorials-modal--player"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="tutorial-player-title"
-            onMouseDown={(event) => event.stopPropagation()}
-          >
-            <header className="tutorials-modal__header">
-              <div className="tutorials-player-modal__header-copy">
-                <p>
-                  {selectedPlaylist.title} • Video {currentVideoIndex + 1} of {currentVideos.length}
-                </p>
-                <h2 id="tutorial-player-title">{selectedVideo.title}</h2>
-              </div>
-              <button
-                type="button"
-                className="tutorials-modal__close"
-                onClick={() => setSelectedVideo(null)}
-                aria-label="Close video player"
-              >
-                <X size={20} />
-              </button>
-            </header>
-
-            <div className="tutorials-player-modal__content">
-              {getYouTubeEmbedUrl(selectedVideo.youtubeUrl) ? (
-                <div className="tutorials-player__frame">
-                  <iframe
-                    key={selectedVideo.videoId}
-                    src={getYouTubeEmbedUrl(selectedVideo.youtubeUrl) ?? undefined}
-                    title={selectedVideo.title}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                    allowFullScreen
-                  />
-                </div>
-              ) : (
-                <div className="tutorials-player__unavailable">
-                  <Play size={28} />
-                  <p>This tutorial opens in YouTube.</p>
-                </div>
-              )}
-
-              {/* Navigation Bar: BACK & NEXT BUTTONS */}
-              <div className="tutorials-player__nav-bar">
-                <button
-                  type="button"
-                  className="tutorials-nav-btn tutorials-nav-btn--prev"
-                  disabled={!hasPrev}
-                  onClick={goToPrevVideo}
-                  title={hasPrev ? `Previous: ${currentVideos[currentVideoIndex - 1]?.title}` : "First video"}
-                >
-                  <ChevronLeft size={18} />
-                  <span>Back</span>
-                </button>
-
-                <div className="tutorials-player__center-actions">
-                  <button
-                    type="button"
-                    className={progress[selectedVideo.videoId]?.status === "completed" ? "tutorial-action is-complete" : "tutorial-action"}
-                    onClick={() => setCompletion(selectedVideo, progress[selectedVideo.videoId]?.status !== "completed")}
-                  >
-                    <CheckCircle2 size={16} />
-                    {progress[selectedVideo.videoId]?.status === "completed" ? "Completed" : "Mark complete"}
-                  </button>
-                  <a
-                    href={selectedVideo.youtubeUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => markStarted(selectedVideo)}
-                  >
-                    Open in YouTube <ExternalLink size={14} />
-                  </a>
-                </div>
-
-                <button
-                  type="button"
-                  className="tutorials-nav-btn tutorials-nav-btn--next"
-                  disabled={!hasNext}
-                  onClick={goToNextVideo}
-                  title={hasNext ? `Next: ${currentVideos[currentVideoIndex + 1]?.title}` : "Last video"}
-                >
-                  <span>Next</span>
-                  <ChevronRight size={18} />
-                </button>
-              </div>
-
-              {selectedVideo.description && (
-                <div className="tutorials-player__description">
-                  <h4>About this tutorial</h4>
-                  <p>{renderTutorialDescription(selectedVideo.description)}</p>
-                </div>
-              )}
-            </div>
-          </section>
-        </div>
-      )}
     </div>
   );
 }

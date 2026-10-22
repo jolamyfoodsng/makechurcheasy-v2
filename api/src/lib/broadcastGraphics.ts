@@ -320,7 +320,7 @@ function builtinDefaults(graphicId: string): BroadcastGraphicDocument | null {
       description: t.description,
       category: "ticker",
       accentColor: t.accentColor,
-      status: "active",
+      status: t.retired ? "hidden" : "active",
       tiers: { ...ALL_TIERS },
       sortOrder: t.sortOrder,
       version: 0,
@@ -360,7 +360,9 @@ export async function listBroadcastGraphics(): Promise<BroadcastGraphicDocument[
   const builtins = [...BUILTIN_BROADCAST_GRAPHICS, ...BUILTIN_BROADCAST_TICKERS].map((b) => {
     const base = builtinDefaults(b.graphicId)!;
     const saved = byId.get(b.graphicId);
-    return saved && saved.source === "builtin"
+    // A retired ticker (removed from newer apps) stays hidden whatever was saved for it.
+    const retired = BUILTIN_BROADCAST_TICKERS.some((t) => t.graphicId === b.graphicId && t.retired);
+    return saved && saved.source === "builtin" && !retired
       ? { ...base, status: saved.status, tiers: saved.tiers, sortOrder: saved.sortOrder ?? base.sortOrder, updatedAt: saved.updatedAt, updatedBy: saved.updatedBy }
       : base;
   });

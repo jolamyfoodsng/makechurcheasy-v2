@@ -2274,3 +2274,32 @@ html.st-resizing iframe { pointer-events: none !important; }
 .st-cm__stage video { width: 100%; height: 100%; object-fit: cover; }
 .st-cm__turnon { height: 30px; padding: 0 14px; border: 1px solid var(--st-line); border-radius: 8px; background: var(--st-panel); color: var(--st-text); font-size: 12.5px; font-weight: 650; cursor: pointer; }
 .st-cm__turnon:hover { background: var(--st-raised); }
+
+/* ── Theme card (next to Text Settings) and compact Send ── */
+.st-tp--card { gap: 8px; }
+.st-tp__big { position: relative; }
+.st-tp__bigpic { display: block; width: 100%; padding: 0; border: 0; background: transparent; cursor: pointer; border-radius: 8px; }
+.st-tp__bigpic .st-tp__pic { width: 100%; }
+.st-tp__bigpic:hover .st-tp__pic { border-color: var(--st-line-strong); }
+.st-tp__pen { position: absolute; top: 6px; right: 6px; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.25); background: rgba(15, 17, 22, 0.78); color: #fff; cursor: pointer; }
+.st-tp__pen:hover:not(:disabled) { background: var(--st-blue); border-color: var(--st-blue); }
+.st-tp__pen:disabled { opacity: 0.4; cursor: default; }
+.st-tp__pick { display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--st-line); background: var(--st-raised); color: var(--st-text); text-align: left; cursor: pointer; }
+.st-tp__pick:hover { border-color: var(--st-line-strong); }
+.st-tp__pickname { font-size: 13px; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.st-tp__pickfor { flex: 1; min-width: 0; color: var(--st-text-3); font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.st-lo__actions--simple { justify-content: flex-end; }
+.st-lo__actions--simple .st-lo__send--color { flex: 0 0 auto; }
+.st-lo__actions--simple .st-lo__send--color .st-lo__sendmain { flex: 0 0 auto; height: 32px; padding: 0 14px; font-size: 13px; }
+.st-lo__actions--simple .st-lo__send--color .st-lo__sendmenu { width: 28px; height: 32px; }
+.st-lo__actions--simple .st-lo__clear { height: 32px; padding: 0 12px; }
+
+/* Text Settings and Theme sit side by side (one under the other when the column is narrow). */
+.st-lo__textpair { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.st-lo__textpair > * { min-width: 0; }
+@container stpv (min-width: 520px) {
+  .st-lo__textpair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: stretch; }
+}
+@container stpv (min-width: 600px) {
+  .st-lo__textpair { grid-column: 1 / -1; order: -1; }
+}

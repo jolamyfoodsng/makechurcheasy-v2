@@ -1,5 +1,6 @@
 "use client";
 
+import { UsageAnalyticsSection } from "@/components/admin/UsageAnalytics";
 import { useEffect, useState } from "react";
 import {
   TrendingUp,
@@ -512,6 +513,9 @@ export default function AdminAnalyticsPage() {
           {error}
         </div>
       )}
+
+      {/* ── App usage: pages opened and buttons clicked, by person ──── */}
+      <UsageAnalyticsSection />
 
       {/* ── Empty State ────────────────────────────────────────────── */}
       {!loading && !error && !hasBusinessData && (

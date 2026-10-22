@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { processDueZohoSignupSyncs } from "@/lib/zohoSignupSync";
+import { syncZohoContacts } from "@/lib/zohoContactSync";
 
 export const runtime = "nodejs";
 
@@ -11,7 +12,14 @@ export async function POST(req: NextRequest) {
 
   try {
     const result = await processDueZohoSignupSyncs();
-    return NextResponse.json({ success: true, ...result });
+    // Runs every 15 minutes; the contact pull itself only runs when the last
+    // one finished more than six hours ago.
+    const contactSync = await syncZohoContacts({ onlyIfDue: true }).catch(() => ({
+      status: "failed" as const,
+      stage: "database" as const,
+      errorCode: "unexpected_error",
+    }));
+    return NextResponse.json({ success: true, ...result, contactSync });
   } catch (error) {
     console.error("[Zoho Signup Sync] Scheduled retry failed:", {
       error: error instanceof Error ? error.name : "unknown_error",

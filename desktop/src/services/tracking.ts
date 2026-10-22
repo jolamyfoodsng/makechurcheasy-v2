@@ -104,11 +104,8 @@ async function captureAndUploadFirstPresentationScreenshot(
  */
 type TrackingRequest = { url: string; headers: Record<string, string>; body: string };
 
-function buildTrackingRequest(
-  event: string,
-  properties?: Record<string, unknown>,
-  timestamp: string = new Date().toISOString(),
-): TrackingRequest | null {
+/** Who is using the app: the signed-in user, the paired device and where to send events. Shared by all trackers. */
+export function getTrackingIdentity(): { userId: string | null; headers: Record<string, string>; apiBase: string | null } {
   const session = getSession();
   const userId =
     session?.user?.id ||
@@ -128,8 +125,15 @@ function buildTrackingRequest(
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (deviceId) headers["X-Device-Id"] = deviceId;
   if (deviceSecret) headers["X-Device-Secret"] = deviceSecret;
+  return { userId, headers, apiBase: getSessionApiBase() || null };
+}
 
-  const apiBase = getSessionApiBase();
+function buildTrackingRequest(
+  event: string,
+  properties?: Record<string, unknown>,
+  timestamp: string = new Date().toISOString(),
+): TrackingRequest | null {
+  const { userId, headers, apiBase } = getTrackingIdentity();
   if (!apiBase) return null;
 
   return {

@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import dockObsClientSource from "../dockObsClient.ts?raw";
 import editorSource from "./DockLowerThirdEditor.tsx?raw";
 import ministrySource from "./DockMinistryTab.tsx?raw";
+import worshipSource from "./DockWorshipTab.tsx?raw";
+import notesSource from "./DockNotesTab.tsx?raw";
 import lowerThirdOverlayHtml from "../../../public/lower-third-overlay.html?raw";
 
 describe("Dock lower-third animate out wiring", () => {
@@ -134,5 +136,15 @@ describe("Ministry lower-third tabs in OBS", () => {
     // Per-tab pages get ?mceSource= so they ignore packets meant for another tab.
     expect(dockObsClientSource).toContain("return this.buildSceneRouteOverlayUrl(url, sourceName);");
     expect(lowerThirdOverlayHtml).toContain('new URLSearchParams(window.location.search).get("mceSource")');
+  });
+});
+
+describe("Worship and Notes quick controls with a layer theme", () => {
+  it("translate LG / XL / 2XL, + / −, Bold and Italic for the theme before applying them", () => {
+    expect(worshipSource).toContain("patch = withLayerThemeQuickPatch(patch, {");
+    expect(worshipSource).toContain("settings={layerThemeQuickDisplay(");
+    expect(ministrySource).not.toContain("withLayerThemeQuickPatch");
+    expect(notesSource).toContain("patch = withLayerThemeQuickPatch(patch, {");
+    expect(notesSource).toContain("return layerThemeQuickDisplay({");
   });
 });

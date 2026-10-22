@@ -19,8 +19,6 @@ import {
   CheckCircle,
   Loader2,
   AlertTriangle,
-  Maximize2,
-  Minimize2,
   Play,
   LayoutDashboard,
   LogOut,
@@ -30,7 +28,7 @@ import {
   Tv,
 } from "../components/icons/NativeIcons";
 import { obsService } from "../services/obsService";
-import { getOverlayBaseUrlSync, useDockBaseUrl } from "../services/overlayUrl";
+import { useDockBaseUrl } from "../services/overlayUrl";
 import { getDeviceId } from "../services/authService";
 import { useAuth } from "../contexts/AuthContext";
 import { track } from "../services/analytics";
@@ -206,66 +204,19 @@ function fireMilestone(milestone: string) {
   }
 }
 
-function isTauriRuntime(): boolean {
-  return typeof window !== "undefined" && (
-    window.location.protocol === "tauri:" ||
-    "__TAURI_INTERNALS__" in window
-  );
-}
-
+/**
+ * The video guide for a setup step. It is a card: a picture of the video and a Watch button. The video
+ * opens on YouTube in the person's browser. (YouTube refuses to play an embedded video inside the
+ * desktop app's windows, which showed "Error 153", so it is never played in here.)
+ */
 function OnboardingTutorialPanel({ step }: { step: number }) {
   const tutorial = ONBOARDING_TUTORIALS[step] ?? ONBOARDING_TUTORIALS[2];
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [embedFailed, setEmbedFailed] = useState(false);
-
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(document.fullscreenElement === iframeRef.current);
-    };
-
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-    return () =>
-      document.removeEventListener("fullscreenchange", handleFullscreenChange);
-  }, []);
-
-  useEffect(() => {
-    setIsFullscreen(false);
-    setEmbedFailed(false);
-  }, [tutorial.videoId]);
 
   const openTutorial = useCallback(() => {
     void openUrl(tutorial.watchUrl).catch(() => {
       window.open(tutorial.watchUrl, "_blank", "noopener,noreferrer");
     });
   }, [tutorial.watchUrl]);
-
-  const toggleFullscreen = useCallback(async () => {
-    const iframe = iframeRef.current;
-    if (!iframe) return;
-
-    try {
-      if (document.fullscreenElement) {
-        await document.exitFullscreen();
-        return;
-      }
-
-      await iframe.requestFullscreen();
-    } catch {
-      openTutorial();
-    }
-  }, [openTutorial]);
-
-  const directEmbedUrl =
-    `https://www.youtube-nocookie.com/embed/${tutorial.videoId}` +
-    `?autoplay=1&mute=1&playsinline=1&rel=0&modestbranding=1${
-      tutorial.startAt ? `&start=${tutorial.startAt}` : ""
-    }`;
-  const embedUrl = isTauriRuntime()
-    ? `${getOverlayBaseUrlSync()}/youtube-tutorial?video=${encodeURIComponent(tutorial.videoId)}${
-      tutorial.startAt ? `&start=${tutorial.startAt}` : ""
-    }`
-    : directEmbedUrl;
 
   return (
     <aside className="ob-tutorial-panel" aria-label={`Step ${step} tutorial`}>
@@ -274,38 +225,21 @@ function OnboardingTutorialPanel({ step }: { step: number }) {
           <span className="ob-tutorial-kicker">Video Guide</span>
           <h2>{tutorial.title}</h2>
         </div>
-        <button
-          className="ob-tutorial-icon-btn"
-          type="button"
-          onClick={toggleFullscreen}
-          title={isFullscreen ? "Exit full screen" : "Maximize tutorial"}
-          aria-label={isFullscreen ? "Exit full screen" : "Maximize tutorial"}
-        >
-          {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
-        </button>
       </div>
 
-      <div className="ob-tutorial-video-shell">
-        <iframe
-          key={tutorial.videoId}
-          ref={iframeRef}
-          src={embedUrl}
-          title={tutorial.title}
-          allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-          referrerPolicy="strict-origin-when-cross-origin"
-          onError={() => setEmbedFailed(true)}
-          allowFullScreen
-        />
-      </div>
-
-      {embedFailed && (
-        <p className="ob-tutorial-embed-fallback" role="status">
-          Video failed to load here.{" "}
-          <button type="button" onClick={openTutorial}>
-            Open on YouTube <ExternalLink size={12} />
-          </button>
-        </p>
-      )}
+      <button
+        type="button"
+        className="ob-tutorial-card"
+        onClick={openTutorial}
+        title="Opens on YouTube in your browser"
+        aria-label={`Watch on YouTube: ${tutorial.title}`}
+      >
+        <img src={`https://i.ytimg.com/vi/${tutorial.videoId}/hqdefault.jpg`} alt="" loading="lazy" />
+        <span className="ob-tutorial-card__play" aria-hidden="true">
+          <Play size={26} fill="currentColor" />
+        </span>
+      </button>
+      <p className="ob-tutorial-note">{tutorial.description}</p>
 
       <div className="ob-tutorial-footer">
         <span className="ob-tutorial-playing">

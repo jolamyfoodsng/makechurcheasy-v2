@@ -37,6 +37,7 @@ import {
 import MultiPlatformStreamingBanner from "../components/MultiPlatformStreamingBanner";
 import BroadcastGraphicsPromoBanner from "../components/BroadcastGraphicsPromoBanner";
 import StudioModePromoBanner from "../components/StudioModePromoBanner";
+import VerseAiPromoBanner from "../components/VerseAiPromoBanner";
 import BroadcastHowItWorksModal from "../components/BroadcastHowItWorksModal";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -772,7 +773,10 @@ export default function ProductionHomePage() {
         onWatchTutorials={() => navigate("/tutorials")}
       />
 
-      <StudioModePromoBanner onOpenStudio={() => handleNavigate("/studio")} />
+      <div className="studio-promo-row">
+        <VerseAiPromoBanner onOpenVerseAi={() => handleNavigate("/speech-to-scripture")} />
+        <StudioModePromoBanner half onOpenStudio={() => handleNavigate("/studio")} />
+      </div>
 
       <DashboardObsDockStatus
         obsStatus={obsStatus}

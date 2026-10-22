@@ -200,7 +200,7 @@ export const DEFAULT_DESKTOP_CONFIG: DesktopConfig = {
     websocketPort: 4455,
     autoDetect: true,
     reconnectIntervalMs: 3000,
-    tutorialVideoUrl: "https://www.youtube.com/watch?v=makechurcheasy-obs-dock",
+    tutorialVideoUrl: "https://youtu.be/i-WnFFnuCMA?t=83",
   },
   ai: {
     scriptureTranslation: true,

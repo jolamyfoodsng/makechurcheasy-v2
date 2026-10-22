@@ -4,6 +4,7 @@
  * The dock keeps Bible, Worship + Notes, and Media production controls inside OBS.
  */
 
+import { setUsagePage } from "../services/usageTracker";
 import { Suspense, useState, useEffect, useCallback, useMemo, useRef, type CSSProperties, type ChangeEvent } from "react";
 import { useTranslation } from "react-i18next";
 import i18n from "../i18n";
@@ -358,6 +359,8 @@ function DockPageContent({
   );
   const [searchPlacement, setSearchPlacement] = useState<DockSearchPlacement>(() => initialSearchPlacement);
   const [renderedTab, setRenderedTab] = useState<DockTab>(() => initialActiveTab);
+  // Usage analytics: the dock tab on screen is the "page".
+  useEffect(() => { setUsagePage(`dock/${renderedTab}`); }, [renderedTab]);
   const [lowMemoryMode, setLowMemoryMode] = useState(() =>
     isSubEightGbDevice(getDeviceProfile()?.hardware.totalRAMMB ?? 0),
   );

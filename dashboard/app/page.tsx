@@ -1,9 +1,21 @@
 import type { Metadata } from "next";
 import { socialPreview, socialTitle, socialDescription } from "@/lib/social-preview";
 import Homepage from "./homepage";
+import { homepageFaq } from "./homepage-faq";
 
-const title = "Church Presentation Software for OBS | MakeChurchEazy";
-const description = "Present Bible verses from 10,000+ translations, compare passages, and show worship lyrics, media, lower thirds and countdowns inside OBS with MakeChurchEazy.";
+const title = "Show Bible Verses, Lyrics & Lower Thirds in OBS | MakeChurchEazy";
+const description = "Church presentation software for OBS Studio. Show Bible verses, worship lyrics, media and lower thirds on your livestream or projector. Free plan available.";
+
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "@id": "https://makechurcheazy.com/#faq",
+  mainEntity: homepageFaq.map(({ q, a }) => ({
+    "@type": "Question",
+    name: q,
+    acceptedAnswer: { "@type": "Answer", text: a },
+  })),
+};
 
 export const metadata: Metadata = {
   title: { absolute: title },
@@ -17,5 +29,8 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <Homepage />;
+  return <>
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd).replace(/</g, "\\u003c") }} />
+    <Homepage />
+  </>;
 }

@@ -175,7 +175,11 @@ import {
   type ComparePassagePreview,
   type ParsedBiblePassageReference,
 } from "../bibleMultiPassage";
-import { pickLayoutAdjust } from "../../themes/layout/adjust";
+import { layoutVerseStyle, LAYOUT_SCALE_MAX, LAYOUT_SCALE_MIN, pickLayoutAdjust, readLayoutAdjust } from "../../themes/layout/adjust";
+import { parseVerseSplitMode, splitVerseText, verseSplitModeId, type VerseSplitMode } from "../verseSplit";
+import { HIGHLIGHT_COLORS, addHighlight, applyHighlights, cleanHighlightText, type VerseHighlight } from "../verseHighlight";
+import HighlightedVerseText from "../HighlightedVerseText";
+import "./DockBibleVerseSplit.css";
 
 const DOCK_CACHED_TRANSLATIONS_KEY = "__mce_dock_cached_translations_v1";
 
@@ -267,6 +271,10 @@ type BibleBrowserQuickSettingsPatch = Partial<Pick<
   | "refFontWeight"
   | "lineHeight"
   | "refSpacing"
+  | "layoutTextScale"
+  | "layoutRefScale"
+  | "layoutBold"
+  | "layoutItalic"
   | "compareVerseFontSizeLeft"
   | "compareVerseFontSizeRight"
   | "compareReferenceFontSizeLeft"
@@ -318,6 +326,18 @@ interface BibleThemeOutputOverride {
 }
 const DOCK_BIBLE_UI_PREFS_KEY = "ocs-dock-bible-ui-preferences";
 const MAX_VERSE_LINES = 4;
+/** Which verses are split into parts, and how (set from the verse right-click menu). */
+const VERSE_SPLIT_STORAGE_KEY = "mce-dock-verse-split-v1";
+/** Words coloured in a verse (right-click a verse after selecting words). */
+const VERSE_HIGHLIGHT_STORAGE_KEY = "mce-dock-verse-highlights-v1";
+function loadVerseHighlights(): Record<string, VerseHighlight[]> {
+  try {
+    const raw = localStorage.getItem(VERSE_HIGHLIGHT_STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as Record<string, VerseHighlight[]>) : {};
+  } catch {
+    return {};
+  }
+}
 const DEFAULT_VERSE_LINES = 1;
 const DEFAULT_QUICK_ACTIONS_TOP = 42;
 const QUICK_ACTIONS_MIN_TOP = 8;
@@ -2072,7 +2092,15 @@ function DockBibleTab({
     }
   }, [showBibleHistory]);
   const [pickerTab, setPickerTab] = useState<"book" | "chapter">("book");
-  const [verseContextMenu, setVerseContextMenu] = useState<{ x: number; y: number; verse: number; text: string } | null>(null);
+  const [verseContextMenu, setVerseContextMenu] = useState<{ x: number; y: number; verse: number; text: string; selection: string } | null>(null);
+  // Words coloured in verses, kept on this computer. The ref lets the "go live" code read the newest list.
+  const [verseHighlights, setVerseHighlights] = useState<Record<string, VerseHighlight[]>>(loadVerseHighlights);
+  // Where the mouse button went down: a click that ends far from there was a drag (selecting words), not a click.
+  const verseMouseDownAtRef = useRef<{ x: number; y: number } | null>(null);
+  // Highlight word picker in the verse menu: the first and last word chosen (indexes into the verse's words).
+  const [wordPick, setWordPick] = useState<{ open: boolean; from: number | null; to: number | null }>({ open: false, from: null, to: null });
+  const verseHighlightsRef = useRef(verseHighlights);
+  verseHighlightsRef.current = verseHighlights;
   const [compareVersesModal, setCompareVersesModal] = useState<{ book: string; chapter: number; verse: number } | null>(null);
   const [copyFeedback, setCopyFeedback] = useState<"success" | "error" | null>(null);
   const copyFeedbackTimerRef = useRef<number | null>(null);
@@ -2615,11 +2643,13 @@ function DockBibleTab({
     });
   }, [isUtilityCollapsed]);
 
-  const loadTranslations = useCallback(async () => {
+  // `quick` (first open only): use the small shared list instead of reading every installed Bible.
+  // Later reloads, e.g. after a download, read the full list so a new Bible always shows up.
+  const loadTranslations = useCallback(async (quick = false) => {
     const loadLocalTranslations = async (): Promise<boolean> => {
       try {
-        const { getInstalledTranslations } = await import("../../bible/bibleDb");
-        const installed = await getInstalledTranslations();
+        const { getInstalledTranslations, getInstalledTranslationsFast } = await import("../../bible/bibleDb");
+        const installed = quick ? await getInstalledTranslationsFast() : await getInstalledTranslations();
         if (installed.length === 0) return false;
         const options = buildInstalledTranslationOptions(installed);
         setAvailableTranslations(options);
@@ -2668,7 +2698,7 @@ function DockBibleTab({
   useEffect(() => {
     let cancelled = false;
     const timer = window.setTimeout(() => {
-      void loadTranslations()
+      void loadTranslations(true)
         .catch(() => {
           if (!cancelled) {
             setAvailableTranslations((current) => (current.length > 0 ? current : [DEFAULT_INSTALLED_TRANSLATION_OPTION]));
@@ -3905,6 +3935,8 @@ function DockBibleTab({
         awaitFontFit?: boolean;
         compareTranslationsOverride?: { translationA: string; translationB: string };
         bypassSceneRoute?: boolean;
+        /** Show this text instead of the verse (one part of a verse that was split). */
+        textOverride?: string;
       },
     ) => {
       if (hasSceneRoute && !bibleSceneRouteConfirmedRef.current && !options?.bypassSceneRoute) {
@@ -3990,7 +4022,7 @@ function DockBibleTab({
       }
       setActionError("");
 
-      const selection = await resolveVerseSelection(
+      const resolvedSelection = await resolveVerseSelection(
         book,
         chapter,
         verse,
@@ -4000,6 +4032,18 @@ function DockBibleTab({
         existingPrimaryPassage,
       );
       if (requestId !== liveVerseRequestIdRef.current) return;
+      // Words the operator coloured go out as colour markup. A part of a split verse arrives already done.
+      const rangeHighlights: VerseHighlight[] = [];
+      if (!options?.textOverride) {
+        for (let v = verse; v <= Math.max(verse, resolvedSelection.verseEnd || verse); v += 1) {
+          rangeHighlights.push(...(verseHighlightsRef.current[`${effectiveTranslation}|${book}|${chapter}|${v}`] ?? []));
+        }
+      }
+      const selection = options?.textOverride
+        ? { ...resolvedSelection, text: options.textOverride }
+        : rangeHighlights.length > 0
+          ? { ...resolvedSelection, text: applyHighlights(resolvedSelection.text, rangeHighlights) }
+          : resolvedSelection;
 
       setVerseText(selection.text);
       const rawReferenceLabel = `${book} ${chapter}:${selection.verseRange}`;
@@ -4987,6 +5031,21 @@ function DockBibleTab({
     ...(draftBrowserQuickThemeSettings ?? activeBrowserFontSettings),
     autoFontScale: true as const,
   };
+  // A ready-made layer theme draws its own text, so the quick buttons change its text
+  // size (a percent of the design), bold and italic instead of the plain font settings.
+  const browserLayerLayout = (browserFontMode === "fullscreen" ? baseFullscreenTheme : baseLowerThirdTheme)?.settings?.layout ?? null;
+  const quickControlSettings = browserLayerLayout
+    ? (() => {
+      const designed = layoutVerseStyle(browserLayerLayout);
+      const bold = displayedBrowserFontSettings.layoutBold ?? designed.bold;
+      const italic = displayedBrowserFontSettings.layoutItalic ?? designed.italic;
+      return {
+        ...displayedBrowserFontSettings,
+        fontWeight: bold ? "bold" as const : "normal" as const,
+        fontStyle: italic ? "italic" as const : "normal" as const,
+      };
+    })()
+    : displayedBrowserFontSettings;
   const displayedBrowserVerseLineCount = draftBrowserVerseLineCount ?? verseLineCount;
   const isFitTextMode = true;
   const hasPendingBrowserQuickChanges =
@@ -5043,7 +5102,18 @@ function DockBibleTab({
       browserReferenceFontSizeMin,
       browserReferenceFontSizeMax,
     );
+    // Layer themes: LG is the size the theme was designed at; XL and 2XL grow by the same
+    // steps the plain themes use.
+    const presetList = browserFontMode === "fullscreen" ? DOCK_QUICK_SIZE_OPTIONS_FULLSCREEN : DOCK_QUICK_SIZE_OPTIONS_LOWER_THIRD;
+    const baseOption = presetList[0];
+    const layerScale = browserLayerLayout && baseOption
+      ? {
+        layoutTextScale: clampNumber(Math.round((option.fontSize / baseOption.fontSize) * 100), LAYOUT_SCALE_MIN, LAYOUT_SCALE_MAX),
+        layoutRefScale: clampNumber(Math.round((option.refFontSize / baseOption.refFontSize) * 100), LAYOUT_SCALE_MIN, LAYOUT_SCALE_MAX),
+      }
+      : {};
     const patch: BibleBrowserQuickSettingsPatch = {
+      ...layerScale,
       fontSize: nextVerseSize,
       refFontSize: nextReferenceSize,
       fontWeight: option.fontWeight ?? "bold",
@@ -5066,6 +5136,8 @@ function DockBibleTab({
     setDraftBrowserQuickThemeSettings(null);
   }, [
     activeBrowserFontSettings.lowerThirdWidthPreset,
+    browserFontMode,
+    browserLayerLayout,
     applyBrowserQuickSettingsPatch,
     browserFontSizeMax,
     browserFontSizeMin,
@@ -5082,7 +5154,19 @@ function DockBibleTab({
       browserReferenceFontSizeMin,
       browserReferenceFontSizeMax,
     );
+    // Layer themes: the same step, as a change of the text size percent.
+    const stepRatio = currentSize > 0 ? nextSize / currentSize : 1;
+    const layerScale = browserLayerLayout
+      ? (() => {
+        const now = readLayoutAdjust(displayedBrowserFontSettings);
+        return {
+          layoutTextScale: clampNumber(Math.round(now.layoutTextScale * stepRatio), LAYOUT_SCALE_MIN, LAYOUT_SCALE_MAX),
+          layoutRefScale: clampNumber(Math.round(now.layoutRefScale * stepRatio), LAYOUT_SCALE_MIN, LAYOUT_SCALE_MAX),
+        };
+      })()
+      : {};
     const patch: BibleBrowserQuickSettingsPatch = {
+      ...layerScale,
       fontSize: nextSize,
       refFontSize: nextRefSize,
       compareVerseFontSizeLeft: nextSize,
@@ -5101,16 +5185,24 @@ function DockBibleTab({
     browserFontSizeMin,
     browserReferenceFontSizeMax,
     browserReferenceFontSizeMin,
-    displayedBrowserFontSettings.fontSize,
+    browserLayerLayout,
+    displayedBrowserFontSettings,
     handleSyncBibleBrowserSettings,
   ]);
 
   // Bold / italic from the quick menu: applies to whichever layout (full screen or
   // lower third) is active, the same way the size buttons do.
   const handleBrowserTextStyleChange = useCallback((patch: BibleBrowserQuickSettingsPatch) => {
-    applyBrowserQuickSettingsPatch(patch);
+    // Layer themes read Bold / Italic from their own fields, not the plain font settings.
+    const layerStyle: BibleBrowserQuickSettingsPatch = browserLayerLayout
+      ? {
+        ...(patch.fontWeight !== undefined ? { layoutBold: ["bold", "extrabold", "black"].includes(String(patch.fontWeight)) } : {}),
+        ...(patch.fontStyle !== undefined ? { layoutItalic: patch.fontStyle === "italic" } : {}),
+      }
+      : {};
+    applyBrowserQuickSettingsPatch({ ...patch, ...layerStyle });
     setDraftBrowserQuickThemeSettings(null);
-  }, [applyBrowserQuickSettingsPatch]);
+  }, [applyBrowserQuickSettingsPatch, browserLayerLayout]);
 
   const handleBrowserVerseLineCountChange = useCallback((lineCount: number) => {
     const safeLineCount = clampVerseLineCount(lineCount);
@@ -5741,7 +5833,8 @@ function DockBibleTab({
     void preloadBibleSearch(activeBibleSearchTranslation).catch(() => { });
   }, [activeBibleSearchTranslation]);
 
-  // Preload search index in memory during idle time so mount remains smooth and instantaneous
+  // Build the search index soon after the tab opens or the translation changes. It is built in short
+  // slices, so the tab stays responsive, and the first search is ready instead of waiting for it.
   useEffect(() => {
     let cancelled = false;
     let handle: number | ReturnType<typeof setTimeout> | null = null;
@@ -5754,9 +5847,9 @@ function DockBibleTab({
 
     const win = typeof window !== "undefined" ? (window as any) : null;
     if (win && typeof win.requestIdleCallback === "function") {
-      handle = win.requestIdleCallback(run, { timeout: 20000 });
+      handle = win.requestIdleCallback(run, { timeout: 3000 });
     } else {
-      handle = setTimeout(run, 15000);
+      handle = setTimeout(run, 3000);
     }
 
     return () => {
@@ -7076,9 +7169,83 @@ function DockBibleTab({
     [runInstantKeywordSearch],
   );
 
+  // ── Split a long verse into parts (right-click a verse) ──
+  const [verseSplits, setVerseSplits] = useState<Record<string, string>>(() => {
+    try {
+      const raw = localStorage.getItem(VERSE_SPLIT_STORAGE_KEY);
+      return raw ? (JSON.parse(raw) as Record<string, string>) : {};
+    } catch {
+      return {};
+    }
+  });
+  const [activeVersePart, setActiveVersePart] = useState<{ verse: number; index: number } | null>(null);
+  const verseSplitKey = useCallback(
+    (verse: number) => `${activeTranslation}|${selectedBook}|${selectedChapter}|${verse}`,
+    [activeTranslation, selectedBook, selectedChapter],
+  );
+  const verseSplitMode = useCallback(
+    (verse: number): VerseSplitMode | null => parseVerseSplitMode(verseSplits[verseSplitKey(verse)]),
+    [verseSplitKey, verseSplits],
+  );
+  const setVerseSplit = useCallback((verse: number, mode: VerseSplitMode | null) => {
+    const key = verseSplitKey(verse);
+    setVerseSplits((current) => {
+      const next = { ...current };
+      if (mode) next[key] = verseSplitModeId(mode);
+      else delete next[key];
+      try { localStorage.setItem(VERSE_SPLIT_STORAGE_KEY, JSON.stringify(next)); } catch { /* not saved */ }
+      return next;
+    });
+    setActiveVersePart(null);
+  }, [verseSplitKey]);
+
+  const highlightKey = useCallback(
+    (verse: number) => `${activeTranslation}|${selectedBook}|${selectedChapter}|${verse}`,
+    [activeTranslation, selectedBook, selectedChapter],
+  );
+  const highlightsForVerse = useCallback(
+    (verse: number): VerseHighlight[] => verseHighlights[highlightKey(verse)] ?? [],
+    [highlightKey, verseHighlights],
+  );
+  const saveVerseHighlights = useCallback((key: string, list: VerseHighlight[]) => {
+    setVerseHighlights((current) => {
+      const next = { ...current };
+      if (list.length > 0) next[key] = list;
+      else delete next[key];
+      try { localStorage.setItem(VERSE_HIGHLIGHT_STORAGE_KEY, JSON.stringify(next)); } catch { /* not saved */ }
+      return next;
+    });
+  }, []);
+  const addVerseHighlight = useCallback((verse: number, text: string, colorId: string) => {
+    saveVerseHighlights(highlightKey(verse), addHighlight(verseHighlightsRef.current[highlightKey(verse)] ?? [], text, colorId));
+  }, [highlightKey, saveVerseHighlights]);
+  const clearVerseHighlights = useCallback((verse: number) => {
+    saveVerseHighlights(highlightKey(verse), []);
+  }, [highlightKey, saveVerseHighlights]);
+
+  /** The parts of a split verse as shown in the Dock list (empty when the verse is not split). */
+  const versePartsInList = useCallback((verse: number): string[] => (
+    Array.from(verseGridRef.current?.querySelectorAll<HTMLElement>(`[data-verse-row="${verse}"] [data-verse-part]`) ?? [])
+      .map((element) => element.dataset.partText ?? "")
+  ), []);
+
+  /** Put one part of a split verse on the screen (the arrow keys use this). */
+  const goToVersePart = useCallback(async (verse: number, index: number, rawText: string) => {
+    if (!selectedBook || !selectedChapter) return;
+    setSelectedVerse(verse);
+    selectedVerseRef.current = verse;
+    setActiveVersePart({ verse, index });
+    await goLiveVerse(selectedBook, selectedChapter, verse, {
+      translation: activeTranslation,
+      columnIndex: activeColumnIndex,
+      textOverride: applyHighlights(rawText, highlightsForVerse(verse)),
+    });
+  }, [activeColumnIndex, activeTranslation, goLiveVerse, highlightsForVerse, selectedBook, selectedChapter]);
+
   const handleVerseClick = useCallback(
-    (v: number, columnIndex: number, version: string) => {
+    (v: number, columnIndex: number, version: string, textOverride?: string) => {
       if (!selectedBook || !selectedChapter) return;
+      if (textOverride === undefined) setActiveVersePart(null);
       setSelectedVerse(v);
       selectedVerseRef.current = v;
       pendingScrollVerseRef.current = null;
@@ -7106,6 +7273,7 @@ function DockBibleTab({
         translation: version,
         columnIndex,
         reveal: false,
+        ...(textOverride !== undefined ? { textOverride } : {}),
       });
     },
     [activateComparePassage, activeComparePassageIndex, compareEnabled, compareMode, comparePassageDrafts, goLiveVerse, selectedBook, selectedChapter],
@@ -7122,27 +7290,6 @@ function DockBibleTab({
     }, 1600);
   }, []);
 
-  const handleVerseDoubleClick = useCallback(async (
-    event: React.MouseEvent,
-    verseNumber: number,
-    primaryText: string,
-    secondaryText?: string,
-  ) => {
-    event.preventDefault();
-    event.stopPropagation();
-    if (!selectedBook || !selectedChapter) return;
-
-    const reference = `${selectedBook} ${selectedChapter}:${verseNumber}`;
-    const copyBlocks = compareEnabled && secondaryText
-      ? [
-        { reference, translation: translationA, text: primaryText },
-        { reference, translation: translationB, text: secondaryText },
-      ]
-      : [{ reference, translation: activeTranslation, text: primaryText }];
-    const copied = await copyTextToClipboard(buildBibleVerseClipboardText(copyBlocks));
-    showCopyFeedback(copied ? "success" : "error");
-  }, [activeTranslation, compareEnabled, selectedBook, selectedChapter, showCopyFeedback, translationA, translationB]);
-
   const handleVerseRowDelegated = useCallback(
     (event: React.MouseEvent | React.KeyboardEvent) => {
       const targetElement =
@@ -7150,6 +7297,36 @@ function DockBibleTab({
           ? event.target.closest<HTMLElement>("[data-verse-row]")
           : null;
       if (!targetElement) return;
+      // Dragging across words to select them (to colour them) must not also put the verse on the screen.
+      if (event.type === "click") {
+        const down = verseMouseDownAtRef.current;
+        const click = event as React.MouseEvent;
+        if (down && Math.hypot(click.clientX - down.x, click.clientY - down.y) > 4) return;
+        const picked = window.getSelection();
+        if (picked && !picked.isCollapsed && picked.anchorNode && targetElement.contains(picked.anchorNode) && picked.toString().trim()) return;
+      }
+      // One part of a split verse: stage just that part.
+      const partElement = event.target instanceof Element ? event.target.closest<HTMLElement>("[data-verse-part]") : null;
+      if (partElement) {
+        if (event.type === "keydown") {
+          const ke = event as React.KeyboardEvent;
+          if (ke.key !== "Enter" && ke.key !== " ") return;
+          ke.preventDefault();
+        }
+        if (event.type === "click" && (event as React.MouseEvent).detail > 1) return;
+        const partVerse = Number(targetElement.dataset.verseRow);
+        const partIndex = Number(partElement.dataset.versePart);
+        if (partVerse && Number.isFinite(partIndex)) {
+          const parent = targetElement.parentElement;
+          parent?.querySelectorAll(".dock-bible-verse-row--selected").forEach((el) => {
+            if (el !== targetElement) el.classList.remove("dock-bible-verse-row--selected");
+          });
+          targetElement.classList.add("dock-bible-verse-row--selected");
+          handleVerseClick(partVerse, activeColumnIndex, activeTranslation, applyHighlights(partElement.dataset.partText ?? "", highlightsForVerse(partVerse)));
+          setActiveVersePart({ verse: partVerse, index: partIndex });
+        }
+        return;
+      }
       if (event.type === "keydown") {
         const ke = event as React.KeyboardEvent;
         if (ke.key !== "Enter" && ke.key !== " ") return;
@@ -7171,7 +7348,7 @@ function DockBibleTab({
       }
       void handleVerseClick(verseNum, activeColumnIndex, activeTranslation);
     },
-    [activeColumnIndex, activeTranslation, handleVerseClick],
+    [activeColumnIndex, activeTranslation, handleVerseClick, highlightsForVerse],
   );
 
   // Switching version only changes what the Dock shows. The verse on air in
@@ -7338,6 +7515,20 @@ function DockBibleTab({
       }
       if (!selectedBook || !selectedChapter) return;
 
+      // A split verse: the arrow keys go through its parts first, then on to the next verse.
+      if (!compareEnabled) {
+        const currentVerse = selectedVerse ?? 1;
+        const currentParts = versePartsInList(currentVerse);
+        if (currentParts.length > 1) {
+          const at = activeVersePart?.verse === currentVerse ? activeVersePart.index : (delta > 0 ? -1 : currentParts.length);
+          const nextPart = at + delta;
+          if (nextPart >= 0 && nextPart < currentParts.length) {
+            await goToVersePart(currentVerse, nextPart, currentParts[nextPart]);
+            return;
+          }
+        }
+      }
+
       let nextChapter = selectedChapter;
       let nextVerse = selectedVerse ?? 1;
       let nextVerseCount = verseCount;
@@ -7379,12 +7570,26 @@ function DockBibleTab({
       setSelectedVerse(nextVerse);
       selectedVerseRef.current = nextVerse;
 
+      // Landing on a split verse: start at its first part (going down) or its last part (going up).
+      if (!compareEnabled && nextChapter === selectedChapter) {
+        const landingParts = versePartsInList(nextVerse);
+        if (landingParts.length > 1) {
+          const landingIndex = delta > 0 ? 0 : landingParts.length - 1;
+          await goToVersePart(nextVerse, landingIndex, landingParts[landingIndex]);
+          return;
+        }
+      }
+      setActiveVersePart(null);
+
       await goLiveVerse(selectedBook, nextChapter, nextVerse, {
         translation: activeTranslation,
         columnIndex: activeColumnIndex,
       });
     },
     [
+      activeVersePart,
+      goToVersePart,
+      versePartsInList,
       activeColumnIndex,
       activeTranslation,
       compareEnabled,
@@ -8470,6 +8675,7 @@ function DockBibleTab({
             <div
               className="dock-bible-reader"
               ref={verseGridRef}
+              onMouseDownCapture={(event) => { verseMouseDownAtRef.current = { x: event.clientX, y: event.clientY }; }}
               onClick={handleVerseRowDelegated}
               onKeyDown={handleVerseRowDelegated}
             >
@@ -8712,6 +8918,9 @@ function DockBibleTab({
                   const isHighlighted = highlightVerse === verse.verse;
                   const verseRefString = `${selectedBook} ${selectedChapter}:${verse.verse}`;
                   const isVerseStarred = favoriteRefs.has(verseRefString);
+                  const splitMode = compareEnabled ? null : verseSplitMode(verse.verse);
+                  const rowHighlights = compareEnabled ? [] : highlightsForVerse(verse.verse);
+                  const verseParts = splitMode ? splitVerseText(verse.text, splitMode) : [verse.text];
                   const rowClassName = [
                     "dock-bible-verse-row",
                     compareEnabled ? "dock-bible-verse-row--compare" : "",
@@ -8726,26 +8935,30 @@ function DockBibleTab({
                       key={verse.verse}
                       data-verse-row={verse.verse}
                       className={rowClassName}
-                      onDoubleClick={(event) => void handleVerseDoubleClick(
-                        event,
-                        verse.verse,
-                        verseA.text,
-                        compareEnabled ? verseB.text : undefined,
-                      )}
                       onContextMenu={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
                         const menuWidth = 190;
-                        const menuHeight = 240;
+                        const menuHeight = 430;
                         const viewportW = window.innerWidth || 800;
                         const viewportH = window.innerHeight || 600;
                         const clampedX = Math.max(8, Math.min(e.clientX, viewportW - menuWidth - 8));
                         const clampedY = Math.max(8, Math.min(e.clientY, viewportH - menuHeight - 8));
+                        // Words selected inside this verse can be coloured from the menu.
+                        const rowElement = e.currentTarget as HTMLElement;
+                        const pageSelection = window.getSelection();
+                        let selectedWords = "";
+                        if (pageSelection && !pageSelection.isCollapsed && pageSelection.anchorNode && rowElement.contains(pageSelection.anchorNode)) {
+                          const candidate = cleanHighlightText(pageSelection.toString());
+                          if (candidate && verse.text.replace(/\s+/g, " ").includes(candidate)) selectedWords = candidate;
+                        }
+                        setWordPick({ open: false, from: null, to: null });
                         setVerseContextMenu({
                           x: clampedX,
                           y: clampedY,
                           verse: verse.verse,
                           text: verse.text,
+                          selection: selectedWords,
                         });
                       }}
                       tabIndex={0}
@@ -8789,7 +9002,26 @@ function DockBibleTab({
                         )
                       ) : (
                         <div className="dock-bible-verse-row__main">
-                          <span className="dock-bible-verse-row__text">{verse.text}</span>
+                          {verseParts.length > 1 ? (
+                            <div className="dock-bible-verse-parts">
+                              {verseParts.map((part, partIndex) => (
+                                <div
+                                  key={partIndex}
+                                  data-verse-part={partIndex}
+                                  data-part-text={part}
+                                  role="button"
+                                  tabIndex={0}
+                                  aria-label={`${selectedBook} ${selectedChapter}:${verse.verse}, part ${partIndex + 1} of ${verseParts.length}`}
+                                  className={`dock-bible-verse-part${activeVersePart?.verse === verse.verse && activeVersePart.index === partIndex ? " dock-bible-verse-part--active" : ""}`}
+                                >
+                                  <span className="dock-bible-verse-part__badge">{partIndex + 1}/{verseParts.length}</span>
+                                  <span className="dock-bible-verse-part__text"><HighlightedVerseText text={part} highlights={rowHighlights} /></span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="dock-bible-verse-row__text"><HighlightedVerseText text={verse.text} highlights={rowHighlights} /></span>
+                          )}
                         </div>
                       )}
                     </div>
@@ -8821,13 +9053,19 @@ function DockBibleTab({
                     top: `${verseContextMenu.y}px`,
                     left: `${verseContextMenu.x}px`,
                     zIndex: 100000,
+                    // Opening the word picker makes the menu taller: scroll inside the window instead of running off it.
+                    maxHeight: `${Math.max(240, (typeof window !== "undefined" ? window.innerHeight : 800) - verseContextMenu.y - 8)}px`,
+                    overflowY: "auto",
                   }}
                   onMouseDown={(e) => e.stopPropagation()}
                   onClick={(e) => e.stopPropagation()}
                 >
+                  <div className="dock-bible-context-menu__actions">
                   <button
                     type="button"
-                    className="dock-bible-context-menu__item"
+                    className="dock-bible-context-menu__action"
+                    title={t("schedule.addToSchedule", "Add to Schedule")}
+                    aria-label={t("schedule.addToSchedule", "Add to Schedule")}
                     onClick={() => {
                       if (selectedBook && selectedChapter) {
                         const currentScheduleBibleTheme = overlayMode === "fullscreen" ? selectedBibleTheme.id : selectedLowerThirdTheme.id;
@@ -8850,12 +9088,14 @@ function DockBibleTab({
                       setVerseContextMenu(null);
                     }}
                   >
-                    <Icon name="playlist_add" size={16} />
-                    <span>{t("schedule.addToSchedule", "Add to Schedule")}</span>
+                    <Icon name="playlist_add" size={20} />
+                    <span>{t("bible.menuSchedule", "Schedule")}</span>
                   </button>
                   <button
                     type="button"
-                    className="dock-bible-context-menu__item"
+                    className="dock-bible-context-menu__action"
+                    title={t("bible.compareVerses", "Compare Verses")}
+                    aria-label={t("bible.compareVerses", "Compare Verses")}
                     onClick={() => {
                       if (selectedBook && selectedChapter) {
                         setCompareVersesModal({
@@ -8867,12 +9107,14 @@ function DockBibleTab({
                       setVerseContextMenu(null);
                     }}
                   >
-                    <Icon name="compare_arrows" size={16} />
-                    <span>{t("bible.compareVerses", "Compare Verses")}</span>
+                    <Icon name="compare_arrows" size={20} />
+                    <span>{t("bible.menuCompare", "Compare")}</span>
                   </button>
                   <button
                     type="button"
-                    className="dock-bible-context-menu__item"
+                    className="dock-bible-context-menu__action"
+                    title={favoriteRefs.has(`${selectedBook} ${selectedChapter}:${verseContextMenu.verse}`) ? t("bible.unstarVerse", "Unstar Verse") : t("bible.starVerse", "Star Verse")}
+                    aria-label={favoriteRefs.has(`${selectedBook} ${selectedChapter}:${verseContextMenu.verse}`) ? t("bible.unstarVerse", "Unstar Verse") : t("bible.starVerse", "Star Verse")}
                     onClick={() => {
                       void handleToggleStarVerse(verseContextMenu.verse, verseContextMenu.text);
                       setVerseContextMenu(null);
@@ -8880,51 +9122,179 @@ function DockBibleTab({
                   >
                     <Icon
                       name={favoriteRefs.has(`${selectedBook} ${selectedChapter}:${verseContextMenu.verse}`) ? "star" : "star_border"}
-                      size={16}
+                      size={20}
                     />
                     <span>
                       {favoriteRefs.has(`${selectedBook} ${selectedChapter}:${verseContextMenu.verse}`)
-                        ? t("bible.unstarVerse", "Unstar Verse")
-                        : t("bible.starVerse", "Star Verse")}
+                        ? t("bible.menuUnstar", "Unstar")
+                        : t("bible.menuStar", "Star")}
                     </span>
                   </button>
                   <button
                     type="button"
-                    className="dock-bible-context-menu__item"
+                    className="dock-bible-context-menu__action"
+                    title={t("bible.copyVerse", "Copy Verse")}
+                    aria-label={t("bible.copyVerse", "Copy Verse")}
                     onClick={() => {
-                      const textToCopy = `${selectedBook} ${selectedChapter}:${verseContextMenu.verse} (${activeTranslation})\n${verseContextMenu.text}`;
-                      void navigator.clipboard?.writeText(textToCopy);
+                      const reference = `${selectedBook} ${selectedChapter}:${verseContextMenu.verse}`;
+                      void copyTextToClipboard(
+                        buildBibleVerseClipboardText([{ reference, translation: activeTranslation, text: verseContextMenu.text }]),
+                      ).then((copied) => showCopyFeedback(copied ? "success" : "error"));
                       setVerseContextMenu(null);
                     }}
                   >
-                    <Icon name="content_copy" size={16} />
-                    <span>{t("bible.copyVerse", "Copy Verse")}</span>
+                    <Icon name="content_copy" size={20} />
+                    <span>{t("bible.menuCopy", "Copy")}</span>
                   </button>
+                  </div>
+                  <div className="dock-bible-context-menu__divider" />
+                  <div className="dock-bible-context-menu__section">
+                    <label className="dock-bible-context-menu__field">
+                      <span className="dock-bible-context-menu__section-header">
+                        <Icon name="format_align_left" size={13} />
+                        <span>{t("bible.linesPerStage", "Lines per stage")}</span>
+                      </span>
+                      <select
+                        className="dock-bible-context-menu__select"
+                        value={displayedBrowserVerseLineCount}
+                        onChange={(e) => {
+                          handleBrowserVerseLineCountChange(Number(e.target.value));
+                          setVerseContextMenu(null);
+                        }}
+                      >
+                        {Array.from({ length: MAX_VERSE_LINES }, (_, index) => index + 1).map((count) => (
+                          <option key={count} value={count}>
+                            {count === 1 ? t("bible.oneLine", "1 Line") : t("bible.xLines", `${count} Lines`, { count })}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="dock-bible-context-menu__field">
+                      <span className="dock-bible-context-menu__section-header">
+                        <Icon name="vertical_split" size={13} />
+                        <span>{t("bible.splitLongVerse", "Split long verse")}</span>
+                      </span>
+                      <select
+                        className="dock-bible-context-menu__select"
+                        value={verseSplitModeId(verseSplitMode(verseContextMenu.verse))}
+                        disabled={compareEnabled}
+                        title={compareEnabled ? t("bible.splitNotWhileComparing", "Not available while comparing versions") : undefined}
+                        onChange={(e) => {
+                          setVerseSplit(verseContextMenu.verse, parseVerseSplitMode(e.target.value));
+                          setVerseContextMenu(null);
+                        }}
+                      >
+                        <option value="off">{t("bible.splitOff", "Off")}</option>
+                        <option value="parts-2">{t("bible.splitParts2", "2 parts")}</option>
+                        <option value="parts-3">{t("bible.splitParts3", "3 parts")}</option>
+                        <option value="lines-3">{t("bible.splitLines3", "3 lines at a time")}</option>
+                        <option value="lines-4">{t("bible.splitLines4", "4 lines at a time")}</option>
+                      </select>
+                    </label>
+                  </div>
                   <div className="dock-bible-context-menu__divider" />
                   <div className="dock-bible-context-menu__section">
                     <div className="dock-bible-context-menu__section-header">
-                      <Icon name="format_align_left" size={13} />
-                      <span>{t("bible.linesPerStage", "Lines per stage")}</span>
+                      <Icon name="palette" size={13} />
+                      <span>{t("bible.highlightWords", "Highlight words")}</span>
                     </div>
-                    <div className="dock-bible-context-menu__lines-grid">
-                      {Array.from({ length: MAX_VERSE_LINES }, (_, index) => index + 1).map((count) => {
-                        const isActive = displayedBrowserVerseLineCount === count;
-                        return (
-                          <button
-                            key={count}
-                            type="button"
-                            className={`dock-bible-context-menu__line-btn${isActive ? " dock-bible-context-menu__line-btn--active" : ""}`}
-                            onClick={() => {
-                              handleBrowserVerseLineCountChange(count);
-                              setVerseContextMenu(null);
-                            }}
-                          >
-                            {isActive && <span className="dock-bible-context-menu__line-check">✓</span>}
-                            <span>{count === 1 ? t("bible.oneLine", "1 Line") : t("bible.xLines", `${count} Lines`, { count })}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
+                    <button
+                      type="button"
+                      className="dock-bible-context-menu__item dock-bible-context-menu__item--small"
+                      aria-expanded={wordPick.open}
+                      onClick={() => setWordPick((current) => ({ open: !current.open, from: null, to: null }))}
+                    >
+                      <Icon name="touch_app" size={16} />
+                      <span>{t("bible.pickWords", "Pick words to colour")}</span>
+                    </button>
+                    {wordPick.open && (() => {
+                      const words = verseContextMenu.text.split(/\s+/).filter(Boolean);
+                      const lo = wordPick.from === null ? -1 : Math.min(wordPick.from, wordPick.to ?? wordPick.from);
+                      const hi = wordPick.from === null ? -1 : Math.max(wordPick.from, wordPick.to ?? wordPick.from);
+                      const picked = lo >= 0 ? cleanHighlightText(words.slice(lo, hi + 1).join(" ").replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "")) : "";
+                      return (
+                        <>
+                          <div className="dock-bible-context-menu__hint">
+                            {t("bible.pickWordsHint", "Tap the first word, then the last word.")}
+                          </div>
+                          <div className="dock-bible-context-menu__words" role="group" aria-label={t("bible.pickWords", "Pick words to colour")}>
+                            {words.map((word, index) => (
+                              <button
+                                key={`${index}-${word}`}
+                                type="button"
+                                className={`dock-bible-context-menu__word${index >= lo && index <= hi ? " dock-bible-context-menu__word--picked" : ""}`}
+                                onClick={() => setWordPick((current) => (
+                                  current.from === null || current.to !== null
+                                    ? { open: true, from: index, to: null }
+                                    : { open: true, from: current.from, to: index }
+                                ))}
+                              >
+                                {word}
+                              </button>
+                            ))}
+                          </div>
+                          {picked && (
+                            <div className="dock-bible-context-menu__swatches" role="group" aria-label={t("bible.highlightColor", "Highlight colour")}>
+                              {HIGHLIGHT_COLORS.map((color) => (
+                                <button
+                                  key={color.id}
+                                  type="button"
+                                  className={`dock-bible-context-menu__swatch${color.hex ? "" : " dock-bible-context-menu__swatch--theme"}`}
+                                  style={color.hex ? { background: color.hex } : undefined}
+                                  title={`${color.label}: “${picked.length > 30 ? `${picked.slice(0, 30)}…` : picked}”`}
+                                  aria-label={`${t("bible.highlightWith", "Highlight with")} ${color.label}`}
+                                  onClick={() => {
+                                    addVerseHighlight(verseContextMenu.verse, picked, color.id);
+                                    setVerseContextMenu(null);
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+                    {verseContextMenu.selection ? (
+                      <>
+                        <div className="dock-bible-context-menu__hint" title={verseContextMenu.selection}>
+                          “{verseContextMenu.selection.length > 34 ? `${verseContextMenu.selection.slice(0, 34)}…` : verseContextMenu.selection}”
+                        </div>
+                        <div className="dock-bible-context-menu__swatches" role="group" aria-label={t("bible.highlightColor", "Highlight colour")}>
+                          {HIGHLIGHT_COLORS.map((color) => (
+                            <button
+                              key={color.id}
+                              type="button"
+                              className={`dock-bible-context-menu__swatch${color.hex ? "" : " dock-bible-context-menu__swatch--theme"}`}
+                              style={color.hex ? { background: color.hex } : undefined}
+                              title={color.label}
+                              aria-label={`${t("bible.highlightWith", "Highlight with")} ${color.label}`}
+                              onClick={() => {
+                                addVerseHighlight(verseContextMenu.verse, verseContextMenu.selection, color.id);
+                                window.getSelection()?.removeAllRanges();
+                                setVerseContextMenu(null);
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="dock-bible-context-menu__hint">
+                        {t("bible.highlightHint", "Select words in the verse, then right-click to colour them.")}
+                      </div>
+                    )}
+                    {highlightsForVerse(verseContextMenu.verse).length > 0 && (
+                      <button
+                        type="button"
+                        className="dock-bible-context-menu__item"
+                        onClick={() => {
+                          clearVerseHighlights(verseContextMenu.verse);
+                          setVerseContextMenu(null);
+                        }}
+                      >
+                        <Icon name="close" size={16} />
+                        <span>{t("bible.clearHighlights", "Clear highlights")}</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               </>,
@@ -8956,7 +9326,7 @@ function DockBibleTab({
               </button>
               <BibleOutputControlsMenu
                 open={showBrowserFontSizePopover}
-                settings={displayedBrowserFontSettings}
+                settings={quickControlSettings}
                 lineCount={displayedBrowserVerseLineCount}
                 isFitTextMode={isFitTextMode}
                 browserQuickUpdateImmediately={browserQuickUpdateImmediately}

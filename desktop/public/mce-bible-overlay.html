@@ -1222,8 +1222,13 @@ video { outline: none; }
         return h.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
       }
       // *words* = important words: bold, in the number/accent colour when the theme sets one.
+      // *[#facc15]words* = the same, in the colour picked in the Dock (hex only, so nothing else can get in).
       function safeEmText(h) {
-        return safeSupText(h).replace(/\*(?=\S)([^*\n]*?\S)\*/g, '<strong class="verse-em">$1</strong>');
+        return safeSupText(h).replace(/\*(?=\S)(?:\[(#[0-9a-fA-F]{3,8})\])?([^*\n]*?\S)\*/g, function (_m, color, words) {
+          return color
+            ? '<strong class="verse-em" style="color:' + color + '">' + words + '</strong>'
+            : '<strong class="verse-em">' + words + '</strong>';
+        });
       }
       function renderVerseLines(text, lineCount) {
         if (typeof text !== 'string') return '';

@@ -9,6 +9,8 @@ export interface TickerTheme {
   html: string;
   css: string;
   fontImports: string[];
+  /** The heading can show the live time instead of the heading text (Dock: "Heading shows"). */
+  headingTime?: boolean;
   /** Colours the theme ships with. Only used to pre-fill the colour picker; never applied to the output. */
   colors?: Partial<Record<"accent" | "accentText" | "barBg" | "barText" | "separator", string>>;
   variables: Array<{
@@ -148,8 +150,6 @@ interface PillTickerOptions {
   glow: string;
   extraCss?: string;
   badgeDot?: boolean;
-  /** Show the live local time in the heading instead of the heading text. */
-  clock?: boolean;
 }
 
 /** First hex colour in a CSS value (so gradients show a representative swatch in the colour picker). */
@@ -173,9 +173,10 @@ function pillTicker(o: PillTickerOptions): TickerTheme {
     badge: o.badge,
     tickerText: o.tickerText,
     speed: "26s",
-    html: `<div class="lt pos-full-bottom" data-state="{{state}}">
+    headingTime: true,
+    html: `<div class="lt pos-full-bottom" data-state="{{state}}" data-heading="{{headingMode}}">
   <div class="ticker-shell">
-    <div class="ticker-badge">${dot}${o.clock ? '<span class="pill-clock" data-live-clock>{{clock}}</span>' : "<span>{{badge}}</span>"}</div>
+    <div class="ticker-badge">${dot}<span class="pill-title">{{badge}}</span><span class="pill-clock" data-live-clock>{{clock}}</span></div>
     <div class="ticker-track">
       <div class="ticker-move" style="--speed:{{speed}};">
         <span>{{tickerText}}</span>
@@ -206,6 +207,7 @@ body { font-family: ${o.font}; }
   animation: pillGlow 2.4s ease-in-out infinite;
 }
 .pill-clock { font-size: 21px; font-variant-numeric: tabular-nums; letter-spacing: .04em; }
+.lt:not([data-heading="time"]) .pill-clock, .lt[data-heading="time"] .pill-title { display: none; }
 .pill-dot { width: 10px; height: 10px; border-radius: 50%; background: currentColor; animation: pillDot 1.4s ease-in-out infinite; }
 .ticker-track { flex: 1; min-width: 0; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent); mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent); }
 .ticker-move { display: inline-flex; gap: 60px; white-space: nowrap; font-size: 24px; font-weight: 600; animation: tickerMove var(--speed, 26s) linear infinite; }
@@ -221,8 +223,8 @@ const SAMPLE_TEXT =
 export const pillTickerThemes: TickerTheme[] = [
   pillTicker({
     id: "ticker-sunrise",
-    name: "Sunrise Pill",
-    description: "Warm orange gradient bar with a cream pill heading and soft glow.",
+    name: "Sunrise",
+    description: "Warm orange gradient bar with a cream pill heading and soft glow. The heading can show your text or the live time.",
     accentColor: "#F97316",
     badge: "This Week",
     tickerText: SAMPLE_TEXT,
@@ -232,21 +234,6 @@ export const pillTickerThemes: TickerTheme[] = [
     badgeBg: "#FFF7ED",
     badgeText: "#9A3412",
     glow: "rgba(249,115,22,.55)",
-  }),
-  pillTicker({
-    id: "ticker-sunrise-clock",
-    name: "Sunrise Clock",
-    description: "The Sunrise pill bar with the live time in the heading instead of a title.",
-    accentColor: "#F97316",
-    badge: "Time",
-    tickerText: SAMPLE_TEXT,
-    font: '"Montserrat", sans-serif',
-    shellBg: "linear-gradient(90deg, #7C2D12 0%, #C2410C 45%, #F97316 100%)",
-    shellText: "#FFFFFF",
-    badgeBg: "#FFF7ED",
-    badgeText: "#9A3412",
-    glow: "rgba(249,115,22,.55)",
-    clock: true,
   }),
   pillTicker({
     id: "ticker-ocean",

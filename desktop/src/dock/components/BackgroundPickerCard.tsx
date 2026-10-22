@@ -45,6 +45,7 @@ import LayoutThemeAdjustPanel from "./LayoutThemeAdjustPanel";
 import { BUILTIN_THEMES } from "../../bible/themes/builtinThemes";
 import { DOCK_THEMES_REFRESHED_EVENT, type DockThemesRefreshedDetail } from "../dockThemeRefresh";
 import type { ThemeLayout } from "../../themes/layout/types";
+import ThemeLayoutPreview from "../../themes/layout/ThemeLayoutPreview";
 
 /* ── Types ── */
 type BackgroundType = "off" | "theme" | "color" | "image" | "pattern" | "video";
@@ -3239,11 +3240,15 @@ function ThemeSection({
               className={`dtb-theme-section__item${isActive ? " dtb-theme-section__item--active" : ""}`}
               onClick={() => onThemeSelect(theme)}
               title={theme.name}
+              style={{ minHeight: 50 }}
             >
               <div
                 className="dtb-theme-section__preview"
                 style={{ backgroundColor: bgColor, color: fontColor }}
               >
+                {s.layout ? (
+                  <ThemeLayoutPreview layout={s.layout} />
+                ) : (
                 <span
                   className="dtb-theme-section__preview-text"
                   style={{
@@ -3256,6 +3261,7 @@ function ThemeSection({
                 >
                   Aa
                 </span>
+                )}
                 <div className="dtb-theme-section__variants">
                   {hasFs && <span className="dtb-theme-section__variant-badge">FS</span>}
                   {hasLt && <span className="dtb-theme-section__variant-badge">LT</span>}

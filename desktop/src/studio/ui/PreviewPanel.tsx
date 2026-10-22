@@ -136,6 +136,8 @@ interface PreviewPanelProps {
   liveCam?: CamOverlay;
   /** The camera card: sits under the Show Bible / Text card. */
   cameraCard?: React.ReactNode;
+  /** The Theme card: sits next to Text Settings. */
+  themeCard?: React.ReactNode;
   /** "What's on the screen" (Bible / Camera / Camera + lower third). Replaces the words switch and look tiles. */
   scenePicker?: React.ReactNode;
   /** Media and Docs fill the screen on their own: no "What's on the screen" card there. */
@@ -336,6 +338,7 @@ export default function PreviewPanel(props: PreviewPanelProps) {
           </div>
           {props.scenePicker}
         </section>
+        <div className="st-lo__textpair">
         {hasLook && (
           <TextSettingsCard
             textScale={props.textScale}
@@ -351,6 +354,8 @@ export default function PreviewPanel(props: PreviewPanelProps) {
             disabled={wordsOff}
           />
         )}
+          {props.themeCard}
+        </div>
         {props.cameraCard}
       </div>
 

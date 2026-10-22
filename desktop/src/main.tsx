@@ -11,6 +11,7 @@ import { initOverlayUrl } from "./services/overlayUrl";
 import { initAuthStore } from "./services/authService";
 import { initAnalytics, captureException } from "./services/analytics";
 import { migrateStorageKeys } from "./services/storageMigration";
+import { startUsageTracking } from "./services/usageTracker";
 
 // Migrate old storage keys before anything else reads them
 migrateStorageKeys();
@@ -196,6 +197,9 @@ if (isDock) {
       const { applyThemeConfigOverrides } = await import("./bible/types");
       applyThemeConfigOverrides();
     } catch { /* best-effort */ }
+
+    // Pages opened and buttons clicked, for the admin usage analytics (no typed text or content is sent).
+    startUsageTracking("app", { router: appRouter });
 
     // Mount main app immediately without StrictMode double-rendering
     root.render(

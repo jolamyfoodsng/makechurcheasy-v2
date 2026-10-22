@@ -1,0 +1,18 @@
+.vao { flex: 0 0 auto; border-top: 1px solid var(--border); background: var(--surface); }
+.vao__head { display: flex; align-items: center; gap: 8px; width: 100%; padding: 9px 12px; border: 0; background: transparent; color: var(--text); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; text-align: left; }
+.vao__chev { margin-left: auto; opacity: 0.6; }
+.vao__dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border); }
+.vao__dot.is-on { background: var(--success, #22c55e); }
+.vao__body { display: flex; flex-direction: column; gap: 8px; padding: 0 12px 12px; max-height: 46vh; overflow-y: auto; }
+.vao__label { font-size: 11px; opacity: 0.7; }
+.vao__row { display: flex; gap: 6px; align-items: center; }
+.vao__row select { flex: 1; min-width: 0; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--text); font: inherit; font-size: 12px; }
+.vao__btn { display: inline-flex; align-items: center; gap: 5px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--text); font: inherit; font-size: 12px; cursor: pointer; white-space: nowrap; }
+.vao__btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.vao__btn--primary { background: var(--primary, #3a5bd9); border-color: transparent; color: #fff; flex: 1; justify-content: center; overflow: hidden; text-overflow: ellipsis; }
+.vao__seg { display: flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.vao__seg button { flex: 1; padding: 5px 8px; border: 0; background: transparent; color: var(--text); font: inherit; font-size: 12px; cursor: pointer; }
+.vao__seg button.is-on { background: var(--primary, #3a5bd9); color: #fff; }
+.vao__hint { margin: 0; font-size: 11px; line-height: 1.4; opacity: 0.7; }
+.vao__hint--error { color: var(--error, #ef4444); opacity: 1; }
+.vao__check { display: flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer; }

@@ -114,6 +114,19 @@ function CodeBlock({ code, language }: { code: string; language: string }) {
   );
 }
 
+function isTableRow(line: string): boolean {
+  const trimmed = line.trim();
+  return trimmed.startsWith("|") && trimmed.endsWith("|") && trimmed.length > 1;
+}
+
+function isTableSeparator(line: string): boolean {
+  return isTableRow(line) && /^\|(\s*:?-{3,}:?\s*\|)+$/.test(line.trim());
+}
+
+function splitTableRow(line: string): string[] {
+  return line.trim().slice(1, -1).split("|").map((cell) => cell.trim());
+}
+
 export function MarkdownRenderer({ content, className = "" }: MarkdownRendererProps) {
   const blocks = useMemo(() => {
     const rawLines = content.split("\n");
@@ -233,6 +246,50 @@ export function MarkdownRenderer({ content, className = "" }: MarkdownRendererPr
         continue;
       }
 
+      // Tables (| a | b |, followed by a | --- | --- | separator row)
+      if (isTableRow(line) && i + 1 < rawLines.length && isTableSeparator(rawLines[i + 1])) {
+        const header = splitTableRow(line);
+        const rows: string[][] = [];
+        i += 2;
+        while (i < rawLines.length && isTableRow(rawLines[i])) {
+          rows.push(splitTableRow(rawLines[i]));
+          i++;
+        }
+        parsedBlocks.push(
+          <div key={`table-${i}`} className="my-8 overflow-x-auto rounded-xl border border-slate-800">
+            <table className="w-full min-w-[34rem] border-collapse text-left font-sans text-sm md:text-base">
+              <thead className="bg-slate-900/70 text-slate-100">
+                <tr>
+                  {header.map((cell, idx) => (
+                    <th key={idx} scope="col" className="px-4 py-3 font-semibold border-b border-slate-800 align-bottom">
+                      {parseInline(cell)}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="text-slate-300">
+                {rows.map((row, rIdx) => (
+                  <tr key={rIdx} className="border-b border-slate-800/70 last:border-b-0">
+                    {row.map((cell, cIdx) =>
+                      cIdx === 0 ? (
+                        <th key={cIdx} scope="row" className="px-4 py-3 font-medium text-slate-100 align-top">
+                          {parseInline(cell)}
+                        </th>
+                      ) : (
+                        <td key={cIdx} className="px-4 py-3 align-top leading-relaxed">
+                          {parseInline(cell)}
+                        </td>
+                      )
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+        continue;
+      }
+
       // Unordered list items (- or *)
       if (/^[-*]\s+/.test(line.trim())) {
         const listItems: string[] = [];
@@ -281,6 +338,7 @@ export function MarkdownRenderer({ content, className = "" }: MarkdownRendererPr
         !rawLines[i].trim().startsWith("```") &&
         !/^[-*]\s+/.test(rawLines[i].trim()) &&
         !/^\d+\.\s+/.test(rawLines[i].trim()) &&
+        !isTableRow(rawLines[i]) &&
         !rawLines[i].trim().match(/^!\[(.*?)\]\((.*?)\)$/)
       ) {
         pLines.push(rawLines[i]);

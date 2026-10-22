@@ -31,6 +31,8 @@ interface QueueDrawerProps {
   graphicLive: boolean;
   /** Graphics are in the left column (Verse AI | Graphics), so the drawer leaves out its graphics tab. */
   hideGraphics?: boolean;
+  /** Verse AI is in the side panel, so the drawer leaves out its Verse AI tab and only holds graphics. */
+  hideVerseAi?: boolean;
   /** Inside the Verse AI panel: only the Queue (top half) and Suggestions (bottom half), no header. */
   embedded?: boolean;
   queue: VoiceBibleCandidate[];
@@ -210,9 +212,11 @@ export default function QueueDrawer(props: QueueDrawerProps) {
     <section className={`st-drawer${open ? " is-open" : ""}`} aria-label="Verse AI and broadcast graphics">
       <div className="st-drawer__head">
         <div className="st-drawer__counts" role="tablist">
-          <button type="button" role="tab" aria-selected={view === "verseai"} className={`st-drawer__count${view === "verseai" ? " is-on" : ""}`} onClick={() => onView("verseai")}>
-            Verse AI <span className="st-count">{queue.length + suggestions.length}</span>
-          </button>
+          {!props.hideVerseAi && (
+            <button type="button" role="tab" aria-selected={view === "verseai"} className={`st-drawer__count${view === "verseai" ? " is-on" : ""}`} onClick={() => onView("verseai")}>
+              Verse AI <span className="st-count">{queue.length + suggestions.length}</span>
+            </button>
+          )}
           {!props.hideGraphics && (
             <button type="button" role="tab" aria-selected={view === "graphics"} className={`st-drawer__count${view === "graphics" ? " is-on" : ""}`} onClick={() => onView("graphics")}>
               Broadcast graphics {props.graphicLive && <span className="st-drawer__live" title="A graphic is on the screen" />}

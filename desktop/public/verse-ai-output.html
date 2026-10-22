@@ -1,0 +1,68 @@
+<!doctype html>
+<!--
+  Verse AI output: the page behind Verse AI's own NDI source.
+
+  It shows one Bible overlay (the same renderer OBS uses) on a see-through background and
+  follows /api/verse-ai-state, which the Speech to Scripture page writes:
+    { revision, packet }   packet = the Bible overlay packet (verse + theme), or a "blanked" one.
+  It is separate from studio-output.html, so the Studio and the Dock are never affected.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Verse AI output</title>
+  <style>
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: transparent; cursor: none; }
+    iframe { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; background: transparent; }
+  </style>
+</head>
+<body>
+  <iframe id="layer" title="Verse" data-src="mce-bible-overlay.html?tab=bible&amp;mceRelay=0&amp;mceSource=verse-ai-output"></iframe>
+  <script>
+    (function () {
+      var layer = document.getElementById('layer');
+      var baseSrc = layer.getAttribute('data-src');
+      var loaded = false;
+      var queued = null;
+      var applied = '';
+      var lastRevision = 0;
+
+      layer.addEventListener('load', function () {
+        loaded = true;
+        if (queued) { var p = queued; queued = null; send(p); }
+      });
+      layer.setAttribute('src', baseSrc);
+
+      function send(packet) {
+        if (!loaded) { queued = packet; return; }
+        var json = JSON.stringify(packet);
+        if (applied === json) return;
+        applied = json;
+        try {
+          layer.contentWindow.location.hash = 'data=' + encodeURIComponent(json);
+        } catch (e) {
+          layer.src = baseSrc + '#data=' + encodeURIComponent(json);
+        }
+      }
+
+      var fetching = false;
+      function refresh() {
+        if (fetching) return;
+        fetching = true;
+        fetch('/api/verse-ai-state?since=' + lastRevision, { cache: 'no-store' })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (state) {
+            if (!state || state.unchanged) return;
+            if (typeof state.revision === 'number') lastRevision = state.revision;
+            if (state.packet) send(state.packet);
+          })
+          .catch(function () { /* the app may be restarting */ })
+          .then(function () { fetching = false; });
+      }
+      refresh();
+      setInterval(refresh, 300);
+    })();
+  </script>
+</body>
+</html>

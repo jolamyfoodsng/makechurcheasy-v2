@@ -10,15 +10,7 @@ import HomepageFeatureShowcases from "./homepage-feature-showcases";
 import PricingContent from "./pricing/PricingContent";
 import ProofStrip from "./proof-strip";
 import StudioModeSection from "./studio-mode-section";
-
-const questions = [
-  { q: "Can I compare Bible verses and translations inside OBS?", a: "Yes. MakeChurchEazy brings Bible reference search, verse comparison, and translation comparison into the OBS dock. Explore 10,000+ Bible translations, compare passages side by side, and update displayed scripture in real time. Scripture can appear full screen or as a lower third." },
-  { q: "Do I need to create OBS scenes and sources myself?", a: "On paid plans, MakeChurchEazy creates and manages the OBS scenes and sources for you. The Free plan uses a presentation link that you add once as an OBS Browser Source." },
-  { q: "Does it work on Windows and Mac?", a: "Yes. MakeChurchEazy is available for Windows and macOS. The download page lets you choose the right installer for your computer." },
-  { q: "Can our volunteers use it?", a: "The controls are built around the tasks your team already understands: show a Bible verse, display lyrics, introduce a speaker, or put media on screen. Tutorials help your team get comfortable with the workflow." },
-  { q: "Can I try it before choosing a paid plan?", a: "Yes. Start with the Free plan, then choose Basic, Growth, or Pro when you need more capacity and tools. Visit the plans page for current pricing and feature availability." },
-  { q: "Do all features require an internet connection?", a: "Many local presentation actions work after setup with downloaded content. Sign-in, downloads, cloud sync, billing, updates, and AI services require an internet connection." },
-];
+import { homepageFaq as questions } from "./homepage-faq";
 
 function ProductView() {
   return <div className={styles.showcasePanel}>
@@ -64,7 +56,7 @@ export default function Homepage() {
       <section className={styles.hero}>
         <div className={styles.heroCopy}>
           <h1>Bible, lyrics and lower thirds.<br /><span>On your stream and in the room.</span></h1>
-          <p className={styles.heroDescription}>MakeChurchEazy works inside OBS Studio for your livestream, and sends scripture, worship lyrics and media straight to your projector or TV with Studio mode. No scenes to build, no window juggling.</p>
+          <p className={styles.heroDescription}>Church presentation software that works inside OBS Studio. Show Bible verses, worship lyrics, media and lower thirds on your livestream, or send them straight to your projector or TV with Studio mode. No scenes to build, no window juggling.</p>
           <div className={styles.heroActions}>
             <Link href="/download" className={styles.downloadButton}>
               <Download size={17} /> Download for Free

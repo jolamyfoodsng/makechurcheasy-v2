@@ -21,6 +21,7 @@ import { writeNativeDockSetting } from "../services/localDockSettings";
 import "../fonts.css";
 import "./dock.css";
 import "./dock-auth.css";
+import { startUsageTracking } from "../services/usageTracker";
 
 // Initialize BroadcastChannel before React renders so child components
 // can immediately send/receive messages in their first useEffect cycle.
@@ -39,6 +40,7 @@ dockClient.onState((msg) => {
 });
 
 function bootstrapDock() {
+  startUsageTracking("dock");
   // The dock runs outside the main app bootstrap, so seed the shared
   // config/overlay caches here before DockPage starts auto-connecting.
   // The DockPage gate owns the local settings/production-settings readiness;

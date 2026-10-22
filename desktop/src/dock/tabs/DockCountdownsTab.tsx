@@ -638,6 +638,7 @@ export default function DockCountdownsTab({
   // Edit modal state
   const [editingCd, setEditingCd] = useState<CountdownConfig | null>(null);
   const [editTitle, setEditTitle] = useState("");
+  const [editSubtitle, setEditSubtitle] = useState("");
   const [editMinutes, setEditMinutes] = useState("");
   const [obsScenes, setObsScenes] = useState<string[]>([]);
   const [editBg, setEditBg] = useState<BackgroundSettings>({
@@ -1201,6 +1202,7 @@ export default function DockCountdownsTab({
                   if (isThisLive) return;
                   setEditingCd(cd);
                   setEditTitle(cd.title);
+                  setEditSubtitle(cd.text?.subtitle ?? "");
                   setEditMinutes(String(cd.timer.durationSeconds / 60));
                   setEditBg({ ...cd.background });
                   setEditMessage(cd.message ? { ...cd.message } : { text: "", color: "#ffffff", position: "below" });
@@ -1302,6 +1304,18 @@ export default function DockCountdownsTab({
                     />
                   </label>
                 </div>
+                {isLayoutDesign(editingCd) && JSON.stringify(editingCd.layout).includes("{subtitle}") && (
+                  <label style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0, marginTop: 10 }}>
+                    <span style={{ fontSize: 10, color: "var(--dock-text-dim)" }}>{t("countdowns.textBelow", "Text below")}</span>
+                    <input
+                      type="text"
+                      value={editSubtitle}
+                      onChange={(e) => setEditSubtitle(e.target.value)}
+                      placeholder={t("countdowns.textBelowPlaceholder", "e.g. Until we begin")}
+                      style={{ background: "rgba(0,0,0,0.22)", border: "1px solid var(--dock-border, rgba(255,255,255,0.1))", borderRadius: 7, padding: "8px 9px", color: "var(--dock-text)", fontSize: 12, outline: "none", minWidth: 0 }}
+                    />
+                  </label>
+                )}
               </div>
 
             {!isLayoutDesign(editingCd) && (<>
@@ -1640,7 +1654,7 @@ export default function DockCountdownsTab({
                 const updatedCd: CountdownConfig = {
                   ...editingCd,
                   title: editTitle.trim() || editingCd.title,
-                  text: isLayoutDesign(editingCd) ? { ...editingCd.text, title: editTitle.trim() || editingCd.text.title } : editingCd.text,
+                  text: isLayoutDesign(editingCd) ? { ...editingCd.text, title: editTitle.trim() || editingCd.text.title, subtitle: editSubtitle.trim() } : editingCd.text,
                   timer: { ...editingCd.timer, durationSeconds: secs },
                   background: { ...editBg },
                   message: editMessage.text.trim() ? { ...editMessage } : undefined,

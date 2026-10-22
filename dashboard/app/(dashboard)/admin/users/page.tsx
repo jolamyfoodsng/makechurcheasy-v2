@@ -148,6 +148,7 @@ interface AdminUser {
     grantedAt: string | null;
     expiresAt: string | null;
   } | null;
+  zohoLists?: string[] | null;
   activationMilestones?: {
     devicePaired?: boolean;
     obsConnected?: boolean;
@@ -1862,6 +1863,14 @@ export default function AdminUsersPage() {
                                 : "border-violet-700/60 bg-violet-900/30 text-violet-300"}`}
                             >
                               {user.reactivationOffer.status === "granted" ? "Reactivated" : "Returning"}
+                            </span>
+                          )}
+                          {user.zohoLists && (
+                            <span
+                              title={user.zohoLists.length ? `Zoho Campaigns lists: ${user.zohoLists.join(", ")}` : "In Zoho Campaigns"}
+                              className="inline-flex shrink-0 items-center rounded-full border border-sky-700/60 bg-sky-900/30 px-1.5 py-0.5 text-[9px] font-semibold text-sky-300"
+                            >
+                              In Zoho
                             </span>
                           )}
                           {user.role === "admin" && <Shield className="w-3.5 h-3.5 text-indigo-400 shrink-0" />}

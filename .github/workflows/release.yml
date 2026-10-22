@@ -70,7 +70,7 @@ jobs:
     timeout-minutes: 90
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: jolamyfoodsng/makechurcheasy-v2
           ref: ${{ github.event.inputs.version || github.ref }}
@@ -78,7 +78,7 @@ jobs:
       # ── Node.js ──
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
@@ -235,7 +235,7 @@ jobs:
 
       # ── Build + Release ──
       - name: Build and release Tauri app
-        uses: tauri-apps/tauri-action@v0
+        uses: tauri-apps/tauri-action@action-v1.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
@@ -308,14 +308,14 @@ jobs:
     timeout-minutes: 120
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: jolamyfoodsng/makechurcheasy-v2
           ref: ${{ github.event.inputs.version || github.ref }}
 
       # ── Node.js ──
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
@@ -490,7 +490,7 @@ jobs:
 
       # ── Build + Release ──
       - name: Build and release Tauri app
-        uses: tauri-apps/tauri-action@v0
+        uses: tauri-apps/tauri-action@action-v1.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
@@ -553,7 +553,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: jolamyfoodsng/makechurcheasy-v2
           ref: ${{ github.event.inputs.version || github.ref }}
@@ -594,7 +594,8 @@ jobs:
             --out /tmp/mce-release/latest.json \
             --source-repo "${{ github.repository }}" \
             --target-repo "jolamyfoodsng/makechurcheasy" \
-            --tag "${{ steps.release-tag.outputs.tag }}"
+            --tag "${{ steps.release-tag.outputs.tag }}" \
+            --notes-file release.md
 
       - name: Upload normalized latest.json
         env:

@@ -2242,3 +2242,36 @@
   .ob-content { padding: 16px; }
   .ob-layout { padding: 24px 18px; }
 }
+
+/* Video guide card: a picture of the video; it opens on YouTube in the browser. */
+.ob-tutorial-card {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 4px);
+  background: #000;
+  cursor: pointer;
+}
+.ob-tutorial-card img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.2s ease, opacity 0.2s ease; }
+.ob-tutorial-card:hover img { transform: scale(1.03); opacity: 0.85; }
+.ob-tutorial-card__play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  color: #fff;
+  background: rgba(220, 38, 38, 0.92);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+}
+.ob-tutorial-card:focus-visible { outline: 2px solid var(--primary, #3b82f6); outline-offset: 2px; }
+.ob-tutorial-note { margin: 0; font-size: 12px; line-height: 1.5; color: var(--text-secondary); }

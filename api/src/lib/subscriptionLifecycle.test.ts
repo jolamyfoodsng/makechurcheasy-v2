@@ -25,6 +25,11 @@ test("classifies seven-day and two-day reminders", () => {
   );
 });
 
+test("classifies the final day as one-day", () => {
+  assert.equal(getSubscriptionLifecycleWindow("2026-08-23T23:59:59.000Z", NOW), "one-day");
+  assert.equal(getSubscriptionLifecycleWindow("2026-08-24T00:00:00.000Z", NOW), "one-day");
+});
+
 test("classifies expired and ignores invalid or distant dates", () => {
   assert.equal(
     getSubscriptionLifecycleWindow("2026-08-22T23:59:59.000Z", NOW),

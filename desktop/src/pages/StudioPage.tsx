@@ -499,27 +499,10 @@ export default function StudioPage() {
   const [immersive, setImmersive] = useState(false);
   const [previewTab, setPreviewTab] = useState<PreviewTab>("preview");
 
-  // Side panel (right): Verse AI or the full Broadcast graphics list (remembered on this computer).
-  const [leftTab, setLeftTabState] = useState<"verseai" | "graphics">(() => {
-    try {
-      return localStorage.getItem("mce-studio-left-tab") === "graphics" ? "graphics" : "verseai";
-    } catch {
-      return "verseai";
-    }
-  });
-  const setLeftTab = useCallback((tab: "verseai" | "graphics") => {
-    setLeftTabState(tab);
-    try { localStorage.setItem("mce-studio-left-tab", tab); } catch { /* not saved */ }
-  }, []);
-  // False while the side panel is folded to the slim rail: graphics then open in the bottom drawer.
-  const leftFullRef = useRef(true);
+  // Graphics live in the bottom drawer (Verse AI has the side panel to itself).
   const openGraphics = useCallback(() => {
-    if (leftFullRef.current) {
-      setLeftTab("graphics");
-      return;
-    }
     setLayout((c) => ({ ...c, drawer: { ...c.drawer, tab: "graphics", open: true } }));
-  }, [setLeftTab]);
+  }, []);
 
   useEffect(() => saveLayout(layout), [layout]);
   const patchLayout = useCallback((patch: Partial<StudioLayout>) => setLayout((current) => ({ ...current, ...patch })), []);
@@ -2288,9 +2271,8 @@ export default function StudioPage() {
         else say("The Queue is empty.");
         break;
       case "monitor-toggle": setPreviewTab((t) => (altOpen && t === "preview" ? "alternate" : "preview")); break;
-      case "panel-verseai": setLeftTab("verseai"); patchLayout({ verseAiCollapsed: false }); break;
+      case "panel-verseai": patchLayout({ verseAiCollapsed: false }); break;
       case "vai-tab":
-        setLeftTab("verseai");
         if (layout.verseAiCollapsed) patchLayout({ verseAiCollapsed: false });
         window.dispatchEvent(new Event(VAI_NEXT_TAB_EVENT));
         break;
@@ -2448,9 +2430,9 @@ export default function StudioPage() {
   // The full side panel (right) has Queue, History and Graphics, so the bottom drawer and the
   // Schedule's History tab are only used while the panel is folded to the slim rail.
   const leftFull = !(layout.verseAiCollapsed || columns.verseAiRail);
-  leftFullRef.current = leftFull;
   const drawerTabView: "verseai" | "graphics" | "mine" = layout.drawer.tab === "graphics" ? "graphics" : layout.drawer.tab === "mine" ? "mine" : "verseai";
-  const drawerView: "verseai" | "graphics" | "mine" = leftFull ? "verseai" : drawerTabView;
+  // Side panel open: Verse AI is there, so the drawer holds only the graphics. Folded to the rail: both.
+  const drawerView: "verseai" | "graphics" | "mine" = leftFull ? (drawerTabView === "mine" ? "mine" : "graphics") : drawerTabView;
   const drawerHasContent = drawerView !== "verseai" || ai.listening || ai.queue.length > 0 || ai.suggestions.length > 0;
   const drawerOpen = layout.drawer.open && drawerHasContent;
   const drawerHeight = drawerOpen ? clamp(layout.drawer.height, 100, drawerMax) : DRAWER_COLLAPSED;
@@ -2947,6 +2929,17 @@ export default function StudioPage() {
                 scenePicker={view === "media" || view === "docs"
                   ? <ScenePicker fillLabel={view === "media" ? "Media" : "Document"} active={cameraShown ? (wordsOn ? null : "camera") : "fullscreen"} onChoose={(scene) => void chooseScene(scene)} />
                   : <ScenePicker active={activeScene} onChoose={(scene) => void chooseScene(scene)} />}
+                themeCard={lookModule ? (
+                  <ThemePanel
+                    themes={lookThemes}
+                    currentId={currentTheme?.id ?? ""}
+                    mode={displayMode}
+                    forLabel={lookModule === "bible" ? "Bible" : lookModule === "worship" ? "Worship" : "Notes"}
+                    sample={previewSlide && previewSlide.module === lookModule ? { text: previewSlide.text, reference: previewSlide.reference } : null}
+                    onMore={() => setThemeModal(true)}
+                    onEdit={(theme) => void startEditTheme(theme)}
+                  />
+                ) : undefined}
                 graphicLive={graphicLive}
                 onCloseGraphic={closeGraphic}
                 liveCam={{
@@ -2956,22 +2949,11 @@ export default function StudioPage() {
                   stream: liveCamera && liveCamera.deviceId === camera.deviceId ? camera.stream : null,
                 }}
               >
-                {lookModule && (
-                  <ThemePanel
-                    themes={lookThemes}
-                    currentId={currentTheme?.id ?? ""}
-                    mode={displayMode}
-                    forLabel={lookModule === "bible" ? "Bible" : lookModule === "worship" ? "Worship" : "Notes"}
-                    sample={previewSlide && previewSlide.module === lookModule ? { text: previewSlide.text, reference: previewSlide.reference } : null}
-                    onApply={async (id) => { await themesApi.choose(lookModule, displayMode, id); say("Theme applied."); }}
-                    onEdit={(theme) => void startEditTheme(theme)}
-                  />
-                )}
               </PreviewPanel>
             </div>
           </div>
 
-          {!leftFull && (
+          {(
             <div className="st-drawer-wrap" style={{ height: drawerHeight }}>
               {drawerOpen && (
                 <Splitter
@@ -2990,7 +2972,7 @@ export default function StudioPage() {
                 view={drawerView}
                 onView={(view) => patchLayout({ drawer: { ...layout.drawer, tab: view === "graphics" ? "graphics" : view === "mine" ? "mine" : "queue", open: true } })}
                 graphicLive={Boolean(graphicLive)}
-                hideGraphics={leftFull}
+                hideVerseAi={leftFull}
                 savedCount={savedGraphicsCount}
                 graphics={<BroadcastGraphicsDrawer mode={drawerView === "mine" ? "mine" : "all"} live={graphicLive} onProject={projectGraphic} onClose={closeGraphic} />}
                 queue={ai.queue}
@@ -3016,19 +2998,6 @@ export default function StudioPage() {
           </div>
         ) : (
           <div className="st-col st-col--vai" style={{ width: columns.verseAi }}>
-            <div className="st-lefttabs" role="tablist" aria-label="Side panel">
-              <button type="button" role="tab" aria-selected={leftTab === "verseai"} className={`st-drawer__count${leftTab === "verseai" ? " is-on" : ""}`} onClick={() => setLeftTab("verseai")}>
-                Verse AI {ai.listening && <span className="st-drawer__live" title="Listening" />}
-              </button>
-              <button type="button" role="tab" aria-selected={leftTab === "graphics"} className={`st-drawer__count${leftTab === "graphics" ? " is-on" : ""}`} onClick={() => setLeftTab("graphics")}>
-                Graphics {graphicLive && <span className="st-drawer__live" title="A graphic is on the screen" />}
-              </button>
-            </div>
-            {leftTab === "graphics" ? (
-              <section className="st-leftgfx" aria-label="Broadcast graphics">
-                <BroadcastGraphicsDrawer live={graphicLive} onProject={projectGraphic} onClose={closeGraphic} />
-              </section>
-            ) : (
               <VerseAiSidebar
                 ai={ai}
                 autoMode={autoMode}
@@ -3077,7 +3046,6 @@ export default function StudioPage() {
                   />
                 )}
               />
-            )}
             <Splitter
               axis="x"
               edge="left"
@@ -3139,6 +3107,7 @@ export default function StudioPage() {
           sample={previewSlide && previewSlide.module === lookModule ? { text: previewSlide.text, reference: previewSlide.reference } : null}
           onPick={(id) => void themesApi.choose(lookModule, displayMode, id)}
           onEdit={() => { setThemeModal(false); void startEditTheme(currentTheme); }}
+          onCreate={() => { setThemeModal(false); void startEditTheme(null); }}
           onClose={() => setThemeModal(false)}
         />
       )}

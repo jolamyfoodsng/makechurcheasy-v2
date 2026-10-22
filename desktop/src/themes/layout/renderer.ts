@@ -958,7 +958,7 @@ export class ThemeRenderer {
         }
         const em = d.createElement("span");
         em.className = "mtl-em";
-        em.style.color = emColor;
+        em.style.color = part.color ?? emColor;
         em.style.fontWeight = String(emWeight);
         appendWords(em, part.text);
         parent.appendChild(em);

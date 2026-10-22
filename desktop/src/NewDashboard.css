@@ -4055,3 +4055,34 @@ body.light .sidebar-nav-chevron-btn:hover {
 .sidebar-free-card__cta:hover { background: var(--primary-hover); }
 .promo-head__icon, .studio-mode-promo__icon { border-radius: var(--radius); }
 .app-content { animation: none; }
+
+/* ── Verse AI + Studio Mode cards, side by side at the top of the home screen ── */
+.studio-promo-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 1.25rem;
+}
+.studio-promo-row .studio-mode-promo { margin-bottom: 0; }
+.studio-mode-promo--half {
+    align-items: flex-start;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 1rem;
+}
+.studio-mode-promo--half .studio-mode-promo__action {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    padding-left: calc(48px + 1rem);
+}
+.studio-mode-promo--half .studio-mode-promo__flow { flex-wrap: wrap; white-space: normal; }
+.verse-ai-promo { border-color: rgba(74, 222, 128, 0.32); }
+.verse-ai-promo .studio-mode-promo__tagline { color: #86efac; }
+.verse-ai-promo .studio-mode-promo__badge { border-color: rgba(74, 222, 128, 0.35); color: #bbf7d0; background: rgba(22, 163, 74, 0.2); }
+@media (max-width: 1100px) {
+    .studio-promo-row { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 640px) {
+    .studio-mode-promo--half .studio-mode-promo__action { padding-left: 0; }
+}

@@ -378,6 +378,9 @@ export interface BibleThemeSettings {
   layoutLineHeight?: number;
   /** Dock: show / hide the theme's title (reference / label). Missing = the theme's own setting. */
   layoutShowTitle?: boolean;
+  /** Dock: bold / italic for the verse text of a layout theme (undefined = as the theme is designed). */
+  layoutBold?: boolean;
+  layoutItalic?: boolean;
   layoutOffsetY?: number;
   /** Dock: how much to darken the background of a full-screen layout theme, percent (0 = as designed). */
   layoutBackdropDarkness?: number;

@@ -76,6 +76,8 @@ export const COLLECTIONS = {
   TRIAL_ACTIVATION_ELIGIBILITY: "trial_activation_eligibility",
   ACTIVATION_FEEDBACK: "activation_feedback",
   ACTIVITY_EVENTS: "activity_events",
+  /** Page views and clicks inside the desktop app and the OBS docks (see lib/usageEvents.ts). */
+  USAGE_EVENTS: "usage_events",
   ANNOUNCEMENTS: "announcements",
   ANNOUNCEMENT_DELIVERIES: "announcement_deliveries",
   DISCOUNT_REDEMPTIONS: "discount_redemptions",
@@ -223,6 +225,12 @@ export async function ensureIndexes() {
     // product activation events
     db.collection(COLLECTIONS.ACTIVITY_EVENTS).createIndex({ userId: 1, timestamp: -1 }),
     db.collection(COLLECTIONS.ACTIVITY_EVENTS).createIndex({ event: 1, timestamp: -1 }),
+
+    // usage_events — page views and clicks (high volume). Deleted automatically after 180 days.
+    db.collection(COLLECTIONS.USAGE_EVENTS).createIndex({ userId: 1, ts: -1 }),
+    db.collection(COLLECTIONS.USAGE_EVENTS).createIndex({ surface: 1, page: 1, ts: -1 }),
+    db.collection(COLLECTIONS.USAGE_EVENTS).createIndex({ type: 1, ts: -1 }),
+    db.collection(COLLECTIONS.USAGE_EVENTS).createIndex({ ts: 1 }, { expireAfterSeconds: 180 * 24 * 60 * 60 }),
 
     // announcements — query by status+surfaces+publish for eligibility
     db.collection(COLLECTIONS.ANNOUNCEMENTS).createIndex({ status: 1, surfaces: 1, publishAt: 1 }),
@@ -638,6 +646,9 @@ interface BillingTransactionData {
   offerOriginalPrice?: number | null;
   offerAppliedPrice?: number | null;
   trialDaysCarried?: number;
+  /** Value of unused time on the previous plan that was taken off this purchase. */
+  creditApplied?: number;
+  creditUnusedDays?: number;
   receiptUrl?: string;
   failureCode?: string;
   failureReason?: string;
@@ -646,9 +657,6 @@ interface BillingTransactionData {
   paidAt: string;
   createdAt: string;
 }
-  /** Value of unused time on the previous plan that was taken off this purchase. */
-  creditApplied?: number;
-  creditUnusedDays?: number;
 
 export async function insertBillingTransaction(
   data: BillingTransactionData

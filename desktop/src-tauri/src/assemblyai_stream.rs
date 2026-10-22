@@ -33,6 +33,11 @@ use tokio_tungstenite::tungstenite::client::IntoClientRequest;
 use tokio_tungstenite::tungstenite::http::HeaderValue;
 use tokio_tungstenite::tungstenite::Message;
 
+/// Wall-clock time for the log lines, so a stop can be matched to what the app logged.
+fn ts() -> String {
+    chrono::Local::now().format("%H:%M:%S%.3f").to_string()
+}
+
 /// User-controlled gain multiplier, stored as f32 bits in an AtomicU32.
 /// Positioned AFTER AGC so it doesn't fight the auto-gain.
 /// 1.0 = unity (100%), 0.0 = muted (0%), 5.0 = max boost (500%).
@@ -495,6 +500,10 @@ pub async fn start_assemblyai_stream(
         };
 
         task_audio_ready.store(false, Ordering::Release);
+        match &result {
+            Ok(()) => println!("[Voice Stream ({engine_label})] {} transcriber task ended normally (stop requested, or the speech service closed the connection)", ts()),
+            Err(error) => println!("[Voice Stream ({engine_label})] {} transcriber task ended with an error: {error}", ts()),
+        }
 
         // A network close can end the WebSocket without an explicit stop command.
         // Release the microphone and start guard so the UI can reconnect immediately.
@@ -756,7 +765,9 @@ async fn run_realtime_transcriber(
     // the UI in Connecting… and hold audio until AssemblyAI sends its Begin
     // message, which confirms that the realtime session is ready to receive
     // audio. This prevents a false Listening/Connected state during startup.
-    println!("[AssemblyAI Realtime] WebSocket opened; waiting for Begin");
+    println!("[AssemblyAI Realtime] {} WebSocket opened; waiting for Begin", ts());
+    let opened_at = Instant::now();
+    let mut begin_wait_warned = false;
 
     let mut last_server_activity = Instant::now();
     let mut heartbeat = interval(WS_HEARTBEAT_INTERVAL);
@@ -775,7 +786,7 @@ async fn run_realtime_transcriber(
 
         tokio::select! {
             _ = &mut shutdown_rx => {
-                println!("[AssemblyAI Realtime] Shutdown signal received");
+                println!("[AssemblyAI Realtime] {} Shutdown signal received (the app asked to stop) after {:.1}s", ts(), opened_at.elapsed().as_secs_f32());
                 let terminate = serde_json::json!({ "type": "Terminate" }).to_string();
                 let _ = timeout(WS_CLOSE_TIMEOUT, write.send(Message::Text(terminate.into()))).await;
                 let _ = timeout(WS_CLOSE_TIMEOUT, write.close()).await;
@@ -805,6 +816,10 @@ async fn run_realtime_transcriber(
                 }
             }
             _ = heartbeat.tick() => {
+                if !begin_wait_warned && !audio_ready.load(Ordering::Acquire) && opened_at.elapsed() > Duration::from_secs(8) {
+                    begin_wait_warned = true;
+                    println!("[AssemblyAI Realtime] {} still waiting for Begin after {:.1}s (no audio is sent until it arrives)", ts(), opened_at.elapsed().as_secs_f32());
+                }
                 if last_server_activity.elapsed() > WS_IDLE_TIMEOUT {
                     return Err(format!(
                         "Realtime WebSocket stalled: no server response for {} seconds",
@@ -822,19 +837,24 @@ async fn run_realtime_transcriber(
             }
             maybe_message = read.next() => {
                 let Some(message) = maybe_message else {
+                    println!("[AssemblyAI Realtime] {} connection ended without a close message after {:.1}s (Begin received: {})", ts(), opened_at.elapsed().as_secs_f32(), audio_ready.load(Ordering::Acquire));
                     break;
                 };
                 last_server_activity = Instant::now();
                 match message {
                     Ok(Message::Text(text)) => {
-                        if handle_realtime_message(&app, text.as_ref())? {
-                            audio_ready.store(true, Ordering::Release);
+                        if handle_realtime_message(&app, text.as_ref())?
+                            && !audio_ready.swap(true, Ordering::AcqRel)
+                        {
+                            println!("[AssemblyAI Realtime] {} Begin received after {} ms; microphone audio now flows", ts(), opened_at.elapsed().as_millis());
                         }
                     }
                     Ok(Message::Binary(bytes)) => {
                         if let Ok(text) = std::str::from_utf8(bytes.as_ref()) {
-                            if handle_realtime_message(&app, text)? {
-                                audio_ready.store(true, Ordering::Release);
+                            if handle_realtime_message(&app, text)?
+                                && !audio_ready.swap(true, Ordering::AcqRel)
+                            {
+                                println!("[AssemblyAI Realtime] {} Begin received after {} ms; microphone audio now flows", ts(), opened_at.elapsed().as_millis());
                             }
                         }
                     }
@@ -845,8 +865,9 @@ async fn run_realtime_transcriber(
                             .map_err(|e| format!("Failed to send realtime pong: {e}"))?;
                     }
                     Ok(Message::Close(frame)) => {
-                        if let Some(frame) = frame {
-                            println!("[AssemblyAI Realtime] WebSocket closed: {} {}", frame.code, frame.reason);
+                        match frame {
+                            Some(frame) => println!("[AssemblyAI Realtime] {} WebSocket closed by the speech service: {} {} (after {:.1}s)", ts(), frame.code, frame.reason, opened_at.elapsed().as_secs_f32()),
+                            None => println!("[AssemblyAI Realtime] {} WebSocket closed by the speech service with no code (after {:.1}s)", ts(), opened_at.elapsed().as_secs_f32()),
                         }
                         break;
                     }
@@ -972,6 +993,7 @@ fn handle_realtime_message(app: &AppHandle, raw: &str) -> Result<bool, String> {
             // Server liveness heartbeat confirmed; keep session alive.
         }
         "Termination" => {
+            println!("[AssemblyAI Realtime] {} Termination message received from the speech service", ts());
             let _ = app.emit(
                 "assemblyai-status",
                 StatusPayload {
@@ -984,6 +1006,7 @@ fn handle_realtime_message(app: &AppHandle, raw: &str) -> Result<bool, String> {
                 .error
                 .or(message.message)
                 .unwrap_or_else(|| "unknown realtime error".to_string());
+            eprintln!("[AssemblyAI Realtime] {} Error message from the speech service: {detail}", ts());
             let _ = app.emit(
                 "assemblyai-status",
                 StatusPayload {
@@ -991,7 +1014,9 @@ fn handle_realtime_message(app: &AppHandle, raw: &str) -> Result<bool, String> {
                 },
             );
         }
-        _ => {}
+        other => {
+            println!("[AssemblyAI Realtime] {} unhandled message type: {other}", ts());
+        }
     }
 
     Ok(false)
@@ -1136,6 +1161,17 @@ fn process_and_send_f32(
     if !audio_ready.load(Ordering::Acquire) {
         ACCUMULATOR.with(|acc| acc.borrow_mut().clear());
         STATE.with(|state| *state.borrow_mut() = AudioState::new());
+        // Log (at most every 5 s) that the microphone is delivering but nothing is sent yet.
+        thread_local! {
+            static WAIT_COUNT: std::cell::Cell<u32> = std::cell::Cell::new(0);
+            static WAIT_LOGGED: std::cell::Cell<Option<Instant>> = std::cell::Cell::new(None);
+        }
+        WAIT_COUNT.with(|c| c.set(c.get() + 1));
+        let due = WAIT_LOGGED.with(|t| t.get().map(|at| at.elapsed() >= Duration::from_secs(5)).unwrap_or(true));
+        if due {
+            WAIT_LOGGED.with(|t| t.set(Some(Instant::now())));
+            println!("[Voice Stream] {} microphone is delivering audio ({} callbacks) but the speech service has not sent Begin yet, so nothing is sent", ts(), WAIT_COUNT.with(|c| c.get()));
+        }
         return;
     }
 
@@ -1245,10 +1281,21 @@ fn process_and_send_f32(
                 {
                     audio_drop_count.fetch_add(1, Ordering::Relaxed);
                 }
-                static CHUNK_COUNTER: AtomicU32 = AtomicU32::new(0);
-                let sent = CHUNK_COUNTER.fetch_add(1, Ordering::Relaxed);
-                if sent == 0 || sent % 200 == 0 {
-                    println!("[Voice Stream] Mic audio active — sent {sent} chunks to speech service (rms: {rms:.4}, level: {level:.3})");
+                // Every 10 s: proof that audio is really reaching the speech service.
+                thread_local! {
+                    static SENT_COUNT: std::cell::Cell<u32> = std::cell::Cell::new(0);
+                    static SENT_LOGGED: std::cell::Cell<Option<Instant>> = std::cell::Cell::new(None);
+                }
+                SENT_COUNT.with(|c| c.set(c.get() + 1));
+                let due = SENT_LOGGED.with(|t| t.get().map(|at| at.elapsed() >= Duration::from_secs(10)).unwrap_or(true));
+                if due {
+                    SENT_LOGGED.with(|t| t.set(Some(Instant::now())));
+                    println!(
+                        "[Voice Stream] {} mic audio flowing: {} chunks sent so far on this thread (rms {rms:.4}, level {level:.3}, queue drops {})",
+                        ts(),
+                        SENT_COUNT.with(|c| c.get()),
+                        audio_drop_count.load(Ordering::Relaxed),
+                    );
                 }
                 let _ = app.emit("assemblyai-audio-level", LevelPayload { level });
             }

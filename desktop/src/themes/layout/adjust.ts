@@ -16,11 +16,19 @@ export interface LayoutAdjustSettings {
   layoutLineHeight?: number;
   /** Show or hide the theme's title (reference / label line). Missing = as the theme is set. */
   layoutShowTitle?: boolean;
+  /** Verse / lyric / note text: bold on or off. Missing = as the theme is designed. */
+  layoutBold?: boolean;
+  /** Verse / lyric / note text: italic on or off. Missing = as the theme is designed. */
+  layoutItalic?: boolean;
   /** Lower thirds: move the whole graphic up (negative) or down, in 1080p pixels. */
   layoutOffsetY?: number;
   /** Full screen: darken the background, percent (0 = as designed). */
   layoutBackdropDarkness?: number;
 }
+
+/** Weight used when the operator turns Bold on / off for a theme's verse text. */
+export const LAYOUT_BOLD_WEIGHT = 700;
+export const LAYOUT_REGULAR_WEIGHT = 400;
 
 export const LAYOUT_SCALE_MIN = 50;
 export const LAYOUT_SCALE_MAX = 200;
@@ -37,7 +45,7 @@ function num(value: unknown): number | undefined {
 }
 
 /** Reads the adjust fields from theme settings / quick settings (missing = as designed). */
-export function readLayoutAdjust(source: unknown): Required<Omit<LayoutAdjustSettings, "layoutBackdropDarkness" | "layoutShowTitle">> {
+export function readLayoutAdjust(source: unknown): Required<Omit<LayoutAdjustSettings, "layoutBackdropDarkness" | "layoutShowTitle" | "layoutBold" | "layoutItalic">> {
   const s = (source && typeof source === "object" ? source : {}) as Record<string, unknown>;
   return {
     layoutTextScale: clamp(num(s.layoutTextScale) ?? 100, LAYOUT_SCALE_MIN, LAYOUT_SCALE_MAX),
@@ -53,6 +61,24 @@ export function readLayoutShowTitle(source: unknown): boolean | undefined {
   return typeof s.layoutShowTitle === "boolean" ? s.layoutShowTitle : undefined;
 }
 
+/** The Dock's Bold / Italic buttons: true / false when the operator chose, undefined = as the theme is designed. */
+export function readLayoutTextStyle(source: unknown): { bold?: boolean; italic?: boolean } {
+  const s = (source && typeof source === "object" ? source : {}) as Record<string, unknown>;
+  return {
+    ...(typeof s.layoutBold === "boolean" ? { bold: s.layoutBold } : {}),
+    ...(typeof s.layoutItalic === "boolean" ? { italic: s.layoutItalic } : {}),
+  };
+}
+
+/** How the theme's own verse text is styled (what the Bold / Italic buttons show before anything is chosen). */
+export function layoutVerseStyle(layout: ThemeLayout | undefined | null): { bold: boolean; italic: boolean } {
+  const verse = layout?.layers.find((layer) => layer.type === "text" && hasTokens(layer.content) && isVerseTextPattern(layer.content));
+  return {
+    bold: (verse?.style.fontWeight ?? LAYOUT_REGULAR_WEIGHT) >= 600,
+    italic: verse?.style.italic === true,
+  };
+}
+
 /** Only the adjust fields that are set, for merging quick settings into a live theme. */
 export function pickLayoutAdjust(source: unknown): LayoutAdjustSettings {
   const s = (source && typeof source === "object" ? source : {}) as Record<string, unknown>;
@@ -61,6 +87,8 @@ export function pickLayoutAdjust(source: unknown): LayoutAdjustSettings {
   if (num(s.layoutRefScale) !== undefined) out.layoutRefScale = num(s.layoutRefScale);
   if (num(s.layoutLineHeight) !== undefined) out.layoutLineHeight = num(s.layoutLineHeight);
   if (typeof s.layoutShowTitle === "boolean") out.layoutShowTitle = s.layoutShowTitle;
+  if (typeof s.layoutBold === "boolean") out.layoutBold = s.layoutBold;
+  if (typeof s.layoutItalic === "boolean") out.layoutItalic = s.layoutItalic;
   if (num(s.layoutOffsetY) !== undefined) out.layoutOffsetY = num(s.layoutOffsetY);
   if (num(s.layoutBackdropDarkness) !== undefined) out.layoutBackdropDarkness = num(s.layoutBackdropDarkness);
   return out;
@@ -72,7 +100,9 @@ export function isLayoutAdjustDefault(adjust: LayoutAdjustSettings): boolean {
     && a.layoutRefScale === 100
     && a.layoutLineHeight === 100
     && a.layoutOffsetY === 0
-    && readLayoutShowTitle(adjust) === undefined;
+    && readLayoutShowTitle(adjust) === undefined
+    && readLayoutTextStyle(adjust).bold === undefined
+    && readLayoutTextStyle(adjust).italic === undefined;
 }
 
 // ───────────────────────────── background ─────────────────────────────
@@ -378,7 +408,9 @@ export function applyLayoutAdjust(layout: ThemeLayout, source: unknown): ThemeLa
   // Switch on = the theme's default (heading shown); switch off = hidden.
   const nextShowHeading = showTitle === undefined ? layout.showHeading : showTitle ? undefined : false;
   const titleChanged = nextShowHeading !== layout.showHeading;
-  if (a.layoutTextScale === 100 && a.layoutRefScale === 100 && a.layoutLineHeight === 100 && offset === 0 && !backdropChanged && !ltOff && !ltFill && !titleChanged) return layout;
+  const textStyle = readLayoutTextStyle(source);
+  const styleChanged = textStyle.bold !== undefined || textStyle.italic !== undefined;
+  if (a.layoutTextScale === 100 && a.layoutRefScale === 100 && a.layoutLineHeight === 100 && offset === 0 && !backdropChanged && !ltOff && !ltFill && !titleChanged && !styleChanged) return layout;
   const textK = a.layoutTextScale / 100;
   const refK = a.layoutRefScale / 100;
   const lineK = a.layoutLineHeight / 100;
@@ -389,8 +421,13 @@ export function applyLayoutAdjust(layout: ThemeLayout, source: unknown): ThemeLa
       const k = isVerse ? textK : refK;
       // Line spacing only matters for the verse / lyric / note body (the renderer's default is 1.3).
       const lk = isVerse ? lineK : 1;
-      if (k !== 1 || lk !== 1) {
+      const styled = isVerse && styleChanged;
+      if (k !== 1 || lk !== 1 || styled) {
         const style = { ...layer.style };
+        if (styled) {
+          if (textStyle.bold !== undefined) style.fontWeight = textStyle.bold ? Math.max(LAYOUT_BOLD_WEIGHT, style.fontWeight ?? 0) : LAYOUT_REGULAR_WEIGHT;
+          if (textStyle.italic !== undefined) style.italic = textStyle.italic;
+        }
         if (k !== 1) {
           if (typeof style.fontSize === "number") style.fontSize = Math.round(style.fontSize * k);
           if (typeof style.minFontSize === "number") style.minFontSize = Math.round(style.minFontSize * k);

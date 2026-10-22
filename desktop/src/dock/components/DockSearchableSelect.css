@@ -1,0 +1,180 @@
+/* DockSearchableSelect — compact, solid, 3px corners, like the rest of the Dock. */
+.dss__trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 30px;
+  padding: 3px 8px;
+  border: 1px solid var(--dock-border);
+  border-radius: 3px;
+  background: var(--dock-surface);
+  color: var(--dock-text);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.dss__trigger--compact { min-height: 26px; font-size: 10px; padding: 2px 6px; }
+.dss__trigger:hover, .dss__trigger.is-open { border-color: var(--dock-accent); }
+.dss__trigger:focus-visible { outline: 2px solid var(--dock-accent); outline-offset: 1px; }
+.dss__value { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dss__badge {
+  flex: none;
+  padding: 0 5px;
+  border: 1px solid var(--dock-border);
+  border-radius: 3px;
+  color: var(--dock-text-dim);
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 15px;
+}
+
+.dss__pop {
+  position: fixed;
+  z-index: 100000;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--dock-border);
+  border-radius: 3px;
+  background: var(--dock-surface, #1e1e24);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  color: var(--dock-text);
+  font-size: 11px;
+}
+
+.dss__search {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--dock-border);
+  color: var(--dock-text-dim);
+}
+.dss__searchicon { display: inline-flex; flex: none; }
+.dss__search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--dock-text);
+  font: inherit;
+  font-size: 12px;
+}
+.dss__search input::placeholder { color: var(--dock-text-dim); }
+.dss__search:focus-within { color: var(--dock-accent); }
+.dss__clear { display: inline-flex; padding: 2px; border: 0; background: transparent; color: var(--dock-text-dim); cursor: pointer; }
+.dss__clear:hover { color: var(--dock-text); }
+
+.dss__scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 4px; }
+
+.dss__tabs { display: flex; gap: 2px; margin-bottom: 4px; padding: 2px; border: 1px solid var(--dock-border); border-radius: 3px; }
+.dss__tabs button {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 2px;
+  background: transparent;
+  color: var(--dock-text-dim);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.dss__tabs button span { opacity: 0.7; font-weight: 500; }
+.dss__tabs button:hover { color: var(--dock-text); }
+.dss__tabs button.is-on { background: var(--dock-accent); color: #fff; }
+
+.dss__group {
+  margin: 6px 4px 2px;
+  padding-top: 6px;
+  border-top: 1px solid var(--dock-border);
+  color: var(--dock-text-dim);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.dss__group--sub { margin-top: 4px; padding-top: 0; border-top: 0; }
+.dss__empty { padding: 8px; color: var(--dock-text-dim); font-size: 11px; text-align: center; }
+
+.dss__row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 5px 6px;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--dock-text);
+  font: inherit;
+  font-size: 11px;
+  text-align: left;
+  cursor: pointer;
+}
+.dss__item { display: flex; align-items: center; border-radius: 3px; }
+.dss__item.is-active { background: rgba(255, 255, 255, 0.08); }
+.dss__item .dss__row { flex: 1; min-width: 0; }
+.dss__row.is-selected { color: var(--dock-accent); font-weight: 700; }
+.dss__check { display: inline-flex; flex: none; width: 12px; }
+.dss__label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dss__label mark { background: rgba(250, 204, 21, 0.3); color: inherit; border-radius: 2px; }
+
+/* Preview button on each row and the preview panel (the list stays open). */
+.dss__eye {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 24px;
+  margin-right: 2px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--dock-text-dim);
+  cursor: pointer;
+}
+.dss__eye:hover { color: var(--dock-text); border-color: var(--dock-border); }
+.dss__eye.is-on { background: var(--dock-accent); border-color: var(--dock-accent); color: #fff; }
+
+.dss__preview {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px;
+  border-top: 1px solid var(--dock-border);
+}
+.dss__preview-pic { flex: none; margin: 0 auto; }
+.dss__preview-side { display: flex; flex: 1 1 120px; min-width: 120px; flex-direction: column; gap: 4px; }
+.dss__preview-side strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+.dss__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 4px 6px;
+  border: 1px solid var(--dock-border);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--dock-text);
+  font: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.dss__btn:hover { border-color: var(--dock-accent); }
+.dss__btn--use { background: var(--dock-accent); border-color: var(--dock-accent); color: #fff; }
+.dss__btn--quiet { border-color: transparent; color: var(--dock-text-dim); }
+.dss__frame { position: relative; overflow: hidden; border-radius: 3px; border: 1px solid var(--dock-border); }
+.dss__frame iframe { position: absolute; top: 0; left: 0; border: 0; background: transparent; transform-origin: top left; pointer-events: none; }
+.dss__frame-empty { display: flex; height: 100%; align-items: center; justify-content: center; color: var(--dock-text-dim); font-size: 10px; }

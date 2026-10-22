@@ -54,7 +54,7 @@ import {
 import { calculateTranscriptionCredits, deductCreditsWithSync, getCreditsBalance, onCreditChange, syncCreditsWithBackend } from "../services/credits";
 import { checkEntitlementSync } from "../services/entitlementClient";
 import { getEffectivePlan } from "../services/licenseService";
-import { lmDockService, type LmDockSnapshot } from "../services/lmDockService";
+import { lmDockService, vaiDiag, type LmDockSnapshot } from "../services/lmDockService";
 import { obsService } from "../services/obsService";
 import { loadData } from "../services/store";
 import { getUserScopedKey } from "../services/userScopedStorage";
@@ -63,6 +63,7 @@ import type { VoiceBibleCandidate } from "../services/voiceBibleTypes";
 import { createTranscript, saveTranscript } from "../transcripts/transcriptService";
 import { loadLmSettings } from "../services/lmSettings";
 import { resolveScriptureProjection } from "../services/scriptureProjection";
+import VerseAiOutputCard from "../components/VerseAiOutputCard";
 import { readNativeDockSetting, writeNativeDockSetting } from "../services/localDockSettings";
 import { isConfirmedAppClose } from "../services/appCloseGuard";
 import { useDockBaseUrl } from "../services/overlayUrl";
@@ -205,8 +206,15 @@ export async function copyToClipboardRobust(text: string): Promise<boolean> {
   return false;
 }
 
-async function openExternal(url?: string): Promise<void> {
-  if (!url) return;
+/** An embed link (youtube.com/embed/ID) does not play in a browser; open the normal watch page instead. */
+function toYouTubeWatchUrl(url: string): string {
+  const match = /youtube(?:-nocookie)?\.com\/embed\/([A-Za-z0-9_-]{6,20})/.exec(url);
+  return match ? `https://www.youtube.com/watch?v=${match[1]}` : url;
+}
+
+async function openExternal(rawUrl?: string): Promise<void> {
+  if (!rawUrl) return;
+  const url = toYouTubeWatchUrl(rawUrl);
   try {
     const { openUrl } = await import("@tauri-apps/plugin-opener");
     await openUrl(url);
@@ -733,6 +741,7 @@ export default function SpeechToScripturePage() {
   useEffect(() => {
     if (!isTranscribing || sessionLimitSeconds === null || sessionLimitSeconds <= 0 || elapsed < sessionLimitSeconds || limitStopTriggeredRef.current) return;
     limitStopTriggeredRef.current = true;
+    vaiDiag("page stop: session limit reached", { elapsed, sessionLimitSeconds });
     setAccessDenied({ reason: "daily_speech_limit" });
     confirmStop();
   }, [confirmStop, elapsed, isTranscribing, sessionLimitSeconds]);
@@ -750,6 +759,7 @@ export default function SpeechToScripturePage() {
       if (!cancelled && !ok) {
         console.warn("[SpeechToScripture] 🛑 Stopped listening due to credit failure!", { targetCredits, chargeSeconds });
         stoppedForCreditFailureRef.current = true;
+        vaiDiag("page stop: credit charge failed", { targetCredits, chargeSeconds });
         lmDockService.stopListening();
         setShowStopConfirm(false);
         setAccessDenied({ reason: "insufficient_credits" });
@@ -768,7 +778,7 @@ export default function SpeechToScripturePage() {
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [copiedDockLink, setCopiedDockLink] = useState(false);
   const [showObsGuideModal, setShowObsGuideModal] = useState(false);
-  const [tutorialVideoUrl, setTutorialVideoUrl] = useState("https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ");
+  const [tutorialVideoUrl, setTutorialVideoUrl] = useState("");
 
   useEffect(() => {
     getDesktopConfig().then((cfg) => {
@@ -1438,6 +1448,7 @@ export default function SpeechToScripturePage() {
                 </div>
               )}
             </div>
+            <VerseAiOutputCard verse={activePreview} />
           </aside>
 
           {/* ── Center: Detected Scriptures (Enlarged Cards) ── */}

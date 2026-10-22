@@ -1,4 +1,5 @@
 import { formatTickerClock, hasTickerClock, TICKER_CLOCK_SCRIPT } from "../data/tickerClock";
+import { buildTickerSpeedScript, hasTickerMove, tickerPixelsPerSecond } from "../data/tickerSpeed";
 import {
   TICKER_THEMES as DOCK_TICKER_THEMES,
   generateTickerHTML,
@@ -99,6 +100,8 @@ interface RenderDockTickerThemeOptions {
   brandName?: string;
   divider?: DockTickerDivider;
   messageSpacing?: number;
+  /** Pill tickers: what the heading shows. "time" = the live clock instead of the heading text. */
+  headingMode?: "text" | "time";
 }
 
 const ALL_DOCK_TICKER_THEME_OPTIONS: DockTickerThemeOption[] = [
@@ -239,6 +242,7 @@ export function renderDockTickerThemeHtml({
   brandName = "",
   divider,
   messageSpacing,
+  headingMode,
 }: RenderDockTickerThemeOptions): string {
   const safeMessages = messages.map((message) => message.trim()).filter(Boolean);
   const resolvedHeading = heading.trim() || option.defaultHeading;
@@ -273,6 +277,7 @@ export function renderDockTickerThemeHtml({
     fontFamily: resolvedFontFamily,
     divider,
     messageSpacing,
+    headingMode,
   });
 }
 
@@ -368,6 +373,7 @@ function renderPermanentTickerThemeHtml(
     messages: messageSequence,
     joinedMessages,
     speed: options.speed,
+    headingMode: options.headingMode,
   });
 
   const html = theme.html.replace(/\{\{\s*([^}]+?)\s*\}\}/g, (_match, key: string) => {
@@ -400,6 +406,7 @@ ${buildPermanentTickerOverrides(options.position, options.loop, Boolean(options.
 <body>
 ${html}
 ${hasTickerClock(html) ? TICKER_CLOCK_SCRIPT : ""}
+${hasTickerMove(html) ? buildTickerSpeedScript(tickerPixelsPerSecond(options.speed)) : ""}
 </body>
 </html>`;
 }
@@ -450,6 +457,7 @@ function resolvePermanentTickerValues(
     messages: string[];
     joinedMessages: string;
     speed: number;
+    headingMode?: "text" | "time";
   },
 ): Record<string, string> {
   const defaults: Record<string, string> = {};
@@ -472,6 +480,7 @@ function resolvePermanentTickerValues(
     state: "in",
     speed: speedToDuration(context.speed),
     clock: formatTickerClock(),
+    headingMode: context.headingMode === "time" ? "time" : "text",
   };
   if (!values.badge) values.badge = context.heading || theme.badge || "";
   if (!values.tickerText) values.tickerText = context.joinedMessages || theme.tickerText || "";

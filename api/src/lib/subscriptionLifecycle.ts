@@ -1,4 +1,4 @@
-export type SubscriptionLifecycleWindow = "seven-day" | "two-day" | "expired" | null;
+export type SubscriptionLifecycleWindow = "seven-day" | "two-day" | "one-day" | "expired" | null;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -22,6 +22,7 @@ export function getSubscriptionLifecycleWindow(
   if (expiryMs <= nowMs) return "expired";
 
   const daysLeft = Math.ceil((expiryMs - nowMs) / DAY_MS);
+  if (daysLeft <= 1) return "one-day";
   if (daysLeft <= 2) return "two-day";
   if (daysLeft <= 7) return "seven-day";
   return null;

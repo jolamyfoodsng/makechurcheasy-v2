@@ -2,11 +2,13 @@ import { ArrowRight, ChevronRight, Monitor } from "./icons/NativeIcons";
 
 interface StudioModePromoBannerProps {
   onOpenStudio: () => void;
+  /** Half width, beside another card (the card stacks its content). */
+  half?: boolean;
 }
 
-export function StudioModePromoBanner({ onOpenStudio }: StudioModePromoBannerProps) {
+export function StudioModePromoBanner({ onOpenStudio, half = false }: StudioModePromoBannerProps) {
   return (
-    <section className="studio-mode-promo" aria-label="Studio Mode announcement">
+    <section className={`studio-mode-promo${half ? " studio-mode-promo--half" : ""}`} aria-label="Studio Mode announcement">
       <div className="studio-mode-promo__main">
         <div className="studio-mode-promo__icon" aria-hidden="true">
           <Monitor size={23} />

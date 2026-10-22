@@ -326,7 +326,7 @@ export async function POST(req: NextRequest) {
     try {
       const result = await db
         .collection("users")
-        .updateOne({ _id: new ObjectId(targetUserId) }, { $set: userUpdate });
+        .updateOne({ _id: new ObjectId(targetUserId) }, { $set: userUpdate, $unset: { scheduledDowngradeAt: "" } });
       userUpdated = result.modifiedCount > 0;
     } catch {
       // Not a valid ObjectId — skip
@@ -335,7 +335,7 @@ export async function POST(req: NextRequest) {
     if (!userUpdated && email) {
       await db
         .collection("users")
-        .updateOne({ email }, { $set: userUpdate });
+        .updateOne({ email }, { $set: userUpdate, $unset: { scheduledDowngradeAt: "" } });
     }
 
     await stopActiveTrialForPaidPlan(targetUserId, "system:paystack-verify");

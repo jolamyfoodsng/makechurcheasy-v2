@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyLayoutAdjust, isLayoutAdjustDefault, pickLayoutAdjust, readLayoutAdjust, readLayoutBackdrop, resolveBackdropMediaUrl } from "./adjust";
+import { applyLayoutAdjust, isLayoutAdjustDefault, layoutVerseStyle, pickLayoutAdjust, readLayoutAdjust, readLayoutBackdrop, resolveBackdropMediaUrl } from "./adjust";
 import type { LayerAnimation, ThemeLayout } from "./types";
 
 // Every layer needs an "in" and an "out" animation; these tests don't care which.
@@ -256,5 +256,52 @@ describe("layout adjust: verse box growth", () => {
     const verse = applyLayoutAdjust(broken, { layoutLineHeight: 105 }).layers.find((l) => l.id === "verse")!;
     expect(Number.isFinite(verse.y)).toBe(true);
     expect(Number.isFinite(verse.h as number)).toBe(true);
+  });
+});
+
+describe("layout adjust: bold and italic", () => {
+  const by = (layout: ThemeLayout, id: string) => layout.layers.find((l) => l.id === id)!;
+
+  it("changes only the verse text and leaves the reference alone", () => {
+    const out = applyLayoutAdjust(LT, { layoutBold: true, layoutItalic: true });
+    expect(by(out, "verse").style.fontWeight).toBe(700);
+    expect(by(out, "verse").style.italic).toBe(true);
+    expect(by(out, "ref").style.fontWeight).toBeUndefined();
+    expect(by(out, "ref").style.italic).toBeUndefined();
+  });
+
+  it("turns bold and italic off when the operator says so", () => {
+    const heavy: ThemeLayout = {
+      ...LT,
+      layers: LT.layers.map((l) => (l.id === "verse" ? { ...l, style: { ...l.style, fontWeight: 900, italic: true } } : l)),
+    };
+    const out = applyLayoutAdjust(heavy, { layoutBold: false, layoutItalic: false });
+    expect(by(out, "verse").style.fontWeight).toBe(400);
+    expect(by(out, "verse").style.italic).toBe(false);
+  });
+
+  it("keeps a heavier design weight when bold is turned on", () => {
+    const heavy: ThemeLayout = {
+      ...LT,
+      layers: LT.layers.map((l) => (l.id === "verse" ? { ...l, style: { ...l.style, fontWeight: 900 } } : l)),
+    };
+    expect(by(applyLayoutAdjust(heavy, { layoutBold: true }), "verse").style.fontWeight).toBe(900);
+  });
+
+  it("works together with size, and counts as a change", () => {
+    const out = applyLayoutAdjust(LT, { layoutTextScale: 150, layoutBold: true });
+    expect(by(out, "verse").style.fontSize).toBe(75);
+    expect(by(out, "verse").style.fontWeight).toBe(700);
+    expect(isLayoutAdjustDefault({ layoutBold: false })).toBe(false);
+    expect(pickLayoutAdjust({ layoutBold: true, layoutItalic: false })).toEqual({ layoutBold: true, layoutItalic: false });
+  });
+
+  it("shows how the theme is designed before anything is chosen", () => {
+    expect(layoutVerseStyle(LT)).toEqual({ bold: false, italic: false });
+    const heavy: ThemeLayout = {
+      ...LT,
+      layers: LT.layers.map((l) => (l.id === "verse" ? { ...l, style: { ...l.style, fontWeight: 800, italic: true } } : l)),
+    };
+    expect(layoutVerseStyle(heavy)).toEqual({ bold: true, italic: true });
   });
 });

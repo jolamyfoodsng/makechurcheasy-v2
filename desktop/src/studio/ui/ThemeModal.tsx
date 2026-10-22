@@ -48,10 +48,12 @@ interface ThemeModalProps {
   sample?: { text: string; reference: string } | null;
   onPick: (id: string) => void;
   onEdit: () => void;
+  /** Make a new theme (falls back to editing the current one). */
+  onCreate?: () => void;
   onClose: () => void;
 }
 
-export default function ThemeModal({ themes, currentId, mode, forLabel, sample, onPick, onEdit, onClose }: ThemeModalProps) {
+export default function ThemeModal({ themes, currentId, mode, forLabel, sample, onPick, onEdit, onCreate, onClose }: ThemeModalProps) {
   const sampleText = sample?.text ?? "";
   const sampleRef = sample?.reference ?? "";
   const content = useMemo<ThemeContent>(
@@ -95,7 +97,7 @@ export default function ThemeModal({ themes, currentId, mode, forLabel, sample, 
               </button>
             );
           })}
-          <button type="button" className="st-themecard st-themecard--add" onClick={onEdit}>
+          <button type="button" className="st-themecard st-themecard--add" onClick={onCreate ?? onEdit}>
             <span className="st-themecard__pic"><Palette size={20} /></span>
             <span className="st-themecard__name">Make a theme…</span>
           </button>

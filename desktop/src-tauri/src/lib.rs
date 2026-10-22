@@ -36,6 +36,7 @@ mod sandbox_migration;
 mod studio_camera;
 mod studio_ndi;
 mod studio_ndi_out;
+mod verse_ai_ndi;
 #[cfg(not(target_os = "macos"))]
 use local_llm_stub as local_llm;
 
@@ -316,6 +317,8 @@ static SAVE_DIALOG_APP: OnceLock<tauri::AppHandle> = OnceLock::new();
 static LM_STATE: OnceLock<Mutex<String>> = OnceLock::new();
 /// Presentation Studio program state: (revision, JSON). Written by the app, read by studio-output.html.
 static STUDIO_STATE: OnceLock<Mutex<(u64, String)>> = OnceLock::new();
+/// Verse AI output state: (revision, JSON). Same shape of server as STUDIO_STATE, kept apart from it.
+static VERSE_AI_STATE: OnceLock<Mutex<(u64, String)>> = OnceLock::new();
 /// Presentation Studio live camera: (frame number, newest JPEG). The Studio POSTs frames of the camera
 /// it already has open; studio-output.html (projector window, TV, OBS) GETs the newest one, so the
 /// camera is opened only once (many cameras and capture cards allow a single user).
@@ -1346,6 +1349,8 @@ fn overlay_is_allowed_app_document(clean_path: &str) -> bool {
             | "presentation.html"
             // Presentation Studio projector window (loads the three overlay pages).
             | "studio-output.html"
+            // Verse AI's own output page (its NDI source).
+            | "verse-ai-output.html"
     )
 }
 
@@ -8050,6 +8055,94 @@ fn start_overlay_server(resource_dir: std::path::PathBuf) -> u16 {
                 continue;
             }
 
+            // API: Verse AI output state. The app POSTs the whole state
+            // (with a numeric "revision"); verse-ai-output.html GETs it, passing
+            // ?since=<revision> so an unchanged state answers with a tiny body.
+            if clean == "api/verse-ai-state" {
+                let verse_ai_state =
+                    VERSE_AI_STATE.get_or_init(|| Mutex::new((0, "{}".to_string())));
+                let header = tiny_http::Header::from_bytes(
+                    "Content-Type",
+                    "application/json; charset=utf-8",
+                )
+                .unwrap();
+                let cors =
+                    tiny_http::Header::from_bytes("Access-Control-Allow-Origin", "*").unwrap();
+                let no_store =
+                    tiny_http::Header::from_bytes("Cache-Control", "no-store").unwrap();
+
+                if request.method() == &tiny_http::Method::Options {
+                    let resp = tiny_http::Response::from_string("")
+                        .with_header(
+                            tiny_http::Header::from_bytes(
+                                "Access-Control-Allow-Methods",
+                                "GET, POST, OPTIONS",
+                            )
+                            .unwrap(),
+                        )
+                        .with_header(
+                            tiny_http::Header::from_bytes(
+                                "Access-Control-Allow-Headers",
+                                "Content-Type",
+                            )
+                            .unwrap(),
+                        )
+                        .with_header(cors);
+                    let _ = request.respond(resp);
+                    continue;
+                }
+
+                if request.method() == &tiny_http::Method::Post {
+                    let mut body = String::new();
+                    if request.as_reader().read_to_string(&mut body).is_err() {
+                        let resp =
+                            tiny_http::Response::from_string("Bad Request").with_status_code(400);
+                        let _ = request.respond(resp);
+                        continue;
+                    }
+                    let revision = serde_json::from_str::<serde_json::Value>(&body)
+                        .ok()
+                        .and_then(|v| v.get("revision").and_then(|r| r.as_u64()))
+                        .unwrap_or(0);
+                    if let Ok(mut state) = verse_ai_state.lock() {
+                        if revision >= state.0 {
+                            *state = (revision, body);
+                        }
+                    }
+                    let resp = tiny_http::Response::from_string(r#"{"ok":true}"#)
+                        .with_header(header)
+                        .with_header(cors);
+                    let _ = request.respond(resp);
+                    continue;
+                }
+
+                // GET
+                let since = request
+                    .url()
+                    .split_once('?')
+                    .and_then(|(_, query)| {
+                        query
+                            .split('&')
+                            .find_map(|pair| pair.strip_prefix("since="))
+                            .and_then(|v| v.parse::<u64>().ok())
+                    });
+                let json = verse_ai_state
+                    .lock()
+                    .map(|state| match since {
+                        Some(seen) if seen >= state.0 => {
+                            format!(r#"{{"unchanged":true,"revision":{}}}"#, state.0)
+                        }
+                        _ => state.1.clone(),
+                    })
+                    .unwrap_or_else(|_| "{}".to_string());
+                let resp = tiny_http::Response::from_string(json)
+                    .with_header(header)
+                    .with_header(cors)
+                    .with_header(no_store);
+                let _ = request.respond(resp);
+                continue;
+            }
+
             // API: LM state relay — GET returns current state, POST updates it
             // Used for cross-process communication between Tauri app and OBS dock
             if clean == "api/lm-state" {
@@ -10077,6 +10170,9 @@ pub fn run() {
             studio_ndi_out::start_studio_ndi_out,
             studio_ndi_out::stop_studio_ndi_out,
             studio_ndi_out::get_studio_ndi_out_status,
+            verse_ai_ndi::start_verse_ai_ndi,
+            verse_ai_ndi::stop_verse_ai_ndi,
+            verse_ai_ndi::get_verse_ai_ndi_status,
             save_bg_image,
             save_upload_file,
             prepare_studio_video_for_program,

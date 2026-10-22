@@ -69,7 +69,8 @@ export default function LoginPage() {
     return QRCode.toDataURL(pairUrl, {
       width: 240,
       margin: 2,
-      color: { dark: "#FFFFFF", light: "#00000000" },
+      // Black squares on white: every scanner reads this. (Reversed white-on-dark codes fail in some.)
+      color: { dark: "#000000", light: "#FFFFFF" },
     });
   }
 
@@ -834,9 +835,9 @@ export default function LoginPage() {
               <div
                 style={{
                   display: "inline-block",
-                  padding: "16px",
+                  padding: "12px",
                   borderRadius: "var(--radius)",
-                  background: "#000",
+                  background: "#fff",
                   marginBottom: "16px",
                 }}
               >

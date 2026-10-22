@@ -67,6 +67,7 @@ import {
   type MultiPeriodActivityScore,
 } from "@/lib/userActivityScore";
 import { getPlanConfig, type PlanConfig } from "@/lib/planConfigService";
+import { UserUsagePanel } from "@/components/admin/UsageAnalytics";
 import {
   formatPlanCredits,
   getAdminManagedPlanAmount,
@@ -406,7 +407,7 @@ export default function AdminUserDetailPage() {
   const router = useRouter();
   const t = useTranslations();
   const [user, setUser] = useState<UserDetail | null>(null);
-  const [activeTab, setActiveTab] = useState<"profile" | "activity" | "payments" | "referrals" | "logs" | "emails">("profile");
+  const [activeTab, setActiveTab] = useState<"profile" | "activity" | "usage" | "payments" | "referrals" | "logs" | "emails">("profile");
   const [previewScreenshotUrl, setPreviewScreenshotUrl] = useState<string | null>(null);
 
   // User Referrals Tab State
@@ -1952,6 +1953,7 @@ export default function AdminUserDetailPage() {
         {([
           ["profile", "User information"],
           ["activity", "Activity"],
+          ["usage", "App usage"],
           ["payments", "Payments"],
           ["referrals", "Referrals"],
           ["logs", "Error Logs"],
@@ -3630,6 +3632,8 @@ export default function AdminUserDetailPage() {
         </div>
       </div>
       </section>
+
+      {activeTab === "usage" && typeof params.id === "string" && <UserUsagePanel userId={params.id} />}
 
       <section aria-label="User payments" hidden={activeTab !== "payments"} className="space-y-4">
         {/* Payment Summary Stats */}

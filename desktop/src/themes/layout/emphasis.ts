@@ -12,10 +12,14 @@ export interface EmphasisPart {
   text: string;
   /** True for the words that were inside asterisks. */
   em: boolean;
+  /** A colour picked for these words, from `*[#facc15]words*`. Without one the theme's highlight colour is used. */
+  color?: string;
 }
 
 // A pair of asterisks around words; the asterisk must touch a word, so "2 * 3 * 4" is left alone.
-const EMPHASIS_RE = /\*(?=\S)([^*\n]*?\S)\*/g;
+// An optional colour right after the first asterisk, `*[#facc15]words*`, gives those words their own colour
+// (the Dock's "Highlight words" writes this).
+const EMPHASIS_RE = /\*(?=\S)(?:\[(#[0-9a-fA-F]{3,8})\])?([^*\n]*?\S)\*/g;
 
 /** Splits text into plain and emphasised parts. Text with no asterisk pairs is one plain part. */
 export function parseEmphasis(text: string): EmphasisPart[] {
@@ -26,7 +30,7 @@ export function parseEmphasis(text: string): EmphasisPart[] {
   let match: RegExpExecArray | null;
   while ((match = EMPHASIS_RE.exec(text))) {
     if (match.index > last) parts.push({ text: text.slice(last, match.index), em: false });
-    parts.push({ text: match[1], em: true });
+    parts.push(match[1] ? { text: match[2], em: true, color: match[1] } : { text: match[2], em: true });
     last = match.index + match[0].length;
   }
   if (last < text.length) parts.push({ text: text.slice(last), em: false });

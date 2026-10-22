@@ -37,6 +37,9 @@ import allThemesData from "../../../lower_thirds/all_themes.json";
 import DockSceneRoutingControl from "../components/DockSceneRoutingControl";
 import DockLowerThirdEditor from "./DockLowerThirdEditor";
 import DockTimeTab from "./DockTimeTab";
+import DockSearchableSelect from "../components/DockSearchableSelect";
+import DockThemePreviewFrame from "../components/DockThemePreviewFrame";
+import { buildThemePreviewHtml, obsPreviewSandbox, type BroadcastTheme } from "../../lowerthirds/broadcastPreviewHtml";
 import { requireEntitlement, getDockPlan, showUpgradeModal, getDockEntitlementLimit, refreshDockPlanNow } from "../dockEntitlement";
 import { getStoredLocalDevPlanOverride } from "../../services/localDevPlanOverride";
 import { checkEntitlementSync } from "../../services/entitlementClient";
@@ -150,6 +153,8 @@ interface TickerSettings {
   loop: boolean;
   themeId: string;
   heading: string;
+  /** Pill tickers: heading text or the live time. */
+  headingMode: "text" | "time";
   messageSpacing: number;
   divider: DockTickerDivider;
   colors: TickerColorOverrides;
@@ -371,6 +376,7 @@ function loadSettings(): TickerSettings {
         heading: typeof parsed.heading === "string" && parsed.heading.trim()
           ? parsed.heading.slice(0, 20)
           : parsedTheme?.defaultHeading ?? "LIVE",
+        headingMode: parsed.headingMode === "time" ? "time" : "text",
         messageSpacing: typeof parsed.messageSpacing === "number"
           ? Math.max(0, Math.min(TICKER_MESSAGE_SPACING_MAX, Math.round(parsed.messageSpacing)))
           : 0,
@@ -387,6 +393,7 @@ function loadSettings(): TickerSettings {
     loop: true,
     themeId: defaultTheme?.id ?? "",
     heading: defaultTheme?.defaultHeading ?? "LIVE",
+    headingMode: "text",
     messageSpacing: 0,
     divider: "theme",
     colors: {},
@@ -1089,6 +1096,7 @@ export default function DockMinistryTab({
       const html = renderDockTickerThemeHtml({
         option: selectedTickerTheme,
         heading: settings.heading,
+        headingMode: settings.headingMode,
         messages: activeMessages.map((m) => m.text),
         speed: settings.speed,
         position: settings.position,
@@ -1215,6 +1223,7 @@ export default function DockMinistryTab({
   const liveSyncKey = JSON.stringify([
     selectedTickerTheme?.id,
     settings.heading,
+    settings.headingMode,
     settings.speed,
     settings.messageSpacing,
     settings.divider,
@@ -1243,6 +1252,7 @@ export default function DockMinistryTab({
         const html = renderDockTickerThemeHtml({
           option: selectedTickerTheme,
           heading: settings.heading,
+          headingMode: settings.headingMode,
           messages: activeMessages.map((m) => m.text),
           speed: settings.speed,
           position: settings.position,
@@ -1309,6 +1319,7 @@ export default function DockMinistryTab({
       const html = renderDockTickerThemeHtml({
         option: selectedTickerTheme,
         heading: settings.heading,
+        headingMode: settings.headingMode,
         messages: activeMessages.map((m) => m.text),
         speed: settings.speed,
         position: settings.position,
@@ -1521,34 +1532,37 @@ export default function DockMinistryTab({
             {/* Theme Picker */}
             <div className="dock-mv-tab__section dock-mv-tab__section--ticker-theme">
               <div style={{ padding: "4px 0" }}>
-                <select
+                <DockSearchableSelect
+                  ariaLabel={t("ministry.theme")}
+                  storageKey="mce-dock-ticker-theme-select"
                   value={selectedTickerTheme?.id ?? ""}
-                  onChange={(e) => {
-                    const nextTheme = resolveDockTickerThemeOption(e.target.value, remoteProductionThemes);
+                  options={effectiveThemeList.map((tpl) => ({ id: tpl.id, label: tpl.name }))}
+                  canPreview={(id) => effectiveThemeList.some((tpl) => tpl.id === id)}
+                  renderPreview={(id, replayKey) => {
+                    const option = effectiveThemeList.find((tpl) => tpl.id === id);
+                    if (!option) return null;
+                    const html = renderDockTickerThemeHtml({
+                      option,
+                      heading: option.defaultHeading,
+                      messages: ["Sunday Service 9:00 AM", "Midweek Prayer Wednesday 6:30 PM"],
+                      speed: settings.speed,
+                      position: "bottom",
+                      loop: true,
+                      divider: settings.divider,
+                      messageSpacing: settings.messageSpacing,
+                    });
+                    return <DockThemePreviewFrame key={replayKey} html={html} sandbox="allow-scripts" title={`Preview of ${option.name}`} />;
+                  }}
+                  onChange={(id) => {
+                    const nextTheme = resolveDockTickerThemeOption(id, remoteProductionThemes);
                     setSettings((s) => ({
                       ...s,
-                      themeId: e.target.value,
+                      themeId: id,
                       heading: nextTheme?.defaultHeading ?? s.heading,
                       colors: {},
                     }));
                   }}
-                  style={{
-                    width: "100%",
-                    background: "var(--dock-surface)",
-                    border: "1px solid var(--dock-border)",
-                    borderRadius: 3,
-                    padding: "4px 6px",
-                    fontSize: 11,
-                    fontWeight: 600,
-                    color: "var(--dock-text)",
-                    fontFamily: "inherit",
-                    cursor: "pointer",
-                  }}
-                >
-                  {effectiveThemeList.map((tpl) => (
-                    <option key={tpl.id} value={tpl.id}>{tpl.name}</option>
-                  ))}
-                </select>
+                />
               </div>
             </div>
 
@@ -1631,6 +1645,34 @@ export default function DockMinistryTab({
                     </button>
                   </div>
                 </div>
+                {selectedTickerTheme?.source === "permanent" && selectedTickerTheme.theme.headingTime && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <label style={{ fontSize: 10, color: "var(--dock-text-dim)", flex: "0 0 50px" }}>Shows</label>
+                    <div role="group" aria-label="Heading shows" style={{ display: "flex", flex: 1, minWidth: 0 }}>
+                      {([["text", "Heading text"], ["time", "Live time"]] as const).map(([value, label]) => (
+                        <button
+                          key={value}
+                          type="button"
+                          aria-pressed={settings.headingMode === value}
+                          onClick={() => setSettings((s) => ({ ...s, headingMode: value }))}
+                          style={{
+                            flex: 1,
+                            minHeight: 28,
+                            border: "1px solid var(--dock-border)",
+                            borderRadius: value === "text" ? "3px 0 0 3px" : "0 3px 3px 0",
+                            marginLeft: value === "time" ? -1 : 0,
+                            background: settings.headingMode === value ? "var(--dock-accent)" : "var(--dock-surface)",
+                            color: settings.headingMode === value ? "#fff" : "var(--dock-text)",
+                            fontSize: 11,
+                            cursor: "pointer",
+                          }}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {([
                   {
                     key: "speed" as const,
@@ -2065,28 +2107,39 @@ export default function DockMinistryTab({
               <div className="dock-mv-tab__section-label" style={{ paddingBottom: 3 }}>{t("ministry.theme")}</div>
               <div style={{ padding: "4px 0" }}>
                 {ltFavorites.length > 0 ? (
-                  <select
-                    value={ltSelectedIdx}
-                    onChange={(e) => handleSelectLtTheme(Number(e.target.value))}
-                    style={{
-                      width: "100%",
-                      background: "var(--dock-surface)",
-                      border: "1px solid var(--dock-border)",
-                      borderRadius: 3,
-                      padding: "2px 6px",
-                      fontSize: 10,
-                      fontWeight: 600,
-                      color: "var(--dock-text)",
-                      fontFamily: "inherit",
-                      cursor: "pointer",
+                  <DockSearchableSelect
+                    compact
+                    ariaLabel={t("ministry.theme")}
+                    storageKey="mce-dock-lt-theme-select"
+                    value={ltEntryKey(ltFavorites[ltSelectedIdx] ?? ltFavorites[0])}
+                    options={ltFavorites.map((entry) => {
+                      const isCustom = entry.kind === "bible" || (entry.kind === "lt" && Boolean(entry.custom));
+                      return {
+                        id: ltEntryKey(entry),
+                        label: entry.label,
+                        badge: isCustom ? t("ministry.custom") : undefined,
+                        group: isCustom ? "Your themes" : /^motion\b/i.test(entry.label) ? "Motion" : "More themes",
+                      };
+                    })}
+                    canPreview={(key) => ltFavorites.some((entry) => entry.kind === "lt" && ltEntryKey(entry) === key)}
+                    renderPreview={(key, replayKey) => {
+                      const entry = ltFavorites.find((e) => ltEntryKey(e) === key);
+                      if (!entry || entry.kind !== "lt") return null;
+                      const broadcastTheme = entry.theme as unknown as BroadcastTheme;
+                      return (
+                        <DockThemePreviewFrame
+                          key={replayKey}
+                          html={buildThemePreviewHtml(broadcastTheme, { backdrop: "#1c2230" })}
+                          sandbox={obsPreviewSandbox(broadcastTheme)}
+                          title={`Preview of ${entry.label}`}
+                        />
+                      );
                     }}
-                  >
-                    {ltFavorites.map((entry, i) => (
-                      <option key={`${entry.kind}-${entry.label}-${i}`} value={i}>
-                        {entry.label}{entry.kind === "bible" || (entry.kind === "lt" && entry.custom) ? ` ${t("ministry.custom")}` : ""}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(key) => {
+                      const idx = ltFavorites.findIndex((entry) => ltEntryKey(entry) === key);
+                      if (idx >= 0) handleSelectLtTheme(idx);
+                    }}
+                  />
                 ) : (
                   <div style={{
                     width: "100%",

@@ -10,7 +10,8 @@
  *
  * Inputs (all from real events):
  *   activity_events       bible_present, worship_song_presented, media_presented,
- *                         broadcast_graphic_shown, sts_push_to_live, voice_session_completed,
+ *                         broadcast_graphic_shown, lower_third_shown, ticker_shown, note_shown,
+ *                         countdown_shown, sts_push_to_live, voice_session_completed,
  *                         searches / songs created / uploads / transcripts / translations,
  *                         obs_connected, app_started
  *   multistream_sessions  usedSeconds per session
@@ -18,9 +19,9 @@
  * Score (0-100) per window:
  *   Consistency  30  days with real use vs. what a church normally needs
  *                    (1 day per 24h, 2 days per week, 6 days per month — most use is Sunday + midweek)
- *   Presenting   35  verses, songs, media, graphics and live captions sent to screen (log-scaled)
+ *   Presenting   35  verses, songs, media, graphics, notes, countdowns and voice verses sent to screen (log-scaled)
  *   Preparation  10  searches, songs created, uploads, transcripts, translations (log-scaled)
- *   Breadth      15  feature areas used: Bible, worship, media, voice, graphics, multi-stream (4 = full)
+ *   Breadth      15  feature areas used: Bible, worship, media, voice, graphics, notes, multi-stream (4 = full)
  *   Live         10  multi-stream used (10) · OBS connected while presenting (6) · OBS connected only (3)
  * Opening the app without doing anything scores at most 5.
  */
@@ -33,9 +34,10 @@ export const ENGAGEMENT_EVENTS = {
   songsCreated: ["worship_song_created", "worship_song_imported"],
   mediaPresented: ["media_presented"],
   mediaUploaded: ["media_uploaded"],
-  graphicsShown: ["broadcast_graphic_shown"],
+  graphicsShown: ["broadcast_graphic_shown", "lower_third_shown", "ticker_shown"],
   graphicsAdded: ["broadcast_graphic_added_to_obs"],
   liveCaptions: ["sts_push_to_live"],
+  notesShown: ["note_shown", "countdown_shown"],
   voiceSessions: ["voice_session_completed"],
   transcripts: ["transcript_created"],
   translations: ["translation_generated"],
@@ -54,7 +56,7 @@ export const TRACKED_EVENTS = Array.from(EVENT_TO_METRIC.keys());
 /** Events that count as "used the product" for active days (opening the app or OBS alone does not). */
 const USE_METRICS = new Set<EngagementMetric>([
   "bibleVerses", "bibleSearches", "songsPresented", "songsCreated", "mediaPresented", "mediaUploaded",
-  "graphicsShown", "graphicsAdded", "liveCaptions", "voiceSessions", "transcripts", "translations",
+  "graphicsShown", "graphicsAdded", "liveCaptions", "notesShown", "voiceSessions", "transcripts", "translations",
 ]);
 
 /** Event names that count as real use of the product (not just opening the app or connecting OBS). */
@@ -204,7 +206,7 @@ const TARGETS: Record<EngagementWindow, { days: number; presents: number; prep: 
 };
 
 export function presentsOf(c: EngagementCounts): number {
-  return c.bibleVerses + c.songsPresented + c.mediaPresented + c.graphicsShown + c.liveCaptions;
+  return c.bibleVerses + c.songsPresented + c.mediaPresented + c.graphicsShown + c.liveCaptions + c.notesShown;
 }
 
 export function prepOf(c: EngagementCounts): number {
@@ -218,6 +220,7 @@ export function areasOf(c: EngagementCounts): string[] {
   if (c.mediaPresented || c.mediaUploaded) areas.push("Media");
   if (c.voiceSessions || c.liveCaptions || c.transcripts || c.translations) areas.push("Voice");
   if (c.graphicsShown || c.graphicsAdded) areas.push("Graphics");
+  if (c.notesShown) areas.push("Notes & countdowns");
   if (c.multistreamSessions) areas.push("Multi-stream");
   return areas;
 }
@@ -272,7 +275,7 @@ export function scoreUserEngagement(e: UserEngagement): ActivityScoreResult {
     ...g,
     breakdown: [
       { category: "Consistency", score: m.consistency, maxScore: 30, detail: `${e.month.activeDays} day${e.month.activeDays === 1 ? "" : "s"} of real use in 30 days (6 = full)` },
-      { category: "Presenting", score: m.presenting, maxScore: 35, detail: `${m.presents} item${m.presents === 1 ? "" : "s"} sent to screen (verses ${e.month.bibleVerses}, songs ${e.month.songsPresented}, media ${e.month.mediaPresented}, graphics ${e.month.graphicsShown})` },
+      { category: "Presenting", score: m.presenting, maxScore: 35, detail: `${m.presents} item${m.presents === 1 ? "" : "s"} sent to screen (verses ${e.month.bibleVerses}, songs ${e.month.songsPresented}, media ${e.month.mediaPresented}, graphics ${e.month.graphicsShown}, voice ${e.month.liveCaptions}, notes & countdowns ${e.month.notesShown})` },
       { category: "Preparation", score: m.preparation, maxScore: 10, detail: `${m.prep} search${m.prep === 1 ? "" : "es"}, songs, uploads or transcripts` },
       { category: "Feature breadth", score: m.breadth, maxScore: 15, detail: m.areas.length ? m.areas.join(", ") : "No features used" },
       { category: "Live production", score: m.live, maxScore: 10, detail: e.month.multistreamSessions ? `Multi-stream ${e.month.multistreamSessions}× (${fmtMin(e.month.multistreamSeconds)})` : e.month.obsConnections ? "OBS connected" : "No OBS or multi-stream" },

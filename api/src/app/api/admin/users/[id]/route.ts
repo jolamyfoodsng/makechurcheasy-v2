@@ -8,6 +8,7 @@ import { getEffectivePlan } from "@/lib/trial";
 import { logAuditEvent } from "@/lib/auditLog";
 import { loadUserEngagement, scoreUserEngagement } from "@/lib/userEngagement";
 import { findPossibleTrialAccounts } from "@/lib/adminTrialAccountLinks";
+import { loadRealUseTimes } from "@/lib/userRetention";
 
 export async function GET(
   req: NextRequest,
@@ -92,6 +93,7 @@ export async function GET(
       errorsTotal, errors30, lastError,
       streamAgg, streamRecent, streamErrorsTotal, streamErrorsRecent,
       graphicsTop,
+      realUseMap,
     ] = await Promise.all([
       loadUserEngagement(db, [userIdString]).catch(() => null),
       db.collection("email_logs").countDocuments(emailMatch).catch(() => 0),
@@ -122,7 +124,9 @@ export async function GET(
         .sort({ createdAt: -1 }).limit(10).toArray().catch(() => []),
       db.collection("broadcast_graphic_usage").find({ userId: userIdString }, { projection: { graphicId: 1, name: 1, addedCount: 1, shownCount: 1, lastShownAt: 1 } })
         .sort({ shownCount: -1, addedCount: -1 }).limit(8).toArray().catch(() => []),
+      loadRealUseTimes(db, [userIdString]).catch(() => null),
     ]);
+    const lastUsed = realUseMap?.get(userIdString)?.lastUseAt || null;
     const engagement = engagementMap?.get(userIdString) || null;
     const streamSummary = (streamAgg as any[])[0] || null;
 
@@ -227,9 +231,10 @@ export async function GET(
       .map((t) => (t ? new Date(t).getTime() : NaN))
       .filter((n) => Number.isFinite(n) && n > 0);
 
-    const latestActiveMs = candidateTimestamps.length > 0 ? Math.max(...candidateTimestamps) : null;
-    const effectiveLastActive = latestActiveMs
-      ? new Date(latestActiveMs).toISOString()
+    // "Last opened": any sign of life (launch, sign-in, device ping, any event), not real use.
+    const latestOpenedMs = candidateTimestamps.length > 0 ? Math.max(...candidateTimestamps) : null;
+    const lastOpened = latestOpenedMs
+      ? new Date(latestOpenedMs).toISOString()
       : (user.lastActive?.toISOString?.() || user.lastActive || null);
     const effectiveExpiresAt =
       user.adminManagedSubscription?.active && user.adminManagedSubscription.expiresAt
@@ -298,7 +303,9 @@ export async function GET(
       signupDate: user.createdAt?.toISOString?.() || user.createdAt || null,
       createdAt: user.createdAt?.toISOString?.() || user.createdAt || null,
       lastLogin: user.lastLogin?.toISOString?.() || user.lastLogin || null,
-      lastActive: effectiveLastActive,
+      lastOpened,
+      // Last time they presented, searched, imported, uploaded or used voice.
+      lastUsed,
       appId: user.appId || "",
       trialId: user.trialId || null,
       trial: trialResponse,

@@ -4,6 +4,7 @@ import {
 } from "./slideEngine";
 import type { Song } from "./types";
 import { saveSongsBatch } from "./worshipDb";
+import { trackWorshipSongImported } from "../services/tracking";
 import type {
   SmartImportSectionDraft,
   SmartImportSectionType,
@@ -204,6 +205,13 @@ export async function importSmartSongs(
   }
 
   await (options.saveBatch ?? saveSongsBatch)(imported, { onProgress });
+
+  if (imported.length) {
+    // Only the kind of source is sent, never the file name.
+    const source = options.sourceName?.trim() || "";
+    const format = /^easyworship/i.test(source) ? "easyworship" : source.match(/\.([a-z0-9]{2,5})$/i)?.[1]?.toLowerCase();
+    trackWorshipSongImported(imported.length, format);
+  }
 
   return imported;
 }

@@ -17,7 +17,7 @@ import { isPresentationLinkTarget } from "../dockPresentationTarget";
 import type { VoiceBibleCandidate, TranscriptEntry } from "../../services/voiceBibleTypes";
 
 import { parseScriptureReference } from "../../services/scriptureParser";
-import { trackTranscriptCreated } from "../../services/tracking";
+import { trackStsPushToLive, trackTranscriptCreated } from "../../services/tracking";
 import { onCreditChange, isProUnlocked } from "../../services/credits";
 import Icon from "../DockIcon";
 import { getUserScopedKey } from "../../services/userScopedStorage";
@@ -856,6 +856,7 @@ export default function DockLmTab({
       settings.translation,
       resolveLmReferencePrefs(liveSnapshot, savedBiblePrefs),
     );
+    trackStsPushToLive();
 
     if (presentationLinkMode) {
       await publishDockStagedItemToPresentation({

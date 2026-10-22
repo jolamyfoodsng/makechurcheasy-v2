@@ -92,7 +92,7 @@ export async function GET(req: NextRequest) {
       const latestSessions = await db
         .collection("security_sessions")
         .aggregate<{ _id: string; latestActive: string }>([
-          { $match: { lastActive: { $ne: null } } },
+          { $match: { userId: { $in: [...userIds, ...userObjectIds] }, lastActive: { $ne: null } } },
           { $group: { _id: "$userId", latestActive: { $max: "$lastActive" } } },
         ])
         .toArray();
@@ -319,8 +319,10 @@ export async function GET(req: NextRequest) {
         .map((t) => (t ? new Date(t).getTime() : NaN))
         .filter((n) => Number.isFinite(n) && n > 0);
 
-      const latestActiveMs = timestamps.length > 0 ? Math.max(...timestamps) : null;
-      const effectiveLastActive = latestActiveMs ? new Date(latestActiveMs).toISOString() : null;
+      // "Last opened": any sign of life — app launch, sign-in, update check, device ping or any event.
+      // It says the app is installed and running, not that the church used it.
+      const latestOpenedMs = timestamps.length > 0 ? Math.max(...timestamps) : null;
+      const lastOpened = latestOpenedMs ? new Date(latestOpenedMs).toISOString() : null;
 
       const userUsage = usageMap.get(id) || usageMap.get(u._id.toString()) || null;
       const engagement = engagementMap.get(id);
@@ -364,7 +366,9 @@ export async function GET(req: NextRequest) {
         signupDate: u.createdAt?.toISOString?.() || u.createdAt || null,
         createdAt: u.createdAt?.toISOString?.() || u.createdAt || null,
         lastLogin: lastLoginRaw,
-        lastActive: effectiveLastActive,
+        lastOpened,
+        // "Last used": the last time they presented, searched, imported, uploaded or used voice.
+        lastUsed: retention.lastUseAt,
         appId: u.appId || "",
         // Desktop app details from the user's devices (latest device first).
         deviceCount: deviceCountMap.get(id) ?? 0,
@@ -372,8 +376,9 @@ export async function GET(req: NextRequest) {
         appPlatform: deviceAppMap.get(id)?.appPlatform || u.appPlatform || "",
         appVersions: deviceAppMap.get(id)?.appVersions ?? (u.appVersion ? [String(u.appVersion)] : []),
         appPlatforms: deviceAppMap.get(id)?.appPlatforms ?? (u.appPlatform ? [String(u.appPlatform)] : []),
-        isActive: effectiveLastActive
-          ? new Date(effectiveLastActive).getTime() > Date.now() - 30 * 24 * 60 * 60 * 1000
+        // Active means real use in the last 30 days; opening the app alone does not count.
+        isActive: retention.lastUseAt
+          ? new Date(retention.lastUseAt).getTime() > Date.now() - 30 * 24 * 60 * 60 * 1000
           : false,
         trial,
         ambassador: u.ambassador || null,

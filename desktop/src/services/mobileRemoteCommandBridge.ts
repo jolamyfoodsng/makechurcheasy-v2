@@ -57,6 +57,13 @@ import {
 } from "./automationStore";
 import { automationRunner } from "./automationRunner";
 import {
+  trackBiblePresent,
+  trackBibleSearch,
+  trackMediaPresented,
+  trackOutputShown,
+  trackWorshipSongPresented,
+} from "./tracking";
+import {
   getDockSceneRouteTargets,
   loadDockSceneRoute,
   normalizeDockSceneRoute,
@@ -1782,6 +1789,7 @@ async function runMobileCommand(command: MobileCommand): Promise<unknown> {
     case "get_bible_search_suggestions":
       return getBibleSearchSuggestionsPayload(command);
     case "record_bible_search":
+      trackBibleSearch(undefined, "mobile_remote");
       return { recentSearches: recordRecentBibleSearchForMobile(command.label) };
     case "get_worship_library":
       return getWorshipLibraryPayload();
@@ -1791,6 +1799,7 @@ async function runMobileCommand(command: MobileCommand): Promise<unknown> {
       return saveNotesPayload(command.notes);
     case "show_note":
       await showNote(command.note);
+      trackOutputShown("note_shown", "mobile_remote");
       return getCurrentStatePayload();
     case "clear_notes":
       await dockObsClient.clearNotesLyrics();
@@ -1811,6 +1820,7 @@ async function runMobileCommand(command: MobileCommand): Promise<unknown> {
       return getCountdownsPayload();
     case "show_countdown":
       await sendCountdownToObs(command.config, true, command.sync);
+      trackOutputShown("countdown_shown", "mobile_remote");
       return getCurrentStatePayload();
     case "clear_countdown":
       await hideAllCountdowns();
@@ -1865,6 +1875,7 @@ async function runMobileCommand(command: MobileCommand): Promise<unknown> {
       }
     case "show_scripture":
       await handleBibleCommand(command);
+      trackBiblePresent({ ref: command.reference, translation: command.translation, source: "mobile_remote" });
       // Keep verse taps responsive. The Rust companion already publishes the
       // lightweight current-scripture state update; querying every OBS scene
       // after each tap made a rapid sequence of taps wait on scene I/O.
@@ -1874,30 +1885,38 @@ async function runMobileCommand(command: MobileCommand): Promise<unknown> {
       return getCurrentStatePayload();
     case "show_slide":
       await handleWorshipSlideCommand(command);
+      trackWorshipSongPresented({ source: "mobile_remote" });
       return getCurrentStatePayload();
     case "clear_worship":
       await dockObsClient.clearWorshipLyrics();
       return getCurrentStatePayload();
     case "next_slide":
-    case "prev_slide":
-      return handleWorshipNavigation(command);
+    case "prev_slide": {
+      const result = await handleWorshipNavigation(command);
+      trackWorshipSongPresented({ source: "mobile_remote" });
+      return result;
+    }
     case "show_media":
       await handleMediaCommand(command);
+      trackMediaPresented({ type: "library", source: "mobile_remote" });
       return getCurrentStatePayload();
     case "send_media_to_scene":
       await handleMediaToSceneCommand(command);
+      trackMediaPresented({ type: "scene", source: "mobile_remote" });
       return getCurrentStatePayload();
     case "clear_media":
       await dockObsClient.clearMedia();
       return getCurrentStatePayload();
     case "show_ticker":
       await showMobileTicker(command);
+      trackOutputShown("ticker_shown", "mobile_remote");
       return getCurrentStatePayload();
     case "clear_ticker":
       await dockObsClient.clearTicker();
       return getCurrentStatePayload();
     case "show_lower_third":
       await handleLowerThirdCommand(command);
+      trackOutputShown("lower_third_shown", "mobile_remote");
       return getCurrentStatePayload();
     case "get_lower_third_themes":
       return getLowerThirdThemesPayload();

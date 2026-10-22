@@ -111,7 +111,11 @@ interface AdminUser {
   subscriptionStatus?: string | null;
   createdAt: string | null;
   lastLogin: string | null;
-  lastActive: string | null;
+  /** Any sign of life: app launch, sign-in, update check, device ping. */
+  lastOpened: string | null;
+  /** Last real use: presenting, searching, importing, uploading or voice. */
+  lastUsed: string | null;
+  /** Real use in the last 30 days. */
   isActive: boolean;
   trial?: { active: boolean; expiresAt?: string } | null;
   ambassador?: {
@@ -260,7 +264,7 @@ function getSubscriptionExpiringInfo(user: AdminUser): {
   };
 }
 
-type SortField = "name" | "email" | "country" | "plan" | "credits" | "createdAt" | "lastLogin" | "lastActive" | "activityScore";
+type SortField = "name" | "email" | "country" | "plan" | "credits" | "createdAt" | "lastLogin" | "lastUsed" | "activityScore";
 type ActivityFilter = "all" | "expiring" | "1d" | "3d" | "7d" | "14d" | "30d" | "inactive";
 type SortDir = "asc" | "desc";
 type AdminUserAction =
@@ -659,7 +663,7 @@ export default function AdminUsersPage() {
         counts.expiring++;
       }
 
-      const ts = u.lastActive || u.lastLogin;
+      const ts = u.lastUsed;
       const time = ts ? new Date(ts).getTime() : NaN;
       if (Number.isFinite(time) && time > 0) {
         const diffDays = (now - time) / (24 * 60 * 60 * 1000);
@@ -831,7 +835,7 @@ export default function AdminUsersPage() {
           return Boolean(exp && !exp.isExpired && exp.daysLeft <= 30);
         }
 
-        const ts = u.lastActive || u.lastLogin;
+        const ts = u.lastUsed;
         const time = ts ? new Date(ts).getTime() : NaN;
         const hasTime = Number.isFinite(time) && time > 0;
         const diffDays = hasTime ? (now - time) / (24 * 60 * 60 * 1000) : Infinity;
@@ -859,9 +863,9 @@ export default function AdminUsersPage() {
       else if (sortField === "credits") { av = a.credits; bv = b.credits; }
       else if (sortField === "createdAt") { av = a.createdAt || ""; bv = b.createdAt || ""; }
       else if (sortField === "lastLogin") { av = a.lastLogin || ""; bv = b.lastLogin || ""; }
-      else if (sortField === "lastActive") {
-        av = a.lastActive || a.lastLogin || "";
-        bv = b.lastActive || b.lastLogin || "";
+      else if (sortField === "lastUsed") {
+        av = a.lastUsed || "";
+        bv = b.lastUsed || "";
       }
       else if (sortField === "activityScore") {
         av = typeof a.activityScore?.score === "number" ? a.activityScore.score : -1;
@@ -906,7 +910,8 @@ export default function AdminUsersPage() {
         "Media Uploaded",
         "Transcripts Created",
         "Signup Date",
-        "Last Active At",
+        "Last Used At",
+        "Last Opened At",
         "Last Login At",
         "Desktop OS",
         "App Version",
@@ -945,7 +950,8 @@ export default function AdminUsersPage() {
           u.usage?.mediaUploaded || 0,
           u.usage?.transcriptCount || 0,
           u.createdAt || "",
-          u.lastActive || "",
+          u.lastUsed || "",
+          u.lastOpened || "",
           u.lastLogin || "",
           userOsList(u).map((os) => OS_LABELS[os]).join(" / ") || OS_LABELS.none,
           userVersionList(u).join(" / "),
@@ -1465,7 +1471,7 @@ export default function AdminUsersPage() {
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
             <Clock className="w-3.5 h-3.5 text-indigo-400" />
-            Activity Cohorts
+            Used the product in
           </span>
           {activityFilter !== "all" && (
             <button
@@ -1485,7 +1491,7 @@ export default function AdminUsersPage() {
             { id: "7d", label: "Past 7 Days", count: activityCounts["7d"] },
             { id: "14d", label: "Past 14 Days", count: activityCounts["14d"] },
             { id: "30d", label: "Past 30 Days", count: activityCounts["30d"] },
-            { id: "inactive", label: "Inactive (>30d)", count: activityCounts.inactive },
+            { id: "inactive", label: "Not used in 30d", count: activityCounts.inactive },
           ].map((item) => {
             const isActive = activityFilter === item.id;
             return (
@@ -1859,8 +1865,8 @@ export default function AdminUsersPage() {
                   </button>
                 </th>
                 <th className="text-left px-4 py-3 font-semibold text-slate-400 text-xs uppercase tracking-wide hidden md:table-cell">
-                  <button onClick={() => toggleSort("lastActive")} className="flex items-center gap-1 hover:text-slate-200 transition-colors">
-                    Last Active <SortIcon field="lastActive" />
+                  <button onClick={() => toggleSort("lastUsed")} className="flex items-center gap-1 hover:text-slate-200 transition-colors" title="Last used = presented, searched, imported, uploaded or used voice. Opened = the app was running (launch, sign-in, update check).">
+                    Last Used <SortIcon field="lastUsed" />
                   </button>
                 </th>
                 <th className="text-left px-4 py-3 font-semibold text-slate-400 text-xs uppercase tracking-wide hidden xl:table-cell">
@@ -2052,33 +2058,34 @@ export default function AdminUsersPage() {
                   </td>
                   <td className="px-4 py-3 hidden md:table-cell">
                     {(() => {
-                      const activeInfo = formatLastActive(user.lastActive || user.lastLogin);
+                      const usedInfo = formatLastActive(user.lastUsed);
+                      const openedInfo = formatLastActive(user.lastOpened || user.lastLogin);
                       return (
-                        <div className="flex items-center gap-1.5" title={activeInfo.full}>
-                          {activeInfo.tone === "recent" && (
-                            <span className="relative flex h-1.5 w-1.5 shrink-0">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+                        <div className="flex flex-col gap-0.5">
+                          <div className="flex items-center gap-1.5" title={user.lastUsed ? `Last used: ${usedInfo.full}` : "Has never presented, searched, imported, uploaded or used voice"}>
+                            {usedInfo.tone === "recent" && (
+                              <span className="relative flex h-1.5 w-1.5 shrink-0">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+                              </span>
+                            )}
+                            <span
+                              className={`text-xs ${
+                                usedInfo.tone === "recent"
+                                  ? "text-emerald-300 font-semibold"
+                                  : usedInfo.tone === "warm"
+                                  ? "text-amber-300 font-medium"
+                                  : usedInfo.tone === "cool"
+                                  ? "text-sky-300 font-medium"
+                                  : "text-slate-500"
+                              }`}
+                            >
+                              {user.lastUsed ? usedInfo.text : "Never used"}
                             </span>
-                          )}
-                          <span
-                            className={`text-xs font-medium ${
-                              activeInfo.tone === "recent"
-                                ? "text-emerald-300 font-semibold"
-                                : activeInfo.tone === "warm"
-                                ? "text-amber-300 font-medium"
-                                : activeInfo.tone === "cool"
-                                ? "text-sky-300 font-medium"
-                                : "text-slate-500"
-                            }`}
-                          >
-                            {activeInfo.text}
+                          </div>
+                          <span className="text-[10px] text-slate-500" title={`Last opened (launch, sign-in, update check): ${openedInfo.full}`}>
+                            Opened {openedInfo.text === "Never" ? "never" : /ago$|^Just now$|^Yesterday$/.test(openedInfo.text) ? openedInfo.text.toLowerCase() : openedInfo.text}
                           </span>
-                          {user.retention && (
-                            <span className="ml-1 text-[10px] text-slate-500" title="The last time they really used the product (not just opened it)">
-                              · {user.retention.daysSinceUse === null ? "never used it" : user.retention.daysSinceUse === 0 ? "used it today" : `used it ${user.retention.daysSinceUse}d ago`}
-                            </span>
-                          )}
                         </div>
                       );
                     })()}

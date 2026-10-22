@@ -248,7 +248,10 @@ interface UserDetail {
   plan: string;
   createdAt: string | null;
   lastLogin: string | null;
-  lastActive: string | null;
+  /** Any sign of life: app launch, sign-in, update check, device ping. */
+  lastOpened: string | null;
+  /** Last real use: presenting, searching, importing, uploading or voice. */
+  lastUsed: string | null;
   appId: string;
   activationMilestones?: {
     firstPresentation?: boolean;
@@ -1842,35 +1845,29 @@ export default function AdminUserDetailPage() {
           </div>
         </div>
 
-        {/* 2. Last Used / Last Active */}
+        {/* 2. Last used (real use) and last opened */}
         <div className="bg-gray-900 border border-slate-700/80 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between text-slate-400 mb-1">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-emerald-400" /> Last Used / Active
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5" title="Presented, searched, imported, uploaded or used voice">
+              <Clock className="w-3.5 h-3.5 text-emerald-400" /> Last Used
             </span>
             <span className="flex items-center gap-1 text-[10px] font-medium text-emerald-400">
               <span className={`w-2 h-2 rounded-full ${
-                user.lastActive && (Date.now() - new Date(user.lastActive).getTime()) < 24 * 60 * 60 * 1000
+                user.lastUsed && (Date.now() - new Date(user.lastUsed).getTime()) < 24 * 60 * 60 * 1000
                   ? "bg-emerald-400 animate-pulse"
                   : "bg-slate-500"
               }`} />
-              {user.lastActive && (Date.now() - new Date(user.lastActive).getTime()) < 24 * 60 * 60 * 1000 ? "Recent" : "Offline"}
+              {user.lastUsed && (Date.now() - new Date(user.lastUsed).getTime()) < 24 * 60 * 60 * 1000 ? "Today" : "Not today"}
             </span>
           </div>
           <div className="mt-1">
             <p className="text-base font-bold text-slate-100">
-              {user.lastActive
-                ? formatRelativeTime(user.lastActive)
-                : user.lastLogin
-                ? formatRelativeTime(user.lastLogin)
-                : "Never active"}
+              {user.lastUsed ? formatRelativeTime(user.lastUsed) : "Never used"}
             </p>
-            <p className="text-xs text-slate-400 mt-0.5 truncate">
-              {user.lastActive
-                ? formatDateTime(user.lastActive)
-                : user.lastLogin
-                ? `Login: ${formatDateTime(user.lastLogin)}`
-                : "No recorded events"}
+            <p className="text-xs text-slate-400 mt-0.5 truncate" title="App launch, sign-in, update check or device ping">
+              {user.lastOpened || user.lastLogin
+                ? `Opened ${formatRelativeTime((user.lastOpened || user.lastLogin)!)}`
+                : "Never opened"}
             </p>
           </div>
         </div>
@@ -2354,15 +2351,20 @@ export default function AdminUserDetailPage() {
               subValue={user.lastLogin ? new Date(user.lastLogin).toLocaleString() : null}
             />
             <InfoRow
-              label="Effective last active"
-              value={user.lastActive ? formatRelativeTime(user.lastActive) : "—"}
-              subValue={user.lastActive ? new Date(user.lastActive).toLocaleString() : null}
+              label="Last used"
+              value={user.lastUsed ? formatRelativeTime(user.lastUsed) : "Never"}
+              subValue={user.lastUsed ? new Date(user.lastUsed).toLocaleString() : null}
+            />
+            <InfoRow
+              label="Last opened"
+              value={user.lastOpened ? formatRelativeTime(user.lastOpened) : "—"}
+              subValue={user.lastOpened ? new Date(user.lastOpened).toLocaleString() : null}
             />
             <InfoRow
               label={t('admin.userDetail.activeStatus')}
               value={
-                (user.lastActive || user.lastLogin) &&
-                  new Date(user.lastActive || user.lastLogin!).getTime() >
+                user.lastUsed &&
+                  new Date(user.lastUsed).getTime() >
                   Date.now() - 30 * 24 * 60 * 60 * 1000
                   ? t('admin.userDetail.activeLast30d')
                   : t('admin.userDetail.notActive')

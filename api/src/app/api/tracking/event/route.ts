@@ -64,6 +64,11 @@ const VALID_EVENTS = new Set([
   // Broadcast Graphics usage (per graphic, per user — see lib/broadcastGraphicUsage.ts)
   "broadcast_graphic_added_to_obs",
   "broadcast_graphic_shown",
+  // Other output put on screen
+  "note_shown",
+  "countdown_shown",
+  "ticker_shown",
+  "lower_third_shown",
   // General
   "first_app_open",
   "app_started",

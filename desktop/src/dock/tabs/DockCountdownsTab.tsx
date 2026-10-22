@@ -24,6 +24,7 @@ import { getTextTheme, loadTextThemeFont } from "../../countdowns/textThemes";
 import { validateMediaFile, backgroundFileAccept } from "../../countdowns/mediaValidation";
 import { saveCountdownAsset, deleteCountdownAsset } from "../../countdowns/countdownStore";
 import type { MediaItem } from "../../library/libraryTypes";
+import { trackOutputShown } from "../../services/tracking";
 import {
   DOCK_COUNTDOWN_BG_SOURCE_NAME,
   DOCK_PRESENTATION_SCENE_NAME,
@@ -992,6 +993,7 @@ export default function DockCountdownsTab({
       writeLivePersistState({ id: cd.id, remaining, running: true, savedAt: Date.now() });
       setLiveCountdownId(cd.id);
       await publishCountdownToPresentation(cd);
+      trackOutputShown("countdown_shown");
       timer.start();
       return;
     }
@@ -1050,6 +1052,7 @@ export default function DockCountdownsTab({
         await dockObsClient.applyMcePresentationSourceVisibility(COUNTDOWN_SOURCE);
       }
 
+      trackOutputShown("countdown_shown");
       timer.start();
     } catch (err) {
       console.warn("[DockCountdowns] Failed to show in OBS:", err);

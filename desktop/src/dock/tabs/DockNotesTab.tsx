@@ -58,7 +58,7 @@ import {
   LOWER_THIRD_REFERENCE_FONT_SIZE_MAX,
   normalizeExplicitOutputFontSettings,
 } from "../lowerThirdQuickSettings";
-import { trackOverlayModeSwitched } from "../../services/tracking";
+import { trackOutputShown, trackOverlayModeSwitched } from "../../services/tracking";
 import {
   DOCK_THEMES_REFRESHED_EVENT,
   findRefreshedTheme,
@@ -1324,6 +1324,7 @@ export default function DockNotesTab({
       setSelectedSlideIdx(idx);
       setVisibleSlideIdx(idx);
       onStage(payload.stageItem);
+      trackOutputShown("note_shown");
 
       if (presentationLinkMode) {
         setOverlayVisible(true);

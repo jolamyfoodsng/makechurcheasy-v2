@@ -11,6 +11,7 @@ import { Plus, Radio, Square } from "./icons/NativeIcons";
 import { isMacPlatform } from "../studio/shortcuts";
 import type { StudioMode } from "../studio/studioEngine";
 import type { VoiceBibleCandidate } from "../services/voiceBibleTypes";
+import { trackStsPushToLive } from "../services/tracking";
 import {
   clearVerseAiVerse,
   getVerseAiNdiStatus,
@@ -66,12 +67,18 @@ export default function VerseAiOutputCard({ verse }: VerseAiOutputCardProps) {
     return off;
   }, []);
 
+  // A theme change redraws the same verse; only a new verse counts as use.
+  const lastTrackedLabel = useRef("");
   const project = useCallback(async (target: VoiceBibleCandidate | null) => {
     if (!target) return;
     setError("");
     try {
       await projectVerseAiVerse(target, latest.current.theme, latest.current.mode);
       setOnScreen(target.label);
+      if (lastTrackedLabel.current !== target.label) {
+        lastTrackedLabel.current = target.label;
+        trackStsPushToLive();
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not project this verse.");
     }

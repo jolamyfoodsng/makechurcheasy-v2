@@ -173,23 +173,25 @@ export function trackEvent(
   }
 }
 
-// ── Broadcast Graphics usage (admin: who added / showed which graphic) ─────
+// ── Use events (presenting, graphics, voice) ────────────────────────────────
 //
-// Unlike other events these are queued when the app is offline (common during
-// a service) and sent later, so the admin counts stay complete.
+// These drive the admin activity score, so they are queued when the app is
+// offline (common during a service) and sent later. Other events are
+// fire-and-forget. The storage key predates the wider use and is kept so
+// events queued by older builds are still sent.
 
-const GRAPHIC_QUEUE_KEY = "mce_graphic_usage_queue_v1";
-const GRAPHIC_QUEUE_MAX = 300;
+const USE_QUEUE_KEY = "mce_graphic_usage_queue_v1";
+const USE_QUEUE_MAX = 500;
 
-type QueuedGraphicEvent = {
+type QueuedUseEvent = {
   event: string;
   properties: Record<string, unknown>;
   timestamp: string;
 };
 
-function readGraphicQueue(): QueuedGraphicEvent[] {
+function readUseQueue(): QueuedUseEvent[] {
   try {
-    const raw = typeof localStorage !== "undefined" ? localStorage.getItem(GRAPHIC_QUEUE_KEY) : null;
+    const raw = typeof localStorage !== "undefined" ? localStorage.getItem(USE_QUEUE_KEY) : null;
     const parsed = raw ? JSON.parse(raw) : [];
     return Array.isArray(parsed) ? parsed.filter((e) => e && typeof e.event === "string") : [];
   } catch {
@@ -197,17 +199,17 @@ function readGraphicQueue(): QueuedGraphicEvent[] {
   }
 }
 
-function writeGraphicQueue(queue: QueuedGraphicEvent[]): void {
+function writeUseQueue(queue: QueuedUseEvent[]): void {
   try {
     if (typeof localStorage === "undefined") return;
-    if (queue.length) localStorage.setItem(GRAPHIC_QUEUE_KEY, JSON.stringify(queue.slice(-GRAPHIC_QUEUE_MAX)));
-    else localStorage.removeItem(GRAPHIC_QUEUE_KEY);
+    if (queue.length) localStorage.setItem(USE_QUEUE_KEY, JSON.stringify(queue.slice(-USE_QUEUE_MAX)));
+    else localStorage.removeItem(USE_QUEUE_KEY);
   } catch {
     // Storage full or unavailable — the event is dropped.
   }
 }
 
-async function sendTrackingEvent(item: QueuedGraphicEvent): Promise<boolean> {
+async function sendTrackingEvent(item: QueuedUseEvent): Promise<boolean> {
   const request = buildTrackingRequest(item.event, item.properties, item.timestamp);
   if (!request) return false;
   try {
@@ -224,17 +226,17 @@ async function sendTrackingEvent(item: QueuedGraphicEvent): Promise<boolean> {
   }
 }
 
-let graphicFlushRunning = false;
+let useFlushRunning = false;
 
-/** Send queued Broadcast Graphics usage events. Safe to call any time. */
-export async function flushGraphicUsageQueue(): Promise<void> {
-  if (graphicFlushRunning) return;
+/** Send queued use events. Safe to call any time. */
+export async function flushUseEventQueue(): Promise<void> {
+  if (useFlushRunning) return;
   if (typeof navigator !== "undefined" && navigator.onLine === false) return;
-  graphicFlushRunning = true;
+  useFlushRunning = true;
   try {
-    const queue = readGraphicQueue();
+    const queue = readUseQueue();
     if (!queue.length) return;
-    const remaining: QueuedGraphicEvent[] = [];
+    const remaining: QueuedUseEvent[] = [];
     for (let i = 0; i < queue.length; i += 1) {
       const sent = await sendTrackingEvent(queue[i]);
       if (!sent) {
@@ -244,10 +246,26 @@ export async function flushGraphicUsageQueue(): Promise<void> {
       }
     }
     // Events added while flushing were appended to storage; keep them too.
-    const addedMeanwhile = readGraphicQueue().slice(queue.length);
-    writeGraphicQueue([...remaining, ...addedMeanwhile]);
+    const addedMeanwhile = readUseQueue().slice(queue.length);
+    writeUseQueue([...remaining, ...addedMeanwhile]);
   } finally {
-    graphicFlushRunning = false;
+    useFlushRunning = false;
+  }
+}
+
+/** Send a use event now, or keep it for later when the app is offline. */
+function trackUseEvent(event: string, properties: Record<string, unknown> = {}): void {
+  try {
+    const item: QueuedUseEvent = { event, properties, timestamp: new Date().toISOString() };
+    void sendTrackingEvent(item).then((sent) => {
+      if (sent) {
+        void flushUseEventQueue();
+        return;
+      }
+      writeUseQueue([...readUseQueue(), item]);
+    });
+  } catch {
+    // Tracking should never break the app
   }
 }
 
@@ -261,23 +279,15 @@ export function trackGraphicUsage(
   name?: string | null,
 ): void {
   if (!themeId) return;
-  const item: QueuedGraphicEvent = {
-    event: kind === "added_to_obs" ? "broadcast_graphic_added_to_obs" : "broadcast_graphic_shown",
-    properties: { themeId, ...(name ? { name } : {}) },
-    timestamp: new Date().toISOString(),
-  };
-  void sendTrackingEvent(item).then((sent) => {
-    if (sent) {
-      void flushGraphicUsageQueue();
-      return;
-    }
-    writeGraphicQueue([...readGraphicQueue(), item]);
-  });
+  trackUseEvent(
+    kind === "added_to_obs" ? "broadcast_graphic_added_to_obs" : "broadcast_graphic_shown",
+    { themeId, ...(name ? { name } : {}) },
+  );
 }
 
 if (typeof window !== "undefined") {
-  window.addEventListener("online", () => { void flushGraphicUsageQueue(); });
-  window.setTimeout(() => { void flushGraphicUsageQueue(); }, 8000);
+  window.addEventListener("online", () => { void flushUseEventQueue(); });
+  window.setTimeout(() => { void flushUseEventQueue(); }, 8000);
 }
 
 function activateTrial(
@@ -341,8 +351,11 @@ export function trackDevicePaired(): void {
 
 // ── Bible Events ───────────────────────────────────────────────────────────
 
-export function trackBibleSearch(version?: string): void {
-  trackEvent("bible_search", { version });
+/** Where an action came from, so the admin can see phone-remote and voice use. */
+export type TrackingSource = "dock" | "mobile_remote" | "voice" | "app";
+
+export function trackBibleSearch(version?: string, source: TrackingSource = "dock"): void {
+  trackUseEvent("bible_search", { version, source });
 }
 
 export function trackBiblePresent(
@@ -356,6 +369,7 @@ export function trackBiblePresent(
         chapter?: number;
         verse?: number;
         verseRange?: string;
+        source?: TrackingSource;
       },
 ): void {
   const isObject = typeof params === "object" && params !== null;
@@ -369,8 +383,10 @@ export function trackBiblePresent(
   const chapter = isObject ? params.chapter : undefined;
   const verse = isObject ? params.verse : undefined;
   const verseRange = isObject ? params.verseRange : undefined;
+  const source = (isObject && params.source) || "dock";
 
-  trackEvent("bible_present", {
+  trackUseEvent("bible_present", {
+    source,
     hasRef: Boolean(rawRef),
     ref: ref || "",
     translation: translation || "",
@@ -395,11 +411,11 @@ export function trackBiblePresent(
 // ── Worship Events ─────────────────────────────────────────────────────────
 
 export function trackWorshipSongCreated(): void {
-  trackEvent("worship_song_created");
+  trackUseEvent("worship_song_created");
 }
 
-export function trackWorshipSongImported(): void {
-  trackEvent("worship_song_imported");
+export function trackWorshipSongImported(count = 1, format?: string): void {
+  trackUseEvent("worship_song_imported", { count, ...(format ? { format } : {}) });
 }
 
 export function trackWorshipSongPresented(
@@ -409,6 +425,7 @@ export function trackWorshipSongPresented(
         songTitle?: string;
         overlayMode?: "fullscreen" | "lower-third";
         hasLyrics?: boolean;
+        source?: TrackingSource;
       },
 ): void {
   const isObject = typeof params === "object" && params !== null;
@@ -419,8 +436,10 @@ export function trackWorshipSongPresented(
       : undefined;
   const overlayMode = isObject ? params.overlayMode : undefined;
   const hasLyrics = isObject ? params.hasLyrics : true;
+  const source = (isObject && params.source) || "dock";
 
-  trackEvent("worship_song_presented", {
+  trackUseEvent("worship_song_presented", {
+    source,
     songTitle: songTitle || "",
     overlayMode: overlayMode || "fullscreen",
     hasLyrics: Boolean(hasLyrics),
@@ -439,7 +458,14 @@ export function trackWorshipSongPresented(
 // ── Media Events ───────────────────────────────────────────────────────────
 
 export function trackMediaUploaded(type: string = "unknown"): void {
-  trackEvent("media_uploaded", { type });
+  trackUseEvent("media_uploaded", { type });
+}
+
+/** Notes, countdowns, tickers and lower thirds put on screen. */
+export type OutputShownEvent = "note_shown" | "countdown_shown" | "ticker_shown" | "lower_third_shown";
+
+export function trackOutputShown(event: OutputShownEvent, source: TrackingSource = "dock"): void {
+  trackUseEvent(event, { source });
 }
 
 export function trackMediaPresented(
@@ -448,6 +474,7 @@ export function trackMediaPresented(
     | {
         type?: string;
         mediaName?: string;
+        source?: TrackingSource;
       },
 ): void {
   const isObject = typeof params === "object" && params !== null;
@@ -457,8 +484,10 @@ export function trackMediaPresented(
       ? params
       : "unknown";
   const mediaName = isObject ? params.mediaName : undefined;
+  const source = (isObject && params.source) || "dock";
 
-  trackEvent("media_presented", {
+  trackUseEvent("media_presented", {
+    source,
     type: type || "unknown",
     mediaName: mediaName || "",
   });
@@ -489,11 +518,11 @@ export function trackVoiceSessionStarted(): void {
 }
 
 export function trackVoiceSessionCompleted(durationSeconds: number): void {
-  trackEvent("voice_session_completed", { durationSeconds });
+  trackUseEvent("voice_session_completed", { durationSeconds });
 }
 
 export function trackTranscriptCreated(wordCount: number): void {
-  trackEvent("transcript_created", { wordCount });
+  trackUseEvent("transcript_created", { wordCount });
 }
 
 export function trackTranscriptExported(format: string): void {
@@ -504,7 +533,7 @@ export function trackTranslationGenerated(
   wordCount: number,
   targetLang?: string,
 ): void {
-  trackEvent("translation_generated", { wordCount, targetLang });
+  trackUseEvent("translation_generated", { wordCount, targetLang });
   activateTrial("first_use");
 }
 
@@ -550,6 +579,6 @@ export function trackFirstUseStarted(): void {
 }
 
 export function trackStsPushToLive(): void {
-  trackEvent("sts_push_to_live");
+  trackUseEvent("sts_push_to_live");
   activateTrial("first_use");
 }

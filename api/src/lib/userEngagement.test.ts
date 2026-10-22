@@ -3,7 +3,7 @@ import { scoreUserEngagement, USE_EVENT_NAMES, type EngagementCounts, type UserE
 
 const empty = (): EngagementCounts => ({
   bibleVerses: 0, bibleSearches: 0, songsPresented: 0, songsCreated: 0, mediaPresented: 0, mediaUploaded: 0,
-  graphicsShown: 0, graphicsAdded: 0, liveCaptions: 0, voiceSessions: 0, transcripts: 0, translations: 0,
+  graphicsShown: 0, graphicsAdded: 0, liveCaptions: 0, notesShown: 0, voiceSessions: 0, transcripts: 0, translations: 0,
   obsConnections: 0, appOpens: 0, voiceSeconds: 0, multistreamSessions: 0, multistreamSeconds: 0,
   activeDays: 0, openDays: 0, lastUseAt: null,
 });

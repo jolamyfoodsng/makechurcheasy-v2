@@ -646,6 +646,9 @@ interface BillingTransactionData {
   paidAt: string;
   createdAt: string;
 }
+  /** Value of unused time on the previous plan that was taken off this purchase. */
+  creditApplied?: number;
+  creditUnusedDays?: number;
 
 export async function insertBillingTransaction(
   data: BillingTransactionData

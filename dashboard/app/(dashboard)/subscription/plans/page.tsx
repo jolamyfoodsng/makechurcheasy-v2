@@ -25,6 +25,26 @@ type PublicPlan = "free" | "basic" | "growth" | "pro";
 type PaidPlan = Exclude<PublicPlan, "free">;
 type PaymentMethod = "flutterwave" | "nowpayments";
 
+/** What changing plan / billing cycle costs now, with the unused time of the current plan credited. */
+type PlanChangeQuote = {
+  eligible: boolean;
+  reason?: string;
+  currentPlan?: "basic" | "growth";
+  currentCycle?: BillingCycle;
+  newPlan: "basic" | "growth";
+  newCycle: BillingCycle;
+  currency: string;
+  currencySymbol?: string;
+  daysLeft: number;
+  newPrice: number;
+  creditValue: number;
+  creditApplied: number;
+  amountDue: number;
+  coversAll: boolean;
+  extraDays: number;
+  newExpiresAt: string;
+};
+
 type EligibleSpecialOffer = {
   id: string;
   name: string;
@@ -152,7 +172,7 @@ function getLocalPaymentMethods(countryCode?: string, currency?: string) {
 
 export default function ComparePlansPage() {
   const pricing = useLocalizedPricing();
-  const { plan: currentPlan, isOnTrial, trialDaysLeft } = useSubscription();
+  const { plan: currentPlan, isOnTrial, trialDaysLeft, subscription } = useSubscription();
   const [billing, setBilling] = useState<BillingCycle>("monthly");
   const [promoCode, setPromoCode] = useState("");
   const [upgradingState, setUpgradingState] = useState<{
@@ -166,6 +186,7 @@ export default function ComparePlansPage() {
   const [offers, setOffers] = useState<EligibleSpecialOffer[]>([]);
   const [offersLoading, setOffersLoading] = useState(true);
   const [error, setError] = useState("");
+  const [quotes, setQuotes] = useState<Record<string, PlanChangeQuote | null>>({});
   const [nowPaymentsEnabled, setNowPaymentsEnabled] = useState(false);
   const [nowPaymentsConfigLoaded, setNowPaymentsConfigLoaded] = useState(false);
   const [flutterwaveEnabled, setFlutterwaveEnabled] = useState(false);
@@ -183,6 +204,26 @@ export default function ComparePlansPage() {
 
   const currentPlanKey = normalizePublicPlan(currentPlan);
   const plans: PaidPlan[] = ["basic", "growth", "pro"];
+  const currentCycle: BillingCycle = subscription?.billingCycle === "yearly" ? "yearly" : "monthly";
+  const hasPaidPlan = !isOnTrial && (currentPlanKey === "basic" || currentPlanKey === "growth");
+
+  // With a paid plan, ask what each change costs: the days left on it are credited.
+  useEffect(() => {
+    if (!hasPaidPlan) return;
+    let cancelled = false;
+    for (const plan of ["basic", "growth"] as const) {
+      const key = `${plan}:${billing}`;
+      fetch(`/api/payments/plan-change/quote?plan=${plan}&billingCycle=${billing}`, { credentials: "include", cache: "no-store" })
+        .then(async (res) => (res.ok ? ((await res.json()) as PlanChangeQuote) : null))
+        .catch(() => null)
+        .then((quote) => {
+          if (!cancelled) setQuotes((current) => ({ ...current, [key]: quote }));
+        });
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [hasPaidPlan, billing, currentPlanKey, currentCycle]);
   const isNigerian = pricing.pricing?.country?.toUpperCase() === "NG";
   const localMethods = getLocalPaymentMethods(pricing.pricing?.country, pricing.pricing?.currency);
 
@@ -430,6 +471,33 @@ export default function ComparePlansPage() {
     }
   };
 
+  /** The credit covers the new plan: nothing to pay, the server switches the plan now. */
+  const handleCreditSwitch = async (plan: PaidPlan, quote: PlanChangeQuote) => {
+    const label = PLAN_NAMES[plan];
+    const sure = window.confirm(
+      `Switch to ${label} now? Your unused ${PLAN_NAMES[currentPlanKey]} time covers it, so there is nothing to pay. ` +
+      `${label} features start immediately and any ${PLAN_NAMES[currentPlanKey]}-only features stop.`,
+    );
+    if (!sure) return;
+    setError("");
+    setUpgradingState({ plan, method: "flutterwave" });
+    try {
+      const { res, data } = await initializePayment({
+        paymentMethod: "flutterwave",
+        plan,
+        billingCycle: quote.newCycle,
+      });
+      if (!res.ok || data?.switched !== true) {
+        throw new Error(data?.error || "Could not switch your plan");
+      }
+      trackProductEvent("plan_changed_with_credit", { plan, billingCycle: quote.newCycle, surface: "subscription_plans" });
+      window.location.assign("/subscription?switched=1");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not switch your plan");
+      setUpgradingState(null);
+    }
+  };
+
   const handleOfferCheckout = async (offer: EligibleSpecialOffer, paymentMethod: PaymentMethod) => {
     setError("");
     setOfferCheckout({ offerId: offer.id, method: paymentMethod });
@@ -660,10 +728,15 @@ export default function ComparePlansPage() {
         {plans.map((planKey) => {
           const isCurrent = currentPlanKey === planKey;
           const isPaidCurrent = !isOnTrial && isCurrent;
-          const isBlockedByHigherPlan =
-            !isOnTrial &&
-            ((currentPlanKey === "growth" && planKey === "basic") ||
-             (currentPlanKey === "pro" && (planKey === "basic" || planKey === "growth")));
+          // Same plan on the same billing cycle: nothing to change. Another cycle (monthly/yearly) or
+          // another plan, up or down, is a change with credit for the unused time.
+          const isSamePlanAndCycle = isPaidCurrent && billing === currentCycle;
+          const changeQuote = hasPaidPlan && !isSamePlanAndCycle && (planKey === "basic" || planKey === "growth")
+            ? quotes[`${planKey}:${billing}`]
+            : null;
+          const quoteLoading = hasPaidPlan && !isSamePlanAndCycle && (planKey === "basic" || planKey === "growth") && quotes[`${planKey}:${billing}`] === undefined;
+          const creditQuote = changeQuote?.eligible ? changeQuote : null;
+          const isBlockedByHigherPlan = !isOnTrial && currentPlanKey === "pro" && (planKey === "basic" || planKey === "growth");
           const isGrowth = planKey === "growth";
           const isPro = planKey === "pro";
           const price = pricing.getPlanPrice(planKey, billing);
@@ -801,7 +874,7 @@ export default function ComparePlansPage() {
                   >
                     Contact us about Pro
                   </a>
-                ) : isPaidCurrent ? (
+                ) : isSamePlanAndCycle ? (
                   <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3.5 text-center">
                     <span className="inline-flex items-center gap-1.5 text-sm font-bold text-emerald-800">
                       <CheckCircle2 className="h-4 w-4 text-emerald-600" />
@@ -814,13 +887,46 @@ export default function ComparePlansPage() {
                       Included in Your Active Plan
                     </span>
                   </div>
+                ) : creditQuote?.coversAll ? (
+                  <>
+                    <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3 text-xs leading-5 text-emerald-900">
+                      <p className="font-bold">Nothing to pay</p>
+                      <p>
+                        Your {creditQuote.daysLeft} unused days on {PLAN_NAMES[currentPlanKey]} are worth{" "}
+                        {pricing.formatPrice(creditQuote.creditValue)}, which covers {PLAN_NAMES[planKey]}.
+                        {creditQuote.extraDays > 0 ? ` The rest adds ${creditQuote.extraDays} extra days.` : ""}{" "}
+                        {PLAN_NAMES[planKey]} runs until {new Date(creditQuote.newExpiresAt).toLocaleDateString()}.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={isAnyUpgrading}
+                      onClick={() => void handleCreditSwitch(planKey, creditQuote)}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#0238E9] px-4 py-3 text-sm font-bold text-white shadow-xs transition-all hover:bg-[#012CAE] disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {upgradingState?.plan === planKey ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                      <span>{upgradingState?.plan === planKey ? "Switching..." : `Switch to ${PLAN_NAMES[planKey]} now`}</span>
+                    </button>
+                  </>
                 ) : (
                   <>
+                    {creditQuote && (
+                      <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-3 text-xs leading-5 text-blue-950">
+                        <p className="font-bold">Pay {pricing.formatPrice(creditQuote.amountDue)} today</p>
+                        <p>
+                          {pricing.formatPrice(creditQuote.newPrice)} minus {pricing.formatPrice(creditQuote.creditValue)} credit
+                          for your {creditQuote.daysLeft} unused days on {PLAN_NAMES[currentPlanKey]}.
+                        </p>
+                      </div>
+                    )}
+                    {quoteLoading && (
+                      <p className="text-center text-[11px] font-medium text-slate-400">Working out your credit…</p>
+                    )}
                     {/* Primary Button: Pay with Cash / Card */}
                     <div>
                       <button
                         type="button"
-                        disabled={isAnyUpgrading || !flutterwaveReady}
+                        disabled={isAnyUpgrading || !flutterwaveReady || quoteLoading}
                         onClick={() => handleUpgrade(planKey, "flutterwave")}
                         className="w-full flex items-center justify-center gap-2 rounded-xl py-3 px-4 text-sm font-bold text-white shadow-xs transition-all bg-[#0238E9] hover:bg-[#012CAE] active:bg-[#012596] active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                       >
@@ -832,7 +938,7 @@ export default function ComparePlansPage() {
                         ) : (
                           <>
                             <CreditCard className="h-4 w-4 shrink-0" />
-                            <span>Pay with Cash / Card</span>
+                            <span>{creditQuote ? `Pay ${pricing.formatPrice(creditQuote.amountDue)} with Cash / Card` : "Pay with Cash / Card"}</span>
                           </>
                         )}
                       </button>
@@ -841,11 +947,12 @@ export default function ComparePlansPage() {
                       </p>
                     </div>
 
-                    {/* Secondary Button: Pay with Crypto */}
+                    {/* Secondary Button: Pay with Crypto (not for plan changes with credit) */}
+                    {!creditQuote && (
                     <div>
                       <button
                         type="button"
-                        disabled={isAnyUpgrading || !nowPaymentsReady}
+                        disabled={isAnyUpgrading || !nowPaymentsReady || quoteLoading}
                         onClick={() => handleUpgrade(planKey, "nowpayments")}
                         className="w-full flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-2.5 px-4 text-sm font-semibold text-slate-700 shadow-2xs transition-all hover:bg-slate-50 hover:border-slate-300 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                       >
@@ -865,6 +972,7 @@ export default function ComparePlansPage() {
                         BTC, ETH, USDT & more · NOWPayments
                       </p>
                     </div>
+                    )}
 
                     <div className="pt-1 flex items-center justify-center gap-1.5 text-[11px] text-slate-400">
                       <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />

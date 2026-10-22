@@ -105,6 +105,9 @@ export async function completeMtnMomoPayment(input: CompleteMtnMomoPaymentInput)
   const price = Number(metadata.price || input.amount);
   const pricingVersion = Number(metadata.pricingVersion || 1);
   const appliedDiscount = discountFromPaymentMetadata(metadata);
+  // Unused time on the previous plan that was taken off this purchase (plan change / monthly-yearly switch).
+  const creditApplied = Math.max(0, Number(metadata.creditApplied) || 0);
+  const creditUnusedDays = Math.max(0, Math.floor(Number(metadata.creditUnusedDays) || 0));
   const oneTimeOfferId = String(metadata.offerId || "").trim() || null;
   const oneTimeOfferName = String(metadata.offerName || "").trim() || null;
   const offerOriginalPrice = Number(metadata.offerOriginalPrice ?? metadata.originalPrice ?? 0) || null;
@@ -168,7 +171,7 @@ export async function completeMtnMomoPayment(input: CompleteMtnMomoPaymentInput)
     plan,
     planName: PLAN_NAMES[plan] || plan,
     amount: input.amount,
-    subtotal: appliedDiscount?.originalAmount || offerOriginalPrice || input.amount,
+    subtotal: appliedDiscount?.originalAmount || offerOriginalPrice || (creditApplied > 0 ? input.amount + creditApplied : input.amount),
     discount: appliedDiscount?.discountAmount || offerDiscountAmount || 0,
     discountCode: appliedDiscount?.code || null,
     discountPercent: appliedDiscount?.percentOff || offerDiscountPercent || null,
@@ -187,11 +190,13 @@ export async function completeMtnMomoPayment(input: CompleteMtnMomoPaymentInput)
     offerAppliedPrice,
     expiresAt,
     trialDaysCarried,
+    ...(creditApplied > 0 ? { creditApplied, creditUnusedDays } : {}),
     paidAt: now.toISOString(),
     createdAt: now.toISOString(),
   });
 
-  await markReferralPaidForUser(input.userId, {
+  // A plan switch paid entirely by credit is not a payment: it must not count towards a referral reward.
+  if (input.amount > 0) await markReferralPaidForUser(input.userId, {
     plan,
     amount: input.amount,
     currency,
@@ -222,14 +227,14 @@ export async function completeMtnMomoPayment(input: CompleteMtnMomoPaymentInput)
   try {
     const result = await db.collection("users").updateOne(
       { _id: new ObjectId(input.userId) },
-      { $set: userUpdate },
+      { $set: userUpdate, $unset: { scheduledDowngradeAt: "" } },
     );
     userUpdated = result.modifiedCount > 0;
   } catch {
     // Fall back to the email lookup below.
   }
   if (!userUpdated && input.email) {
-    await db.collection("users").updateOne({ email: input.email }, { $set: userUpdate });
+    await db.collection("users").updateOne({ email: input.email }, { $set: userUpdate, $unset: { scheduledDowngradeAt: "" } });
   }
 
   await stopActiveTrialForPaidPlan(input.userId, completionSource);
@@ -350,18 +355,21 @@ export async function completeMtnMomoPayment(input: CompleteMtnMomoPaymentInput)
         billingCycle,
         credits: planCredits,
         expiresAt,
-        amountPaid: `${currency} ${price}`,
+        amountPaid: `${currency} ${creditApplied > 0 ? input.amount : price}`,
       })),
-      sendEmail(paymentReceiptEmail({
-        userName,
-        userEmail: input.email,
-        planName: PLAN_NAMES[plan] || plan,
-        amount: `${currency} ${price}`,
-        billingCycle,
-        paidAt: now.toISOString(),
-        receiptNumber: input.providerReference,
-        invoiceUrl,
-      })),
+      // No receipt when nothing was charged (a switch paid entirely by credit).
+      input.amount > 0
+        ? sendEmail(paymentReceiptEmail({
+          userName,
+          userEmail: input.email,
+          planName: PLAN_NAMES[plan] || plan,
+          amount: `${currency} ${creditApplied > 0 ? input.amount : price}`,
+          billingCycle,
+          paidAt: now.toISOString(),
+          receiptNumber: input.providerReference,
+          invoiceUrl,
+        }))
+        : Promise.resolve(),
     ]);
     for (const [index, result] of emailResults.entries()) {
       if (result.status === "rejected") {

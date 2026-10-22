@@ -23,6 +23,8 @@ import { DiscountCodeError, resolveDiscountCode } from "@/lib/discounts";
 import { resolveSpecialOfferById, type ResolvedSpecialOffer } from "@/lib/specialOffers";
 import { getActiveTrialDaysRemaining } from "@/lib/trialRecords";
 import { hasSuccessfulPaidSubscription } from "@/lib/subscriptionPricingEligibility";
+import { loadPlanChangeContext, quotePlanChange, type PlanChangeQuote } from "@/lib/planChangeCredit";
+import { completeMtnMomoPayment } from "@/lib/completeMtnMomoPayment";
 import {
   createMtnMomoRequest,
   getMtnMomoPublicConfig,
@@ -263,6 +265,76 @@ export async function POST(req: NextRequest) {
       numericAmount = appliedDiscount.finalAmount;
     }
 
+    // ── Credit for the unused time of the current plan ─────────────────────
+    // Changing plan (including Growth to Basic) or switching monthly/yearly takes the value of the days
+    // left off the new price. When the credit covers the whole price nothing is charged: the plan is
+    // switched now and the leftover becomes extra days.
+    let planChange: PlanChangeQuote | null = null;
+    const fullPrice = numericAmount;
+    if (
+      !appliedOffer &&
+      purchaseKind === "subscription" &&
+      (billingCycle === "monthly" || billingCycle === "yearly") &&
+      (purchasePlan === "basic" || purchasePlan === "growth")
+    ) {
+      const changeContext = await loadPlanChangeContext(userId, authUser.mongoUser);
+      const quote = quotePlanChange({
+        context: changeContext,
+        newPlan: purchasePlan,
+        newCycle: billingCycle,
+        newPrice: numericAmount,
+        currency: paymentCurrency,
+      });
+      if (quote.eligible) planChange = quote;
+    }
+    if (planChange?.coversAll) {
+      const switchedAt = new Date();
+      const result = await completeMtnMomoPayment({
+        providerReference: `mce_credit_${switchedAt.getTime()}_${crypto.randomBytes(6).toString("hex")}`,
+        userId,
+        email,
+        amount: 0,
+        currency: paymentCurrency,
+        metadata: {
+          userId,
+          plan: purchasePlan,
+          billingCycle,
+          // The leftover credit, as extra days of the new plan.
+          trialDaysCarried: planChange.extraDays,
+          country: userCountry,
+          currency: paymentCurrency,
+          currencySymbol: paymentCurrencySymbol,
+          price: fullPrice,
+          originalPrice: originalAmount,
+          pricingVersion: await getPricingVersion(),
+          purchaseKind,
+          creditApplied: planChange.creditApplied,
+          creditUnusedDays: planChange.daysLeft,
+        },
+        paymentProvider: "plan_credit",
+        paymentMethod: "Credit for unused time",
+        completionSource: "user:plan-change",
+      });
+      return NextResponse.json({
+        switched: true,
+        plan: purchasePlan,
+        billingCycle,
+        expiresAt: result.expiresAt,
+        extraDays: planChange.extraDays,
+        creditApplied: planChange.creditApplied,
+        currency: paymentCurrency,
+      });
+    }
+    if (planChange) {
+      if (paymentMethod === "nowpayments") {
+        return NextResponse.json(
+          { error: "Changing plan with your unused-time credit is not available with crypto yet. Please choose Cash / Card." },
+          { status: 400 },
+        );
+      }
+      numericAmount = planChange.amountDue;
+    }
+
     // NOWPayments invoices are always priced in USD. Convert the exact local
     // amount selected above so the card price and the crypto invoice match.
     if (paymentMethod === "nowpayments") {
@@ -352,8 +424,11 @@ export async function POST(req: NextRequest) {
       country: userCountry,
       currency: paymentCurrency,
       currencySymbol: paymentCurrencySymbol,
-      price: numericAmount,
+      // The plan's price; what is charged can be less when unused time is credited.
+      price: planChange ? fullPrice : numericAmount,
       originalPrice: originalAmount,
+      creditApplied: planChange?.creditApplied || undefined,
+      creditUnusedDays: planChange?.daysLeft || undefined,
       pricingVersion,
       purchaseKind,
       earlyAccess: billingCycle === "lifetime",

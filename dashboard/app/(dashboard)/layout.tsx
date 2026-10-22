@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { Loader2, ShieldAlert } from "lucide-react";
 import { Sidebar } from "@/components/Sidebar";
@@ -20,6 +20,8 @@ import { ActivationSurveyModal } from "@/components/ActivationSurveyModal";
 import { AmbassadorWelcomeModal } from "@/components/AmbassadorWelcomeModal";
 import { useAuth } from "@/contexts/AuthContext";
 
+const SIDEBAR_COLLAPSED_KEY = "mce-dashboard-sidebar-collapsed";
+
 export default function DashboardLayout({
   children,
 }: {
@@ -29,6 +31,28 @@ export default function DashboardLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  // Desktop only: hide the sidebar to give pages the full width. Remembered per browser.
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  useEffect(() => {
+    try {
+      setIsSidebarCollapsed(localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "true");
+    } catch {
+      // Storage blocked: start expanded.
+    }
+  }, []);
+
+  const toggleSidebarCollapsed = () => {
+    setIsSidebarCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(next));
+      } catch {
+        // Storage blocked: the choice lasts for this visit only.
+      }
+      return next;
+    });
+  };
 
   const isAdminRoute = pathname.startsWith("/admin");
   const isActualAdmin = mongoUser?.role === "admin";
@@ -90,12 +114,16 @@ export default function DashboardLayout({
   return (
     <div className={`mce-dashboard-shell min-h-screen flex font-sans ${isAdmin ? "mce-admin-mode bg-slate-900 text-slate-50" : "mce-user-mode bg-slate-50 text-slate-900"}`}>
       {isAdmin ? (
-        <AdminSidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
+        <AdminSidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} collapsed={isSidebarCollapsed} />
       ) : (
-        <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
+        <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} collapsed={isSidebarCollapsed} />
       )}
-      <div className={`flex-1 ${isAdmin ? "md:ml-[260px]" : "md:ml-[280px]"} flex flex-col min-w-0`}>
-        <Topbar onMenuClick={() => setIsSidebarOpen(true)} />
+      <div className={`flex-1 ${isSidebarCollapsed ? "md:ml-0" : isAdmin ? "md:ml-[260px]" : "md:ml-[280px]"} flex flex-col min-w-0 transition-[margin] duration-300`}>
+        <Topbar
+          onMenuClick={() => setIsSidebarOpen(true)}
+          sidebarCollapsed={isSidebarCollapsed}
+          onToggleSidebar={toggleSidebarCollapsed}
+        />
         {!isAdmin && <AppUpdateNotice />}
         {!isAdmin && <TrialBanner />}
         <main className="mce-dashboard-main flex-1 overflow-x-hidden overflow-y-auto w-full">

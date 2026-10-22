@@ -80,7 +80,7 @@ const growthSystemItems: NavItem[] = [
   { path: "/admin/settings", labelKey: "admin.sidebar.settings", icon: Settings },
 ];
 
-export function AdminSidebar({ isOpen, setIsOpen }: { isOpen?: boolean; setIsOpen?: (v: boolean) => void }) {
+export function AdminSidebar({ isOpen, setIsOpen, collapsed }: { isOpen?: boolean; setIsOpen?: (v: boolean) => void; collapsed?: boolean }) {
   const t = useTranslations();
   const pathname = usePathname();
 
@@ -130,8 +130,9 @@ export function AdminSidebar({ isOpen, setIsOpen }: { isOpen?: boolean; setIsOpe
 
       <aside
         className={cn(
-          "mce-admin-sidebar fixed left-0 top-0 h-full w-[260px] flex flex-col border-r border-slate-800/80 bg-[#0B101E] z-50 select-none transition-transform duration-300 md:translate-x-0",
-          isOpen ? "translate-x-0" : "-translate-x-full"
+          "mce-admin-sidebar fixed left-0 top-0 h-full w-[260px] flex flex-col border-r border-slate-800/80 bg-[#0B101E] z-50 select-none transition-transform duration-300",
+          isOpen ? "translate-x-0" : "-translate-x-full",
+          collapsed ? "md:-translate-x-full" : "md:translate-x-0"
         )}
       >
         {/* Top Branding */}

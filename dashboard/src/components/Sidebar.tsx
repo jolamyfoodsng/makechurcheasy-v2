@@ -36,7 +36,7 @@ function isGroupActive(pathname: string, routes: string[]): boolean {
   return routes.some((r) => pathname === r || pathname.startsWith(r + "/"));
 }
 
-export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean; setIsOpen?: (v: boolean) => void }) {
+export function Sidebar({ isOpen, setIsOpen, collapsed }: { isOpen?: boolean; setIsOpen?: (v: boolean) => void; collapsed?: boolean }) {
   const t = useTranslations();
   const pathname = usePathname();
   const {
@@ -95,8 +95,9 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean; setIsOpen?: (
 
       <aside
         className={cn(
-          "fixed left-0 top-0 h-full w-[280px] bg-white border-r border-slate-200 flex flex-col z-50 transition-transform duration-300 md:translate-x-0",
+          "fixed left-0 top-0 h-full w-[280px] bg-white border-r border-slate-200 flex flex-col z-50 transition-transform duration-300",
           isOpen ? "translate-x-0" : "-translate-x-full",
+          collapsed ? "md:-translate-x-full" : "md:translate-x-0",
         )}
       >
         {/* Logo */}

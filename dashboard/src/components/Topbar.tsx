@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { ChevronDown, Menu, User, Settings, Shield, LogOut, Sparkles } from "lucide-react";
+import { ChevronDown, Menu, PanelLeftClose, PanelLeftOpen, User, Settings, Shield, LogOut, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -11,7 +11,15 @@ import { UserNotificationsBell } from "./UserNotificationsBell";
 import { getSubscriptionState } from "../lib/trialState";
 import { getAmbassadorInfo } from "@/lib/ambassadorUtils";
 
-export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
+export function Topbar({
+  onMenuClick,
+  sidebarCollapsed,
+  onToggleSidebar,
+}: {
+  onMenuClick?: () => void;
+  sidebarCollapsed?: boolean;
+  onToggleSidebar?: () => void;
+}) {
   const t = useTranslations();
   const pathname = usePathname();
   const router = useRouter();
@@ -81,6 +89,17 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
         >
           <Menu className="w-5 h-5" />
         </button>
+        {onToggleSidebar && (
+          <button
+            type="button"
+            onClick={onToggleSidebar}
+            aria-label={sidebarCollapsed ? "Show sidebar" : "Hide sidebar"}
+            title={sidebarCollapsed ? "Show sidebar" : "Hide sidebar"}
+            className={`hidden md:inline-flex p-1.5 rounded-[3px] transition-colors ${isAdmin ? "text-slate-400 hover:text-slate-100 hover:bg-gray-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`}
+          >
+            {sidebarCollapsed ? <PanelLeftOpen className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5" />}
+          </button>
+        )}
         <h1 className={`text-base font-bold hidden md:block ${isAdmin ? "text-slate-50" : "text-slate-900"}`}>{getPageTitle()}</h1>
       </div>
 

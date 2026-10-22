@@ -1,25 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  CreditCard,
-  History,
-  Zap,
-  Wallet,
-  RefreshCw,
-  FileAudio,
-  Loader2,
-  TrendingUp,
-  Languages,
-  Mic,
-  Brain,
   AlertCircle,
-  Sparkles,
-  Clock,
+  ArrowRight,
+  BarChart3,
+  Brain,
+  Calendar,
   CheckCircle2,
+  Clock,
+  CreditCard,
+  FileAudio,
+  Info,
+  Languages,
+  Loader2,
+  Lock,
+  Mic,
+  RefreshCw,
+  Settings,
+  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
 import {
   getCreditTransactions,
   getCreditUsageByDay,
@@ -35,27 +36,20 @@ import {
 import { useSubscription } from "@/lib/useSubscription";
 import { getUserId } from "@/lib/userId";
 import { getAmbassadorInfo } from "@/lib/ambassadorUtils";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
-import { Card, Badge, Button, EmptyState, CardSkeleton, TableSkeleton } from "@/components/ui";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { CardSkeleton, TableSkeleton } from "@/components/ui";
 
 function formatDate(iso: string) {
   try {
-    return new Date(iso).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
+    return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   } catch {
     return iso;
   }
+}
+
+function formatShortDate(value: string) {
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? value : d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 function formatCurrency(amount: number, currency: string): string {
@@ -67,31 +61,30 @@ function formatCurrency(amount: number, currency: string): string {
       maximumFractionDigits: 2,
     }).format(amount);
   } catch {
-    if (currency === "NGN") return `₦${amount.toLocaleString()}`;
-    return `$${amount.toLocaleString()}`;
+    return `${currency} ${amount.toLocaleString()}`;
   }
 }
 
-function formatDuration(seconds: number): string {
-  if (seconds <= 0) return "0 min";
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  if (hours > 0 && minutes > 0) return `${hours}h ${minutes}m`;
-  if (hours > 0) return `${hours}h`;
-  return `${minutes}m`;
+const formatNumber = (value: number) => value.toLocaleString("en-US", { maximumFractionDigits: 2 });
+
+function activityLabel(txn: CreditTransaction): string {
+  if (txn.source === "transcription") return "Live transcription";
+  if (txn.source === "translation") return "Live translation";
+  return txn.description?.slice(0, 60) || "Credit activity";
 }
 
+const RANGES = [
+  { days: 7, label: "Last 7 days" },
+  { days: 30, label: "Last 30 days" },
+] as const;
+
 export default function Credits() {
-  const t = useTranslations();
   const {
     planLabel,
-    planTier,
-    planConfig,
     subscription,
     mongoUser,
     maxCredits,
     isUnlimited: subIsUnlimited,
-    isOnTrial,
     loading: subLoading,
   } = useSubscription();
 
@@ -99,39 +92,27 @@ export default function Credits() {
 
   const [recentTransactions, setRecentTransactions] = useState<CreditTransaction[]>([]);
   const [chartData, setChartData] = useState<{ date: string; usage: number }[]>([]);
+  const [rangeDays, setRangeDays] = useState<number>(7);
   const [transcriptionBalance, setTranscriptionBalance] = useState<TranscriptionBalanceSummary | null>(null);
   const [topupPricing, setTopupPricing] = useState<TopupPricingResult | null>(null);
+  const [selectedPackId, setSelectedPackId] = useState<string | null>(null);
   const [purchaseError, setPurchaseError] = useState("");
   const [purchasingPackId, setPurchasingPackId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [topupSuccessMessage, setTopupSuccessMessage] = useState("");
   const [isVerifyingTopup, setIsVerifyingTopup] = useState(false);
 
+  // Top-ups are charged in the subscription's currency, so that is the currency shown.
   const currency = subscription?.currency || "NGN";
   const isUnlimited = subIsUnlimited || Boolean(transcriptionBalance?.unlimited);
 
-  // Fallback calculations if transcription balance summary is not yet loaded
   const fallbackCredits = mongoUser?.credits ?? 0;
-  const totalAvailableCredits = transcriptionBalance
-    ? transcriptionBalance.totalAvailableCredits
-    : (mongoUser?.totalAvailable ?? maxCredits);
-
-  const totalAvailableHours = transcriptionBalance
-    ? transcriptionBalance.totalAvailableHours
-    : Math.round((fallbackCredits / 60) * 10) / 10;
-
-  const includedHours = transcriptionBalance
-    ? transcriptionBalance.includedHours
-    : Math.round((Math.min(fallbackCredits, maxCredits) / 60) * 10) / 10;
-
-  const includedCredits = transcriptionBalance
-    ? transcriptionBalance.includedCredits
-    : Math.min(fallbackCredits, maxCredits);
-
+  const totalAvailableCredits = transcriptionBalance ? transcriptionBalance.totalAvailableCredits : (mongoUser?.totalAvailable ?? maxCredits);
+  const totalAvailableHours = transcriptionBalance ? transcriptionBalance.totalAvailableHours : Math.round((fallbackCredits / 60) * 100) / 100;
+  const includedHours = transcriptionBalance ? transcriptionBalance.includedHours : Math.round((Math.min(fallbackCredits, maxCredits) / 60) * 100) / 100;
   const purchasedHours = transcriptionBalance ? transcriptionBalance.purchasedHours : 0;
-  const purchasedCredits = transcriptionBalance ? transcriptionBalance.purchasedCredits : 0;
 
-  // Initial data loading + handle return from Flutterwave verification
+  // Initial data + return from the payment page
   useEffect(() => {
     const userId = getUserId();
     if (!userId) {
@@ -139,7 +120,6 @@ export default function Credits() {
       return;
     }
 
-    // Check if returning from a payment gateway redirect
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const isTopupSuccess = params.get("topup") === "success";
@@ -152,620 +132,342 @@ export default function Credits() {
             if (res.success) {
               setTopupSuccessMessage(
                 res.alreadyProcessed
-                  ? "Your top-up was previously confirmed and added to your balance."
-                  : "Top-up verified successfully! Your hours have been credited."
+                  ? "Your top-up was already confirmed and added to your balance."
+                  : "Top-up confirmed. Your hours have been added.",
               );
-              if (res.balance) {
-                setTranscriptionBalance(res.balance);
-              }
+              if (res.balance) setTranscriptionBalance(res.balance);
             } else {
-              setPurchaseError("Payment verification could not be completed. Please contact support if you were debited.");
+              setPurchaseError("We couldn't confirm the payment. Contact support if you were charged.");
             }
           })
-          .catch((err) => {
-            setPurchaseError(err instanceof Error ? err.message : "Failed to verify top-up");
-          })
+          .catch((err) => setPurchaseError(err instanceof Error ? err.message : "Failed to verify top-up"))
           .finally(() => {
             setIsVerifyingTopup(false);
-            const cleanUrl = window.location.pathname;
-            window.history.replaceState({}, document.title, cleanUrl);
+            window.history.replaceState({}, document.title, window.location.pathname);
           });
       }
     }
 
     Promise.all([
       getCreditTransactions(userId, { limit: 5 }),
-      getCreditUsageByDay(userId, 7),
       getTranscriptionBalance().catch(() => null),
       getTranscriptionPackages(currency).catch(() => null),
     ])
-      .then(([txns, usage, balanceData, packagesData]) => {
+      .then(([txns, balanceData, packagesData]) => {
         setRecentTransactions(txns.transactions || []);
-        setChartData(usage.usage.map((d) => ({ date: d.date, usage: d.amount })));
-        if (balanceData) {
-          setTranscriptionBalance(balanceData);
-        }
-        if (packagesData) {
-          setTopupPricing(packagesData);
-        }
+        if (balanceData) setTranscriptionBalance(balanceData);
+        if (packagesData) setTopupPricing(packagesData);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [currency]);
 
+  // Usage chart: refetched when the range changes.
+  useEffect(() => {
+    const userId = getUserId();
+    if (!userId) return;
+    let cancelled = false;
+    getCreditUsageByDay(userId, rangeDays)
+      .then((usage) => {
+        if (!cancelled) setChartData(usage.usage.map((d) => ({ date: formatShortDate(d.date), usage: d.amount })));
+      })
+      .catch(() => { if (!cancelled) setChartData([]); });
+    return () => { cancelled = true; };
+  }, [rangeDays]);
+
+  const packages: TopupPackage[] = useMemo(() => topupPricing?.packages ?? [], [topupPricing]);
+  const selectedPack = packages.find((pack) => pack.id === selectedPackId)
+    ?? packages.find((pack) => pack.badge === "Popular")
+    ?? packages[0];
+
   const handleBuyCredits = async (pack: TopupPackage) => {
     setPurchaseError("");
     setPurchasingPackId(pack.id);
     try {
-      const returnUrl =
-        typeof window !== "undefined"
-          ? `${window.location.origin}/credits?topup=success`
-          : undefined;
-
+      const returnUrl = typeof window !== "undefined" ? `${window.location.origin}/credits?topup=success` : undefined;
       const data = await createTranscriptionTopup(pack.id, returnUrl);
-      if (!data.authorization_url) {
-        throw new Error("Could not initialize payment gateway");
-      }
+      if (!data.authorization_url) throw new Error("Could not start checkout");
       try {
-        localStorage.setItem(
-          "mce_pending_payment",
-          JSON.stringify({
-            type: "transcription_topup",
-            reference: data.reference,
-            packId: pack.id,
-          }),
-        );
+        localStorage.setItem("mce_pending_payment", JSON.stringify({ type: "transcription_topup", reference: data.reference, packId: pack.id }));
       } catch {
         /* best effort */
       }
       window.location.href = data.authorization_url;
     } catch (error) {
-      setPurchaseError(
-        error instanceof Error ? error.message : "Could not start checkout",
-      );
+      setPurchaseError(error instanceof Error ? error.message : "Could not start checkout");
       setPurchasingPackId(null);
     }
   };
 
   if (subLoading || loading) {
     return (
-      <div className="p-6 md:p-8 max-w-6xl mx-auto w-full space-y-6 pb-16">
+      <div className="mx-auto w-full max-w-6xl space-y-6 p-6 pb-16 md:p-8">
         <CardSkeleton />
         <CardSkeleton />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <CardSkeleton />
-          <CardSkeleton />
-        </div>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2"><CardSkeleton /><CardSkeleton /></div>
         <TableSkeleton rows={3} />
       </div>
     );
   }
 
-  // Fallback packages if pricing endpoint hasn't finished loading yet
-  const displayPackages: TopupPackage[] = topupPricing?.packages || [
-    {
-      id: "topup-1h",
-      hours: 1,
-      credits: 60,
-      seconds: 3600,
-      price: currency === "NGN" ? 100 : 0.07,
-      currency,
-      pricePerHour: currency === "NGN" ? 100 : 0.07,
-      pricePerCredit: currency === "NGN" ? 1.67 : 0.001,
-      badge: undefined,
-      description: "Quick top-up for a single service or practice run.",
-    },
-    {
-      id: "topup-5h",
-      hours: 5,
-      credits: 300,
-      seconds: 18000,
-      price: currency === "NGN" ? 500 : 0.35,
-      currency,
-      pricePerHour: currency === "NGN" ? 100 : 0.07,
-      pricePerCredit: currency === "NGN" ? 1.67 : 0.001,
-      badge: undefined,
-      description: "Ideal for a full weekend of Sunday services.",
-    },
-    {
-      id: "topup-10h",
-      hours: 10,
-      credits: 600,
-      seconds: 36000,
-      price: currency === "NGN" ? 950 : 0.70,
-      currency,
-      pricePerHour: currency === "NGN" ? 95 : 0.07,
-      pricePerCredit: currency === "NGN" ? 1.58 : 0.001,
-      badge: "Popular",
-      description: "Best for active ministries running multiple weekly meetings.",
-    },
-    {
-      id: "topup-20h",
-      hours: 20,
-      credits: 1200,
-      seconds: 72000,
-      price: currency === "NGN" ? 1900 : 1.40,
-      currency,
-      pricePerHour: currency === "NGN" ? 95 : 0.07,
-      pricePerCredit: currency === "NGN" ? 1.58 : 0.001,
-      badge: undefined,
-      description: "Extended coverage for monthly conferences and youth camps.",
-    },
-    {
-      id: "topup-50h",
-      hours: 50,
-      credits: 3000,
-      seconds: 180000,
-      price: currency === "NGN" ? 4750 : 3.50,
-      currency,
-      pricePerHour: currency === "NGN" ? 95 : 0.07,
-      pricePerCredit: currency === "NGN" ? 1.58 : 0.001,
-      badge: "Best Value",
-      description: "Maximum savings for large productions and multi-campus events.",
-    },
-  ];
-
   return (
-    <div className="p-6 md:p-8 max-w-6xl mx-auto w-full space-y-8 pb-16">
+    <div className="mx-auto w-full max-w-6xl space-y-5 p-6 pb-16 md:p-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 mb-1">Credits & Transcription</h1>
-          <p className="text-sm text-slate-500">
-            Monitor your transcription balance, plan allowances, and top up hours with zero expiration.
-          </p>
+          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">Credits &amp; transcription</h1>
+          <p className="mt-1 text-sm text-slate-500">Track your balance, understand usage, and top up when you need to.</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Link href="/credits/history">
-            <Button variant="secondary" size="sm" icon={<History className="w-4 h-4" />}>
-              View History
-            </Button>
-          </Link>
-          <Link href="/subscription">
-            <Button variant="secondary" size="sm" icon={<CreditCard className="w-4 h-4" />}>
-              Plan
-            </Button>
-          </Link>
-        </div>
+        <Link
+          href="/subscription"
+          className="inline-flex items-center gap-2 self-start rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+        >
+          <CreditCard className="h-4 w-4" /> View plan
+        </Link>
       </div>
 
-      {/* Verification status notifications */}
       {topupSuccessMessage && (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 shadow-sm animate-fade-in">
-          <div className="flex items-center gap-2.5">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-            <span>{topupSuccessMessage}</span>
-          </div>
-          <button
-            onClick={() => setTopupSuccessMessage("")}
-            className="text-xs text-emerald-700 hover:text-emerald-900 font-bold ml-4"
-          >
-            Dismiss
-          </button>
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
+          <span className="flex items-center gap-2.5"><CheckCircle2 className="h-5 w-5 text-emerald-600" />{topupSuccessMessage}</span>
+          <button onClick={() => setTopupSuccessMessage("")} className="text-xs font-bold text-emerald-700 hover:text-emerald-900">Dismiss</button>
         </div>
       )}
-
       {isVerifyingTopup && (
-        <div className="flex items-center gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-800 animate-pulse">
-          <Loader2 className="w-4 h-4 text-blue-600 animate-spin shrink-0" />
-          <span>Verifying your top-up payment...</span>
+        <div className="flex items-center gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-800">
+          <Loader2 className="h-4 w-4 animate-spin text-blue-600" /> Confirming your top-up payment...
         </div>
       )}
 
-      {/* Credit Balance Card with Two Separate Balances */}
-      <Card padding="lg">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center shrink-0">
-              <Zap className="w-6 h-6 text-amber-600" />
+      {/* Balance */}
+      <section className="rounded-xl border border-slate-200 border-l-4 border-l-[#0238E9] bg-white shadow-2xs">
+        <div className="grid grid-cols-1 divide-y divide-slate-100 md:grid-cols-[1.3fr_1fr_1fr] md:divide-x md:divide-y-0">
+          <div className="p-6">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Available balance</p>
+              <span className="rounded-md bg-blue-50 px-2 py-0.5 text-xs font-semibold text-[#0238E9]">
+                {ambassadorInfo.isAmbassador ? "Ambassador grant" : `${planLabel} plan`}
+              </span>
             </div>
-            <div>
-              <div className="flex flex-wrap items-center gap-2 mb-1">
-                <h2 className="text-xl font-bold text-slate-900">
-                  AI & Transcription Balance
-                </h2>
-                {ambassadorInfo.isAmbassador && (
-                  <Badge variant="purple" size="sm">
-                    <Sparkles className="w-3 h-3 mr-0.5 text-purple-600 inline" />
-                    Ambassador Grant
-                  </Badge>
-                )}
-                <Badge variant="default" size="sm">
-                  {ambassadorInfo.isAmbassador ? "Growth Tier" : `${planLabel} Plan`}
-                </Badge>
-              </div>
-
-              {/* Total Balance Headline */}
-              <div className="flex items-baseline gap-2 mb-1">
-                <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
-                  {isUnlimited ? "∞" : `${totalAvailableHours.toLocaleString()} hrs`}
-                </span>
-                {!isUnlimited && (
-                  <span className="text-sm font-semibold text-slate-500">
-                    ({totalAvailableCredits.toLocaleString()} credits)
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-slate-500 mb-4">
-                {isUnlimited
-                  ? "Unlimited live transcription and AI credits on your current plan"
-                  : "1 credit = 1 minute of live transcription • Billed down to exact seconds"}
-              </p>
-
-              {/* Separate Balances Cards */}
-              {!isUnlimited && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl">
-                  {/* Included Plan Balance */}
-                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
-                    <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
-                      <span className="font-semibold text-slate-700">Included Plan Allowance</span>
-                      <span className="text-[11px] font-medium text-slate-400">Resets monthly</span>
-                    </div>
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="text-lg font-bold text-slate-900">{includedHours} hrs</span>
-                      <span className="text-xs text-slate-500 font-medium">({includedCredits} credits)</span>
-                    </div>
-                    <p className="text-[11px] text-slate-500 mt-1">
-                      Consumed first during live transcription.
-                    </p>
-                  </div>
-
-                  {/* Purchased Top-Up Balance */}
-                  <div className="p-3.5 rounded-xl bg-amber-50/60 border border-amber-200/80">
-                    <div className="flex items-center justify-between text-xs text-amber-900 mb-1">
-                      <span className="font-bold text-amber-800">Purchased Top-Up</span>
-                      <span className="text-[11px] font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">
-                        Never expires
-                      </span>
-                    </div>
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="text-lg font-bold text-amber-950">{purchasedHours} hrs</span>
-                      <span className="text-xs text-amber-800 font-medium">({purchasedCredits} credits)</span>
-                    </div>
-                    <p className="text-[11px] text-amber-800 mt-1">
-                      Rolls over indefinitely; used when plan hours deplete.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Ambassador Note */}
-              {ambassadorInfo.isAmbassador && (
-                <div className="mt-4 p-3 rounded-xl bg-purple-50/70 border border-purple-100 flex items-start gap-2.5 max-w-xl">
-                  <Sparkles className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
-                  <div className="text-xs text-purple-900 leading-relaxed">
-                    <span className="font-bold">Ambassador Partnership Allocation:</span>{" "}
-                    You have a {ambassadorInfo.tenureLabel} grant with full Growth Tier privileges ({ambassadorInfo.remainingLabel} · expires {ambassadorInfo.formattedExpiry}).
-                    {ambassadorInfo.creditsGranted > 0 && (
-                      <span> Granted with {ambassadorInfo.creditsGranted.toLocaleString()} AI credits.</span>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
+            {isUnlimited ? (
+              <p className="mt-2 text-5xl font-extrabold tracking-tight text-slate-900">Unlimited</p>
+            ) : (
+              <>
+                <p className="mt-2 text-slate-900">
+                  <span className="text-5xl font-extrabold tracking-tight">{formatNumber(totalAvailableHours)}</span>{" "}
+                  <span className="text-3xl text-slate-500">hours</span>
+                </p>
+                <p className="mt-1 text-lg font-semibold text-slate-600">{formatNumber(totalAvailableCredits)} credits</p>
+              </>
+            )}
           </div>
-
-          <div className="shrink-0">
-            <Link href="#buy-credits">
-              <Button
-                variant="primary"
-                size="md"
-                icon={<Wallet className="w-4 h-4" />}
-                className="w-full sm:w-auto"
-              >
-                Top Up Credits
-              </Button>
-            </Link>
+          <div className="p-6">
+            <p className="text-sm text-slate-600">Plan balance</p>
+            <p className="mt-2 text-3xl font-extrabold text-slate-900">{isUnlimited ? "∞" : `${formatNumber(includedHours)} hrs`}</p>
+            <p className="mt-1 text-sm text-slate-500">Resets monthly · Used first</p>
+          </div>
+          <div className="p-6">
+            <p className="text-sm text-slate-600">Purchased credits</p>
+            <p className="mt-2 text-3xl font-extrabold text-slate-900">{formatNumber(purchasedHours)} hrs</p>
+            <p className="mt-1 text-sm text-slate-500">Never expires · Used after plan credits</p>
           </div>
         </div>
-      </Card>
-
-      {/* Credit Usage by Feature + Chart */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Usage by AI Feature */}
-        <Card padding="md">
-          <div className="flex items-center gap-2 mb-4">
-            <TrendingUp className="w-4 h-4 text-slate-500" />
-            <h3 className="text-sm font-semibold text-slate-900">
-              AI Features & Billing Rates
-            </h3>
+        <div className="flex items-center gap-2 border-t border-slate-100 px-6 py-3 text-sm text-slate-500">
+          <Info className="h-4 w-4 shrink-0" />
+          For live transcription: 1 credit = 1 minute. Charged by the second.
+        </div>
+        {ambassadorInfo.isAmbassador && (
+          <div className="flex items-start gap-2.5 border-t border-slate-100 px-6 py-3 text-sm text-purple-900">
+            <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-purple-600" />
+            You have a {ambassadorInfo.tenureLabel} ambassador grant with Growth features ({ambassadorInfo.remainingLabel}).
           </div>
-          <div className="space-y-3">
-            <div className="flex items-start gap-3 p-2.5 rounded-lg bg-slate-50">
-              <Mic className="w-4 h-4 text-purple-500 shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-slate-900">
-                    Speech-to-Scripture
-                  </span>
-                  <span className="text-xs font-semibold text-slate-600">
-                    1 credit/min (per second)
-                  </span>
-                </div>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Real-time sermon speech recognition & scripture detection
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 p-2.5 rounded-lg bg-slate-50">
-              <Languages className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-slate-900">
-                    Live Translation
-                  </span>
-                  <span className="text-xs font-semibold text-slate-600">
-                    1 credit/min (per second)
-                  </span>
-                </div>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Real-time multilingual captioning & translation
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 p-2.5 rounded-lg bg-slate-50">
-              <Brain className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-slate-900">
-                    AI Sermon Summaries
-                  </span>
-                  <span className="text-xs font-semibold text-slate-600">
-                    5 credits / run
-                  </span>
-                </div>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Comprehensive sermon summary & study points generation
-                </p>
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        {/* Credit Usage Chart */}
-        {chartData.length > 0 ? (
-          <Card padding="md">
-            <div className="flex items-center gap-2 mb-4">
-              <TrendingUp className="w-4 h-4 text-slate-500" />
-              <h3 className="text-sm font-semibold text-slate-900">
-                Credits Used (Last 7 Days)
-              </h3>
-            </div>
-            <div className="h-56 w-full">
-              <ResponsiveContainer width="100%" height="100%" minHeight={1}>
-                <AreaChart
-                  data={chartData}
-                  margin={{ top: 5, right: 5, left: -20, bottom: 0 }}
-                >
-                  <defs>
-                    <linearGradient id="creditUsageGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#d97706" stopOpacity={0.2} />
-                      <stop offset="95%" stopColor="#d97706" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    vertical={false}
-                    stroke="#e2e8f0"
-                  />
-                  <XAxis
-                    dataKey="date"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: "#94a3b8", fontSize: 11 }}
-                    dy={8}
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: "#94a3b8", fontSize: 11 }}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      borderRadius: "8px",
-                      border: "1px solid #e2e8f0",
-                      boxShadow: "none",
-                      fontSize: "12px",
-                    }}
-                    formatter={(value) => [`${value} credits`, "Used"]}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="usage"
-                    stroke="#d97706"
-                    strokeWidth={2}
-                    fillOpacity={1}
-                    fill="url(#creditUsageGrad)"
-                    activeDot={{ r: 4, fill: "#d97706", stroke: "#fef3c7", strokeWidth: 2 }}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </Card>
-        ) : (
-          <Card padding="md">
-            <div className="flex flex-col items-center justify-center h-56 text-center">
-              <TrendingUp className="w-8 h-8 text-slate-200 mb-3" />
-              <p className="text-sm text-slate-500">No usage data yet</p>
-              <p className="text-xs text-slate-400 mt-1">
-                Start transcribing live services to see your credit usage chart.
-              </p>
-            </div>
-          </Card>
         )}
-      </div>
+      </section>
 
-      {/* Top-up Packages Grid */}
-      <div id="buy-credits" className="scroll-mt-6">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 mb-4">
-          <div>
-            <h2 className="text-lg font-bold text-slate-900 mb-1">
-              Top Up Transcription Credits
-            </h2>
-            <p className="text-sm text-slate-500">
-              1 credit = 1 minute of transcription. Top-up credits never expire and roll over automatically every month.
-            </p>
+      {/* Top up */}
+      <section id="buy-credits" className="scroll-mt-6 rounded-xl border border-slate-200 bg-white p-6 shadow-2xs">
+        <div className="mb-4 flex items-start justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <BarChart3 className="mt-0.5 h-5 w-5 text-slate-700" />
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">Top up credits</h2>
+              <p className="text-sm text-slate-500">Purchased credits roll over and never expire.</p>
+            </div>
           </div>
-          {topupPricing && (
-            <span className="text-xs font-medium text-slate-400">
-              Live Exchange Rate • Secure Flutterwave Checkout
-            </span>
-          )}
+          <span
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-800"
+            title="Top-ups are charged in your subscription's currency"
+          >
+            {topupPricing?.currency || currency}
+          </span>
         </div>
 
         {purchaseError && (
           <div className="mb-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
-            <AlertCircle className="w-4 h-4 shrink-0" /> {purchaseError}
+            <AlertCircle className="h-4 w-4 shrink-0" /> {purchaseError}
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          {displayPackages.map((pack) => {
-            const isBuying = purchasingPackId === pack.id;
-            const isBestValue = pack.badge === "Best Value";
-            const isPopular = pack.badge === "Popular";
+        {packages.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500">
+            Top-up prices could not be loaded. Refresh the page to try again.
+          </p>
+        ) : (
+          <>
+            <div role="radiogroup" aria-label="Top-up amount" className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+              {packages.map((pack) => {
+                const selected = selectedPack?.id === pack.id;
+                return (
+                  <button
+                    key={pack.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    onClick={() => setSelectedPackId(pack.id)}
+                    className={`flex items-start gap-3 rounded-lg border p-4 text-left transition-colors ${
+                      selected ? "border-[#0238E9] bg-blue-50/60 ring-1 ring-[#0238E9]" : "border-slate-200 hover:border-slate-300"
+                    }`}
+                  >
+                    <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${selected ? "border-[#0238E9]" : "border-slate-300"}`}>
+                      {selected && <span className="h-2.5 w-2.5 rounded-full bg-[#0238E9]" />}
+                    </span>
+                    <span>
+                      <span className="block text-base font-semibold text-slate-900">{pack.hours} {pack.hours === 1 ? "hour" : "hours"}</span>
+                      <span className="block text-sm text-slate-500">{pack.credits.toLocaleString()} credits</span>
+                      <span className="mt-1 block text-xl font-bold text-slate-900">{formatCurrency(pack.price, pack.currency)}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
 
-            return (
-              <Card
-                key={pack.id}
-                padding="md"
-                className={`flex flex-col justify-between relative transition-all ${
-                  isBestValue
-                    ? "border-amber-400 shadow-sm ring-1 ring-amber-300 bg-gradient-to-b from-amber-50/20 to-white"
-                    : isPopular
-                      ? "border-blue-400 shadow-sm ring-1 ring-blue-300 bg-gradient-to-b from-blue-50/20 to-white"
-                      : "hover:border-slate-300"
-                }`}
-              >
+            {selectedPack && (
+              <div className="mt-5 flex flex-col justify-between gap-4 border-t border-slate-100 pt-5 sm:flex-row sm:items-center">
                 <div>
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
-                      <Clock className="w-4 h-4 text-slate-700" />
-                    </div>
-                    {pack.badge && (
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                          isBestValue
-                            ? "bg-amber-100 text-amber-800 border border-amber-200"
-                            : "bg-blue-100 text-blue-800 border border-blue-200"
-                        }`}
-                      >
-                        {pack.badge}
-                      </span>
-                    )}
-                  </div>
-
-                  <h3 className="text-lg font-bold text-slate-900">
-                    {pack.hours} {pack.hours === 1 ? "Hour" : "Hours"}
-                  </h3>
-                  <p className="text-xs font-semibold text-slate-500">
-                    {pack.credits.toLocaleString()} credits ({formatDuration(pack.seconds)})
+                  <p className="text-base font-bold text-slate-900">
+                    {selectedPack.hours} {selectedPack.hours === 1 ? "hour" : "hours"} · {selectedPack.credits.toLocaleString()} credits
                   </p>
-                  <p className="mt-2 text-xs text-slate-500 leading-relaxed min-h-[32px]">
-                    {pack.description}
-                  </p>
-
-                  <div className="my-4 pt-3 border-t border-slate-100">
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-2xl font-black text-slate-900">
-                        {formatCurrency(pack.price, pack.currency)}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-400 mt-0.5">
-                      {formatCurrency(pack.pricePerHour, pack.currency)} / hr
-                    </p>
+                  <p className="text-sm text-slate-500">One-time payment</p>
+                </div>
+                <div className="flex flex-col items-stretch gap-1.5 sm:flex-row sm:items-center sm:gap-6">
+                  <span className="text-2xl font-extrabold text-slate-900">{formatCurrency(selectedPack.price, selectedPack.currency)}</span>
+                  <div className="flex flex-col items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => void handleBuyCredits(selectedPack)}
+                      disabled={!!purchasingPackId || isVerifyingTopup}
+                      className="inline-flex min-w-[220px] items-center justify-center gap-2 rounded-lg bg-[#0238E9] px-5 py-3 text-sm font-semibold text-white hover:bg-[#012CAE] disabled:opacity-50"
+                    >
+                      {purchasingPackId ? <><Loader2 className="h-4 w-4 animate-spin" /> Redirecting...</> : <>Continue to checkout <ArrowRight className="h-4 w-4" /></>}
+                    </button>
+                    <span className="flex items-center gap-1 text-xs text-slate-500"><Lock className="h-3 w-3" /> Secure checkout with Flutterwave</span>
                   </div>
                 </div>
+              </div>
+            )}
+          </>
+        )}
+      </section>
 
-                <button
-                  onClick={() => handleBuyCredits(pack)}
-                  disabled={!!purchasingPackId || isVerifyingTopup}
-                  className={`w-full h-10 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm ${
-                    isBestValue
-                      ? "bg-amber-500 hover:bg-amber-600 text-white"
-                      : isPopular
-                        ? "bg-blue-600 hover:bg-blue-700 text-white"
-                        : "bg-slate-900 hover:bg-slate-800 text-white"
-                  } disabled:opacity-50`}
-                >
-                  {isBuying ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      Redirecting...
-                    </>
-                  ) : (
-                    `Top Up ${pack.hours}h`
-                  )}
-                </button>
-              </Card>
-            );
-          })}
-        </div>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {/* Usage chart */}
+        <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-2xs">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h2 className="flex items-center gap-2.5 text-xl font-bold text-slate-900"><BarChart3 className="h-5 w-5" /> Credit usage</h2>
+            <label className="relative inline-flex items-center">
+              <Calendar className="pointer-events-none absolute left-3 h-4 w-4 text-slate-500" />
+              <select
+                value={rangeDays}
+                onChange={(e) => setRangeDays(Number(e.target.value))}
+                className="appearance-none rounded-lg border border-slate-300 bg-white py-2 pl-9 pr-8 text-sm font-medium text-slate-800"
+                aria-label="Usage period"
+              >
+                {RANGES.map((range) => <option key={range.days} value={range.days}>{range.label}</option>)}
+              </select>
+            </label>
+          </div>
+          {chartData.some((d) => d.usage > 0) ? (
+            <div className="h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: "#64748b", fontSize: 11 }} interval="preserveStartEnd" />
+                  <YAxis axisLine={false} tickLine={false} allowDecimals={false} tick={{ fill: "#64748b", fontSize: 11 }} label={{ value: "Credits", angle: -90, position: "insideLeft", fill: "#64748b", fontSize: 11 }} />
+                  <Tooltip cursor={{ fill: "rgba(2,56,233,0.06)" }} formatter={(value) => [`${value} credits`, "Used"]} />
+                  <Bar dataKey="usage" fill="#0238E9" radius={[3, 3, 0, 0]} maxBarSize={28} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="flex h-56 flex-col items-center justify-center text-center text-sm text-slate-500">
+              <FileAudio className="mb-2 h-6 w-6 text-slate-400" />
+              No credits used in this period.
+            </div>
+          )}
+        </section>
+
+        {/* How credits are used */}
+        <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-2xs">
+          <h2 className="mb-4 flex items-center gap-2.5 text-xl font-bold text-slate-900"><Settings className="h-5 w-5" /> How credits are used</h2>
+          <ul className="divide-y divide-slate-100">
+            <RateRow icon={<Mic className="h-5 w-5 text-[#0238E9]" />} title="Speech-to-Scripture" detail="Live speech recognition & scripture detection" rate="1 credit / min" />
+            <RateRow icon={<Languages className="h-5 w-5 text-[#0238E9]" />} title="Live Translation" detail="Multilingual captions & translation" rate="1 credit / min" />
+            <RateRow icon={<Brain className="h-5 w-5 text-[#0238E9]" />} title="AI Sermon Summaries" detail="Sermon summaries & study points" rate="5 credits / run" />
+          </ul>
+          <p className="mt-3 flex items-center gap-2 text-sm text-slate-500"><Info className="h-4 w-4" /> Live audio is billed by the second.</p>
+        </section>
       </div>
 
-      {/* Recent Credit Activity */}
-      <section>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-slate-900">
-            Recent Credit Activity
-          </h2>
-          <Link
-            href="/credits/history"
-            className="text-sm font-medium text-blue-600 hover:underline"
-          >
-            View full history
+      {/* Recent activity */}
+      <section className="rounded-xl border border-slate-200 bg-white shadow-2xs">
+        <div className="flex items-center justify-between px-6 py-4">
+          <h2 className="flex items-center gap-2.5 text-xl font-bold text-slate-900"><Clock className="h-5 w-5" /> Recent activity</h2>
+          <Link href="/credits/history" className="inline-flex items-center gap-1 text-sm font-semibold text-[#0238E9] hover:underline">
+            View full history <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
-        <Card padding="none">
-          {recentTransactions.length === 0 ? (
-            <EmptyState
-              icon={<Zap className="w-5 h-5" />}
-              title="No credit activity yet"
-              description="Your credit transactions will appear here as you use AI features."
-            />
-          ) : (
-            recentTransactions.map((txn, i) => (
-              <div
-                key={txn._id || i}
-                className={`flex items-center gap-3 px-5 py-3 hover:bg-slate-50 transition-colors ${
-                  i < recentTransactions.length - 1
-                    ? "border-b border-slate-100"
-                    : ""
-                }`}
-              >
-                <div
-                  className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                    txn.amount > 0
-                      ? "bg-green-50 text-green-600"
-                      : txn.source === "transcription" ||
-                          txn.source === "translation"
-                        ? "bg-purple-50 text-purple-500"
-                        : "bg-slate-100 text-slate-500"
-                  }`}
-                >
-                  {txn.amount > 0 ? (
-                    <RefreshCw className="w-4 h-4" />
-                  ) : (
-                    <FileAudio className="w-4 h-4" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-900 truncate">
-                    {txn.description?.slice(0, 50) || "Transaction"}
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    {txn.amount > 0 ? "+" : ""}
-                    {txn.amount.toLocaleString()} credits
-                  </p>
-                </div>
-                <span className="text-xs text-slate-400 shrink-0">
-                  {formatDate(txn.createdAt)}
-                </span>
-              </div>
-            ))
-          )}
-        </Card>
+        {recentTransactions.length === 0 ? (
+          <p className="border-t border-slate-100 px-6 py-8 text-center text-sm text-slate-500">No credit activity yet. It appears here as you use AI features.</p>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-y border-slate-100 bg-slate-50 text-left text-xs font-medium text-slate-500">
+                <th className="px-6 py-2 font-medium">Activity</th>
+                <th className="px-6 py-2 font-medium">Date</th>
+                <th className="px-6 py-2 text-right font-medium">Credits</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {recentTransactions.map((txn, i) => (
+                <tr key={txn._id || i}>
+                  <td className="px-6 py-2.5">
+                    <span className="flex items-center gap-2.5 text-slate-800">
+                      {txn.amount > 0 ? <RefreshCw className="h-4 w-4 text-emerald-600" /> : <Mic className="h-4 w-4 text-purple-500" />}
+                      {activityLabel(txn)}
+                    </span>
+                  </td>
+                  <td className="px-6 py-2.5 text-slate-600">{formatDate(txn.createdAt)}</td>
+                  <td className={`px-6 py-2.5 text-right font-medium ${txn.amount > 0 ? "text-emerald-700" : "text-slate-800"}`}>
+                    {txn.amount > 0 ? "+" : ""}{formatNumber(txn.amount)} {Math.abs(txn.amount) === 1 ? "credit" : "credits"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </section>
     </div>
+  );
+}
+
+function RateRow({ icon, title, detail, rate }: { icon: React.ReactNode; title: string; detail: string; rate: string }) {
+  return (
+    <li className="flex items-center gap-3 py-3">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50">{icon}</span>
+      <span className="min-w-0 flex-1">
+        <span className="block font-semibold text-slate-900">{title}</span>
+        <span className="block text-sm text-slate-500">{detail}</span>
+      </span>
+      <span className="shrink-0 text-sm font-semibold text-slate-900">{rate}</span>
+    </li>
   );
 }

@@ -10,6 +10,8 @@ import { getInitialMongoUser } from "@/lib/serverAuth";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import ClientErrorTelemetry from "@/components/ClientErrorTelemetry";
 
+import { FOUNDER_ID, companySameAs, founderPersonNode } from "@/lib/founder";
+
 export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
   appleWebApp: {
@@ -132,7 +134,11 @@ const siteJsonLd = {
         "@type": "ImageObject",
         url: "https://makechurcheazy.com/logos/make_church_easy_logo.png",
       },
+      // Who is behind the company: lets Google and AI answers say "Founder and CEO" next to the name.
+      founder: { "@id": FOUNDER_ID },
+      ...(companySameAs().length ? { sameAs: companySameAs() } : {}),
     },
+    founderPersonNode(),
     {
       "@type": "SoftwareApplication",
       "@id": "https://makechurcheazy.com/#software",

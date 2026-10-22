@@ -47,7 +47,7 @@ export function MarketingFooter() {
       <div><Brand light /><p>For the people behind the service.</p></div>
       <nav aria-label="Footer navigation">
         <div><strong>Product</strong><Link href="/features">Features</Link><Link href="/pricing">Pricing</Link><Link href="/download">Download</Link></div>
-        <div><strong>Resources</strong><Link href="/docs">Documentation</Link><Link href="/blog">Blog</Link><Link href="/tutorials">Tutorials</Link><Link href="/support">Support</Link><Link href="/contact">Contact us</Link><Link href="/login">Your account</Link></div>
+        <div><strong>Resources</strong><Link href="/docs">Documentation</Link><Link href="/blog">Blog</Link><Link href="/tutorials">Tutorials</Link><Link href="/support">Support</Link><Link href="/about">About</Link><Link href="/contact">Contact us</Link><Link href="/login">Your account</Link></div>
       </nav>
     </div>
     <div className={styles.footerBottom}><span>© {new Date().getFullYear()} MakeChurchEazy.</span><span>Made for church media teams. Built around OBS.</span></div>

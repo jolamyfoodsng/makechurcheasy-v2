@@ -1,0 +1,23 @@
+.page { padding-bottom: 96px; }
+.intro { max-width: 808px; margin: 0 auto; padding: 88px 24px 0; }
+.eyebrow { color: var(--copper); font-size: 14px; font-weight: 600; margin-bottom: 16px; }
+.page h1 { font-size: clamp(40px, 5vw, 64px); line-height: 1.1; letter-spacing: -.03em; }
+.lead { margin-top: 28px; color: var(--secondary); font-size: 19px; line-height: 1.75; }
+.lead a, .section a { color: var(--copper); text-decoration: underline; text-underline-offset: 4px; }
+.section { max-width: 808px; margin: 64px auto 0; padding: 0 24px; }
+.page .section h2 { font-size: clamp(24px, 2.6vw, 32px); line-height: 1.25; letter-spacing: -.02em; margin-bottom: 16px; }
+.section > p { color: var(--secondary); font-size: 17px; line-height: 1.8; }
+.facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 28px; }
+.facts > div { padding: 16px 20px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.facts dt { color: var(--muted); font-size: 13px; }
+.facts dd { margin: 4px 0 0; font-size: 16px; font-weight: 600; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 20px; margin-top: 32px; }
+.textLink { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font-weight: 600; }
+.profiles { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 12px; }
+.profiles a { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border: 1px solid var(--line); border-radius: 12px; text-decoration: none; font-weight: 600; }
+.profiles a:hover { border-color: var(--copper); }
+.page :is(a, summary):focus-visible { outline: 3px solid var(--copper); outline-offset: 5px; }
+@media (max-width: 600px) {
+  .intro { padding-top: 56px; }
+  .facts { grid-template-columns: 1fr; }
+}

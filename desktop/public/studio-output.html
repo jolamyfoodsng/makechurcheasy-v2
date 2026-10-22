@@ -280,7 +280,8 @@ video { outline: none; }
   <div id="hint" role="status"></div>
   <pre id="diag" aria-hidden="true"></pre>
   <div id="menu" role="menu"><button type="button" id="menu-close" role="menuitem">Close projector <span>Esc</span></button></div>
-  <script>
+  <script src="/studio-graphic-placement.js"></script>
+    <script>
     (function () {
       var params = new URLSearchParams(window.location.search);
       var isMonitor = params.get('monitor') === '1';
@@ -1140,6 +1141,8 @@ video { outline: none; }
             entry.frame = frame;
             // If the graphic's own scripts did not load here, say so on screen instead of showing nothing.
             frame.addEventListener('load', function () {
+              placeGraphic(entry.el, entry.layer, frame);
+              setTimeout(function () { placeGraphic(entry.el, entry.layer, frame); }, 700);
               setTimeout(function () {
                 var ok = false;
                 try { ok = !!(frame.contentWindow && frame.contentWindow.MCEKinetic); } catch (e) { ok = true; }
@@ -1199,12 +1202,37 @@ video { outline: none; }
         'middle-left': [-24, 0], 'middle-right': [24, 0],
         'bottom-left': [-24, 34], 'bottom-center': [0, 34], 'bottom-right': [24, 34]
       };
-      function placeGraphic(el, layer) {
-        var p = GFX_POS[layer.graphicPos] || GFX_POS.center;
+      function placeGraphic(el, layer, frame) {
         var s = Math.max(30, Math.min(200, Number(layer.graphicScale) || 100)) / 100;
-        el.style.transform = 'translate(' + p[0] + '%,' + p[1] + '%) scale(' + s + ')';
         el.style.transformOrigin = '50% 50%';
+        // Measure the graphic and put its edge on a margin, so a wide graphic is never cut off.
+        // Until the page has loaded (or if it cannot be measured) the old fixed offsets are used.
+        try {
+          var placement = window.MCEGraphicPlacement;
+          var canvas = frame && frame.contentDocument && frame.contentDocument.getElementById('kx-canvas');
+          var node = canvas && canvas.firstElementChild;
+          if (placement && node) {
+            var box = placement.contentBox(frame.clientWidth, frame.clientHeight, {
+              left: node.offsetLeft, top: node.offsetTop, width: node.offsetWidth, height: node.offsetHeight
+            });
+            if (box) {
+              var o = placement.offsets(box, layer.graphicPos, layer.graphicScale);
+              el.style.transform = 'translate(' + Math.round(o.dx) + 'px,' + Math.round(o.dy) + 'px) scale(' + o.scale + ')';
+              return;
+            }
+          }
+        } catch (e) { /* fall back below */ }
+        var p = GFX_POS[layer.graphicPos] || GFX_POS.center;
+        el.style.transform = 'translate(' + p[0] + '%,' + p[1] + '%) scale(' + s + ')';
       }
+      // The page and its fonts settle after the frame loads, and a resized window changes the scale: place again.
+      function replaceGraphics() {
+        Object.keys(mixEntries).forEach(function (id) {
+          var entry = mixEntries[id];
+          if (entry && entry.layer && entry.layer.kind === 'graphic' && entry.frame) placeGraphic(entry.el, entry.layer, entry.frame);
+        });
+      }
+      window.addEventListener('resize', replaceGraphics);
 
       function applyMix(layers) {
         layers = Array.isArray(layers) ? layers : [];
@@ -1232,7 +1260,7 @@ video { outline: none; }
             mixOrder = '';
           }
           entry.layer = layer;
-          if (layer.kind === 'graphic') placeGraphic(entry.el, layer);
+          if (layer.kind === 'graphic') placeGraphic(entry.el, layer, entry.frame);
           if (layer.kind === 'page') { sizePage(entry); updatePage(entry, layer); }
           var shown = layer.shown === true;
           if (shown !== entry.shownNow) {

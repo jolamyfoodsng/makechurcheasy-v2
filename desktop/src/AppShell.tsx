@@ -26,6 +26,7 @@ import { ServiceCompletedModal } from "./components/ServiceCompletedModal";
 import BibleCommandPalette from "./components/BibleCommandPalette";
 import { BibleProvider } from "./bible/bibleStore";
 import SettingsModalSlot from "./components/SettingsModalSlot";
+import { ensureSavedBroadcastGraphicsLoaded } from "./services/broadcastGraphicsStorage";
 import Icon from "./components/Icon";
 import DashboardSidebar from "./components/DashboardSidebar";
 import AppStatusStrip from "./components/AppStatusStrip";
@@ -203,6 +204,11 @@ export function AppShell() {
     serviceStore.reset();
     navigate("/");
   }, [navigate]);
+
+  // Saved Broadcast Graphics live in a file in the app folder; read them once at start so every screen (Studio included) sees them.
+  useEffect(() => {
+    void ensureSavedBroadcastGraphicsLoaded();
+  }, []);
 
   const handleEndServiceConfirm = useCallback(() => {
     serviceStore.endService();

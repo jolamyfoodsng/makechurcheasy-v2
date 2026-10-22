@@ -112,6 +112,29 @@ export async function hydrateSavedBroadcastGraphics(): Promise<boolean> {
   }
 }
 
+const hydrations = new Map<string, Promise<boolean>>();
+
+/** True once this account's list has been read from the app folder (always true outside the desktop app). */
+export function areSavedBroadcastGraphicsLoaded(): boolean {
+  return !isTauri() || Boolean(cache && cacheName === diskName());
+}
+
+/**
+ * Make sure the saved graphics are read from the app folder. Screens that list or change them
+ * (the Studio drawer, the app shell) call this first: the list only lives in memory after it, and
+ * saving before it would write a list with just the new graphic over the file.
+ */
+export function ensureSavedBroadcastGraphicsLoaded(): Promise<boolean> {
+  if (areSavedBroadcastGraphicsLoaded()) return Promise.resolve(true);
+  const name = diskName();
+  let pending = hydrations.get(name);
+  if (!pending) {
+    pending = hydrateSavedBroadcastGraphics().finally(() => hydrations.delete(name));
+    hydrations.set(name, pending);
+  }
+  return pending;
+}
+
 function writeLocalStorageList(items: SavedBroadcastGraphic[]): boolean {
   if (typeof localStorage === "undefined") return false;
   try {
@@ -138,6 +161,13 @@ function writeLocalStorageList(items: SavedBroadcastGraphic[]): boolean {
  * (memory first, file written right behind it), otherwise to browser storage.
  */
 function persistAll(items: SavedBroadcastGraphic[]): boolean {
+  if (isTauri() && !areSavedBroadcastGraphicsLoaded()) {
+    // The list was never read from the app folder: this array only has what this call knows about.
+    // Writing it would replace every saved graphic with it.
+    lastSaveError = "Your saved graphics are still loading. Try again in a moment.";
+    void ensureSavedBroadcastGraphicsLoaded();
+    return false;
+  }
   if (isTauri()) {
     const name = diskName();
     cache = items;
@@ -248,8 +278,7 @@ export function deleteBroadcastGraphic(id: string): boolean {
   const all = loadSavedBroadcastGraphics();
   const filtered = all.filter((g) => g.id !== id);
   if (filtered.length === all.length) return false;
-  persistAll(filtered);
-  return true;
+  return persistAll(filtered);
 }
 
 /**

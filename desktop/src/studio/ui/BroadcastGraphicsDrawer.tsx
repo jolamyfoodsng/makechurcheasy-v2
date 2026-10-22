@@ -27,6 +27,7 @@ import {
 import {
   BROADCAST_GRAPHICS_UPDATED_EVENT,
   deleteBroadcastGraphic,
+  ensureSavedBroadcastGraphicsLoaded,
   loadSavedBroadcastGraphics,
   saveBroadcastGraphic,
   updateBroadcastGraphic,
@@ -185,6 +186,9 @@ export default function BroadcastGraphicsDrawer({ mode: initialMode = "all", liv
     return () => window.removeEventListener("mousedown", close);
   }, [menuKey]);
 
+  // The saved list is read from the app folder; the drawer refreshes itself when that finishes.
+  useEffect(() => { void ensureSavedBroadcastGraphicsLoaded(); }, []);
+
   useEffect(() => {
     const refresh = () => setVersion((v) => v + 1);
     const events = [BROADCAST_GRAPHICS_CATALOG_UPDATED_EVENT, BROADCAST_GRAPHICS_UPDATED_EVENT, REMOTE_PRODUCTION_THEMES_UPDATED_EVENT];
@@ -246,24 +250,34 @@ export default function BroadcastGraphicsDrawer({ mode: initialMode = "all", liv
   const save = (entry: Entry): boolean => {
     const values = valuesFor(entry);
     const name = nameFor(entry).trim() || entry.name;
-    if (isSaved(entry)) {
-      updateBroadcastGraphic(entry.key.slice("saved-".length), { name, variables: values });
-      setEdits((all) => ({ ...all, [entry.key]: {} }));
-      say("Saved.");
-      return true;
+    try {
+      if (isSaved(entry)) {
+        updateBroadcastGraphic(entry.key.slice("saved-".length), { name, variables: values });
+        setEdits((all) => ({ ...all, [entry.key]: {} }));
+        say("Saved.");
+        return true;
+      }
+    } catch (err) {
+      say(err instanceof Error ? err.message : "Could not save the graphic.");
+      return false;
     }
     if (isFreeStudio() && loadSavedBroadcastGraphics().length >= FREE_LIMITS.saved) {
       say(freeLimitMessage("saved"));
       return false;
     }
-    saveBroadcastGraphic({
-      name,
-      templateId: entry.theme.id,
-      category: (entry.category === "mine" ? "others" : entry.category) as SavedBroadcastGraphic["category"],
-      displayType: "lower-third",
-      variables: values,
-      isAddedToObs: false,
-    });
+    try {
+      saveBroadcastGraphic({
+        name,
+        templateId: entry.theme.id,
+        category: (entry.category === "mine" ? "others" : entry.category) as SavedBroadcastGraphic["category"],
+        displayType: "lower-third",
+        variables: values,
+        isAddedToObs: false,
+      });
+    } catch (err) {
+      say(err instanceof Error ? err.message : "Could not save the graphic.");
+      return false;
+    }
     say("Saved to My graphics.");
     return true;
   };

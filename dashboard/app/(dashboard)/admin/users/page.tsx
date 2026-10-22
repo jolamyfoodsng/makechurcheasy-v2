@@ -513,6 +513,7 @@ export default function AdminUsersPage() {
 
   const [actionMsg, setActionMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [zohoSyncing, setZohoSyncing] = useState(false);
 
   const fetchUsers = useCallback(async (isRefresh = false) => {
     if (isRefresh) {
@@ -1409,6 +1410,34 @@ export default function AdminUsersPage() {
               <Download className="w-4 h-4 text-emerald-400" />
             )}
             <span>Export CSV ({filtered.length})</span>
+          </button>
+
+          <button
+            type="button"
+            disabled={zohoSyncing}
+            title="Pull contacts from Zoho Campaigns and tag matching users"
+            onClick={async () => {
+              setZohoSyncing(true);
+              try {
+                const res = await fetch("/api/admin/contacts/sync", { method: "POST", credentials: "include" });
+                const body = await res.json().catch(() => ({}));
+                const r = body.result;
+                if (r?.status === "completed") {
+                  setActionMsg({ type: "success", text: `Zoho sync done: ${r.contacts} contacts, ${r.matchedUsers} matched to users, ${r.filledPhones} phones filled in.` });
+                  await fetchUsers(true);
+                } else {
+                  setActionMsg({ type: "error", text: r?.errorCode === "no_lists_found" ? "Zoho returned no lists. Check the Zoho token's READ permission." : body.error || "Zoho sync failed." });
+                }
+              } catch {
+                setActionMsg({ type: "error", text: "Could not reach the server." });
+              } finally {
+                setZohoSyncing(false);
+              }
+            }}
+            className="inline-flex items-center gap-2 px-3.5 py-2 text-sm font-semibold rounded-xl border border-sky-700/60 bg-sky-950/40 text-sky-300 hover:bg-sky-900/60 hover:text-sky-100 transition shadow-sm disabled:opacity-50 cursor-pointer"
+          >
+            <RefreshCw className={`w-4 h-4 ${zohoSyncing ? "animate-spin" : ""}`} />
+            <span>{zohoSyncing ? "Syncing Zoho..." : "Sync from Zoho"}</span>
           </button>
 
           <button

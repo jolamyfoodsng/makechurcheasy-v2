@@ -29,7 +29,18 @@ function accentForType(type: PendingUserModal["type"]) {
   return "bg-indigo-500/10 text-indigo-400 border-indigo-500/20";
 }
 
+/**
+ * "Account Update" pop-ups queued by the server. The /api/user/modals route behind them is not in the
+ * API source right now, so asking for it only produced a 404 on every page and every window focus.
+ * Set NEXT_PUBLIC_USER_MODALS=true once the route is deployed to switch them back on.
+ */
+const USER_MODALS_ENABLED = process.env.NEXT_PUBLIC_USER_MODALS === "true";
+
 export function UserPendingModalHost() {
+  return USER_MODALS_ENABLED ? <PendingModalHost /> : null;
+}
+
+function PendingModalHost() {
   const router = useRouter();
   const [modal, setModal] = useState<PendingUserModal | null>(null);
 

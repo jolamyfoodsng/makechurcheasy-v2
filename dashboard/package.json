@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "next dev -p 4000",
-    "build": "next build",
+    "build": "next build --webpack",
     "build:cloudflare": "opennextjs-cloudflare build",
     "preview:cloudflare": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy:cloudflare": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
@@ -19,7 +19,7 @@
     "clsx": "^2.1.1",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
-    "next": "^15.3.9",
+    "next": "16.4.2",
     "next-intl": "^4.13.0",
     "otpauth": "^9.5.1",
     "react": "^19.0.1",
@@ -31,13 +31,13 @@
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
-    "@opennextjs/cloudflare": "^1.18.1",
+    "@opennextjs/cloudflare": "1.20.13",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^22.14.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "tailwindcss": "^4.1.14",
     "typescript": "~5.8.2",
-    "wrangler": "^4.140.0"
+    "wrangler": "4.151.3"
   }
 }

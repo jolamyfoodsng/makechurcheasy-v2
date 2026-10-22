@@ -149,7 +149,7 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean; setIsOpen?: (
 
           {/* Subscription */}
           <Link
-            href="/subscription"
+            href="/subscription/plans"
             onClick={() => setIsOpen?.(false)}
             className={navLinkClass(subscriptionActive)}
           >

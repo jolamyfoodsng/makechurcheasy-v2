@@ -15,6 +15,8 @@ interface UseLocalizedPricingResult {
   error: string | null;
   getPlanPrice: (plan: "basic" | "growth" | "pro", cycle: "monthly" | "yearly") => number;
   getIntroPrice: (plan: "basic" | "growth" | "pro") => number | undefined;
+  /** True when the server has a real price for this plan (Pro usually has none: it is sold by contact). */
+  hasPlanPrice: (plan: "basic" | "growth" | "pro") => boolean;
   formatPrice: (amount: number) => string;
   rawCurrency: string;
 }
@@ -59,12 +61,13 @@ export function useLocalizedPricing(): UseLocalizedPricingResult {
           prices: {
             basic: Number(basic.monthly) || 0,
             growth: Number(growth.monthly) || 0,
-            pro: Number(pro.monthly) || (region === "nigeria" ? 12000 : region === "africa" ? 15 : 20),
+            // Pro is sold by contacting us: no price here means no price shown (never a made-up one).
+            pro: Number(pro.monthly) || 0,
           },
           yearlyPrices: {
             basic: Number(basic.yearly) || 0,
             growth: Number(growth.yearly) || 0,
-            pro: Number(pro.yearly) || (region === "nigeria" ? 122400 : region === "africa" ? (String(resolvedData.currency).toUpperCase() === "USD" ? 122 : Math.round((Number(pro.monthly) || 15) * 8.13)) : 204),
+            pro: Number(pro.yearly) || 0,
           },
           introPrices: {
             basic: Number.isFinite(Number(basic.introductoryMonthly)) ? Number(basic.introductoryMonthly) : undefined,
@@ -103,6 +106,11 @@ export function useLocalizedPricing(): UseLocalizedPricingResult {
     [pricing],
   );
 
+  const hasPlanPrice = useCallback(
+    (plan: "basic" | "growth" | "pro"): boolean => (pricing?.prices[plan] ?? 0) > 0,
+    [pricing],
+  );
+
   const getIntroPrice = useCallback(
     (plan: "basic" | "growth" | "pro"): number | undefined => pricing?.introPrices[plan],
     [pricing],
@@ -125,6 +133,7 @@ export function useLocalizedPricing(): UseLocalizedPricingResult {
     error,
     getPlanPrice,
     getIntroPrice,
+    hasPlanPrice,
     formatPrice,
     rawCurrency: pricing?.currency || "USD",
   };

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   AlertCircle,
@@ -67,6 +68,8 @@ const PLAN_COPY: Record<PublicPlan, { subtitle: string; badge?: string; inherits
     subtitle: "A simpler setup for your weekly services.",
     features: [
       "Unlimited local songs, lyrics & media",
+      "Unlimited lower thirds",
+      "5 GB cloud storage",
       "All Bible versions",
       "Automatic OBS scenes & sources",
       "OBS Multistream (10 hrs/mo — no extra plugin needed)",
@@ -80,10 +83,10 @@ const PLAN_COPY: Record<PublicPlan, { subtitle: string; badge?: string; inherits
     inherits: "Everything in Basic, plus:",
     features: [
       "OBS Multistream (20 hrs/mo — YouTube & Facebook together)",
-      "Cloud storage for songs, lyrics & media",
+      "20 GB cloud storage for songs, lyrics & media",
       "Cloud sync across operators",
       "Mobile control app",
-      "Lower thirds & sermon export",
+      "Sermon notes export",
       "10 speech-to-scripture hours / month",
       "Priority support",
     ],
@@ -94,6 +97,7 @@ const PLAN_COPY: Record<PublicPlan, { subtitle: string; badge?: string; inherits
     inherits: "Everything in Growth, plus:",
     features: [
       "OBS Multistream (40 hrs/mo — multi-platform broadcasting)",
+      "50 GB cloud storage",
       "Unlimited multi-campus content sync",
       "20 speech-to-scripture hours / month",
       "Full phone support & direct line",
@@ -470,7 +474,10 @@ export default function ComparePlansPage() {
         <div>
           <h1 className="mb-1 text-2xl font-extrabold tracking-tight text-slate-900">Compare Plans</h1>
           <p className="text-sm text-slate-500">
-            Choose the plan that fits your church media team.
+            Choose the plan that fits your church media team.{" "}
+            <Link href="/subscription" className="font-semibold text-[#0238E9] hover:underline">
+              Your plan &amp; billing
+            </Link>
           </p>
         </div>
 
@@ -660,6 +667,8 @@ export default function ComparePlansPage() {
           const isGrowth = planKey === "growth";
           const isPro = planKey === "pro";
           const price = pricing.getPlanPrice(planKey, billing);
+          // Pro is sold by contact until it has a price: no price, no pay buttons.
+          const contactOnly = !pricing.hasPlanPrice(planKey);
           const monthlyEquivalent = billing === "yearly" ? price / 12 : price;
           const paidPeriodDays = billing === "yearly" ? 365 : 30;
           const nextPaymentInDays = paidPeriodDays + trialDaysLeft;
@@ -719,6 +728,11 @@ export default function ComparePlansPage() {
 
                 {/* Price Display */}
                 <div className="mb-6">
+                  {contactOnly ? (
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-3xl font-black text-slate-900 tracking-tight">Let&apos;s talk</span>
+                    </div>
+                  ) : (
                   <div className="flex items-baseline gap-1.5">
                     {isDiscountApplicable ? (
                       <>
@@ -744,7 +758,11 @@ export default function ComparePlansPage() {
                     )}
                   </div>
 
-                  {isDiscountApplicable && validatedDiscount ? (
+                  )}
+
+                  {contactOnly ? (
+                    <p className="mt-1 text-xs text-slate-500 font-medium">Pricing for multi-campus teams</p>
+                  ) : isDiscountApplicable && validatedDiscount ? (
                     <p className="mt-1 text-xs font-semibold text-emerald-600">
                       🎉 {validatedDiscount.percentOff}% off for {validatedDiscount.durationMonths} month{validatedDiscount.durationMonths > 1 ? "s" : ""}
                     </p>
@@ -754,7 +772,7 @@ export default function ComparePlansPage() {
                     </p>
                   ) : null}
 
-                  {!isDiscountApplicable && introPrice && introPrice < price && (
+                  {!contactOnly && !isDiscountApplicable && introPrice && introPrice < price && (
                     <p className="mt-1 text-xs font-semibold text-emerald-600">
                       {pricing.formatPrice(introPrice)} first month
                     </p>
@@ -776,7 +794,14 @@ export default function ComparePlansPage() {
 
               {/* Action Buttons: Pay with Cash / Pay with Crypto */}
               <div className="pt-5 border-t border-slate-100 space-y-2.5">
-                {isPaidCurrent ? (
+                {contactOnly && !isPaidCurrent ? (
+                  <a
+                    href="mailto:support@makechurcheazy.com?subject=MakeChurchEazy%20Pro%20plan"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#0238E9] px-4 py-3 text-sm font-bold text-white shadow-xs transition-all hover:bg-[#012CAE]"
+                  >
+                    Contact us about Pro
+                  </a>
+                ) : isPaidCurrent ? (
                   <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3.5 text-center">
                     <span className="inline-flex items-center gap-1.5 text-sm font-bold text-emerald-800">
                       <CheckCircle2 className="h-4 w-4 text-emerald-600" />
@@ -892,13 +917,31 @@ export default function ComparePlansPage() {
                   label="Monthly Pricing"
                   basic={pricing.formatPrice(pricing.getPlanPrice("basic", "monthly")) + "/mo"}
                   growth={pricing.formatPrice(pricing.getPlanPrice("growth", "monthly")) + "/mo"}
-                  pro={pricing.formatPrice(pricing.getPlanPrice("pro", "monthly")) + "/mo"}
+                  pro={pricing.hasPlanPrice("pro") ? pricing.formatPrice(pricing.getPlanPrice("pro", "monthly")) + "/mo" : "Contact us"}
                 />
                 <CompareRow
                   label="Songs, Lyrics & Media"
                   basic="Unlimited (Local)"
                   growth="Unlimited (Local + Cloud)"
                   pro="Unlimited (Multi-Campus Sync)"
+                />
+                <CompareRow
+                  label="Lower Thirds"
+                  basic="Unlimited"
+                  growth="Unlimited"
+                  pro="Unlimited"
+                />
+                <CompareRow
+                  label="Cloud Storage"
+                  basic="5 GB"
+                  growth="20 GB"
+                  pro="50 GB"
+                />
+                <CompareRow
+                  label="OBS Multistream"
+                  basic="10 Hours/mo"
+                  growth="20 Hours/mo"
+                  pro="40 Hours/mo"
                 />
                 <CompareRow
                   label="Bible Versions"
@@ -925,12 +968,6 @@ export default function ComparePlansPage() {
                   pro="Included"
                 />
                 <CompareRow
-                  label="1-Click EW & ProPresenter Migration"
-                  basic="Free"
-                  growth="Free"
-                  pro="Free"
-                />
-                <CompareRow
                   label="Cloud Sync Across Operators"
                   basic={false}
                   growth={true}
@@ -943,7 +980,7 @@ export default function ComparePlansPage() {
                   pro={true}
                 />
                 <CompareRow
-                  label="Lower Thirds & Sermon Notes Export"
+                  label="Sermon Notes Export"
                   basic={false}
                   growth={true}
                   pro={true}

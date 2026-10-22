@@ -62,6 +62,7 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
       case "/credits": return t("pageTitles.credits");
       case "/downloads": return t("pageTitles.downloads");
       case "/subscription": return t("pageTitles.subscription");
+      case "/subscription/plans": return t("pageTitles.subscription");
       case "/billing": return t("pageTitles.billing");
       case "/tutorials": return t("pageTitles.tutorials");
       case "/community": return t("pageTitles.community");

@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Make Church Eazy Overlay</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Nunito:wght@500;700;800;900&family=Playfair+Display:ital,wght@0,500;0,700;1,500&display=swap">
+<link rel="stylesheet" href="assets/overlays.css">
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: transparent; }
+  body.bg-dark { background: #121214; }
+  body.bg-green { background: #00b140; }
+  body.bg-checker { background: repeating-conic-gradient(#cfcfcf 0 25%, #f4f4f4 0 50%) 0 0 / 48px 48px; }
+  .msg { position: fixed; left: 24px; top: 24px; font: 600 16px system-ui, sans-serif; color: #fff; background: #b91c1c; padding: 10px 14px; border-radius: 8px; }
+</style>
+</head>
+<body>
+<div class="stage" id="stage"></div>
+<script src="assets/overlays.js"></script>
+<script>
+(function () {
+  // This is the page OBS loads as a Browser Source (1920 x 1080). Everything it shows comes from the link.
+  var q = new URLSearchParams(location.search), id = q.get("t"), params = {};
+  q.forEach(function (v, k) { params[k] = v; });
+
+  var bg = q.get("bg");
+  if (bg) document.body.classList.add("bg-" + bg.replace(/[^a-z]/g, ""));
+
+  var stage = document.getElementById("stage");
+  function rescale() {
+    var s = Math.min(innerWidth / 1920, innerHeight / 1080);
+    stage.style.transform = "scale(" + s + ")";
+  }
+  rescale();
+  addEventListener("resize", rescale);
+
+  if (!MCEOverlays.byId[id]) {
+    var m = document.createElement("div");
+    m.className = "msg";
+    m.textContent = "Overlay link not recognised. Create a new link at overlays.makechurcheazy.com";
+    document.body.appendChild(m);
+    return;
+  }
+
+  var ready = document.fonts && document.fonts.ready ? Promise.race([document.fonts.ready, new Promise(function (r) { setTimeout(r, 2500); })]) : Promise.resolve();
+  ready.then(function () {
+    // mount after fonts load so the ticker measures its text at the right width
+    var api = MCEOverlays.mount(stage, id, params);
+    var every = Number(api.params.repeat) || 0;
+    api.show();
+    if (every > 0) setInterval(function () { api.show(); }, every * 1000);
+  });
+})();
+</script>
+</body>
+</html>

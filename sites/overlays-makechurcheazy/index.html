@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Church Overlays — Make Church Eazy</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Free live-stream overlays for churches: lower thirds, scripture, tickers, countdowns. Pick one, customize it, paste the link into OBS.">
+<meta name="theme-color" content="#0b1020">
+<meta property="og:title" content="Free church live-stream overlays">
+<meta property="og:description" content="Pick a design, type your pastor's name, copy one link into OBS. No download, no account, no watermark.">
+<meta property="og:url" content="https://overlays.makechurcheazy.com/">
+<link rel="canonical" href="https://overlays.makechurcheazy.com/">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Nunito:wght@500;700;800;900&family=Playfair+Display:ital,wght@0,500;0,700;1,500&display=swap">
+<link rel="stylesheet" href="assets/overlays.css">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+
+<div class="strip"><div class="wrap">
+  <span>Run your whole Sunday from one app — Bible, songs, lower thirds and OBS control.</span>
+  <a href="https://makechurcheazy.com" rel="noopener">Try Make Church Eazy today</a>
+</div></div>
+
+<header class="nav"><div class="wrap">
+  <a class="brand" href="#top"><img src="assets/android-chrome-192x192.png" alt="" width="34" height="34">Make Church Eazy <span>Overlays</span></a>
+  <nav aria-label="Main">
+    <a href="#gallery">Overlays</a>
+    <a href="#how">How it works</a>
+    <a class="btn sm" href="https://makechurcheazy.com" rel="noopener">Get the app</a>
+  </nav>
+</div></header>
+
+<main id="top">
+  <div class="hero"><div class="wrap">
+    <div>
+      <span class="eyebrow">Free for churches</span>
+      <h1>Live-stream overlays your church will actually use.</h1>
+      <p class="lede">Pick a design, type your pastor's name, copy one link into OBS. No download, no account, no watermark.</p>
+      <div class="cta">
+        <a class="btn amber" href="#gallery">Browse overlays</a>
+        <a class="btn ghost" href="#how">How it works</a>
+      </div>
+      <small>Works with OBS Studio, vMix, Streamlabs and Ecamm — anything that can show a web page.</small>
+    </div>
+    <div class="frame bg-video" id="heroFrame"><div class="stage" id="heroStage"></div></div>
+  </div></div>
+
+  <section id="how"><div class="wrap">
+    <h2>Three steps, about two minutes</h2>
+    <p class="sub">Overlays are just web links, so there is nothing to install on your media PC.</p>
+    <div class="steps">
+      <div class="step"><b>1</b><h3>Pick a design</h3><p>Lower thirds, scripture, tickers, giving and countdowns, all made for church services.</p></div>
+      <div class="step"><b>2</b><h3>Make it yours</h3><p>Add names, verses and your church colours. Watch the preview update as you type.</p></div>
+      <div class="step"><b>3</b><h3>Paste the link into OBS</h3><p>Add a Browser Source, paste the link, set 1920 × 1080. The background is transparent.</p></div>
+    </div>
+  </div></section>
+
+  <section id="gallery"><div class="wrap">
+    <h2>Overlay library</h2>
+    <p class="sub">Click any overlay to customize it and get your link.</p>
+    <div class="chips" id="chips" role="group" aria-label="Filter by category"></div>
+    <div class="grid" id="grid"></div>
+  </div></section>
+
+  <section><div class="wrap">
+    <div class="promo">
+      <div><span class="tag">From the makers of these overlays</span><h3>Need to change them live during service?</h3>
+      <p>Make Church Eazy puts Bible verses, song lyrics, lower thirds and your OBS scenes on one control screen, so one volunteer can run the whole stream.</p></div>
+      <a class="btn amber" href="https://makechurcheazy.com" rel="noopener">Try Make Church Eazy today</a>
+    </div>
+  </div></section>
+</main>
+
+<footer><div class="wrap">
+  <div>© Make Church Eazy. Overlays are free to use on your church's streams.</div>
+  <div><a href="https://makechurcheazy.com" rel="noopener">makechurcheazy.com</a></div>
+</div></footer>
+
+<dialog id="studio" aria-labelledby="studioTitle">
+  <div class="dlg-head"><h2 id="studioTitle">Customize</h2><button class="x" id="studioClose" aria-label="Close">&times;</button></div>
+  <div class="dlg-body">
+    <div class="dlg-left">
+      <div class="frame bg-video" id="studioFrame"><div class="stage" id="studioStage"></div></div>
+      <div class="toolbar">
+        <button class="btn sm" id="playBtn">&#9654; Play in</button>
+        <button class="btn sm ghost" id="hideBtn">Play out</button>
+        <span class="grow"></span>
+        <div class="bgs" id="bgs"><span>Preview on</span></div>
+      </div>
+      <div class="obs">
+        <h3>Your OBS link</h3>
+        <div class="row2"><input id="linkBox" readonly aria-label="Overlay link" value=""><button class="btn" id="copyBtn">Copy link</button></div>
+        <a class="btn ghost sm" id="openLink" href="#" target="_blank" rel="noopener">Open in a new tab to test</a>
+        <ol>
+          <li>In OBS, under Sources click <b>+</b> and choose <b>Browser</b>.</li>
+          <li>Paste your link into <b>URL</b>. Set <b>Width 1920</b> and <b>Height 1080</b>. Click OK.</li>
+          <li>Changed the text? Create a new link and paste it in, or edit the URL in the source's properties.</li>
+        </ol>
+        <p class="warn">The overlay shows exactly what is typed in the link. Anyone with the link sees the same thing.</p>
+      </div>
+    </div>
+    <div class="dlg-right">
+      <form id="form" onsubmit="return false" autocomplete="off"></form>
+      <div class="save">
+        <button class="btn sm ghost" id="saveDefaults" type="button">Remember my church colours &amp; name</button>
+        <button class="btn sm ghost" id="resetDefaults" type="button">Reset</button>
+      </div>
+      <div class="mini-promo"><b>Change overlays live, from your computer</b>Make Church Eazy runs every overlay from one control screen during service. <a href="https://makechurcheazy.com" rel="noopener">Try it today</a>.</div>
+    </div>
+  </div>
+</dialog>
+
+<script src="assets/overlays.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

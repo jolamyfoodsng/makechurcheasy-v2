@@ -1,0 +1,139 @@
+/* Make Church Eazy — Overlays: styles for every overlay, drawn on a 1920x1080 stage. */
+.stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; overflow: hidden; }
+
+.ov {
+  --c1: #0238e9; --c2: #f59e0b; --ff: 'Archivo', system-ui, sans-serif;
+  --e: cubic-bezier(.2, .8, .2, 1); --dark: rgba(10, 16, 34, .94);
+  position: absolute; inset: 0; font-family: var(--ff); color: #fff; overflow: hidden;
+  pointer-events: none; -webkit-font-smoothing: antialiased;
+}
+.ov *, .ov *::before, .ov *::after { box-sizing: border-box; margin: 0; }
+.ov.noanim * { transition: none !important; }
+.ov:not(.in) * { transition-delay: 0s !important; }
+
+/* shared row positioning: "row b|t l|c|r" */
+.row { position: absolute; left: 0; right: 0; display: flex; padding: 0 96px; --tx: -120%; --ty: 0; --o: 1; --clip: inset(0 100% 0 0); }
+.row.b { bottom: 110px; } .row.t { top: 80px; }
+.row.l { justify-content: flex-start; } .row.c { justify-content: center; } .row.r { justify-content: flex-end; }
+.row.c { --tx: 0; --ty: 70px; --o: 0; --clip: inset(0 50% 0 50%); }
+.row.t.c { --ty: -70px; }
+.row.r { --tx: 120%; --clip: inset(0 0 0 100%); }
+
+/* 1 — clean lower third */
+.lt1 { display: flex; align-items: stretch; max-width: 1500px; }
+.lt1-bar { width: 12px; background: var(--c2); transform: scaleY(0); transform-origin: bottom; transition: transform .5s var(--e); }
+.lt1-card { background: var(--dark); padding: 22px 48px 26px 36px; clip-path: var(--clip); transition: clip-path .8s var(--e) .15s; }
+.lt1-name { font-size: 60px; font-weight: 800; line-height: 1.05; letter-spacing: -.01em; }
+.lt1-sub { margin-top: 10px; font-size: 30px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--c2); }
+.ov.in .lt1-bar { transform: none; }
+.ov.in .lt1-card { clip-path: inset(0); }
+
+/* 2 — bold lower third */
+.lt2 { display: flex; flex-direction: column; align-items: flex-start; max-width: 1500px; }
+.row.r .lt2 { align-items: flex-end; } .row.c .lt2 { align-items: center; }
+.lt2-name, .lt2-sub { transform: translate(var(--tx), var(--ty)); opacity: var(--o); transition: transform .7s var(--e), opacity .5s var(--e); }
+.lt2-name { background: var(--c1); padding: 14px 64px 16px 40px; font-size: 62px; font-weight: 900; line-height: 1.05; text-transform: uppercase; clip-path: polygon(0 0, 100% 0, calc(100% - 30px) 100%, 0 100%); }
+.lt2-sub { background: #fff; color: #0b1020; padding: 10px 56px 12px 40px; font-size: 30px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; border-left: 14px solid var(--c2); clip-path: polygon(0 0, 100% 0, calc(100% - 20px) 100%, 0 100%); transition-delay: .12s; }
+.row.r .lt2-name { padding: 14px 40px 16px 64px; clip-path: polygon(30px 0, 100% 0, 100% 100%, 0 100%); }
+.row.r .lt2-sub { padding: 10px 40px 12px 56px; border-left: 0; border-right: 14px solid var(--c2); clip-path: polygon(20px 0, 100% 0, 100% 100%, 0 100%); }
+.ov.in .lt2-name, .ov.in .lt2-sub { transform: none; opacity: 1; }
+
+/* 3 — song title */
+.sg { display: flex; align-items: center; transform: translate(var(--tx), var(--ty)); opacity: var(--o); transition: transform .8s var(--e), opacity .5s var(--e); max-width: 1500px; }
+.sg-icon { flex: none; width: 112px; height: 112px; border-radius: 50%; background: var(--c2); color: #0b1020; display: grid; place-items: center; margin-right: -26px; z-index: 1; box-shadow: 0 8px 30px rgba(0, 0, 0, .35); }
+.sg-icon svg { width: 58px; height: 58px; }
+.sg-card { background: var(--dark); padding: 20px 64px 22px 50px; border-radius: 0 70px 70px 0; min-height: 96px; }
+.sg-label { font-size: 24px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--c2); }
+.sg-song { font-size: 54px; font-weight: 800; line-height: 1.1; }
+.sg-by { margin-top: 4px; font-size: 28px; font-weight: 500; opacity: .75; }
+.ov.in .sg { transform: none; opacity: 1; }
+
+/* 4 — scripture bar */
+.sb { position: absolute; left: 96px; right: 96px; bottom: 90px; display: flex; align-items: stretch; transform: translateY(40px); opacity: 0; transition: transform .8s var(--e), opacity .6s var(--e); }
+.sb-ref { flex: none; min-width: 290px; max-width: 420px; background: var(--c1); padding: 24px 40px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+.sb-refname { font-size: 46px; font-weight: 800; line-height: 1.05; }
+.sb-ver { margin-top: 8px; font-size: 24px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--c2); }
+.sb-text { flex: 1; background: var(--dark); padding: 28px 48px; font-family: 'Playfair Display', Georgia, serif; font-weight: 500; line-height: 1.3; display: flex; align-items: center; border-bottom: 8px solid var(--c2); }
+.ov.in .sb { transform: none; opacity: 1; }
+
+/* 5 — scripture card */
+.sc { position: absolute; inset: 0; display: grid; place-items: center; }
+.sc-wash { position: absolute; inset: 0; background: radial-gradient(ellipse at center, rgba(6, 10, 24, .72), rgba(6, 10, 24, .9)); opacity: 0; transition: opacity .8s var(--e); }
+.sc-body { position: relative; width: 1560px; text-align: center; opacity: 0; transform: translateY(34px); transition: opacity .9s var(--e) .2s, transform .9s var(--e) .2s; }
+.sc-cross { width: 54px; height: 54px; margin: 0 auto 34px; color: var(--c2); } .sc-cross svg { width: 100%; height: 100%; }
+.sc-text { font-family: 'Playfair Display', Georgia, serif; font-style: italic; font-weight: 500; line-height: 1.22; text-wrap: balance; }
+.sc-ref { margin-top: 44px; font-size: 44px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--c2); }
+.sc-ref span { margin-left: 14px; color: #fff; opacity: .7; font-size: .7em; letter-spacing: .2em; }
+.ov.in .sc-wash { opacity: 1; } .ov.in .sc-body { opacity: 1; transform: none; }
+
+/* 6 — announcement ticker */
+.tk { position: absolute; left: 0; right: 0; height: 96px; display: flex; transition: transform .8s var(--e); }
+.tk.b { bottom: 0; transform: translateY(100%); } .tk.t { top: 0; transform: translateY(-100%); }
+.ov.in .tk { transform: none; }
+.tk-label { position: relative; z-index: 2; flex: none; background: var(--c2); color: #0b1020; font-size: 34px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; display: flex; align-items: center; padding: 0 70px 0 56px; clip-path: polygon(0 0, 100% 0, calc(100% - 28px) 100%, 0 100%); }
+.tk-track { flex: 1; min-width: 0; margin-left: -28px; padding-left: 28px; background: var(--c1); overflow: hidden; display: flex; align-items: center; }
+.tk-run { display: flex; flex: none; white-space: nowrap; animation: tk var(--dur, 30s) linear infinite; will-change: transform; }
+.tk-group { display: flex; flex: none; align-items: center; }
+.tk-item { font-size: 40px; font-weight: 700; padding: 0 40px; }
+.tk-sep { color: var(--c2); font-size: 28px; }
+@keyframes tk { to { transform: translateX(-50%); } }
+
+/* 7 — giving bar */
+.gv { display: flex; align-items: center; background: var(--c1); border-radius: 26px; padding: 22px 52px 22px 26px; gap: 30px; box-shadow: 0 14px 44px rgba(0, 0, 0, .35); transform: translateY(60px) scale(.96); opacity: 0; transition: transform .8s var(--e), opacity .5s var(--e); }
+.gv-icon { flex: none; width: 104px; height: 104px; border-radius: 50%; background: #fff; color: var(--c1); display: grid; place-items: center; }
+.gv-icon svg { width: 56px; height: 56px; }
+.gv-head { font-size: 28px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--c2); }
+.gv-url { font-size: 64px; font-weight: 900; line-height: 1.05; letter-spacing: -.01em; }
+.gv-note { margin-top: 6px; font-size: 28px; font-weight: 500; opacity: .85; }
+.ov.in .gv { transform: none; opacity: 1; }
+
+/* 8 — prayer bar */
+.pr { display: flex; align-items: center; max-width: 1560px; background: var(--dark); border-radius: 100px; padding: 18px 70px 18px 18px; gap: 34px; transform: translateY(60px); opacity: 0; transition: transform .8s var(--e), opacity .5s var(--e); box-shadow: 0 14px 44px rgba(0, 0, 0, .35); }
+.pr-icon { flex: none; width: 112px; height: 112px; border-radius: 50%; background: var(--c2); color: #0b1020; display: grid; place-items: center; }
+.pr-icon svg { width: 52px; height: 52px; }
+.pr-label { font-size: 24px; font-weight: 700; letter-spacing: .22em; text-transform: uppercase; color: var(--c2); }
+.pr-text { font-weight: 700; line-height: 1.2; }
+.ov.in .pr { transform: none; opacity: 1; }
+
+/* 9 — social bar */
+.so { display: flex; align-items: center; gap: 44px; background: var(--dark); border-radius: 22px; padding: 22px 52px; border-top: 8px solid var(--c2); transform: translateY(60px); opacity: 0; transition: transform .8s var(--e), opacity .5s var(--e); box-shadow: 0 14px 44px rgba(0, 0, 0, .35); }
+.so-label { font-size: 30px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; color: var(--c2); }
+.so-item { display: flex; align-items: center; gap: 16px; font-size: 40px; font-weight: 700; }
+.so-icon { width: 58px; height: 58px; border-radius: 50%; background: var(--c1); display: grid; place-items: center; }
+.so-icon svg { width: 32px; height: 32px; }
+.ov.in .so { transform: none; opacity: 1; }
+
+/* 10 — service countdown */
+.cd { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 40px; }
+.cd-title { font-size: 48px; font-weight: 800; letter-spacing: .24em; text-transform: uppercase; text-shadow: 0 4px 24px rgba(0, 0, 0, .5); opacity: 0; transform: translateY(-20px); transition: opacity .6s var(--e), transform .6s var(--e); }
+.cd-boxes { display: flex; gap: 28px; }
+.cd-box { width: 280px; padding: 30px 0 26px; background: var(--dark); border-top: 10px solid var(--c2); text-align: center; border-radius: 6px; opacity: 0; transform: scale(.85); transition: opacity .6s var(--e), transform .7s var(--e); }
+.cd-box:nth-child(2) { transition-delay: .08s; } .cd-box:nth-child(3) { transition-delay: .16s; } .cd-box:nth-child(4) { transition-delay: .24s; }
+.cd-num { font-size: 150px; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
+.cd-lab { margin-top: 10px; font-size: 26px; font-weight: 700; letter-spacing: .24em; text-transform: uppercase; color: var(--c2); }
+.cd-done { display: none; font-size: 84px; font-weight: 900; text-align: center; text-shadow: 0 4px 30px rgba(0, 0, 0, .6); }
+.ov.in .cd-title { opacity: 1; transform: none; } .ov.in .cd-box { opacity: 1; transform: none; }
+.cd.is-done .cd-boxes, .ov.is-done .cd-boxes, .ov.is-done .cd-title { display: none; } .ov.is-done .cd-done { display: block; }
+
+/* 11 — starting soon */
+.ss { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
+.ss-bg { position: absolute; inset: 0; background: radial-gradient(circle at 85% 12%, rgba(255, 255, 255, .12), transparent 38%), radial-gradient(circle at 8% 92%, rgba(245, 158, 11, .22), transparent 40%), linear-gradient(135deg, var(--c1), #050a1a 92%); opacity: 0; transition: opacity .9s var(--e); }
+.ss.nobg .ss-bg { background: radial-gradient(ellipse at center, rgba(6, 10, 24, .55), rgba(6, 10, 24, .8)); }
+.ss-body { position: relative; display: flex; flex-direction: column; align-items: center; gap: 22px; max-width: 1500px; opacity: 0; transform: translateY(30px); transition: opacity .9s var(--e) .25s, transform .9s var(--e) .25s; }
+.ss-logo { max-height: 150px; max-width: 420px; object-fit: contain; margin-bottom: 8px; }
+.ss-church { font-size: 40px; font-weight: 800; letter-spacing: .3em; text-transform: uppercase; color: var(--c2); }
+.ss-head { font-size: 190px; font-weight: 900; line-height: 1; letter-spacing: -.02em; text-wrap: balance; }
+.ss-sub { font-size: 46px; font-weight: 500; opacity: .85; }
+.ss-time { margin-top: 18px; font-size: 96px; font-weight: 800; font-variant-numeric: tabular-nums; padding: 8px 44px; border: 4px solid var(--c2); border-radius: 100px; }
+.ov.in .ss-bg { opacity: 1; } .ov.in .ss-body { opacity: 1; transform: none; }
+
+/* 12 — live bug */
+.lb { position: absolute; display: flex; align-items: center; gap: 22px; background: var(--dark); border-radius: 22px; padding: 14px 18px 14px 22px; opacity: 0; transition: opacity .6s var(--e), transform .8s var(--e); box-shadow: 0 10px 34px rgba(0, 0, 0, .35); }
+.lb.tl { top: 64px; left: 80px; transform: translateX(-60px); } .lb.tr { top: 64px; right: 80px; transform: translateX(60px); }
+.lb.bl { bottom: 64px; left: 80px; transform: translateX(-60px); } .lb.br { bottom: 64px; right: 80px; transform: translateX(60px); }
+.lb-logo { height: 68px; max-width: 200px; object-fit: contain; }
+.lb-name { font-size: 38px; font-weight: 800; letter-spacing: .02em; }
+.lb-tag { display: flex; align-items: center; gap: 12px; background: #e11d2e; padding: 10px 22px; border-radius: 12px; font-size: 32px; font-weight: 900; letter-spacing: .16em; }
+.lb-tag i { width: 16px; height: 16px; border-radius: 50%; background: #fff; animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .25; transform: scale(.7); } }
+.ov.in .lb { opacity: 1; transform: none; }

@@ -252,6 +252,19 @@ interface UserDetail {
   lastOpened: string | null;
   /** Last real use: presenting, searching, importing, uploading or voice. */
   lastUsed: string | null;
+  /** Where they came from at sign-up (ChatGPT, TikTok, a friend...). Null for older accounts. */
+  signupSource?: {
+    channel: string;
+    label: string;
+    source?: string;
+    medium?: string;
+    campaign?: string;
+    referrerHost?: string;
+    landingPath?: string;
+    clickId?: string;
+    firstSeenAt?: string;
+    signupClient?: "web" | "desktop";
+  } | null;
   appId: string;
   activationMilestones?: {
     firstPresentation?: boolean;
@@ -2339,6 +2352,20 @@ export default function AdminUserDetailPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-1">
             <InfoRow label="Referral code" value={user.referralCode || "—"} />
             <InfoRow label="Referred by" value={(() => { const code = typeof user.referredBy === "string" ? user.referredBy : String((user.referredBy as unknown as { code?: string } | null)?.code || ""); if (!code) return "Direct / None"; return user.referredByName ? `${user.referredByName} · ${code}` : code; })()} />
+            <InfoRow
+              label="Came from"
+              value={user.signupSource ? user.signupSource.label : "Not recorded"}
+              subValue={user.signupSource
+                ? [
+                    user.signupSource.campaign && `Campaign: ${user.signupSource.campaign}`,
+                    user.signupSource.medium && `Medium: ${user.signupSource.medium}`,
+                    user.signupSource.referrerHost && `Linked from ${user.signupSource.referrerHost}`,
+                    user.signupSource.landingPath && `Landed on ${user.signupSource.landingPath}`,
+                    user.signupSource.firstSeenAt && `First visit ${new Date(user.signupSource.firstSeenAt).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}`,
+                    user.signupSource.signupClient === "desktop" ? "Signed up in the desktop app" : null,
+                  ].filter(Boolean).join(" · ") || null
+                : "Signed up before sources were recorded"}
+            />
             <InfoRow label="IP Address" value={user.lastIp || "—"} />
             <InfoRow
               label={t('common.signedUp')}

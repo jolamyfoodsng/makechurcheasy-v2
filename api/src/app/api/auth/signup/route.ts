@@ -15,6 +15,7 @@ import { getPlatformSettings } from "@/lib/platformSettings";
 import { applyReferralCode, normalizeReferralCode, validateReferralCode } from "@/lib/referrals";
 import { detectRequestCountry, resolveSignupLanguage } from "@/lib/signupDefaults";
 import { notifyTelegramNewSignup } from "@/lib/telegramNotifications";
+import { signupSourceFromRequest } from "@/lib/signupSource";
 
 const CODE_EXPIRY_MS = 10 * 60 * 1000; // 10 minutes
 
@@ -163,6 +164,8 @@ export async function POST(req: NextRequest) {
       trialId: null,
       trial: null,
       onboardingCompleted: true,
+      // Where they came from (ChatGPT, TikTok, a friend...), from the website's first-visit cookie.
+      signupSource: signupSourceFromRequest(req, submittedReferralCode || null),
       createdAt: now,
       lastLogin: now,
     };
@@ -174,7 +177,7 @@ export async function POST(req: NextRequest) {
       name: user.name,
       country: normalizedCountry,
       createdAt: now,
-      source: "Website signup",
+      source: `Website signup · from ${user.signupSource.label}`,
     });
 
     if (submittedReferralCode) {

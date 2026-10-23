@@ -9,6 +9,7 @@ import { DEFAULT_LOCALE, resolveLocalePreference } from "@/i18n/routing";
 import { getInitialMongoUser } from "@/lib/serverAuth";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import ClientErrorTelemetry from "@/components/ClientErrorTelemetry";
+import TrafficSourceCapture from "@/components/TrafficSourceCapture";
 
 import { FOUNDER_ID, companySameAs, founderPersonNode } from "@/lib/founder";
 
@@ -198,6 +199,7 @@ export default async function RootLayout({
           }}
         />
         <GoogleAnalytics />
+        <TrafficSourceCapture />
         <I18nProvider locale={locale} messages={messages}>
           <AuthProvider initialMongoUser={initialMongoUser}>
             <ClientErrorTelemetry />

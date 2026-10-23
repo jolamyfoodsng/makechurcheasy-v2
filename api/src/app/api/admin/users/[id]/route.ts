@@ -301,6 +301,8 @@ export async function GET(
       // stored plan has not yet been reconciled by the daily lifecycle job.
       plan: effectivePlan === "trial" ? "free" : effectivePlan,
       signupDate: user.createdAt?.toISOString?.() || user.createdAt || null,
+      // Where they came from (ChatGPT, TikTok, a friend...). Null for accounts made before this was recorded.
+      signupSource: user.signupSource || null,
       createdAt: user.createdAt?.toISOString?.() || user.createdAt || null,
       lastLogin: user.lastLogin?.toISOString?.() || user.lastLogin || null,
       lastOpened,

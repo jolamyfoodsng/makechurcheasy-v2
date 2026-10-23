@@ -15,6 +15,7 @@ import { detectRequestCountry, resolveSignupLanguage } from "@/lib/signupDefault
 import { extractRequestLocation, buildLoginLocationUpdates } from "@/lib/userLocation";
 import { notifyTelegramNewSignup } from "@/lib/telegramNotifications";
 import { applyReferralCode, normalizeReferralCode } from "@/lib/referrals";
+import { signupSourceFromRequest } from "@/lib/signupSource";
 
 function appOrigin(appUrl: string): string {
   try {
@@ -335,6 +336,8 @@ export async function GET(req: NextRequest) {
               },
             }
           : {}),
+        // Where they came from (ChatGPT, TikTok, a friend...), from the website's first-visit cookie.
+        signupSource: signupSourceFromRequest(req, referralCodeFromState || null),
         createdAt: now,
         lastLogin: now,
       };
@@ -361,7 +364,7 @@ export async function GET(req: NextRequest) {
         name: newUser.name,
         country: normalizedCountry,
         createdAt: now,
-        source: "Google signup",
+        source: `Google signup · from ${newUser.signupSource.label}`,
       });
 
       if (referralCodeFromState) {

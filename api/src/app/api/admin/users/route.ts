@@ -364,6 +364,8 @@ export async function GET(req: NextRequest) {
         // Active trials remain labelled Free so the existing trial badge is shown.
         plan: effectivePlan === "trial" ? "free" : effectivePlan,
         signupDate: u.createdAt?.toISOString?.() || u.createdAt || null,
+        // Where they came from (ChatGPT, TikTok, a friend...). Null for accounts made before this was recorded.
+        signupSource: u.signupSource || null,
         createdAt: u.createdAt?.toISOString?.() || u.createdAt || null,
         lastLogin: lastLoginRaw,
         lastOpened,

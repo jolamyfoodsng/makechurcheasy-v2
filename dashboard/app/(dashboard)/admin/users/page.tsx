@@ -168,6 +168,8 @@ interface AdminUser {
   } | null;
   /** Is the user still with us: worked out from the last real use of the product (not just opening it). */
   retention?: RetentionInfo | null;
+  /** Where they came from at sign-up (ChatGPT, TikTok, a friend...). Null for older accounts. */
+  signupSource?: SignupSourceInfo | null;
   activityScore?: {
     score: number;
     grade: ActivityScoreBreakdown["grade"];
@@ -265,6 +267,24 @@ function getSubscriptionExpiringInfo(user: AdminUser): {
 }
 
 type SortField = "name" | "email" | "country" | "plan" | "credits" | "createdAt" | "lastLogin" | "lastUsed" | "activityScore";
+type SignupSourceInfo = {
+  channel: string;
+  label: string;
+  source?: string;
+  medium?: string;
+  campaign?: string;
+  referrerHost?: string;
+  landingPath?: string;
+  firstSeenAt?: string;
+  signupClient?: "web" | "desktop";
+  referralCode?: string;
+};
+
+/** Filter key for a user's sign-up channel; older accounts have none recorded. */
+function sourceKeyOf(u: { signupSource?: SignupSourceInfo | null }): string {
+  return u.signupSource?.channel || "__none";
+}
+
 type ActivityFilter = "all" | "expiring" | "1d" | "3d" | "7d" | "14d" | "30d" | "inactive";
 type SortDir = "asc" | "desc";
 type AdminUserAction =
@@ -464,6 +484,7 @@ export default function AdminUsersPage() {
   const [osFilter, setOsFilter] = useState<"all" | OsKey | "none">("all");
   const [versionFilter, setVersionFilter] = useState<string>("all");
   const [retentionFilter, setRetentionFilter] = useState<RetentionStatus | "attention" | "all">("all");
+  const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [exportingCsv, setExportingCsv] = useState(false);
   const [sortField, setSortField] = useState<SortField>("createdAt");
@@ -682,6 +703,19 @@ export default function AdminUsersPage() {
 
   const retentionCounts = useMemo(() => countRetention(users), [users]);
 
+  // Sign-up channels with how many accounts each, most first. Older accounts are "Not recorded".
+  const sourceCounts = useMemo(() => {
+    const map = new Map<string, { key: string; label: string; count: number }>();
+    for (const u of users) {
+      const key = sourceKeyOf(u);
+      const label = key === "__none" ? "Not recorded" : key === "website" ? "Other websites" : u.signupSource!.label;
+      const entry = map.get(key) || { key, label, count: 0 };
+      entry.count += 1;
+      map.set(key, entry);
+    }
+    return Array.from(map.values()).sort((a, b) => (a.key === "__none" ? 1 : b.key === "__none" ? -1 : b.count - a.count));
+  }, [users]);
+
   // Counts for the OS and app-version dropdowns.
   const osCounts = useMemo(() => {
     const counts: Record<OsKey | "none", number> = { windows: 0, macos: 0, linux: 0, unknown: 0, none: 0 };
@@ -781,6 +815,11 @@ export default function AdminUsersPage() {
       });
     }
 
+    // Where they came from at sign-up.
+    if (sourceFilter !== "all") {
+      result = result.filter((u) => sourceKeyOf(u) === sourceFilter);
+    }
+
     // "Still with us" filter: by the last time they really used the product.
     if (retentionFilter !== "all") {
       result = result.filter((u) => (retentionFilter === "attention"
@@ -876,7 +915,7 @@ export default function AdminUsersPage() {
     });
 
     return result;
-  }, [users, search, filter, selectedCountries, contactFilter, billingCycleFilter, osFilter, versionFilter, versionOptions, activityFilter, retentionFilter, sortField, sortDir]);
+  }, [users, search, filter, selectedCountries, contactFilter, billingCycleFilter, osFilter, versionFilter, versionOptions, activityFilter, retentionFilter, sourceFilter, sortField, sortDir]);
 
   function handleExportCsv() {
     if (filtered.length === 0) {
@@ -910,6 +949,9 @@ export default function AdminUsersPage() {
         "Media Uploaded",
         "Transcripts Created",
         "Signup Date",
+        "Signup Source",
+        "Signup Campaign",
+        "Signup Referrer",
         "Last Used At",
         "Last Opened At",
         "Last Login At",
@@ -950,6 +992,9 @@ export default function AdminUsersPage() {
           u.usage?.mediaUploaded || 0,
           u.usage?.transcriptCount || 0,
           u.createdAt || "",
+          u.signupSource?.label || "Not recorded",
+          u.signupSource?.campaign || "",
+          u.signupSource?.referrerHost || "",
           u.lastUsed || "",
           u.lastOpened || "",
           u.lastLogin || "",
@@ -1532,6 +1577,48 @@ export default function AdminUsersPage() {
         </div>
       </div>
 
+      {/* Where sign-ups came from */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5" title="Recorded at sign-up from ?src= / ?utm_source= links and the site that sent them. Older accounts were not recorded.">
+            <Globe className="w-3.5 h-3.5 text-indigo-400" />
+            Came from
+          </span>
+          {sourceFilter !== "all" && (
+            <button
+              onClick={() => setSourceFilter("all")}
+              className="text-xs text-indigo-400 hover:text-indigo-300 font-medium transition-colors"
+            >
+              Reset to all
+            </button>
+          )}
+        </div>
+        <div className="flex items-center gap-2 overflow-x-auto pb-1.5 scrollbar-thin">
+          {sourceCounts.map((item) => {
+            const isSelected = sourceFilter === item.key;
+            return (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => setSourceFilter(isSelected ? "all" : item.key)}
+                className={`group flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
+                  isSelected
+                    ? "bg-indigo-600 text-white ring-1 ring-indigo-400/50"
+                    : item.key === "__none"
+                      ? "bg-gray-900 text-slate-500 hover:bg-gray-800 hover:text-slate-300 border border-slate-800"
+                      : "bg-gray-900 text-slate-300 hover:bg-gray-800 hover:text-slate-100 border border-slate-800"
+                }`}
+              >
+                <span>{item.label}</span>
+                <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold ${isSelected ? "bg-white/20 text-white" : "bg-slate-800 text-slate-400"}`}>
+                  {item.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-3">
         <div className="relative flex-1 min-w-[200px]">
@@ -2101,6 +2188,14 @@ export default function AdminUsersPage() {
                           {createdInfo.text !== createdInfo.full && createdInfo.full !== "Unknown" && (
                             <span className="text-[10px] text-slate-500">
                               {createdInfo.full}
+                            </span>
+                          )}
+                          {user.signupSource && (
+                            <span
+                              className="text-[10px] text-indigo-300"
+                              title={[user.signupSource.campaign && `Campaign: ${user.signupSource.campaign}`, user.signupSource.referrerHost && `Linked from ${user.signupSource.referrerHost}`, user.signupSource.landingPath && `Landed on ${user.signupSource.landingPath}`].filter(Boolean).join(" · ") || undefined}
+                            >
+                              from {user.signupSource.label}
                             </span>
                           )}
                         </div>

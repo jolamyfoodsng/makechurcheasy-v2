@@ -1,5 +1,6 @@
 "use client";
 
+import { isTrafficSourceWord } from "@/lib/trafficSource";
 import { Suspense, useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -84,8 +85,10 @@ function SignupInner() {
 
   // Detect referral code from URL query parameters and localStorage
   useEffect(() => {
+    // ?ref=tiktok style links name a channel, not a friend's code (see lib/trafficSource).
+    const refParam = searchParams.get("ref");
     const rawRef =
-      searchParams.get("ref") ||
+      (isTrafficSourceWord(refParam) ? null : refParam) ||
       searchParams.get("referral") ||
       searchParams.get("referralCode");
     const storedRef =

@@ -6,6 +6,7 @@ import { getPlanConfig } from "@/lib/db";
 import { rateLimit } from "@/lib/rateLimit";
 import { isKnownCountryCode, normalizeCountryCode } from "@/lib/countryNormalization";
 import { notifyTelegramNewSignup } from "@/lib/telegramNotifications";
+import { signupSourceFromRequest } from "@/lib/signupSource";
 
 const CORS_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -92,6 +93,8 @@ export async function POST(req: NextRequest) {
       trial: null,
       isActive: true,
       signupDate: now,
+      // Where they came from (ChatGPT, TikTok, a friend...), from the website's first-visit cookie.
+      signupSource: signupSourceFromRequest(req),
       createdAt: now,
       lastLogin: now,
       lastActive: now,
@@ -103,7 +106,7 @@ export async function POST(req: NextRequest) {
       name: user.name,
       country: normalizedCountry,
       createdAt: now,
-      source: "Landing page signup",
+      source: `Landing page signup · from ${user.signupSource.label}`,
     });
 
     await db.collection("activity_events").insertOne({

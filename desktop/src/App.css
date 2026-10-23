@@ -933,6 +933,13 @@ input[type="radio"] {
   gap: 16px;
 }
 
+/* Home dashboard: use the whole content area on big monitors instead of a 1500px centred column. */
+.app-page__inner--wide {
+  width: 100%;
+  max-width: 2600px;
+  padding-inline: clamp(24px, 3vw, 48px);
+}
+
 .app-page__header {
   display: flex;
   align-items: flex-end;

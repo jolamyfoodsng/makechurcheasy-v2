@@ -761,7 +761,7 @@ export default function ProductionHomePage() {
   }, [navigate]);
 
   return (
-    <div className="app-page__inner">
+    <div className="app-page__inner app-page__inner--wide">
       <OnboardingResumeBanner />
 
       <DashboardGreeting

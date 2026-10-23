@@ -10,6 +10,7 @@ import {
   DEFAULT_EMAIL_BRANDING,
   type EmailBrandingSettings,
 } from "./emailBrandingDefaults";
+import { DEFAULT_SUPPORT_CONTENT, normalizeSupportContent, type SupportContent } from "./supportContent";
 
 const COLLECTION = "platform_settings";
 const DOC_ID = "platform_settings";
@@ -53,11 +54,8 @@ export interface AdminControls {
     /** Extra blocked email domains, e.g. "tempmail.dev". */
     blockedDomains: string[];
   };
-  support: {
-    whatsappUrl: string;
-    youtubeUrl: string;
-    supportEmail: string;
-  };
+  /** The desktop app's Support window (see supportContent.ts). */
+  support: SupportContent;
 }
 
 export const DEFAULT_ADMIN_CONTROLS: AdminControls = {
@@ -71,11 +69,7 @@ export const DEFAULT_ADMIN_CONTROLS: AdminControls = {
   },
   speech: { model: "universal-streaming-english", dailyMinutesCap: 0 },
   signup: { maxSignupsPerIpPerDay: 5, maxSignupsPerDevicePerDay: 2, blockDisposableEmails: true, blockedDomains: [] },
-  support: {
-    whatsappUrl: "https://chat.whatsapp.com/EQIuXfpCTBOG7YOSf2nKqU?mode=gi_t",
-    youtubeUrl: "https://www.youtube.com/playlist?list=PLRua6gJfgC0o",
-    supportEmail: "support@makechurcheazy.com",
-  },
+  support: DEFAULT_SUPPORT_CONTENT,
 };
 
 export interface PlatformSettings {
@@ -581,6 +575,14 @@ export async function getPlatformSettings(): Promise<PlatformSettings> {
       defaultsRecord[section] as Record<string, unknown>,
     );
   }
+
+  // The Support window is cleaned as a whole (not merged field by field): settings saved before
+  // the Support editor existed only have three links, and those are kept in the default channels.
+  const storedControls = docRecord.controls as Record<string, unknown> | undefined;
+  merged.controls = {
+    ...(merged.controls ?? DEFAULT_ADMIN_CONTROLS),
+    support: normalizeSupportContent(storedControls?.support),
+  };
 
   _cache = { doc: merged, ts: Date.now() };
   return merged;

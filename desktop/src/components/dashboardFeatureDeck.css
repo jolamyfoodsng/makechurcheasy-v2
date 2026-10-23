@@ -1,0 +1,345 @@
+/* Dashboard feature deck (DashboardFeatureDeck.tsx). Theme tokens only — see docs/DESIGN_SYSTEM.md. */
+
+.dashboard-feature-deck {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  height: var(--deck-height, 520px);
+  margin-bottom: 24px;
+}
+
+/* ── Verse AI: the large card ── */
+.deck-hero {
+  grid-row: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  padding: 24px;
+  overflow: hidden;
+  border: 1px solid var(--primary-soft-border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--primary) 7%, var(--surface));
+}
+
+.deck-hero__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.deck-hero__icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius);
+  background: var(--primary);
+  color: #ffffff;
+}
+
+.deck-hero__title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* Tagline, description and flow sit in the middle of the space between the title and the button. */
+.deck-hero__body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: auto 0;
+}
+
+.deck-hero__tagline {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  text-wrap: balance;
+}
+
+.deck-hero__description {
+  margin: 0;
+  max-width: 56ch;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.deck-hero__flow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+}
+
+.deck-hero__flow > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.deck-hero__action {
+  align-self: flex-start;
+}
+
+/* ── Studio Mode, Broadcast Graphics, Multi-Stream ── */
+.deck-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 0;
+  padding: 12px 16px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  transition: border-color var(--transition);
+}
+
+.deck-card:hover {
+  border-color: var(--border-strong);
+}
+
+.deck-card__icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  color: var(--accent-blue);
+}
+
+.deck-card__copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.deck-card__title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.deck-card__title {
+  margin: 0;
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.deck-card__tagline {
+  margin: 2px 0 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.deck-card__meta {
+  display: none;
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.dashboard-feature-deck[data-roomy="true"] .deck-card__meta {
+  display: block;
+}
+
+.deck-card__actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.deck-badge {
+  flex-shrink: 0;
+  padding: 1px 6px;
+  border: 1px solid var(--primary-soft-border);
+  border-radius: var(--radius-sm);
+  background: var(--primary-soft);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--accent-blue);
+}
+
+/* ── Buttons ── */
+.deck-btn {
+  min-height: 34px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.deck-btn:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-hover);
+}
+
+.deck-btn--primary {
+  min-height: 40px;
+  padding: 0 16px;
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.deck-btn--primary:hover {
+  border-color: var(--primary-hover);
+  background: var(--primary-hover);
+}
+
+.deck-btn--primary:active {
+  background: var(--primary-pressed);
+}
+
+.deck-icon-btn {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+}
+
+.deck-icon-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.deck-btn:focus-visible,
+.deck-icon-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Short decks: tighten the large card so it still fits. */
+.dashboard-feature-deck[data-roomy="false"] .deck-hero {
+  gap: 8px;
+  padding: 20px;
+}
+
+.dashboard-feature-deck[data-roomy="false"] .deck-hero__tagline {
+  font-size: 22px;
+}
+
+.dashboard-feature-deck[data-roomy="false"] .deck-hero__description {
+  font-size: 13px;
+}
+
+/* ── Medium width: Verse AI across the top, the other three in a row below ── */
+.dashboard-feature-deck[data-layout="row"] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
+}
+
+.dashboard-feature-deck[data-layout="row"] .deck-hero {
+  grid-row: auto;
+  grid-column: 1 / -1;
+}
+
+.dashboard-feature-deck[data-layout="row"] .deck-card,
+.dashboard-feature-deck[data-layout="stack"] .deck-card {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.dashboard-feature-deck[data-layout="row"] .deck-card__copy {
+  flex: 1;
+}
+
+.dashboard-feature-deck[data-layout="row"] .deck-card__actions,
+.dashboard-feature-deck[data-layout="stack"] .deck-card__actions {
+  width: 100%;
+  justify-content: space-between;
+  flex-direction: row-reverse;
+}
+
+/* ── Very narrow: one column, normal scrolling ── */
+.dashboard-feature-deck[data-layout="stack"] {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: none;
+  height: auto;
+}
+
+.dashboard-feature-deck[data-layout="stack"] .deck-hero {
+  grid-row: auto;
+}
+
+.dashboard-feature-deck[data-layout="stack"] .deck-hero__body {
+  margin: 0;
+}
+
+/* The side cards are short in the row layout: the title carries them, the icon is dropped. */
+.dashboard-feature-deck[data-layout="row"] .deck-card__icon {
+  display: none;
+}
+
+/* Verse AI across the top: text on the left, the button on the right, so it needs less height. */
+.dashboard-feature-deck[data-layout="row"] .deck-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr);
+  column-gap: 24px;
+  row-gap: 12px;
+}
+
+.dashboard-feature-deck[data-layout="row"] .deck-hero__head,
+.dashboard-feature-deck[data-layout="row"] .deck-hero__body {
+  grid-column: 1;
+}
+
+.dashboard-feature-deck[data-layout="row"] .deck-hero__body {
+  margin: 0;
+  align-self: center;
+}
+
+.dashboard-feature-deck[data-layout="row"] .deck-hero__action {
+  grid-column: 2;
+  grid-row: 1 / -1;
+  align-self: center;
+}

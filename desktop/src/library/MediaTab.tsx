@@ -11,7 +11,6 @@
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 import { Search, Plus, Share2, Eye, MoreVertical, ArrowLeft, X as CloseIcon, Film } from "../components/icons/NativeIcons";
 import i18n from "../i18n";
@@ -58,6 +57,7 @@ import {
   fetchTemplatePictures,
   type TemplatePictureAsset,
 } from "../services/templateVideos";
+import { saveUploadBytes } from "../services/uploadFileBytes";
 
 type FilterType = "all" | "image" | "video";
 type AddMediaCategory = "image" | "video" | "audio" | "document";
@@ -243,10 +243,7 @@ export async function saveLibraryMediaItem(
     const uploadStartedAt = Date.now();
     const uploadedAt = new Date(uploadStartedAt).toISOString();
     const safeName = `media_${uploadStartedAt}_${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
-    const diskPath = await invoke<string>("save_upload_file", {
-      fileName: safeName,
-      fileData: Array.from(bytes),
-    });
+    const diskPath = await saveUploadBytes(safeName, bytes);
 
     const baseUrl = await getOverlayBaseUrl();
     const overlayUrl = `${baseUrl}/uploads/${encodeURIComponent(safeName)}`;

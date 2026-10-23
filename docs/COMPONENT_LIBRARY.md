@@ -1,5 +1,7 @@
 # MakeChurchEazy Component Library
 
+> **Superseded:** the current design spec is [`desktop/docs/DESIGN_SYSTEM.md`](../desktop/docs/DESIGN_SYSTEM.md). Where this document disagrees with it (colours, fonts, radii, button and modal sizes, icons), follow DESIGN_SYSTEM.md.
+
 Version: 1.0
 Last Updated: June 2026
 

@@ -6,6 +6,7 @@
  * /api/config/desktop endpoint is unreachable. It mirrors the API-side
  * defaults in api/src/lib/platformSettings.ts.
  */
+import { DEFAULT_SUPPORT_CONTENT, type SupportContent } from "./supportContent";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -140,7 +141,8 @@ export type DesktopFeatureSwitch =
 export interface DesktopAdminControls {
   features: Record<DesktopFeatureSwitch, boolean>;
   speech: { model: "universal-streaming-english" | "universal-streaming-multilingual" };
-  support: { whatsappUrl: string; youtubeUrl: string; supportEmail: string };
+  /** The Support window (see supportContent.ts). */
+  support: SupportContent;
 }
 
 export const DEFAULT_DESKTOP_ADMIN_CONTROLS: DesktopAdminControls = {
@@ -152,11 +154,7 @@ export const DEFAULT_DESKTOP_ADMIN_CONTROLS: DesktopAdminControls = {
     presentationLink: true,
   },
   speech: { model: "universal-streaming-english" },
-  support: {
-    whatsappUrl: "https://chat.whatsapp.com/EQIuXfpCTBOG7YOSf2nKqU?mode=gi_t",
-    youtubeUrl: "https://www.youtube.com/playlist?list=PLRua6gJfgC0o",
-    supportEmail: "support@makechurcheazy.com",
-  },
+  support: DEFAULT_SUPPORT_CONTENT,
 };
 
 export const DEFAULT_DESKTOP_CONFIG: DesktopConfig = {

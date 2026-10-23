@@ -1,5 +1,7 @@
 # UI/UX Build Standards
 
+> **Start with [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md).** It lists the exact tokens, shared components and checks every new screen, dialog and page must use (dark + light mode, the user's accent colour and font from Settings → Appearance). The rules below are the general taste; that file is the concrete spec.
+
 Always build interfaces with consistency, restraint, and strong visual hierarchy.
 
 ## Primary objective
@@ -113,7 +115,7 @@ When asked to build a UI:
 - Keep border radius minimal across the interface
 - Prefer a mostly rectangular appearance
 - Use very small rounding only where needed
-- Standard radius should stay around 3px
+- Standard radius is `var(--radius)` (4px); `var(--radius-lg)` (6px) for dialogs and panels
 - Avoid overly soft, pill-shaped, or heavily rounded components
 
 ### Color usage

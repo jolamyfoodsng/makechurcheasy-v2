@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CreditCard, LifeBuoy, Loader2, Mic, Monitor, Power, Save, ShieldCheck } from "lucide-react";
+import { CreditCard, Loader2, Mic, Monitor, Power, Save, ShieldCheck } from "lucide-react";
 import { Button, Card, CardHeader, Input, Select, Textarea, Toggle } from "@/components/ui";
 import type { AdminControls, FeatureSwitchKey, PaymentProviderKey, PlatformSettings } from "../types";
+import { withSupportDefaults } from "../supportContent";
+import { SupportWindowEditor } from "./SupportWindowEditor";
 
 interface Props {
   data: PlatformSettings["controls"];
@@ -286,38 +288,12 @@ export function ControlsSection({ data, onChange, onSave, saving }: Props) {
         </div>
       </Card>
 
-      {/* Support links */}
-      <Card padding="none">
-        <div className="px-6 py-4 border-b border-slate-100">
-          <CardHeader
-            title="Support links in the app"
-            description="Shown in the desktop app's Help menu. Leave a field empty to hide that link."
-            icon={<LifeBuoy className="w-4 h-4" />}
-            action={<SaveButton saving={saving} onClick={onSave} />}
-          />
-        </div>
-        <div className="px-6 py-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Input
-            label="WhatsApp community link"
-            value={data.support.whatsappUrl}
-            onChange={(e) => set("support", { ...data.support, whatsappUrl: e.target.value })}
-            placeholder="https://chat.whatsapp.com/…"
-          />
-          <Input
-            label="YouTube help videos"
-            value={data.support.youtubeUrl}
-            onChange={(e) => set("support", { ...data.support, youtubeUrl: e.target.value })}
-            placeholder="https://www.youtube.com/…"
-          />
-          <Input
-            label="Support email"
-            type="email"
-            value={data.support.supportEmail}
-            onChange={(e) => set("support", { ...data.support, supportEmail: e.target.value })}
-            placeholder="support@makechurcheazy.com"
-          />
-        </div>
-      </Card>
+      {/* Support window in the desktop app */}
+      <SupportWindowEditor
+        value={withSupportDefaults(data.support)}
+        onChange={(support) => set("support", support)}
+        saveButton={<SaveButton saving={saving} onClick={onSave} />}
+      />
     </div>
   );
 }

@@ -1,5 +1,7 @@
 # Native-style desktop interface
 
+> The full, current spec (tokens, components, checklist) is [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md).
+
 The October 2026 app-wide refresh follows the requested Studio direction and supersedes older decorative colors, large radii, and web-font defaults in `docs/DESIGN.md` for application chrome.
 
 - `src/native-theme.css` provides shared startup tokens, system font stacks, compact radii, keyboard focus, and native form feedback. Main app and standalone dock entry points share it.

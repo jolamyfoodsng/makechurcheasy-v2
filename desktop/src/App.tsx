@@ -19,7 +19,7 @@ import { SettingsOverlayContext } from "./components/SettingsModalSlot";
 import { Routes, Route, Navigate, useParams, useNavigate, useLocation, type Location } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { OBSConnectGate } from "./components/OBSConnectGate";
-import { getPreferredWorkspace, isOnboardingCompleted } from "./services/workspacePreference";
+import { isOnboardingCompleted } from "./services/workspacePreference";
 import AuthGate from "./components/AuthGate";
 import LicenseGuard from "./components/LicenseGuard";
 import FeatureGuard from "./components/FeatureGuard";
@@ -395,7 +395,6 @@ function App() {
   const { user, setUser } = useAuth();
   const { lockReason: licenseLockReason } = useLicenseGuardState();
   const mceOnboardingDone = isOnboardingCompleted();
-  const preferredWorkspace = getPreferredWorkspace();
   const [globalMediaDragging, setGlobalMediaDragging] = useState(false);
   const [globalMediaUploading, setGlobalMediaUploading] = useState(false);
   const [showTrialModal, setShowTrialModal] = useState(false);
@@ -1594,14 +1593,8 @@ function App() {
                                       <Route path="onboarding" element={<OnboardingPage />} />
                                     )}
                                     <Route element={mceOnboardingDone ? <AppShell /> : <Navigate to="/onboarding" replace />}>
-                                      <Route
-                                        index
-                                        element={
-                                          preferredWorkspace === "studio"
-                                            ? <Navigate to="/studio" replace />
-                                            : <ProductionHomePage />
-                                        }
-                                      />
+                                      {/* The dashboard, always (also for churches that chose Studio during setup). */}
+                                      <Route index element={<ProductionHomePage />} />
                                       <Route path="live-tools" element={<Navigate to="/" replace />} />
                                       <Route path="live" element={<Navigate to="/" replace />} />
                                       <Route path="service" element={<Navigate to="/" replace />} />

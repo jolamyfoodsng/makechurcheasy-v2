@@ -34,10 +34,7 @@ import {
   isMceBridgeLoaded,
   isMovePluginLoaded,
 } from "../services/obsMovePlugin";
-import MultiPlatformStreamingBanner from "../components/MultiPlatformStreamingBanner";
-import BroadcastGraphicsPromoBanner from "../components/BroadcastGraphicsPromoBanner";
-import StudioModePromoBanner from "../components/StudioModePromoBanner";
-import VerseAiPromoBanner from "../components/VerseAiPromoBanner";
+import DashboardFeatureDeck from "../components/DashboardFeatureDeck";
 import BroadcastHowItWorksModal from "../components/BroadcastHowItWorksModal";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -773,27 +770,20 @@ export default function ProductionHomePage() {
         onWatchTutorials={() => navigate("/tutorials")}
       />
 
-      <div className="studio-promo-row">
-        <VerseAiPromoBanner onOpenVerseAi={() => handleNavigate("/speech-to-scripture")} />
-        <StudioModePromoBanner half onOpenStudio={() => handleNavigate("/studio")} />
-      </div>
+      {/* The four main features, all visible without scrolling; Verse AI first and largest. */}
+      <DashboardFeatureDeck
+        onOpenVerseAi={() => handleNavigate("/speech-to-scripture")}
+        onOpenStudio={() => handleNavigate("/studio")}
+        onOpenGraphics={() => navigate("/broadcast-graphics")}
+        onOpenBroadcast={() => navigate("/broadcast")}
+        onHowItWorks={() => setShowHowItWorksModal(true)}
+      />
 
       <DashboardObsDockStatus
         obsStatus={obsStatus}
         dockAvailable={dockAvailable}
         onConnectObs={handleConnectObs}
       />
-
-      <div className="broadcast-promo-row">
-        <MultiPlatformStreamingBanner
-          onOpenBroadcast={() => navigate("/broadcast")}
-          onHowItWorks={() => setShowHowItWorksModal(true)}
-        />
-        <BroadcastGraphicsPromoBanner
-          onOpenGraphics={() => navigate("/broadcast-graphics")}
-          onWatchTutorials={() => navigate("/tutorials")}
-        />
-      </div>
 
       <FeatureGrid
         voiceBibleStatus={voiceBible.status}

@@ -1,5 +1,7 @@
 # MakeChurchEazy Design System Master Guide
 
+> **Superseded:** the current design spec is [`desktop/docs/DESIGN_SYSTEM.md`](../desktop/docs/DESIGN_SYSTEM.md). Where this document disagrees with it (colours, fonts, radii, button and modal sizes, icons), follow DESIGN_SYSTEM.md.
+
 Version: 1.0
 
 This document is the highest design authority for MakeChurchEazy.

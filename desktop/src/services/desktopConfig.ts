@@ -20,6 +20,7 @@ import {
 import { noteServerTime } from "./trustedClock";
 import { APP_VERSION, getDeviceApiBaseCandidates, getDeviceId, getDeviceSecret } from "./authService";
 import type { DesktopAnnouncement, ActiveDiscountInfo } from "./announcementService";
+import { normalizeSupportContent } from "./supportContent";
 
 // Re-export for backward compatibility
 export type { DesktopConfig, ActiveDiscountInfo };
@@ -406,7 +407,7 @@ export function getAdminControls(): DesktopAdminControls {
   return {
     features: { ...d.features, ...(controls?.features ?? {}) },
     speech: { ...d.speech, ...(controls?.speech ?? {}) },
-    support: { ...d.support, ...(controls?.support ?? {}) },
+    support: normalizeSupportContent(controls?.support),
   };
 }
 

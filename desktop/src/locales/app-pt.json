@@ -1709,7 +1709,6 @@
   "mvSettings.general.defaultTickerScrollSpeedDesc": "Velocidade de rolagem padrão para o módulo Ticker (1 = lento, 5 = rápido).",
   "mvSettings.general.aboutTitle": "Sobre",
   "mvSettings.general.aboutDescription": "Controle completo de produção da igreja para OBS — uma camada inteligente construída sobre o OBS Studio para equipes de transmissão da igreja.",
-  "mvSettings.general.aboutBuiltWith": "Construído com Tauri v2 + React 19 + TypeScript",
   "mvSettings.general.dangerZone": "Zona de perigo",
   "mvSettings.general.clearAllDataDesc": "Limpe todos os layouts, modelos e ativos salvos. Isto não pode ser desfeito.",
   "mvSettings.general.databaseCleared": "Banco de dados limpo.",

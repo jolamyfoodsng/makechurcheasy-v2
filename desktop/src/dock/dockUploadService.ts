@@ -13,6 +13,7 @@ import { getMediaKind, isSupportedMediaFile } from "../services/mediaValidation"
 import { getUserScopedKey } from "../services/userScopedStorage";
 import { isInternalDockMediaItem } from "./internalMediaAssets";
 import { compareMediaItemsNewest, getMediaStableKey } from "../library/mediaOrdering";
+import { saveUploadBytes } from "../services/uploadFileBytes";
 
 const LOCAL_LIBRARY_KEY = "ocs-dock-media-library-v1";
 
@@ -184,14 +185,9 @@ export function generateImageThumbnail(src: string): Promise<string> {
 export async function saveToDisk(file: File, safeName: string): Promise<string> {
   // Try Tauri first
   try {
-    const { invoke } = await import("@tauri-apps/api/core");
-    console.log("[UPLOAD] saveToDisk: Tauri module loaded, converting to bytes…");
     const bytes = new Uint8Array(await file.arrayBuffer());
-    console.log("[UPLOAD] saveToDisk: Tauri invoke save_upload_file…");
-    const result = await invoke<string>("save_upload_file", {
-      fileName: safeName,
-      fileData: Array.from(bytes),
-    });
+    console.log("[UPLOAD] saveToDisk: Tauri save (raw bytes)…");
+    const result = await saveUploadBytes(safeName, bytes);
     console.log("[UPLOAD] saveToDisk: Tauri save OK →", result);
     return result;
   } catch (tauriErr) {

@@ -1,0 +1,202 @@
+/* Support window (SupportDialog.tsx), inside the shared ModalDialog. Theme tokens only — see docs/DESIGN_SYSTEM.md. */
+
+.support-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.support-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: -8px 0 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.support-status__dot {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--text-disabled);
+}
+
+.support-status.is-online .support-status__dot {
+  background: var(--success);
+  box-shadow: 0 0 0 3px var(--success-bg);
+}
+
+/* The main channel: the one thing most people should press. */
+.support-primary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-lg);
+  background: var(--primary);
+  color: #ffffff;
+  text-decoration: none;
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.support-primary:hover {
+  border-color: var(--primary-hover);
+  background: var(--primary-hover);
+}
+
+.support-primary__icon {
+  flex-shrink: 0;
+  display: flex;
+}
+
+.support-primary__text,
+.support-channel__text,
+.support-emergency__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.support-primary__text strong {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.support-primary__text span {
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+/* The other channels: a plain list. */
+.support-channels {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.support-channels li + li {
+  border-top: 1px solid var(--border);
+}
+
+.support-channel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--surface);
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: background var(--transition);
+}
+
+.support-channel:hover {
+  background: var(--surface-hover);
+}
+
+.support-channel__icon {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  color: var(--accent-blue);
+}
+
+.support-channel__text strong,
+.support-emergency__text strong {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.support-channel__text span,
+.support-emergency__text span {
+  overflow: hidden;
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.support-channel__go {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+/* Sunday emergency hotline. */
+.support-emergency {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid color-mix(in srgb, var(--warning) 38%, var(--border));
+  border-radius: var(--radius-lg);
+  background: var(--warning-bg);
+  text-decoration: none;
+  transition: border-color var(--transition);
+}
+
+.support-emergency:hover {
+  border-color: var(--warning);
+}
+
+.support-emergency__icon {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--warning) 18%, transparent);
+  color: var(--warning);
+}
+
+.support-emergency__number {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-feature-settings: "tnum";
+  white-space: nowrap;
+}
+
+.support-primary:focus-visible,
+.support-channel:focus-visible,
+.support-emergency:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.support-empty {
+  margin: 0;
+  padding: 12px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* The hotline description wraps: it's the one people must read in a hurry. */
+.support-emergency__text span {
+  overflow: visible;
+  white-space: normal;
+}

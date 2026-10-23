@@ -7,7 +7,7 @@
 
 import { openDB, type IDBPDatabase } from "idb";
 import type { Song } from "./types";
-import { clearStore, getByKey, getCentralDb, getCurrentUserId, putRecord, STORES } from "../services/db";
+import { clearStore, deleteRecord, getByKey, getCentralDb, getCurrentUserId, putRecord, STORES } from "../services/db";
 
 const DB_NAME = "obs-church-studio-worship";
 const DB_VERSION = 4;
@@ -376,6 +376,18 @@ export async function restoreSong(id: string): Promise<void> {
 /** Backwards-compatible alias: song removal now archives instead of deleting */
 export async function deleteSong(id: string): Promise<void> {
   await archiveSong(id);
+}
+
+/** Delete an archived song for good (Songs → More tools → Archive → Delete). Active songs are left alone. */
+export async function permanentlyDeleteSong(id: string): Promise<void> {
+  const existing = await getSong(id);
+  if (!existing || !isSongArchived(existing)) return;
+  const db = await getDb();
+  await db.delete("songs", id);
+  await deleteRecord(STORES.WORSHIP_SONGS, id).catch((err) => {
+    console.warn("[worshipDb] Failed to delete song from central store:", err);
+  });
+  notifySongsChanged();
 }
 
 /** Remove all songs for the current user (scoped by userId) */

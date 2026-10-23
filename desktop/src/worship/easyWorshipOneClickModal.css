@@ -1,239 +1,178 @@
-.ew-import-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
+/* EasyWorship import: the parts that sit inside the shared ModalDialog (see docs/DESIGN_SYSTEM.md).
+   Theme tokens only, so it follows dark / light mode and the accent from Settings → Appearance. */
+
+.ew-choose {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(15, 20, 16, 0.7);
-  backdrop-filter: none;
-  padding: 1rem;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.ew-import-modal {
-  position: relative;
-  width: 100%;
-  max-width: 480px;
-  background-color: #fcfaf4;
-  border: 1px solid rgba(40, 45, 41, 0.15);
-  border-radius: var(--radius-lg, 6px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
-  padding: 2rem;
-  color: #282d29;
-  font-family: var(--font-user, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+.ew-library-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.ew-import-modal__close {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
+.ew-library {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: none;
-  background: rgba(40, 45, 41, 0.06);
-  color: #282d29;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  color: var(--text-secondary);
   cursor: pointer;
-  transition: background 0.2s;
+  transition: border-color var(--transition), background var(--transition);
 }
 
-.ew-import-modal__close:hover {
-  background: rgba(40, 45, 41, 0.12);
+.ew-library:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-hover);
 }
 
-.ew-import-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
+.ew-library.is-selected {
+  border-color: var(--primary);
+  background: var(--primary-soft);
 }
 
-.ew-import-icon-wrap {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  background: rgba(125, 138, 66, 0.15);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 1.25rem;
-}
-
-.ew-import-icon-wrap.success {
-  background: rgba(16, 185, 129, 0.15);
-}
-
-.ew-import-title {
-  font-size: 1.35rem;
-  font-weight: 700;
-  margin: 0 0 0.5rem 0;
-  color: #282d29;
-}
-
-.ew-import-subtitle {
-  font-size: 0.9rem;
-  color: rgba(40, 45, 41, 0.8);
-  line-height: 1.45;
-  margin: 0 0 1.5rem 0;
-}
-
-.ew-import-features {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
-  text-align: left;
-}
-
-.ew-feature-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  background: rgba(125, 138, 66, 0.08);
-  border: 1px solid rgba(125, 138, 66, 0.2);
-  border-radius: var(--radius, 4px);
-}
-
-.ew-feature-icon {
-  color: #7d8a42;
-  margin-top: 2px;
+.ew-library input {
+  margin: 0;
   flex-shrink: 0;
 }
 
-.ew-feature-item strong {
-  display: block;
-  font-size: 0.88rem;
-  color: #282d29;
+.ew-library-icon {
+  flex-shrink: 0;
+  color: var(--accent-blue);
 }
 
-.ew-feature-item span {
-  display: block;
-  font-size: 0.78rem;
-  color: rgba(40, 45, 41, 0.7);
+.ew-library-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
-.ew-import-progress-box {
-  width: 100%;
-  margin-bottom: 1.5rem;
+.ew-library-text strong {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
-.ew-progress-bar-wrap {
-  width: 100%;
-  height: 8px;
-  background: rgba(40, 45, 41, 0.1);
-  border-radius: 4px;
+.ew-library-text span {
   overflow: hidden;
-  margin-bottom: 0.5rem;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.ew-progress-bar-fill {
-  height: 100%;
-  background: #7d8a42;
-  transition: width 0.3s ease;
+.ew-library-empty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
 }
 
-.ew-progress-stage-text {
-  font-size: 0.82rem;
-  color: rgba(40, 45, 41, 0.75);
+.ew-choose-folder {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.ew-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.ew-option input {
   margin: 0;
 }
 
-.ew-summary-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem;
-  width: 100%;
-  margin-bottom: 1.5rem;
-}
-
-.ew-summary-card {
+.ew-note {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 0.88rem;
-  background: rgba(16, 185, 129, 0.08);
-  border: 1px solid rgba(16, 185, 129, 0.2);
-  border-radius: var(--radius, 4px);
-}
-
-.ew-summary-num {
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: #059669;
-}
-
-.ew-summary-label {
-  font-size: 0.78rem;
-  color: rgba(40, 45, 41, 0.75);
-}
-
-.ew-import-actions {
-  display: flex;
-  gap: 0.75rem;
-  width: 100%;
-}
-
-.ew-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.25rem;
-  border-radius: 9999px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  border: none;
-  flex: 1;
-}
-
-.ew-btn--primary {
-  background: #282d29;
-  color: #f4f0e1;
-}
-
-.ew-btn--primary:hover {
-  background: #3a413b;
-}
-
-.ew-btn--secondary {
-  background: rgba(40, 45, 41, 0.08);
-  color: #282d29;
-}
-
-.ew-btn--secondary:hover {
-  background: rgba(40, 45, 41, 0.15);
-}
-
-.ew-import-error {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.2);
-  color: #dc2626;
-  border-radius: var(--radius, 4px);
-  font-size: 0.82rem;
-  margin-bottom: 1rem;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 12px;
+  line-height: 1.5;
   text-align: left;
 }
 
-/* Library choice (found EasyWorship libraries, or a folder the operator picked) */
-.ew-library-list { display: grid; gap: 8px; width: 100%; margin: 4px 0 10px; text-align: left; }
-.ew-library { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid rgba(40, 45, 41, 0.15); border-radius: 4px; background: #fff; cursor: pointer; }
-.ew-library.is-selected { border-color: #7d8a42; box-shadow: 0 0 0 1px #7d8a42 inset; }
-.ew-library input { margin: 0; accent-color: #7d8a42; }
-.ew-library-text { display: grid; min-width: 0; }
-.ew-library-text strong { font-size: 14px; }
-.ew-library-text span { overflow: hidden; color: rgba(40, 45, 41, 0.65); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
-.ew-library-empty { display: flex; align-items: center; gap: 8px; margin: 0; padding: 10px 12px; border: 1px dashed rgba(40, 45, 41, 0.25); border-radius: 4px; color: rgba(40, 45, 41, 0.75); font-size: 13px; line-height: 1.5; }
-.ew-choose-folder { align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; }
-.ew-import-note { margin: 10px 0 0; color: rgba(40, 45, 41, 0.7); font-size: 12.5px; line-height: 1.5; text-align: left; }
-.ew-import-note--warn { padding: 8px 10px; border-radius: 4px; background: rgba(217, 119, 6, 0.1); color: #92400e; }
-.ew-import-error { display: flex; align-items: flex-start; gap: 8px; text-align: left; }
-.ew-summary-grid { grid-template-columns: 1fr 1fr; }
+.ew-choose .ew-note {
+  margin: 0;
+}
+
+.ew-note--warn {
+  border-color: color-mix(in srgb, var(--warning) 38%, var(--border));
+  background: var(--warning-bg);
+  color: var(--text-primary);
+}
+
+.ew-note--error {
+  border-color: var(--error-border);
+  background: var(--error-bg);
+  color: var(--danger-text);
+}
+
+:root.light .ew-note--error {
+  color: var(--error);
+}
+
+.ew-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 0;
+}
+
+.ew-summary > div {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 2px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+}
+
+.ew-summary dt {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.ew-summary dd {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-feature-settings: "tnum";
+}
+
+.ew-spin {
+  animation: ew-spin 0.9s linear infinite;
+}
+
+@keyframes ew-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ew-spin { animation: none; }
+}

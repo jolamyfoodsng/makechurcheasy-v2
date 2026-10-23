@@ -1709,7 +1709,6 @@
   "mvSettings.general.defaultTickerScrollSpeedDesc": "Ọsọ mpịgharị akpaghị aka maka modul Ticker (1 = ngwa ngwa, 5 = ngwa ngwa).",
   "mvSettings.general.aboutTitle": "Banyere",
   "mvSettings.general.aboutDescription": "Njikwa Mmepụta Ụka zuru oke maka OBS - akwa oyi akwa wuru n'elu OBS Studio maka ndị otu mgbasa ozi ụka.",
-  "mvSettings.general.aboutBuiltWith": "Ejiri Tauri v2 + React 19 + TypeScript rụọ ya",
   "mvSettings.general.dangerZone": "Mpaghara ihe egwu",
   "mvSettings.general.clearAllDataDesc": "Kpochapụ nhazi, ndebiri na akụ niile echekwara. Enweghị ike imegharị nke a.",
   "mvSettings.general.databaseCleared": "E kpochapuru ebe nchekwa data.",

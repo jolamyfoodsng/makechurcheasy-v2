@@ -1747,7 +1747,6 @@
   "mvSettings.general.defaultTickerScrollSpeedDesc": "Default scrolling speed for the Ticker module (1 = slow, 5 = fast).",
   "mvSettings.general.aboutTitle": "About",
   "mvSettings.general.aboutDescription": "Complete Church Production Control for OBS — a smart layer built on top of OBS Studio for church broadcast teams.",
-  "mvSettings.general.aboutBuiltWith": "Built with Tauri v2 + React 19 + TypeScript",
   "mvSettings.general.checkForUpdates": "Check for Updates",
   "mvSettings.general.checkingForUpdates": "Checking...",
   "mvSettings.general.updateAvailableMessage": "MakeChurchEazy v{{version}} is available.",

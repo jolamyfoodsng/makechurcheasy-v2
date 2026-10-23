@@ -97,7 +97,9 @@ import {
   Sun,
   Trash2,
   Zap,
+  FolderUp,
 } from "../../components/icons/NativeIcons";
+import EasyWorshipOneClickImportModal from "../../worship/EasyWorshipOneClickImportModal";
 import { refreshAccountBootstrapFromServer } from "../../services/authService";
 import { readNativeDockSetting, writeNativeDockSetting } from "../../services/localDockSettings";
 import { safeTauriInvoke, safeTauriListen } from "../../services/tauriSafe";
@@ -151,7 +153,7 @@ export const SETTINGS_CATEGORIES: SettingsNavCategory[] = [
     group: "Account & System",
     items: [
       { id: "usage", label: "Plan & AI Credits", icon: History, description: "Plan tier, remaining credits, and transaction history." },
-      { id: "storage", label: "Data & Storage", icon: Trash2, description: "Database reset, worship cleanup, and cache management." },
+      { id: "storage", label: "Data & Storage", icon: Trash2, description: "Import from EasyWorship, database reset, worship cleanup, and cache management." },
     ],
   },
   {
@@ -304,6 +306,7 @@ export function MVSettings() {
   const hasMobileAccess = canUseMobileControl(authUser);
   const [showMobileUpgrade, setShowMobileUpgrade] = useState(false);
   const [showCloudSyncUpgrade, setShowCloudSyncUpgrade] = useState(false);
+  const [easyWorshipImportOpen, setEasyWorshipImportOpen] = useState(false);
   const [creditBalance, setCreditBalance] = useState<number>(0);
   const [creditDetails, setCreditDetails] = useState<CreditDetails | null>(null);
   const [creditsUsedThisMonth, setCreditsUsedThisMonth] = useState<number>(0);
@@ -1446,7 +1449,6 @@ export function MVSettings() {
                       <p style={{ color: "var(--text-secondary)", fontSize: 13, lineHeight: 1.6, marginBottom: 8 }}>
                         {t("mvSettings.general.aboutDescription")}
                       </p>
-                      <p style={{ color: "var(--text-muted)", fontSize: 12 }}>{t("mvSettings.general.aboutBuiltWith")}</p>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginTop: 16 }}>
                         <button
                           className="action-btn"
@@ -3074,6 +3076,19 @@ export function MVSettings() {
                     <p className="section-desc">{t("mvSettings.storage.sectionDesc", "Manage local databases, purge cached media and worship catalogs, or reset initial setup.")}</p>
                   </div>
 
+                  {/* Import from EasyWorship: always here, even after the Songs page banner is closed */}
+                  <div className="settings-card fields-rows-stack" style={{ marginBottom: "20px" }}>
+                    <div className="flex-between-center">
+                      <div className="switch-left">
+                        <span className="switch-title">Import from EasyWorship</span>
+                        <span className="switch-subtitle">Bring in your songs, media and themes from EasyWorship. Your plan&apos;s limits still apply.</span>
+                      </div>
+                      <button className="action-btn" onClick={() => setEasyWorshipImportOpen(true)} title="Import from EasyWorship">
+                        <FolderUp size={14} /> Import
+                      </button>
+                    </div>
+                  </div>
+
                   {/* Cloud Backup & Multi-Laptop Sync Card */}
                   <div style={{ marginBottom: "20px" }}>
                     <CloudSyncSettingsCard onOpenUpgrade={() => setShowCloudSyncUpgrade(true)} />
@@ -3300,6 +3315,10 @@ export function MVSettings() {
         currentPlan={effectivePlan}
         message="Mobile Remote access is available on Growth."
       />
+
+      {easyWorshipImportOpen && (
+        <EasyWorshipOneClickImportModal onClose={() => setEasyWorshipImportOpen(false)} />
+      )}
 
       {/* Cloud Sync upgrade modal */}
       <UpgradeModal

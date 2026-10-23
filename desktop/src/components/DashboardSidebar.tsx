@@ -5,11 +5,12 @@
  * navigation chrome: nav links, OBS/Dock status, user profile.
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAdminControls } from "../hooks/useAdminControls";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { AppLogo } from "./AppLogo";
+import SupportDialog from "./SupportDialog";
 import {
   LayoutDashboard,
   Mic,
@@ -21,30 +22,25 @@ import {
   FolderClosed,
   FolderOpen,
   ChevronDown,
+  ChevronUp,
   PanelLeftClose,
   PanelLeftOpen,
   LogOut,
   LayoutGrid,
   Timer,
   Zap,
-  GraduationCap,
   HelpCircle,
-  MessageCircle,
-  Send,
-  Mail,
-  Phone,
-  ExternalLink,
-  X,
   FileText,
   Radio,
   MonitorPlay,
-  Layers, Youtube, Lock, Star } from "./icons/NativeIcons";
+  Layers, Lock, Star } from "./icons/NativeIcons";
 import type { ConnectionStatus } from "../services/obsService";
 
 import { useAuth } from "../contexts/AuthContext";
 import { getEnvConfig } from "../services/envConfig";
 import { getEffectivePlan } from "../services/licenseService";
 import { openDashboardSubscriptionPlans } from "../services/subscriptionNavigation";
+import { OPEN_SUPPORT_DIALOG_EVENT } from "../services/supportDialog";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -74,10 +70,56 @@ export default function DashboardSidebar({
   const { appName, isTest } = getEnvConfig();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showSupportModal, setShowSupportModal] = useState(false);
-  const supportLinks = useAdminControls().support;
+  const supportContent = useAdminControls().support;
   const [isResourcesOpen, setIsResourcesOpen] = useState(false);
   const [isTranscriptsOpen, setIsTranscriptsOpen] = useState(false);
   const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
+  const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
+  const accountMenuRef = useRef<HTMLDivElement>(null);
+  const accountRouteActive = currentPath.startsWith("/credits") || currentPath.startsWith("/settings");
+
+  // The account menu closes on a click outside it, on Esc and when the page changes.
+  useEffect(() => {
+    if (!isAccountMenuOpen) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!accountMenuRef.current?.contains(event.target as Node)) setIsAccountMenuOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsAccountMenuOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [isAccountMenuOpen]);
+
+  useEffect(() => {
+    setIsAccountMenuOpen(false);
+  }, [currentPath]);
+
+  // Other parts of the app (the top strip) open the Support window through this event.
+  useEffect(() => {
+    const open = () => setShowSupportModal(true);
+    window.addEventListener(OPEN_SUPPORT_DIALOG_EVENT, open);
+    return () => window.removeEventListener(OPEN_SUPPORT_DIALOG_EVENT, open);
+  }, []);
+
+  const accountMenuItem = (to: string, Icon: typeof Mic, label: string) => (
+    <button
+      type="button"
+      role="menuitem"
+      className={`sidebar-account-menu__item${currentPath.startsWith(to) ? " is-active" : ""}`}
+      onClick={() => {
+        setIsAccountMenuOpen(false);
+        onNavigate(to);
+      }}
+    >
+      <Icon className="sidebar-account-menu__icon" />
+      <span>{label}</span>
+    </button>
+  );
 
 
 
@@ -437,30 +479,6 @@ export default function DashboardSidebar({
       </div>
 
       <div className="sidebar-section-bottom">
-        <div className="sidebar-nav-list sidebar-nav-list--bottom">
-          {navItem("/tutorials", GraduationCap, "Tutorials")}
-          {navItem("/credits", Zap, t("sidebar.credits", { defaultValue: "Credits" }))}
-          {navItem("/settings", Settings, t("sidebar.settings"))}
-          <a
-            className="sidebar-nav-item"
-            href="#"
-            title={collapsed ? t("sidebar.support", { defaultValue: "Support" }) : undefined}
-            onClick={(e) => {
-              e.preventDefault();
-              setShowSupportModal(true);
-            }}
-          >
-            <HelpCircle className="sidebar-nav-icon" />
-            <span className="sidebar-nav-text">{t("sidebar.support", { defaultValue: "Support" })}</span>
-            <span className="sidebar-support-dot-container" title="Live support available">
-              <span className="sidebar-support-ripple" />
-              <span className="sidebar-support-dot" />
-            </span>
-          </a>
-        </div>
-
-
-
         {isFreePlan && !collapsed && (
           <div className="sidebar-free-card">
             <div className="sidebar-free-card__head">
@@ -478,29 +496,67 @@ export default function DashboardSidebar({
           </div>
         )}
 
-        {/* User Profile */}
-        {user && !collapsed && (
-          <div className="sidebar-user-section">
-            <div className="sidebar-user-info">
-              <div className="sidebar-user-avatar">
+        {/* Account: the profile opens a menu with Credits, Settings, Support and Sign out */}
+        {user && (
+          <div className="sidebar-user-section" ref={accountMenuRef}>
+            {isAccountMenuOpen && (
+              <div className="sidebar-account-menu" role="menu" aria-label={user.name || "Account"}>
+                {accountMenuItem("/credits", Zap, t("sidebar.credits", { defaultValue: "Credits" }))}
+                {accountMenuItem("/settings", Settings, t("sidebar.settings"))}
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="sidebar-account-menu__item"
+                  onClick={() => {
+                    setIsAccountMenuOpen(false);
+                    setShowSupportModal(true);
+                  }}
+                >
+                  <HelpCircle className="sidebar-account-menu__icon" />
+                  <span>{t("sidebar.support", { defaultValue: "Support" })}</span>
+                  {supportContent.status.online && (
+                    <span className="sidebar-account-menu__live" title={supportContent.status.text || "Live support available"} aria-hidden="true" />
+                  )}
+                </button>
+                <div className="sidebar-account-menu__divider" role="separator" />
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="sidebar-account-menu__item"
+                  onClick={() => {
+                    setIsAccountMenuOpen(false);
+                    setShowLogoutConfirm(true);
+                  }}
+                >
+                  <LogOut className="sidebar-account-menu__icon" />
+                  <span>{t("sidebar.signOut")}</span>
+                </button>
+              </div>
+            )}
+            <button
+              type="button"
+              className={`sidebar-user-button${isAccountMenuOpen || accountRouteActive ? " sidebar-user-button--active" : ""}`}
+              onClick={() => setIsAccountMenuOpen((open) => !open)}
+              aria-haspopup="menu"
+              aria-expanded={isAccountMenuOpen}
+              title={collapsed ? user.name || user.email : undefined}
+            >
+              <span className="sidebar-user-avatar">
                 {user.avatar ? (
                   <img src={user.avatar} alt="" className="sidebar-user-avatar-img" />
                 ) : (
                   <span>{user.name?.[0]?.toUpperCase() || "U"}</span>
                 )}
-              </div>
-              <div className="sidebar-user-details">
-                <p className="sidebar-user-name">{user.name}</p>
-                <p className="sidebar-user-email">{user.email}</p>
-              </div>
-            </div>
-            <button
-              className="sidebar-user-signout"
-              onClick={() => setShowLogoutConfirm(true)}
-              title={t("sidebar.signOut")}
-              aria-label={t("sidebar.signOut")}
-            >
-              <LogOut className="sidebar-user-signout-icon" />
+              </span>
+              {!collapsed && (
+                <>
+                  <span className="sidebar-user-details">
+                    <span className="sidebar-user-name">{user.name}</span>
+                    <span className="sidebar-user-email">{user.email}</span>
+                  </span>
+                  <ChevronUp className="sidebar-user-chevron" />
+                </>
+              )}
             </button>
           </div>
         )}
@@ -539,277 +595,7 @@ export default function DashboardSidebar({
         document.body,
       )}
 
-      {showSupportModal && typeof document !== "undefined" && createPortal(
-        <div
-          className="end-confirm-backdrop"
-          onClick={() => setShowSupportModal(false)}
-          onKeyDown={(e) => { if (e.key === "Escape") setShowSupportModal(false); }}
-        >
-          <div
-            className="support-modal-card"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="support-modal-title"
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: "var(--surface, #1e293b)",
-              border: "1px solid var(--border, #334155)",
-              borderRadius: "var(--radius)",
-              padding: "24px",
-              maxWidth: "480px",
-              width: "90%",
-              color: "var(--text, #f8fafc)",
-              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
-              position: "relative",
-            }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <div style={{
-                  width: "36px",
-                  height: "36px",
-                  borderRadius: "var(--radius)",
-                  background: "rgba(16, 185, 129, 0.15)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#10b981",
-                }}>
-                  <HelpCircle size={20} />
-                </div>
-                <div>
-                  <h3 id="support-modal-title" style={{ margin: 0, fontSize: "1.15rem", fontWeight: 700 }}>
-                    MakeChurchEazy Support
-                  </h3>
-                  <p style={{ margin: 0, fontSize: "0.8rem", color: "var(--text-muted, #94a3b8)" }}>
-                    We're here to help Sunday run smoothly
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowSupportModal(false)}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  color: "var(--text-muted, #94a3b8)",
-                  cursor: "pointer",
-                  padding: "4px",
-                  borderRadius: "var(--radius)",
-                }}
-                aria-label="Close"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "10px", marginBottom: "20px" }}>
-              {/* WhatsApp */}
-              {supportLinks.whatsappUrl && (
-              <a
-                href={supportLinks.whatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "14px",
-                  padding: "12px 16px",
-                  borderRadius: "var(--radius)",
-                  background: "rgba(37, 211, 102, 0.08)",
-                  border: "1px solid rgba(37, 211, 102, 0.25)",
-                  color: "inherit",
-                  textDecoration: "none",
-                  transition: "background 0.15s ease",
-                }}
-              >
-                <div style={{
-                  width: "36px",
-                  height: "36px",
-                  borderRadius: "50%",
-                  background: "rgba(37, 211, 102, 0.2)",
-                  color: "#25D366",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                }}>
-                  <MessageCircle size={18} />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: "0.95rem" }}>WhatsApp Community & Chat</div>
-                  <div style={{ fontSize: "0.78rem", color: "var(--text-muted, #94a3b8)" }}>Get immediate assistance from our team</div>
-                </div>
-                <ExternalLink size={16} style={{ color: "var(--text-muted, #94a3b8)" }} />
-              </a>
-              )}
-
-              {/* Telegram */}
-              <a
-                href="https://t.me/makechurcheasy"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "14px",
-                  padding: "12px 16px",
-                  borderRadius: "var(--radius)",
-                  background: "rgba(0, 136, 204, 0.08)",
-                  border: "1px solid rgba(0, 136, 204, 0.25)",
-                  color: "inherit",
-                  textDecoration: "none",
-                  transition: "background 0.15s ease",
-                }}
-              >
-                <div style={{
-                  width: "36px",
-                  height: "36px",
-                  borderRadius: "50%",
-                  background: "rgba(0, 136, 204, 0.2)",
-                  color: "#0088cc",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                }}>
-                  <Send size={18} />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: "0.95rem" }}>Telegram Support</div>
-                  <div style={{ fontSize: "0.78rem", color: "var(--text-muted, #94a3b8)" }}>Direct chat @makechurcheasy</div>
-                </div>
-                <ExternalLink size={16} style={{ color: "var(--text-muted, #94a3b8)" }} />
-              </a>
-
-              {/* Email */}
-              {supportLinks.supportEmail && (
-              <a
-                href={`mailto:${supportLinks.supportEmail}`}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "14px",
-                  padding: "12px 16px",
-                  borderRadius: "var(--radius)",
-                  background: "rgba(99, 102, 241, 0.08)",
-                  border: "1px solid rgba(99, 102, 241, 0.25)",
-                  color: "inherit",
-                  textDecoration: "none",
-                  transition: "background 0.15s ease",
-                }}
-              >
-                <div style={{
-                  width: "36px",
-                  height: "36px",
-                  borderRadius: "50%",
-                  background: "rgba(99, 102, 241, 0.2)",
-                  color: "var(--accent-blue)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                }}>
-                  <Mail size={18} />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: "0.95rem" }}>Email Support</div>
-                  <div style={{ fontSize: "0.78rem", color: "var(--text-muted, #94a3b8)" }}>{supportLinks.supportEmail}</div>
-                </div>
-                <ExternalLink size={16} style={{ color: "var(--text-muted, #94a3b8)" }} />
-              </a>
-              )}
-
-              {/* YouTube help videos */}
-              {supportLinks.youtubeUrl && (
-              <a
-                href={supportLinks.youtubeUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "14px",
-                  padding: "12px 16px",
-                  borderRadius: "var(--radius)",
-                  background: "rgba(239, 68, 68, 0.08)",
-                  border: "1px solid rgba(239, 68, 68, 0.25)",
-                  color: "inherit",
-                  textDecoration: "none",
-                  transition: "background 0.15s ease",
-                }}
-              >
-                <div style={{
-                  width: "36px",
-                  height: "36px",
-                  borderRadius: "50%",
-                  background: "rgba(239, 68, 68, 0.2)",
-                  color: "#ef4444",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                }}>
-                  <Youtube size={18} />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: "0.95rem" }}>Help Videos</div>
-                  <div style={{ fontSize: "0.78rem", color: "var(--text-muted, #94a3b8)" }}>Step-by-step tutorials on YouTube</div>
-                </div>
-                <ExternalLink size={16} style={{ color: "var(--text-muted, #94a3b8)" }} />
-              </a>
-              )}
-
-              {/* Emergency Hotline / Phone */}
-              <a
-                href="tel:+2349054545286"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "14px",
-                  padding: "12px 16px",
-                  borderRadius: "var(--radius)",
-                  background: "rgba(245, 158, 11, 0.08)",
-                  border: "1px solid rgba(245, 158, 11, 0.25)",
-                  color: "inherit",
-                  textDecoration: "none",
-                  transition: "background 0.15s ease",
-                }}
-              >
-                <div style={{
-                  width: "36px",
-                  height: "36px",
-                  borderRadius: "50%",
-                  background: "rgba(245, 158, 11, 0.2)",
-                  color: "#fbbf24",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                }}>
-                  <Phone size={18} />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: "0.95rem" }}>Sunday Emergency Hotline</div>
-                  <div style={{ fontSize: "0.78rem", color: "var(--text-muted, #94a3b8)" }}>+234 905 454 5286</div>
-                </div>
-                <ExternalLink size={16} style={{ color: "var(--text-muted, #94a3b8)" }} />
-              </a>
-            </div>
-
-            <div style={{ display: "flex", justifyContent: "flex-end" }}>
-              <button
-                type="button"
-                className="support-modal-done"
-                onClick={() => setShowSupportModal(false)}
-              >
-                Done
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body,
-      )}
+      {showSupportModal && <SupportDialog content={supportContent} onClose={() => setShowSupportModal(false)} />}
     </nav>
   );
 }

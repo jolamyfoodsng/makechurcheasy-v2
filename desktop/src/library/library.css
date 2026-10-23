@@ -2482,6 +2482,56 @@
   border-radius: var(--radius, 4px);
 }
 
+.lib-archive-row .lib-song-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.lib-archive-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 12px;
+  flex-shrink: 0;
+}
+
+.lib-archive-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition), border-color var(--transition), color var(--transition);
+}
+
+.lib-archive-btn:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-strong);
+}
+
+.lib-archive-btn--danger {
+  color: var(--danger-text);
+}
+
+.lib-archive-btn--danger:hover {
+  background: var(--error-bg);
+  border-color: var(--error-border);
+}
+
+.lib-archive-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
 .lib-archive-meta {
   margin: 0 0 6px;
   font-size: 11px;
@@ -4562,22 +4612,23 @@ html.mv-theme-light .lib-media-drop-overlay__card {
 }
 
 .worship-search-wrap {
-  flex: 1;
+  flex: 0 1 420px;
+  min-width: 200px;
   position: relative;
   display: flex;
   align-items: center;
-  background: rgba(17, 24, 39, 0.7);
-  border: 1px solid var(--border);
-  border-radius: var(--radius, 4px);
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius);
   padding: 0 14px;
   height: 44px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color var(--transition), box-shadow var(--transition);
   box-sizing: border-box;
 }
 
 .worship-search-wrap:focus-within {
-  border-color: rgba(99, 102, 241, 0.6);
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+  border-color: var(--input-focus);
+  box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 .worship-search-icon {
@@ -4590,8 +4641,8 @@ html.mv-theme-light .lib-media-drop-overlay__card {
   flex: 1;
   background: transparent;
   border: none;
-  color: #f3f4f6;
-  font-size: 0.925rem;
+  color: var(--text-primary);
+  font-size: 14px;
   outline: none;
   min-width: 0;
 }
@@ -4621,6 +4672,35 @@ html.mv-theme-light .lib-media-drop-overlay__card {
   align-items: center;
   gap: 12px;
   flex-shrink: 0;
+  margin-left: auto;
+}
+
+.worship-search-online-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 16px;
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.worship-search-online-btn:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-strong);
+}
+
+.worship-search-online-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
 .worship-add-song-btn {
@@ -4670,6 +4750,16 @@ html.mv-theme-light .lib-media-drop-overlay__card {
 
 .worship-more-tools-btn:hover {
   color: #f3f4f6;
+}
+
+/* Shown on "More tools" right after a song is archived, until the menu is opened. */
+.worship-more-tools-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-soft);
+  flex-shrink: 0;
 }
 
 .worship-more-tools-dropdown {
@@ -4727,9 +4817,9 @@ html.mv-theme-light .lib-media-drop-overlay__card {
   justify-content: space-between;
   gap: 16px;
   padding: 14px 20px;
-  border-radius: var(--radius, 4px);
-  background: rgba(245, 158, 11, 0.04);
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--border);
   box-sizing: border-box;
 }
 
@@ -4743,14 +4833,14 @@ html.mv-theme-light .lib-media-drop-overlay__card {
 .worship-ew-icon-box {
   width: 44px;
   height: 44px;
-  border-radius: 8px;
-  border: 1.5px solid rgba(245, 158, 11, 0.7);
-  background: rgba(245, 158, 11, 0.08);
+  border-radius: var(--radius);
+  border: 1px solid var(--primary-soft-border);
+  background: var(--primary-soft);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  color: #f59e0b;
+  color: var(--accent-blue);
 }
 
 .worship-ew-text {
@@ -4759,15 +4849,15 @@ html.mv-theme-light .lib-media-drop-overlay__card {
 
 .worship-ew-title {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 15px;
   font-weight: 700;
-  color: #f3f4f6;
+  color: var(--text-primary);
   line-height: 1.3;
 }
 
 .worship-ew-subtitle {
   margin: 2px 0 0 0;
-  font-size: 0.825rem;
+  font-size: 13px;
   color: var(--text-secondary);
   line-height: 1.3;
 }
@@ -4778,22 +4868,74 @@ html.mv-theme-light .lib-media-drop-overlay__card {
   justify-content: center;
   padding: 8px 18px;
   height: 38px;
-  border-radius: var(--radius, 4px);
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #f3f4f6;
-  font-size: 0.85rem;
+  border-radius: var(--radius);
+  background: var(--primary);
+  border: 1px solid var(--primary);
+  color: #ffffff;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   flex-shrink: 0;
   white-space: nowrap;
-  transition: all 0.15s ease;
+  transition: background var(--transition), border-color var(--transition);
 }
 
 .worship-ew-import-btn:hover {
-  background: rgba(245, 158, 11, 0.15);
-  border-color: rgba(245, 158, 11, 0.6);
-  color: #fbbf24;
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+.worship-ew-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.worship-ew-later-btn {
+  height: 38px;
+  padding: 0 16px;
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition), color var(--transition);
+}
+
+.worship-ew-later-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.worship-ew-close-btn {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+}
+
+.worship-ew-close-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.worship-ew-later-btn:focus-visible,
+.worship-ew-import-btn:focus-visible,
+.worship-ew-close-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
 /* Song Grid (3 columns matching screenshot) */
@@ -4825,17 +4967,16 @@ html.mv-theme-light .lib-media-drop-overlay__card {
   min-height: 168px;
   padding: 16px 18px;
   border-radius: var(--radius, 4px);
-  background: rgba(17, 24, 39, 0.85);
+  background: var(--surface);
   border: 1px solid var(--border);
   box-sizing: border-box;
-  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color var(--transition), background var(--transition);
   position: relative;
 }
 
 .worship-song-card:hover {
-  border-color: var(--border);
-  background: rgba(23, 32, 51, 0.95);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  border-color: var(--border-strong);
+  background: var(--surface-raised);
 }
 
 .worship-song-card--gated {
@@ -4858,8 +4999,8 @@ html.mv-theme-light .lib-media-drop-overlay__card {
 .worship-song-card-icon {
   width: 44px;
   height: 44px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4876,7 +5017,7 @@ html.mv-theme-light .lib-media-drop-overlay__card {
   margin: 0 0 2px 0;
   font-size: 0.95rem;
   font-weight: 700;
-  color: #f3f4f6;
+  color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -4926,9 +5067,9 @@ html.mv-theme-light .lib-media-drop-overlay__card {
   padding: 6px 14px;
   height: 32px;
   border-radius: var(--radius, 4px);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--surface-raised);
   border: 1px solid var(--border);
-  color: #f3f4f6;
+  color: var(--text-primary);
   font-size: 0.825rem;
   font-weight: 500;
   cursor: pointer;
@@ -4936,8 +5077,8 @@ html.mv-theme-light .lib-media-drop-overlay__card {
 }
 
 .worship-song-view-btn:hover {
-  background: rgba(255, 255, 255, 0.09);
-  border-color: rgba(255, 255, 255, 0.22);
+  background: var(--surface-hover);
+  border-color: var(--border-strong);
 }
 
 .worship-card-menu-container {
@@ -4951,7 +5092,7 @@ html.mv-theme-light .lib-media-drop-overlay__card {
   width: 32px;
   height: 32px;
   border-radius: var(--radius, 4px);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--surface-raised);
   border: 1px solid var(--border);
   color: var(--text-secondary);
   cursor: pointer;
@@ -4959,8 +5100,8 @@ html.mv-theme-light .lib-media-drop-overlay__card {
 }
 
 .worship-song-menu-btn:hover {
-  background: rgba(255, 255, 255, 0.09);
-  color: #f3f4f6;
+  background: var(--surface-hover);
+  color: var(--text-primary);
 }
 
 .worship-card-dropdown {
@@ -4971,7 +5112,7 @@ html.mv-theme-light .lib-media-drop-overlay__card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius, 4px);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--mce-modal-shadow);
   padding: 4px;
   z-index: 50;
   display: flex;
@@ -4997,11 +5138,11 @@ html.mv-theme-light .lib-media-drop-overlay__card {
 }
 
 .worship-card-dropdown-item:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
+  background: var(--surface-hover);
+  color: var(--text-primary);
 }
 
 .worship-card-dropdown-item--danger:hover {
-  background: rgba(239, 68, 68, 0.15);
-  color: #f87171;
+  background: var(--error-bg);
+  color: var(--error);
 }

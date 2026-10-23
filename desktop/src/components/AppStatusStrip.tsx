@@ -2,13 +2,16 @@
  * AppStatusStrip.tsx — slim bar at the top of the app.
  *
  *   left:  "Free plan · Upgrade"          (only while the user is on the Free plan)
- *   right: "6 days left · Update now"     (only while a forced update is counting down)
- *
- * It renders nothing when neither applies, so paid, up-to-date users see no bar.
+ *   right: "Having any issues? Contact support · WhatsApp"   (always, quiet)
+ *          "6 days left · Update now"     (only while a forced update is counting down)
  */
 
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import Icon from "./Icon";
+import { HelpCircle, MessageCircle } from "./icons/NativeIcons";
+import { useAdminControls } from "../hooks/useAdminControls";
+import { openSupportDialog } from "../services/supportDialog";
+import { supportChannelHref } from "./SupportDialog";
 import { getCurrentUser } from "../services/authService";
 import { getEffectivePlan } from "../services/licenseService";
 import { openDashboardSubscriptionPlans } from "../services/subscriptionNavigation";
@@ -47,6 +50,7 @@ export default function AppStatusStrip() {
   const [percent, setPercent] = useState(0);
 
   const [updateError, setUpdateError] = useState<string | null>(null);
+  const whatsapp = useAdminControls().support.channels.find((c) => c.kind === "whatsapp" && c.enabled && c.value);
 
   // Download and install the update inside the app, straight from the releases.
   const startUpdate = useCallback(async (downloadUrl: string) => {
@@ -94,8 +98,6 @@ export default function AppStatusStrip() {
   );
   const isEmergency = forced?.lockType === "emergency-lock";
 
-  if (!isFree && !showUpdate) return null;
-
   const urgent = Boolean(live?.finalDay);
 
   return (
@@ -121,6 +123,30 @@ export default function AppStatusStrip() {
       </div>
 
       <div className="app-status-strip__side app-status-strip__side--end">
+        <div className="app-status-strip__support">
+          <span className="app-status-strip__support-text">Having any issues?</span>
+          <button
+            type="button"
+            className="app-status-strip__support-link"
+            onClick={openSupportDialog}
+            title="Open Support"
+          >
+            <HelpCircle size={13} aria-hidden="true" />
+            Contact support
+          </button>
+          {whatsapp && (
+            <a
+              className="app-status-strip__support-link"
+              href={supportChannelHref(whatsapp)}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={whatsapp.label}
+            >
+              <MessageCircle size={13} aria-hidden="true" />
+              WhatsApp
+            </a>
+          )}
+        </div>
         {showUpdate && live && live.hoursRemaining !== null && (
           <div
             className={`app-status-strip__chip ${

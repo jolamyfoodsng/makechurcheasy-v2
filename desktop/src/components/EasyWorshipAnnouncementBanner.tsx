@@ -112,7 +112,7 @@ export default function EasyWorshipAnnouncementBanner() {
   return (
     <>
     {chooserOpen && <EasyWorshipOneClickImportModal onClose={() => setChooserOpen(false)} />}
-    <div className={`ew-announcement-banner ew-announcement-banner--${stage}`} role="alert">
+    <div className={`ew-announcement-banner ew-announcement-banner--${stage}`} role="status">
       <div className="ew-announcement-banner__container">
         {/* Left Icon + Text */}
         <div className="ew-announcement-banner__main">
@@ -124,7 +124,7 @@ export default function EasyWorshipAnnouncementBanner() {
 
           {stage === "running" && (
             <div className="ew-announcement-badge ew-announcement-badge--spin">
-              <Loader2 size={18} className="animate-spin" />
+              <Loader2 size={18} className="ew-spin" />
             </div>
           )}
 
@@ -141,7 +141,7 @@ export default function EasyWorshipAnnouncementBanner() {
                   Import from EasyWorship
                 </strong>
                 <span className="ew-announcement-desc">
-                  Bring your EasyWorship songs and lyrics into MakeChurchEazy. EasyWorship can stay open.
+                  Bring your EasyWorship songs, pictures, videos and themes into MakeChurchEazy. EasyWorship can stay open.
                 </span>
               </>
             )}
@@ -160,11 +160,11 @@ export default function EasyWorshipAnnouncementBanner() {
             {stage === "completed" && (
               <>
                 <strong className="ew-announcement-title">
-                  EasyWorship songs imported
+                  Imported from EasyWorship
                 </strong>
                 <span className="ew-announcement-desc">
                   {summary
-                    ? `Added ${summary.importedCount.toLocaleString()} ${summary.importedCount === 1 ? "song" : "songs"}${summary.alreadyInLibraryCount ? `; ${summary.alreadyInLibraryCount.toLocaleString()} you already had were skipped` : ""}${summary.overLimitCount ? `; ${summary.overLimitCount.toLocaleString()} didn’t fit your plan’s song limit` : ""}.`
+                    ? `Added ${summary.importedCount.toLocaleString()} ${summary.importedCount === 1 ? "song" : "songs"}${summary.alreadyInLibraryCount ? `; ${summary.alreadyInLibraryCount.toLocaleString()} you already had were skipped` : ""}${summary.overLimitCount ? `; ${summary.overLimitCount.toLocaleString()} didn’t fit your plan’s song limit` : ""}${summary.assets ? `; ${summary.assets.mediaImported.toLocaleString()} pictures and videos and ${summary.assets.themesImported.toLocaleString()} themes added` : ""}.`
                     : "Your songs are in the library."}
                 </span>
               </>
@@ -182,7 +182,7 @@ export default function EasyWorshipAnnouncementBanner() {
                 onClick={handleStartImport}
               >
                 <Download size={15} />
-                <span>Choose songs to import</span>
+                <span>Choose what to import</span>
               </button>
               <button
                 type="button"

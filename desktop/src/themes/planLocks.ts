@@ -8,12 +8,21 @@
  * covers those), and a theme that is already selected stays usable, so a church
  * that moves down a plan never loses the look it is live with.
  *
+ * Imported themes (from EasyWorship) are content the plan pays for, like songs: importing is
+ * free, but only the first N imported themes stay open, so themes brought in during a trial
+ * lock when the church moves to Free.
+ *
  * Pure functions only: the Themes page and the Dock theme browser share this.
  */
 import type { BibleTheme } from "../bible/types";
 import { BUILTIN_THEMES } from "../bible/themes/builtinThemes";
 
-type LockableTheme = Pick<BibleTheme, "id" | "source">;
+type LockableTheme = Pick<BibleTheme, "id" | "source"> & Partial<Pick<BibleTheme, "createdAt">>;
+
+/** Themes created by an import (see buildEasyWorshipThemes) rather than by the church. */
+export function isImportedTheme(theme: Pick<BibleTheme, "id">): boolean {
+  return theme.id.startsWith("easyworship-");
+}
 
 /** Ids of the ready-made themes a plan with this limit may use (-1 = every one). */
 export function planOpenThemeIds(limit: number): Set<string> {
@@ -35,7 +44,19 @@ export function planLockedThemeIds(
   const open = planOpenThemeIds(limit);
   const keep = new Set<string>();
   for (const id of keepIds) if (id) keep.add(id);
+  // The first N imported themes (oldest first, so the open ones don't change between screens).
+  const openImported = new Set(
+    themes
+      .filter(isImportedTheme)
+      .sort((a, b) => (a.createdAt ?? "").localeCompare(b.createdAt ?? "") || a.id.localeCompare(b.id))
+      .slice(0, Math.max(0, limit))
+      .map((theme) => theme.id),
+  );
   for (const theme of themes) {
+    if (isImportedTheme(theme)) {
+      if (!openImported.has(theme.id) && !keep.has(theme.id)) locked.add(theme.id);
+      continue;
+    }
     if (theme.source === "custom") continue;
     if (open.has(theme.id) || keep.has(theme.id)) continue;
     locked.add(theme.id);

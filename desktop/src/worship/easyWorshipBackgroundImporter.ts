@@ -1,10 +1,11 @@
 /**
- * easyWorshipBackgroundImporter.ts — imports the songs from an EasyWorship 6 / 7 library.
+ * easyWorshipBackgroundImporter.ts — imports an EasyWorship 6 / 7 profile: its songs, pictures, videos
+ * and themes.
  *
  * EasyWorship keeps each profile's songs in Songs.db and SongWords.db (see read_easyworship_db_folder
- * in src-tauri/src/lib.rs, which reads them read-only). This runs in the background, so the operator can
- * close the window and keep working. Songs already in the library are skipped, and the plan's song limit
- * is kept. Only songs and lyrics are imported: EasyWorship's pictures, videos and themes are not.
+ * in src-tauri/src/lib.rs, which reads them read-only); pictures, videos and themes come through
+ * easyWorshipAssetImport.ts. This runs in the background, so the operator can close the window and keep
+ * working. Anything already imported is skipped, and the plan's limits are kept.
  */
 
 import { invoke } from "@tauri-apps/api/core";
@@ -12,6 +13,12 @@ import {
   convertEasyWorshipRecordsToDrafts,
   type EasyWorshipRawRecord,
 } from "./easyWorshipImportService";
+import {
+  importEasyWorshipAssets,
+  readEasyWorshipAssets,
+  type EasyWorshipAssetSummary,
+  type EasyWorshipLimits,
+} from "./easyWorshipAssetImport";
 import { importSmartSongs } from "./smartImportService";
 import type { SmartImportSongDraft } from "./smartImportTypes";
 import type { Song } from "./types";
@@ -42,6 +49,15 @@ export interface EWImportSummary {
   overLimitCount: number;
   libraryName: string;
   dataDir: string;
+  /** Pictures, videos and themes; absent when only songs were imported. */
+  assets?: EasyWorshipAssetSummary;
+  /** What went wrong with the pictures, videos and themes, when the songs still came in. */
+  assetsError?: string;
+}
+
+/** How many more of each the plan allows (Infinity for no limit). */
+export interface EWImportLimits extends EasyWorshipLimits {
+  songs: number;
 }
 
 export type EWImportStatus = "idle" | "importing" | "completed" | "error";
@@ -119,31 +135,47 @@ class EasyWorshipBackgroundImporter {
   }
 
   /**
-   * Imports the songs from `library`. `remainingSlots` is how many more songs the plan allows
-   * (Infinity for no limit).
+   * Imports the songs from `library`, then (with `includeMedia`) its pictures, videos and themes.
    */
-  async startImport(library: EWLibrary, remainingSlots: number): Promise<EWImportSummary> {
+  async startImport(library: EWLibrary, limits: EWImportLimits, includeMedia = true): Promise<EWImportSummary> {
     if (this.status === "importing") throw new Error("An EasyWorship import is already running.");
     this.status = "importing";
     this.errorMessage = "";
+    // Songs take the first half of the bar when pictures, videos and themes follow.
+    const songShare = includeMedia ? 0.5 : 1;
+    const songProgress = (stage: string, percent: number) => this.notifyProgress(stage, Math.round(percent * songShare));
     try {
-      this.notifyProgress(`Reading songs from “${library.name}”…`, 10);
+      songProgress(`Reading songs from “${library.name}”…`, 10);
       const records = await invoke<EasyWorshipRawRecord[]>("read_easyworship_db_folder", { folderPath: library.dataDir });
 
-      this.notifyProgress(`Preparing ${records.length} songs…`, 40);
+      songProgress(`Preparing ${records.length} songs…`, 40);
       const drafts = convertEasyWorshipRecordsToDrafts(records).filter((d) => d.sections.length > 0);
 
-      this.notifyProgress("Checking your library for songs you already have…", 55);
+      songProgress("Checking your library for songs you already have…", 55);
       const [active, archived] = await Promise.all([getAllSongs(), getArchivedSongs()]);
-      const { toImport, alreadyInLibrary, overLimit } = selectEasyWorshipDrafts(drafts, [...active, ...archived], remainingSlots);
+      const { toImport, alreadyInLibrary, overLimit } = selectEasyWorshipDrafts(drafts, [...active, ...archived], limits.songs);
 
-      this.notifyProgress(`Adding ${toImport.length} songs to your library…`, 70);
+      songProgress(`Adding ${toImport.length} songs to your library…`, 70);
       const imported = toImport.length
         ? await importSmartSongs(toImport, {
           sourceName: `EasyWorship (${library.name})`,
           saveBatch: saveSongsBatch,
-        }, (saved, total) => this.notifyProgress(`Adding songs… ${saved} of ${total}`, 70 + Math.round((saved / Math.max(1, total)) * 28)))
+        }, (saved, total) => songProgress(`Adding songs… ${saved} of ${total}`, 70 + Math.round((saved / Math.max(1, total)) * 28)))
         : [];
+
+      let assets: EasyWorshipAssetSummary | undefined;
+      let assetsError: string | undefined;
+      if (includeMedia) {
+        try {
+          this.notifyProgress("Looking for pictures, videos and themes…", 50);
+          const found = await readEasyWorshipAssets(library.dataDir);
+          assets = await importEasyWorshipAssets(found, limits, (stage, fraction) =>
+            this.notifyProgress(stage, 50 + Math.round(fraction * 48)));
+        } catch (err) {
+          assetsError = err instanceof Error ? err.message : String(err);
+          console.warn("[EasyWorship] Pictures, videos and themes were not imported:", err);
+        }
+      }
 
       const summary: EWImportSummary = {
         foundCount: drafts.length,
@@ -152,6 +184,8 @@ class EasyWorshipBackgroundImporter {
         overLimitCount: overLimit,
         libraryName: library.name,
         dataDir: library.dataDir,
+        assets,
+        assetsError,
       };
       this.status = "completed";
       this.lastSummary = summary;

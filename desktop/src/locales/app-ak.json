@@ -1709,7 +1709,6 @@
   "mvSettings.general.defaultTickerScrollSpeedDesc": "Default scrolling ahoɔhare ma Ticker module (1 = brɛoo, 5 = ntɛmntɛm).",
   "mvSettings.general.aboutTitle": "Ɛfa",
   "mvSettings.general.aboutDescription": "Complete Church Production Control for OBS — nyansa layer a wɔasi wɔ OBS Studio atifi ama asɔre a wɔbɔ amanneɛ akuw.",
-  "mvSettings.general.aboutBuiltWith": "Wɔde Tauri v2 + React 19 + TypeScript na ɛkyekyee",
   "mvSettings.general.dangerZone": "Asiane Beae",
   "mvSettings.general.clearAllDataDesc": "Popa nhyehyeɛ, nsusuiɛ, ne agyapadeɛ a wɔakora so nyinaa. Wɔrentumi nsan nyɛ eyi.",
   "mvSettings.general.databaseCleared": "Wɔasiesie database no.",

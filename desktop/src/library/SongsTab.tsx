@@ -6,7 +6,7 @@
  *   • Song list with lyrics preview, slide count, key badge
  *   • Add Song modal (title, artist, lyrics, and slide layout)
  *   • Edit Song modal (same fields, pre-filled)
- *   • Archive with confirmation
+ *   • Archive in one click (a dot on "More tools" points to it); delete for good from the Archive with confirmation
  *   • ESC closes modals
  *
  * Songs are persisted in IndexedDB via worshipDb.ts.
@@ -63,11 +63,13 @@ import {
   archiveSong,
   getAllSongs,
   getArchivedSongs,
+  permanentlyDeleteSong,
   restoreSong,
   saveSong,
   WORSHIP_SONGS_UPDATED_EVENT,
 } from "../worship/worshipDb";
 import WorshipSongModal from "../worship/WorshipSongModal";
+import ModalDialog from "../components/ModalDialog";
 import { fuzzyMatch } from "../services/fuzzySearch";
 
 /* ---------- helpers ---------- */
@@ -112,6 +114,21 @@ function createSongId(prefix = "song"): string {
 /* SongsTab                                                                  */
 /* ========================================================================= */
 
+const EASYWORSHIP_BANNER_KEY = "mce-songs-easyworship-banner";
+const EASYWORSHIP_REMIND_LATER_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** Hidden when closed for good, or until the "Remind me later" time has passed. */
+function readEasyWorshipBannerVisible(): boolean {
+  try {
+    const saved = localStorage.getItem(EASYWORSHIP_BANNER_KEY);
+    if (!saved) return true;
+    if (saved === "closed") return false;
+    return Date.now() >= Number(saved);
+  } catch {
+    return true;
+  }
+}
+
 export function SongsTab() {
   const [songs, setSongs] = useState<Song[]>([]);
   const [archivedSongs, setArchivedSongs] = useState<Song[]>([]);
@@ -126,8 +143,20 @@ export function SongsTab() {
   const [editSong, setEditSong] = useState<Song | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [showArchiveModal, setShowArchiveModal] = useState(false);
+  // Set when a song is archived; shows a dot on "More tools" until the menu is opened.
+  const [hasUnseenArchive, setHasUnseenArchive] = useState(false);
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [easyWorshipModalOpen, setEasyWorshipModalOpen] = useState(false);
+  const [showEasyWorshipBanner, setShowEasyWorshipBanner] = useState(readEasyWorshipBannerVisible);
+  const hideEasyWorshipBanner = (forever: boolean) => {
+    try {
+      localStorage.setItem(
+        EASYWORSHIP_BANNER_KEY,
+        forever ? "closed" : String(Date.now() + EASYWORSHIP_REMIND_LATER_MS),
+      );
+    } catch { /* storage unavailable: it hides for this visit only */ }
+    setShowEasyWorshipBanner(false);
+  };
   const [showMoreTools, setShowMoreTools] = useState(false);
   const [activeCardMenuId, setActiveCardMenuId] = useState<string | null>(null);
   const moreToolsRef = useRef<HTMLDivElement>(null);
@@ -381,8 +410,17 @@ export function SongsTab() {
   const handleArchive = useCallback(
     async (id: string) => {
       await archiveSong(id);
+      setHasUnseenArchive(true);
       reload();
+    },
+    [reload]
+  );
+
+  const handlePermanentDelete = useCallback(
+    async (id: string) => {
       setDeleteConfirmId(null);
+      await permanentlyDeleteSong(id);
+      reload();
     },
     [reload]
   );
@@ -523,6 +561,16 @@ export function SongsTab() {
         <div className="worship-toolbar-actions">
           <button
             type="button"
+            className="worship-search-online-btn"
+            onClick={handleOpenOnlineSearch}
+            title="Search for song lyrics online"
+          >
+            <Globe size={16} />
+            <span>Search Online</span>
+          </button>
+
+          <button
+            type="button"
             className={`worship-add-song-btn ${hasReachedSongLimit ? "lib-add-btn--at-limit" : ""}`}
             onClick={handleAddSong}
             title="Add a song"
@@ -535,27 +583,20 @@ export function SongsTab() {
             <button
               type="button"
               className="worship-more-tools-btn"
-              onClick={() => setShowMoreTools((prev) => !prev)}
-              aria-label="More tools"
-              title="More tools"
+              onClick={() => {
+                setShowMoreTools((prev) => !prev);
+                setHasUnseenArchive(false);
+              }}
+              aria-label={hasUnseenArchive ? "More tools (a song was archived)" : "More tools"}
+              title={hasUnseenArchive ? "Archived songs are in More tools → Archive" : "More tools"}
             >
               <span>More tools</span>
+              {hasUnseenArchive && <span className="worship-more-tools-dot" aria-hidden="true" />}
               <ChevronDown size={14} />
             </button>
 
             {showMoreTools && (
               <div className="worship-more-tools-dropdown">
-                <button
-                  type="button"
-                  className="worship-dropdown-item"
-                  onClick={() => {
-                    setShowMoreTools(false);
-                    handleOpenOnlineSearch();
-                  }}
-                >
-                  <Globe size={16} />
-                  <span>Search Online</span>
-                </button>
                 <button
                   type="button"
                   className="worship-dropdown-item"
@@ -598,7 +639,9 @@ export function SongsTab() {
         </div>
       </div>
 
-      {/* EasyWorship Import Banner */}
+      {/* EasyWorship Import Banner: "Remind me later" hides it for a week, the X for good
+          (Settings → Data & Storage and "More tools" still offer the import). */}
+      {showEasyWorshipBanner && (
       <div className="worship-ew-banner">
         <div className="worship-ew-banner-left">
           <div className="worship-ew-icon-box">
@@ -609,15 +652,35 @@ export function SongsTab() {
             <p className="worship-ew-subtitle">Import songs, media, and themes in one step.</p>
           </div>
         </div>
-        <button
-          type="button"
-          className="worship-ew-import-btn"
-          onClick={() => setEasyWorshipModalOpen(true)}
-          title="Import EasyWorship library"
-        >
-          Import EasyWorship
-        </button>
+        <div className="worship-ew-actions">
+          <button
+            type="button"
+            className="worship-ew-later-btn"
+            onClick={() => hideEasyWorshipBanner(false)}
+            title="Hide this for a week"
+          >
+            Remind me later
+          </button>
+          <button
+            type="button"
+            className="worship-ew-import-btn"
+            onClick={() => setEasyWorshipModalOpen(true)}
+            title="Import EasyWorship library"
+          >
+            Import EasyWorship
+          </button>
+          <button
+            type="button"
+            className="worship-ew-close-btn"
+            onClick={() => hideEasyWorshipBanner(true)}
+            title="Close. You can still import from Settings → Data & Storage"
+            aria-label="Close"
+          >
+            <X size={16} />
+          </button>
+        </div>
       </div>
+      )}
 
       {/* Filter indicator chips if searching */}
       {hasActiveFilters && (
@@ -800,7 +863,7 @@ export function SongsTab() {
                                 className="worship-card-dropdown-item worship-card-dropdown-item--danger"
                                 onClick={() => {
                                   setActiveCardMenuId(null);
-                                  setDeleteConfirmId(s.id);
+                                  void handleArchive(s.id);
                                 }}
                               >
                                 <Archive size={14} />
@@ -960,19 +1023,6 @@ export function SongsTab() {
         </div>
       )}
 
-      {/* Archive confirmation */}
-      {deleteConfirmId && (
-        <div className="lib-modal-backdrop" onClick={() => setDeleteConfirmId(null)}>
-          <div className="lib-confirm-modal" onClick={(e) => e.stopPropagation()}>
-            <h3>Archive the song?</h3>
-            <p>This song and its lyrics will be archived and removed from the active library.</p>
-            <div className="lib-confirm-actions">
-              <button className="lib-confirm-cancel" onClick={() => setDeleteConfirmId(null)} title="Cancel">Cancel</button>
-              <button className="lib-confirm-delete" onClick={() => handleArchive(deleteConfirmId)} title="Archive">Archive</button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {showArchiveModal && (
         <div className="lib-modal-backdrop" onClick={() => setShowArchiveModal(false)}>
@@ -1022,13 +1072,24 @@ export function SongsTab() {
                           </span>
                         </div>
 
-                        <div className="lib-song-actions lib-song-actions--visible">
+                        <div className="lib-archive-row-actions">
                           <button
-                            className="lib-song-action-btn"
-                            title="Restore song"
+                            type="button"
+                            className="lib-archive-btn"
+                            title="Put this song back in your library"
                             onClick={() => handleRestore(song.id)}
                           >
-                            <Icon name="unarchive" size={16} />
+                            <Icon name="replay" size={15} />
+                            <span>Restore</span>
+                          </button>
+                          <button
+                            type="button"
+                            className="lib-archive-btn lib-archive-btn--danger"
+                            title="Delete this song for good"
+                            onClick={() => setDeleteConfirmId(song.id)}
+                          >
+                            <Icon name="delete" size={15} />
+                            <span>Delete</span>
                           </button>
                         </div>
                       </div>
@@ -1045,6 +1106,23 @@ export function SongsTab() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Delete an archived song for good */}
+      {deleteConfirmId && (
+        <ModalDialog
+          tone="danger"
+          icon={<Icon name="delete" size={26} />}
+          title="Delete this song for good?"
+          onClose={() => setDeleteConfirmId(null)}
+          actions={[
+            { label: "Cancel", onClick: () => setDeleteConfirmId(null), variant: "ghost", autoFocus: true },
+            { label: "Delete song", onClick: () => void handlePermanentDelete(deleteConfirmId), variant: "danger" },
+          ]}
+        >
+          &ldquo;{archivedSongs.find((song) => song.id === deleteConfirmId)?.metadata.title ?? "This song"}&rdquo; and its
+          lyrics will be removed from this computer. This can&apos;t be undone.
+        </ModalDialog>
       )}
 
       {/* Add Song Modal */}

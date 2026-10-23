@@ -1,12 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { execFileSync } from "child_process";
-import { existsSync } from "fs";
-import { resolve } from "path";
 import {
   parseEasyWorshipRtf,
   parseEasyWorshipSongSections,
   convertEasyWorshipRecordsToDrafts,
-  type EasyWorshipRawRecord,
 } from "./easyWorshipImportService";
 
 describe("easyWorshipImportService", () => {
@@ -28,41 +24,32 @@ describe("easyWorshipImportService", () => {
     expect(sections[1].label).toBe("Chorus 1");
   });
 
-  it("imports real songs from eazyworship folder if available", () => {
-    const songsDbPath = resolve(__dirname, "../../../eazyworship/Songs (1).db");
-    const wordsDbPath = resolve(__dirname, "../../../eazyworship/SongWords (1).db");
+  // The header EasyWorship 7 writes before every song's lyrics (font table, colour table, list styles).
+  const EW_HEADER =
+    "{\\rtf1\\ansi\\deff0\\deftab254{\\fonttbl{\\f0\\fnil\\fcharset0 Arial;}{\\f1\\fnil\\fcharset0 Verdana;}}" +
+    "{\\colortbl\\red0\\green0\\blue0;\\red255\\green0\\blue0;}\\paperw12240\\paperh15840\\margl1880\\margr1880\\margt1440\\margb1440" +
+    "{\\*\\pnseclvl1\\pnucrm\\pnstart1\\pnhang\\pnindent720{\\pntxtb}{\\pntxta{.}}}\r\n" +
+    "{\\*\\pnseclvl5\\pndec\\pnstart1\\pnhang\\pnindent720{\\pntxtb{(}}{\\pntxta{)}}}\r\n";
+  const line = (text: string) => `\\li0\\fi0\\ri0\\sb0\\sl\\sa0 \\plain\\f1\\fntnamaut ${text}\\par\r\n`;
 
-    if (!existsSync(songsDbPath) || !existsSync(wordsDbPath)) {
-      console.warn("Skipping real DB test: files not found at eazyworship path");
-      return;
-    }
+  it("keeps EasyWorship's font and colour tables out of the lyrics, one line per line", () => {
+    const rtf = `${EW_HEADER}{\\pard${line("Verse 1")}${line("A mighty fortress is our God")}${line("A bulwark never failing")}}\r\n}`;
+    expect(parseEasyWorshipRtf(rtf)).toBe("Verse 1\nA mighty fortress is our God\nA bulwark never failing");
+  });
 
-    const sql = `ATTACH DATABASE "${wordsDbPath}" AS w; SELECT s.rowid, s.title, s.author, s.copyright, s.reference_number, w.words FROM song s JOIN w.word w ON s.rowid = w.song_id;`;
-    const jsonStr = execFileSync("sqlite3", ["-json", songsDbPath, sql]).toString();
-    const rows = JSON.parse(jsonStr) as Array<{
-      rowid: number;
-      title: string;
-      author?: string;
-      copyright?: string;
-      reference_number?: string;
-      words: string;
-    }>;
+  it("reads accented letters, smart quotes and Unicode the way EasyWorship stores them", () => {
+    const rtf = `${EW_HEADER}{\\pard${line("\\u210?r\\'e8 \\u242?f\\'e9 \\u7864?\\uc2\\u7885?? m\\'92 \\{x\\}")}}}`;
+    expect(parseEasyWorshipRtf(rtf)).toBe("Òrè òfé Ẹọ m’ {x}");
+  });
 
-    expect(rows.length).toBeGreaterThan(0);
-
-    const records: EasyWorshipRawRecord[] = rows.map((r) => ({
-      rowid: r.rowid,
-      title: r.title,
-      author: r.author,
-      copyright: r.copyright,
-      referenceNumber: r.reference_number,
-      wordsRtf: r.words,
-    }));
-
-    const drafts = convertEasyWorshipRecordsToDrafts(records);
-    expect(drafts.length).toBe(rows.length);
-    expect(drafts[0].title).toBe("A Heart Like Thine");
-    expect(drafts[0].artist).toBe("Judson Van DeVenter");
-    expect(drafts[0].sections.length).toBeGreaterThan(0);
+  it("turns a whole EasyWorship song into its sections", () => {
+    const rtf = `${EW_HEADER}{\\pard${line("Chorus 1")}${line("Come to my soul")}${line("Verse 1")}${line("Give me a love")}${line("Verse 2")}${line("Only a joy")}}\r\n}`;
+    const [draft] = convertEasyWorshipRecordsToDrafts([{ rowid: 1, title: "A Heart Like Thine", author: "J. Van DeVenter", wordsRtf: rtf }]);
+    expect(draft.sections.map((s) => [s.label, s.content])).toEqual([
+      ["Chorus 1", "Come to my soul"],
+      ["Verse 1", "Give me a love"],
+      ["Verse 2", "Only a joy"],
+    ]);
+    expect(draft.artist).toBe("J. Van DeVenter");
   });
 });

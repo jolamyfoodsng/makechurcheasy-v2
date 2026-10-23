@@ -24,6 +24,17 @@ describe("plan theme locks", () => {
     expect(planLockedThemeIds([...builtins, own], 0).has("custom-1")).toBe(false);
   });
 
+  it("locks EasyWorship themes past the plan's limit, so a trial import isn't free on Free", () => {
+    const imported = ["c", "a", "b"].map((name, i) => ({
+      id: `easyworship-${name}`, source: "custom" as const, createdAt: `2026-10-0${i + 1}T00:00:00Z`,
+    }));
+    const locked = planLockedThemeIds([...builtins, ...imported], 2);
+    // The two imported first stay open, the third locks; the church's own themes still never lock.
+    expect(["easyworship-c", "easyworship-a", "easyworship-b"].map((id) => locked.has(id))).toEqual([false, false, true]);
+    expect(planLockedThemeIds([...builtins, ...imported], -1).size).toBe(0);
+    expect(planLockedThemeIds(imported, 2, ["easyworship-b"]).size).toBe(0);
+  });
+
   it("keeps the selected / in-use theme open", () => {
     const last = builtins[builtins.length - 1].id;
     expect(planLockedThemeIds(builtins, 2).has(last)).toBe(true);

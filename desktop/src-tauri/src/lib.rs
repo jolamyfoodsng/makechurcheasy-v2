@@ -1679,13 +1679,36 @@ fn save_bg_image(file_name: String, file_data: Vec<u8>) -> Result<String, String
 /// Returns the absolute path to the saved file.
 #[tauri::command]
 fn save_upload_file(file_name: String, file_data: Vec<u8>) -> Result<String, String> {
+    write_upload_file(&file_name, &file_data)
+}
+
+/// Same as `save_upload_file`, but the file arrives as the raw request body instead of a JSON
+/// list of numbers, which is many times faster for large videos. The name is sent URL-encoded
+/// in the `x-file-name` header.
+#[tauri::command]
+fn save_upload_file_raw(request: tauri::ipc::Request<'_>) -> Result<String, String> {
+    let tauri::ipc::InvokeBody::Raw(file_data) = request.body() else {
+        return Err("Expected the file as raw bytes".into());
+    };
+    let encoded_name = request
+        .headers()
+        .get("x-file-name")
+        .and_then(|value| value.to_str().ok())
+        .ok_or("Missing x-file-name header")?;
+    let file_name = urlencoding::decode(encoded_name)
+        .map_err(|e| format!("Invalid file name: {}", e))?
+        .into_owned();
+    write_upload_file(&file_name, file_data)
+}
+
+fn write_upload_file(file_name: &str, file_data: &[u8]) -> Result<String, String> {
     let uploads_dir = app_dir()?.join("uploads");
     fs::create_dir_all(&uploads_dir)
         .map_err(|e| format!("Failed to create uploads directory: {}", e))?;
 
-    let safe_file_name = sanitize_filename_for_storage(&file_name)?;
+    let safe_file_name = sanitize_filename_for_storage(file_name)?;
     let file_path = uploads_dir.join(&safe_file_name);
-    fs::write(&file_path, &file_data)
+    fs::write(&file_path, file_data)
         .map_err(|e| format!("Failed to write file '{}': {}", safe_file_name, e))?;
     let prepared_video = uploads_dir.join(studio_video_cache_name(&safe_file_name));
     if prepared_video.is_file() {
@@ -4297,6 +4320,199 @@ fn read_easyworship_db_folder(folder_path: String) -> Result<Vec<EasyWorshipRawR
     Ok(records)
 }
 
+// ── EasyWorship pictures, videos and themes ──────────────────────────────
+//
+// A profile keeps its media in <Profile>\Resources\Images and \Videos, with titles in
+// Databases\Data\Media.db (path "<images>" / "<videos>" means those folders). Themes are listed in
+// Themes.db (song themes are presentation_type 13, scripture themes 14) and laid out in
+// PresentationLayouts.db: the BACKGROUND element's foreground resource is the picture or video,
+// and its background resource the solid colour behind it.
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct EasyWorshipMediaFile {
+    title: String,
+    path: String,
+    /// "image" or "video".
+    kind: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct EasyWorshipTheme {
+    title: String,
+    /// "song" or "scripture".
+    kind: String,
+    /// The picture or video behind the words, when there is one and the file exists.
+    media_path: Option<String>,
+    /// "#rrggbb" when the background is a solid colour.
+    color: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct EasyWorshipAssets {
+    media: Vec<EasyWorshipMediaFile>,
+    themes: Vec<EasyWorshipTheme>,
+}
+
+const EW_IMAGE_EXTENSIONS: [&str; 7] = ["jpg", "jpeg", "png", "bmp", "gif", "webp", "tif"];
+const EW_VIDEO_EXTENSIONS: [&str; 10] = ["mp4", "mov", "wmv", "avi", "mpg", "mpeg", "m4v", "mkv", "webm", "flv"];
+
+fn easyworship_media_kind(path: &Path) -> Option<&'static str> {
+    let ext = path.extension()?.to_string_lossy().to_lowercase();
+    if EW_IMAGE_EXTENSIONS.contains(&ext.as_str()) {
+        Some("image")
+    } else if EW_VIDEO_EXTENSIONS.contains(&ext.as_str()) {
+        Some("video")
+    } else {
+        None
+    }
+}
+
+/// The child of `dir` named `name`, whatever its case ("Resources", "resources").
+fn child_dir_ci(dir: &Path, name: &str) -> Option<PathBuf> {
+    fs::read_dir(dir)
+        .ok()?
+        .flatten()
+        .map(|e| e.path())
+        .find(|p| p.is_dir() && p.file_name().map(|n| n.to_string_lossy().eq_ignore_ascii_case(name)).unwrap_or(false))
+}
+
+/// "<images>foo.jpg", "<videos>", or a full path, as a file on disk.
+fn resolve_easyworship_media_path(resources: Option<&Path>, folder: &str, filename: &str) -> Option<PathBuf> {
+    let joined = format!("{}{}", folder, filename);
+    let resolved = if let Some(rest) = joined.strip_prefix('<') {
+        let (tag, file) = rest.split_once('>')?;
+        let sub = match tag.to_lowercase().as_str() {
+            "images" => "Images",
+            "videos" => "Videos",
+            "audio" => "Audio",
+            "shared" | "sharedmedia" => "SharedMedia",
+            _ => return None,
+        };
+        child_dir_ci(resources?, sub)?.join(file.trim_start_matches(['\\', '/']))
+    } else if !folder.is_empty() {
+        PathBuf::from(folder).join(filename)
+    } else {
+        PathBuf::from(filename)
+    };
+    resolved.is_file().then_some(resolved)
+}
+
+/// Reads the pictures, videos and themes of the EasyWorship profile around `folder_path` (read-only).
+#[tauri::command]
+fn read_easyworship_assets(folder_path: String) -> Result<EasyWorshipAssets, String> {
+    let picked = PathBuf::from(folder_path.trim());
+    let dir = if picked.is_file() { picked.parent().unwrap_or(&picked).to_path_buf() } else { picked };
+    let data_dir = find_easyworship_data_dir(&dir, 0).map(|(d, _, _)| d).unwrap_or_else(|| dir.clone());
+    // "<Profile>\v6.1\Databases\Data" → "<Profile>\Resources"
+    let resources = data_dir.ancestors().find_map(|a| child_dir_ci(a, "Resources"));
+    let resources = resources.as_deref();
+    let db = |name: &str| -> Option<rusqlite::Connection> {
+        let path = fs::read_dir(&data_dir)
+            .ok()?
+            .flatten()
+            .map(|e| e.path())
+            .find(|p| p.file_name().map(|n| n.to_string_lossy().eq_ignore_ascii_case(name)).unwrap_or(false))?;
+        open_easyworship_db(&path).ok()
+    };
+
+    // Pictures and videos: Media.db first (it has the titles), then anything else in the folders.
+    let mut media: Vec<EasyWorshipMediaFile> = Vec::new();
+    let mut seen = std::collections::HashSet::new();
+    let mut add_media = |title: String, path: PathBuf, media: &mut Vec<EasyWorshipMediaFile>| {
+        let Some(kind) = easyworship_media_kind(&path) else { return };
+        let key = path.to_string_lossy().to_lowercase();
+        if seen.insert(key) {
+            let title = if title.trim().is_empty() {
+                path.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default()
+            } else {
+                title.trim().to_string()
+            };
+            media.push(EasyWorshipMediaFile { title, path: path.to_string_lossy().to_string(), kind: kind.to_string() });
+        }
+    };
+    if let Some(conn) = db("Media.db") {
+        if let Ok(mut stmt) = conn.prepare("SELECT title, path, filename FROM media ORDER BY title COLLATE NOCASE") {
+            let rows = stmt.query_map([], |row| {
+                Ok((
+                    row.get::<_, Option<String>>(0)?.unwrap_or_default(),
+                    row.get::<_, Option<String>>(1)?.unwrap_or_default(),
+                    row.get::<_, Option<String>>(2)?.unwrap_or_default(),
+                ))
+            });
+            if let Ok(rows) = rows {
+                for (title, folder, filename) in rows.flatten() {
+                    if let Some(path) = resolve_easyworship_media_path(resources, &folder, &filename) {
+                        add_media(title, path, &mut media);
+                    }
+                }
+            }
+        }
+    }
+    if let Some(resources) = resources {
+        for sub in ["Images", "Videos"] {
+            let Some(folder) = child_dir_ci(resources, sub) else { continue };
+            let mut files: Vec<PathBuf> = fs::read_dir(&folder).map(|r| r.flatten().map(|e| e.path()).filter(|p| p.is_file()).collect()).unwrap_or_default();
+            files.sort();
+            for path in files {
+                add_media(String::new(), path, &mut media);
+            }
+        }
+    }
+
+    // Themes: the title from Themes.db, the background from PresentationLayouts.db.
+    let mut themes: Vec<EasyWorshipTheme> = Vec::new();
+    if let (Some(list), Some(layouts)) = (db("Themes.db"), db("PresentationLayouts.db")) {
+        let items: Vec<(String, i64, i64)> = list
+            .prepare("SELECT title, presentation_type, presentation_id FROM file_item WHERE presentation_type IN (13, 14) ORDER BY title COLLATE NOCASE")
+            .and_then(|mut stmt| {
+                stmt.query_map([], |row| Ok((row.get::<_, Option<String>>(0)?.unwrap_or_default(), row.get(1)?, row.get(2)?)))
+                    .map(|rows| rows.flatten().collect())
+            })
+            .unwrap_or_default();
+        for (title, presentation_type, presentation_id) in items {
+            let background: Option<(Option<i64>, Option<i64>)> = layouts
+                .query_row(
+                    "SELECT e.foreground_resource_id, e.background_resource_id FROM element e JOIN slide s ON s.rowid = e.slide_id \
+                     WHERE s.presentation_id = ?1 AND e.element_uid = 'BACKGROUND' ORDER BY s.order_index LIMIT 1",
+                    [presentation_id],
+                    |row| Ok((row.get(0)?, row.get(1)?)),
+                )
+                .ok();
+            let (foreground, back) = background.unwrap_or((None, None));
+            let media_path = foreground.and_then(|id| {
+                layouts
+                    .query_row(
+                        "SELECT original_filename FROM resource_image WHERE resource_id = ?1 \
+                         UNION ALL SELECT original_filename FROM resource_video WHERE resource_id = ?1 LIMIT 1",
+                        [id],
+                        |row| row.get::<_, Option<String>>(0),
+                    )
+                    .ok()
+                    .flatten()
+                    .and_then(|name| resolve_easyworship_media_path(resources, "", &name))
+            });
+            if let Some(path) = &media_path {
+                add_media(String::new(), path.clone(), &mut media);
+            }
+            // EasyWorship colours are stored as 0x00BBGGRR.
+            let color = back
+                .and_then(|id| layouts.query_row("SELECT color FROM resource_color WHERE resource_id = ?1", [id], |row| row.get::<_, i64>(0)).ok())
+                .map(|c| format!("#{:02x}{:02x}{:02x}", c & 0xff, (c >> 8) & 0xff, (c >> 16) & 0xff));
+            themes.push(EasyWorshipTheme {
+                title: if title.trim().is_empty() { "EasyWorship theme".to_string() } else { title.trim().to_string() },
+                kind: if presentation_type == 14 { "scripture" } else { "song" }.to_string(),
+                media_path: media_path.map(|p| p.to_string_lossy().to_string()),
+                color,
+            });
+        }
+    }
+
+    Ok(EasyWorshipAssets { media, themes })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -4320,6 +4536,30 @@ mod tests {
         // Picking the Songs.db file itself works the same.
         let by_file = read_easyworship_db_folder(sample.join("Songs (1).db").to_string_lossy().to_string()).expect("by file");
         assert_eq!(by_file.len(), records.len());
+    }
+
+    /// EasyWorship's own Default profile, when EasyWorship is installed on this computer.
+    #[test]
+    fn reads_easyworship_pictures_videos_and_themes() {
+        let Ok(public) = std::env::var("PUBLIC") else { return };
+        let profile = PathBuf::from(public).join("Documents").join("Softouch").join("Easyworship").join("Default");
+        if !profile.join("Resources").is_dir() {
+            eprintln!("EasyWorship's Default profile not found; skipping");
+            return;
+        }
+        let assets = read_easyworship_assets(profile.to_string_lossy().to_string()).expect("assets");
+        assert!(assets.media.iter().all(|m| Path::new(&m.path).is_file()));
+        assert!(assets.media.iter().any(|m| m.kind == "image") && assets.media.iter().any(|m| m.kind == "video"));
+        assert!(assets.themes.iter().any(|t| t.kind == "song" && t.media_path.is_some()), "{:?}", assets.themes);
+        // Every theme picture or video is also in the media list.
+        for theme in &assets.themes {
+            if let Some(path) = &theme.media_path {
+                assert!(assets.media.iter().any(|m| &m.path == path), "{path}");
+            }
+        }
+        // Picking the database folder finds the same profile.
+        let from_data = read_easyworship_assets(profile.join("v6.1").join("Databases").join("Data").to_string_lossy().to_string()).expect("from data");
+        assert_eq!(from_data.media.len(), assets.media.len());
     }
 
     #[test]
@@ -10175,6 +10415,7 @@ pub fn run() {
             verse_ai_ndi::get_verse_ai_ndi_status,
             save_bg_image,
             save_upload_file,
+            save_upload_file_raw,
             prepare_studio_video_for_program,
             delete_upload_file,
             media_refs::register_media_references,
@@ -10212,6 +10453,7 @@ pub fn run() {
             delete_dock_setting,
             search_online_song_lyrics,
             read_easyworship_db_folder,
+            read_easyworship_assets,
             find_easyworship_libraries,
             inspect_easyworship_folder,
             load_transcripts,

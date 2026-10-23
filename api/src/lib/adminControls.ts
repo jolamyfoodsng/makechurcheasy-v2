@@ -11,6 +11,7 @@ import {
   type FeatureSwitchKey,
   type PaymentProviderKey,
 } from "./platformSettings";
+import { normalizeSupportContent } from "./supportContent";
 
 export async function getAdminControls(): Promise<AdminControls> {
   try {
@@ -92,10 +93,6 @@ function int(value: unknown, fallback: number, min = 0, max = 100_000): number {
   const n = Number(value);
   return Number.isFinite(n) ? Math.min(max, Math.max(min, Math.round(n))) : fallback;
 }
-function url(value: unknown): string {
-  const v = String(value ?? "").trim().slice(0, 500);
-  return v === "" || /^https?:\/\//i.test(v) ? v : "";
-}
 
 export function sanitizeAdminControls(raw: Record<string, unknown>): AdminControls {
   const d = DEFAULT_ADMIN_CONTROLS;
@@ -132,11 +129,7 @@ export function sanitizeAdminControls(raw: Record<string, unknown>): AdminContro
       blockDisposableEmails: bool(su.blockDisposableEmails, true),
       blockedDomains: [...new Set(domains.map((x) => String(x).trim().toLowerCase().replace(/^@/, "")).filter((x) => /^[a-z0-9.-]+\.[a-z]{2,}$/.test(x)))].slice(0, 500),
     },
-    support: {
-      whatsappUrl: url(st.whatsappUrl),
-      youtubeUrl: url(st.youtubeUrl),
-      supportEmail: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(st.supportEmail ?? "").trim()) ? String(st.supportEmail).trim() : "",
-    },
+    support: normalizeSupportContent(st),
   };
 }
 

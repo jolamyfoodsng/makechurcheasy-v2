@@ -29,7 +29,8 @@ const REFERENCE_UPLOAD_NAME = /^ref_[0-9a-f]{32}\.[a-z0-9]+$/i;
 export function isReferenceUploadName(name: string | undefined | null): boolean {
   return Boolean(name && REFERENCE_UPLOAD_NAME.test(name));
 }
-const INTERNAL_UPLOAD_PREFIXES = ["dock_theme_bg_", "dock_theme_box_bg_", "dock_theme_logo_"];
+// studio_video_*.mp4 are browser-playable copies of library videos (prepare_studio_video in lib.rs), not media of their own.
+const INTERNAL_UPLOAD_PREFIXES = ["dock_theme_bg_", "dock_theme_box_bg_", "dock_theme_logo_", "studio_video_"];
 
 function getUploadMediaType(fileName: string): MediaItem["type"] | null {
   const extension = fileName.split(".").pop()?.toLowerCase() || "";

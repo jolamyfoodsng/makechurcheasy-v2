@@ -11,7 +11,8 @@
  *   (optional hint line)
  *   [ Cancel ]  [ Main action ]
  *
- * Tones: brand (indigo), info (sky), warning (amber), danger (red), success (green).
+ * Tones: brand / info (the app accent), warning, danger, success: all from the theme tokens,
+ * so dialogs follow dark / light mode and the accent chosen in Settings → Appearance.
  * Buttons: ghost, primary, danger, dangerGhost. Put the safe / cancel button first.
  */
 import { useEffect, useId } from "react";

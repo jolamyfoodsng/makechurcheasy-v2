@@ -44,6 +44,7 @@ Loose media assets are stored directly on the file system:
 
 ## 5. MakeChurchEazy Import Capabilities
 
-1. **Songs Import**: Direct SQLite join of `Songs.db` + `SongWords.db` with automatic RTF decoding and section splitting (`Verse 1`, `Chorus`, `Bridge`).
-2. **Media Library Import**: Scanning `Resources\Videos\` and `Resources\Images\` to index background videos and images directly into MakeChurchEazy's Worship Media Library.
-3. **Schedule Import**: Unzipping `.ewsx` archives to extract embedded songs, slides, and background video/image assets.
+1. **Songs Import** (`read_easyworship_db_folder`, `easyWorshipImportService.ts`): `Songs.db` + `SongWords.db`, with the RTF decoded (font/colour tables skipped, `\'xx` and `\uN` characters decoded) and split into sections (`Verse 1`, `Chorus`, `Bridge`).
+2. **Media Library Import** (`read_easyworship_assets`, `easyWorshipAssetImport.ts`): the files listed in `Media.db` plus anything else in `Resources\Images\` and `Resources\Videos\`, copied into the Media library with their EasyWorship titles.
+3. **Theme Import**: each song theme (`presentation_type` 13) and scripture theme (14) becomes a fullscreen theme. The background is the `BACKGROUND` element's foreground resource (`resource_image` / `resource_video`, `<images>` / `<videos>` paths), or its solid colour (`resource_color`, stored as `0x00BBGGRR`). Theme videos also get an MP4 preview copy, because the app's previews can't play `.wmv`; OBS plays the original.
+4. **Not imported yet**: schedules (`.ewsx`), presentations, and theme fonts and text positions.

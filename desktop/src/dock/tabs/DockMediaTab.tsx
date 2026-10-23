@@ -3121,6 +3121,10 @@ let _cachedGlobalUploadsDir: string | null = null;
         nextItems.push(item);
         console.log("[UPLOAD] Registering shared dock media item:", item.id);
         await registerDockMediaItem(item);
+        // Show each file as soon as it is saved instead of after the whole batch, so a
+        // new upload is at the top of Newly Uploaded straight away.
+        rememberPendingMedia([item]);
+        setLibraryMedia((current) => dedupeMediaItems([item, ...current]));
         if (documentPage) {
           updateMediaPreference(`media:${item.filePath || item.diskFileName || item.id}`, { fitMode: "contain" });
         }

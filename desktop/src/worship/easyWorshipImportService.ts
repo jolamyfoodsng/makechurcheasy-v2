@@ -28,38 +28,161 @@ function uid(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+/** RTF groups whose text is not lyrics (font and colour tables, document info, pictures…). */
+const RTF_SKIPPED_DESTINATIONS = new Set([
+  "fonttbl", "colortbl", "stylesheet", "info", "pict", "header", "footer", "headerl", "headerr",
+  "footerl", "footerr", "listtable", "listoverridetable", "rsidtbl", "generator", "xmlnstbl",
+  "themedata", "colorschememapping", "datastore", "latentstyles", "object", "fldinst",
+]);
+
+const RTF_SYMBOLS: Record<string, string> = {
+  emdash: "—", endash: "–", lquote: "‘", rquote: "’", ldblquote: "“", rdblquote: "”", bullet: "•",
+  emspace: " ", enspace: " ", qmspace: " ",
+};
+
+const CONTROL_WORD = /([a-zA-Z]{1,32})(-?\d{1,10})? ?/y;
+
+function rtfByteDecoder(codepage: number): TextDecoder {
+  try {
+    return new TextDecoder(`windows-${codepage}`);
+  } catch {
+    return new TextDecoder("windows-1252");
+  }
+}
+
 /**
- * Parses RTF formatting control codes from EasyWorship `word.words` column
- * into clean plain text with preserved section markers and line breaks.
+ * Turns the RTF EasyWorship keeps in `word.words` into plain text, one lyric line per line,
+ * with the section markers ("Verse 1", "Chorus") kept as their own lines.
+ * Handles accented letters stored as \'xx (in the song's code page) or \uN (Unicode).
  */
 export function parseEasyWorshipRtf(rtf: string): string {
   if (!rtf || typeof rtf !== "string") return "";
+  if (!rtf.trimStart().startsWith("{\\rtf")) {
+    return rtf.replace(/\r\n?/g, "\n").split("\n").map((l) => l.trim()).join("\n").trim();
+  }
 
-  // 1. Remove RTF group headers like {\*\...}
-  let text = rtf.replace(/\{\\\*[\s\S]*?\}/g, "");
+  let out = "";
+  let bytes: number[] = [];
+  let decoder = rtfByteDecoder(1252);
+  // Per group: is its text skipped, and how many fallback characters follow a \uN.
+  const stack: Array<{ skip: boolean; uc: number }> = [];
+  let skip = false;
+  let uc = 1;
+  let fallbackToSkip = 0;
 
-  // 2. Replace RTF line break and page break tokens
-  text = text.replace(/\\par\b/gi, "\n");
-  text = text.replace(/\\line\b/gi, "\n");
-  text = text.replace(/\\page\b/gi, "\n\f\n");
-
-  // 3. Remove all formatting tags (\plain, \f1, \pard, \sb0, etc.)
-  text = text.replace(/\\[a-z0-9]+\s?/gi, "");
-
-  // 4. Remove group braces
-  text = text.replace(/[{}]/g, "");
-
-  // 5. Decode hex escapes like \'a9 -> ©, \'92 -> ’
-  text = text.replace(/\\'([0-9a-f]{2})/gi, (_, hex) => {
-    try {
-      return String.fromCharCode(parseInt(hex, 16));
-    } catch {
-      return "";
+  const flushBytes = () => {
+    if (bytes.length) {
+      out += decoder.decode(new Uint8Array(bytes));
+      bytes = [];
     }
-  });
+  };
+  const emit = (text: string) => {
+    if (skip) return;
+    if (fallbackToSkip > 0) {
+      fallbackToSkip -= 1;
+      return;
+    }
+    flushBytes();
+    out += text;
+  };
 
-  // 6. Clean up extra spacing
-  const lines = text.split("\n").map((line) => line.trim());
+  let i = 0;
+  while (i < rtf.length) {
+    const ch = rtf[i];
+    if (ch === "{") {
+      stack.push({ skip, uc });
+      i += 1;
+      continue;
+    }
+    if (ch === "}") {
+      const parent = stack.pop();
+      if (parent) ({ skip, uc } = parent);
+      fallbackToSkip = 0;
+      i += 1;
+      continue;
+    }
+    // Raw line breaks in RTF are only there to wrap the file; \par marks the real ones.
+    if (ch === "\r" || ch === "\n") {
+      i += 1;
+      continue;
+    }
+    if (ch !== "\\") {
+      emit(ch);
+      i += 1;
+      continue;
+    }
+
+    const next = rtf[i + 1];
+    if (next === undefined) break;
+    if (next === "\\" || next === "{" || next === "}") {
+      emit(next);
+      i += 2;
+      continue;
+    }
+    if (next === "'") {
+      const byte = parseInt(rtf.substr(i + 2, 2), 16);
+      i += 4;
+      if (skip || Number.isNaN(byte)) continue;
+      if (fallbackToSkip > 0) {
+        fallbackToSkip -= 1;
+        continue;
+      }
+      bytes.push(byte);
+      continue;
+    }
+    if (next === "*") {
+      skip = true;
+      i += 2;
+      continue;
+    }
+    if (next === "~") {
+      emit(" ");
+      i += 2;
+      continue;
+    }
+    if (next === "_") {
+      emit("-");
+      i += 2;
+      continue;
+    }
+    if (next === "\r" || next === "\n") {
+      emit("\n");
+      i += 2;
+      continue;
+    }
+
+    CONTROL_WORD.lastIndex = i + 1;
+    const match = CONTROL_WORD.exec(rtf);
+    if (!match) {
+      // Other control symbols (\-, \|, \:) carry no text.
+      i += 2;
+      continue;
+    }
+    i += 1 + match[0].length;
+    const word = match[1];
+    const param = match[2] === undefined ? undefined : Number(match[2]);
+
+    if (RTF_SKIPPED_DESTINATIONS.has(word)) {
+      skip = true;
+    } else if (word === "par" || word === "line" || word === "page" || word === "sect") {
+      emit("\n");
+    } else if (word === "tab") {
+      emit(" ");
+    } else if (word === "ansicpg" && param) {
+      flushBytes();
+      decoder = rtfByteDecoder(param);
+    } else if (word === "uc" && param !== undefined) {
+      uc = Math.max(0, param);
+    } else if (word === "u" && param !== undefined) {
+      emit(String.fromCharCode(param < 0 ? param + 65536 : param));
+      if (!skip) fallbackToSkip = uc;
+    } else if (RTF_SYMBOLS[word]) {
+      emit(RTF_SYMBOLS[word]);
+    }
+  }
+  flushBytes();
+
+  const lines = out.split("\n").map((line) => line.replace(/\s+/g, " ").trim());
   return lines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
 }
 
@@ -76,7 +199,7 @@ export function parseEasyWorshipSongSections(cleanLyrics: string): SmartImportSe
   let currentLines: string[] = [];
 
   const SECTION_HEADER_RE =
-    /^(verse|chorus|bridge|tag|pre-chorus|prechorus|refrain|intro|outro|vamp|hook)\s*(\d*)$/i;
+    /^(verse|chorus|bridge|tag|pre-chorus|pre chorus|prechorus|refrain|intro|outro|ending|vamp|hook)\s*(\d*):?$/i;
 
   const flush = () => {
     const content = currentLines.join("\n").trim();
@@ -118,7 +241,7 @@ export function parseEasyWorshipSongSections(cleanLyrics: string): SmartImportSe
       } else if (rawType.startsWith("intro")) {
         currentType = "intro";
         currentLabel = num ? `Intro ${num}` : "Intro";
-      } else if (rawType.startsWith("outro")) {
+      } else if (rawType.startsWith("outro") || rawType.startsWith("ending")) {
         currentType = "outro";
         currentLabel = num ? `Outro ${num}` : "Outro";
       } else {

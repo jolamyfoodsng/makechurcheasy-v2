@@ -1,3 +1,5 @@
+import { DEFAULT_SUPPORT_CONTENT, type SupportContent } from "./supportContent";
+
 export type PaymentProviderKey = "flutterwave" | "mtnMomo" | "nowpayments";
 export type FeatureSwitchKey =
   | "speechToScripture"
@@ -19,11 +21,8 @@ export interface AdminControls {
     blockDisposableEmails: boolean;
     blockedDomains: string[];
   };
-  support: {
-    whatsappUrl: string;
-    youtubeUrl: string;
-    supportEmail: string;
-  };
+  /** The desktop app's Support window (see supportContent.ts). */
+  support: SupportContent;
 }
 
 export interface PlatformSettings {
@@ -286,11 +285,7 @@ export const DEFAULT_SETTINGS: PlatformSettings = {
     },
     speech: { model: "universal-streaming-english", dailyMinutesCap: 0 },
     signup: { maxSignupsPerIpPerDay: 5, maxSignupsPerDevicePerDay: 2, blockDisposableEmails: true, blockedDomains: [] },
-    support: {
-      whatsappUrl: "https://chat.whatsapp.com/EQIuXfpCTBOG7YOSf2nKqU?mode=gi_t",
-      youtubeUrl: "https://www.youtube.com/playlist?list=PLRua6gJfgC0o",
-      supportEmail: "support@makechurcheazy.com",
-    },
+    support: DEFAULT_SUPPORT_CONTENT,
   },
   featureFlags: {
     remotePresentationBeta: false,

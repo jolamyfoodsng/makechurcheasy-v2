@@ -16,6 +16,7 @@
 
 import type { TrialStatus } from "@/types/schemas";
 import { getLocalDevPlanOverride } from "@/lib/localDevPlanOverride";
+import { DEFAULT_TRIAL_DAYS } from "@/lib/trialDuration";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -250,7 +251,7 @@ export function resolveEffectivePlan(user: RawMongoUser | null | undefined): Eff
 
 // ── New User Factory ────────────────────────────────────────────────────────
 
-const DEFAULT_TRIAL_DAYS = 30;
+// DEFAULT_TRIAL_DAYS lives in ./trialDuration so the trial record code can use it too.
 
 /**
  * Get the default trial duration from platform settings.

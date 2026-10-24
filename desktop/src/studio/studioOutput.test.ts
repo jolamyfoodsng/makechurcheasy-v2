@@ -105,6 +105,25 @@ describe("one way onto the screen", () => {
     expect(getProgramState().preview?.active).toBeNull();
   });
 
+  it("Preview blanks the module it leaves so that layer animates out under the new words", async () => {
+    const song: StudioSlide = { key: "worship:s1:1", module: "worship", label: "V1", text: "Amazing grace", reference: "", itemTitle: "Amazing Grace" };
+    await setPreviewState(verse, null, "lower-third");
+    expect(getProgramState().preview?.packets.bible?.blanked).toBeUndefined();
+    await setPreviewState(song, null, "lower-third");
+    const preview = getProgramState().preview;
+    expect(preview?.active).toBe("worship");
+    expect(preview?.packets.bible?.blanked).toBe(true);
+    expect(preview?.packets.worship?.blanked).toBeUndefined();
+    // Back to the Bible: its layer gets real words again, and the worship one is the one that leaves.
+    await setPreviewState(verse, null, "lower-third");
+    expect(getProgramState().preview?.packets.bible?.blanked).toBeUndefined();
+    expect(getProgramState().preview?.packets.worship?.blanked).toBe(true);
+    // Changing the look of the same module is not a swap.
+    await setPreviewState({ ...verse, text: "For God so loved the world" }, null, "lower-third");
+    expect(getProgramState().preview?.packets.worship?.blanked).toBe(true);
+    expect(getProgramState().preview?.packets.bible?.blanked).toBeUndefined();
+  });
+
   it("preview video starts independently and can pause without changing Program", async () => {
     await goLive(verse, null, "fullscreen", "fade");
     await setPreviewState(video, null, "fullscreen");

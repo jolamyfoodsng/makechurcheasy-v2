@@ -35,7 +35,7 @@ async function openCameraSettings(): Promise<void> {
   }
 }
 
-/** The live picture of the chosen camera, or "Camera is off" with a button to turn it on. */
+/** A small live picture of the chosen camera; when it is off, a tile that turns it on. */
 function Preview({ stream, on, onTurnOn }: { stream: MediaStream | null; on: boolean; onTurnOn: () => void }) {
   const ref = useRef<HTMLVideoElement>(null);
   useEffect(() => {
@@ -44,16 +44,17 @@ function Preview({ stream, on, onTurnOn }: { stream: MediaStream | null; on: boo
     el.srcObject = stream;
     if (stream) void el.play().catch(() => undefined);
   }, [stream]);
+  if (stream && on) {
+    return (
+      <div className="st-cm__stage is-on" role="img" aria-label="Camera picture">
+        <video ref={ref} muted playsInline />
+      </div>
+    );
+  }
   return (
-    <div className={`st-cm__stage${stream && on ? " is-on" : ""}`}>
-      {stream && on ? <video ref={ref} muted playsInline /> : (
-        <>
-          <CameraOff size={26} aria-hidden="true" />
-          <span>Camera is off</span>
-          <button type="button" className="st-cm__turnon" onClick={onTurnOn}>Turn on camera</button>
-        </>
-      )}
-    </div>
+    <button type="button" className="st-cm__stage st-cm__stage--off" onClick={onTurnOn} title="Camera is off. Click to turn it on." aria-label="Camera is off. Turn on camera">
+      <CameraOff size={18} aria-hidden="true" />
+    </button>
   );
 }
 
@@ -78,6 +79,7 @@ export default function SharedControls(props: CameraCardProps) {
     <section className="st-lo__mini st-camcard" aria-label="Camera">
       <div className="st-lo__minihead">
         <strong><Video size={15} /> Camera</strong>
+        <Preview stream={camera.stream} on={cameraOn} onTurnOn={() => props.onCamera(true)} />
       </div>
       <div className="st-cm__row">
         <select
@@ -117,7 +119,6 @@ export default function SharedControls(props: CameraCardProps) {
           {cameraOn ? <CameraOff size={16} /> : <Video size={16} />} <span>{cameraOn ? "Hide" : "Show"}</span>
         </button>}
       </div>
-      <Preview stream={camera.stream} on={cameraOn} onTurnOn={() => props.onCamera(true)} />
       {camera.error && (
         <div className="st-lay__err" role="status">
           <span>{camera.error}</span>

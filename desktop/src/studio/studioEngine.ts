@@ -641,6 +641,10 @@ export function setPreviewState(slide: StudioSlide | null, themes: StudioThemes 
     packets[slide.module] = buildStudioPacket(slide.module, slide, themes, mode, "cut").data;
   }
   const active = slide ? (slide.module === "media" && !media ? null : slide.module) : null;
+  // The module that was in Preview is blanked, as goLive does for Program, so its layer plays its exit
+  // animation. Left as it was, the old words stayed under the new ones and then vanished with no animation.
+  const leaving = previousPreview?.active;
+  if (leaving && leaving !== "media" && leaving !== active) packets[leaving] = blankPacket(mode);
   const sameMedia = Boolean(media && previousPreview?.media
     && media.kind === previousPreview.media.kind && media.url === previousPreview.media.url);
   const mediaControl = media

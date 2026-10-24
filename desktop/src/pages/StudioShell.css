@@ -2272,6 +2272,11 @@ html.st-resizing iframe { pointer-events: none !important; }
 .st-cm__stage { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; aspect-ratio: 16 / 9; min-height: 96px; border: 1px solid var(--st-line); border-radius: 10px; background: var(--st-raised); color: var(--st-text-2); font-size: 12.5px; overflow: hidden; }
 .st-cm__stage.is-on { padding: 0; background: #000; }
 .st-cm__stage video { width: 100%; height: 100%; object-fit: cover; }
+/* A framing check, not a second monitor: a small thumbnail at the right of the Camera heading. */
+.st-camcard .st-cm__stage { flex: none; width: 96px; min-height: 0; aspect-ratio: 16 / 9; margin: 0; border-radius: 6px; padding: 0; }
+.st-cm__stage--off { cursor: pointer; font: inherit; }
+.st-cm__stage--off:hover { background: var(--st-hover, var(--st-panel)); color: var(--st-text); }
+.st-cm__stage--off:focus-visible { outline: 2px solid var(--st-blue); outline-offset: 2px; }
 .st-cm__turnon { height: 30px; padding: 0 14px; border: 1px solid var(--st-line); border-radius: 8px; background: var(--st-panel); color: var(--st-text); font-size: 12.5px; font-weight: 650; cursor: pointer; }
 .st-cm__turnon:hover { background: var(--st-raised); }
 
@@ -2288,18 +2293,19 @@ html.st-resizing iframe { pointer-events: none !important; }
 .st-tp__pick:hover { border-color: var(--st-line-strong); }
 .st-tp__pickname { font-size: 13px; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .st-tp__pickfor { flex: 1; min-width: 0; color: var(--st-text-3); font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.st-lo__actions--simple { justify-content: flex-end; }
+/* Send and Clear: the main action of the screen, so centred and large. */
+.st-lo__actions--simple { justify-content: center; gap: 12px; }
 .st-lo__actions--simple .st-lo__send--color { flex: 0 0 auto; }
-.st-lo__actions--simple .st-lo__send--color .st-lo__sendmain { flex: 0 0 auto; height: 32px; padding: 0 14px; font-size: 13px; }
-.st-lo__actions--simple .st-lo__send--color .st-lo__sendmenu { width: 28px; height: 32px; }
-.st-lo__actions--simple .st-lo__clear { height: 32px; padding: 0 12px; }
+.st-lo__actions--simple .st-lo__send--color .st-lo__sendmain { flex: 0 0 auto; height: 48px; padding: 0 28px; font-size: 16px; gap: 10px; }
+.st-lo__actions--simple .st-lo__send--color .st-lo__sendmenu { width: 40px; height: 48px; }
+.st-lo__actions--simple .st-lo__clear { height: 48px; padding: 0 24px; font-size: 15px; gap: 8px; }
 
-/* Text Settings and Theme sit side by side (one under the other when the column is narrow). */
-.st-lo__textpair { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-.st-lo__textpair > * { min-width: 0; }
-@container stpv (min-width: 520px) {
-  .st-lo__textpair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: stretch; }
-}
+/* Two columns when there is room: Display Mode over Camera on the left, Text Settings over Theme on the right.
+   One column (same order) when the panel is narrow. */
+.st-lo__cols { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.st-lo__col { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.st-lo__col > * { min-width: 0; }
 @container stpv (min-width: 600px) {
-  .st-lo__textpair { grid-column: 1 / -1; order: -1; }
+  .st-lo__stack { grid-template-columns: minmax(0, 1fr); }
+  .st-lo__cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
 }

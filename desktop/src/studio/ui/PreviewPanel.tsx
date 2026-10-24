@@ -332,31 +332,35 @@ export default function PreviewPanel(props: PreviewPanelProps) {
             </div>
           </section>
         )}
-        <section className="st-lo__mini st-lo__words" aria-label="Display Mode">
-          <div className="st-lo__minihead">
-            <strong><Monitor size={15} /> Display Mode</strong>
+        <div className="st-lo__cols">
+          <div className="st-lo__col">
+            <section className="st-lo__mini st-lo__words" aria-label="Display Mode">
+              <div className="st-lo__minihead">
+                <strong><Monitor size={15} /> Display Mode</strong>
+              </div>
+              {props.scenePicker}
+            </section>
+            {props.cameraCard}
           </div>
-          {props.scenePicker}
-        </section>
-        <div className="st-lo__textpair">
-        {hasLook && (
-          <TextSettingsCard
-            textScale={props.textScale}
-            onTextScale={props.onTextScale}
-            bold={props.textBold}
-            italic={props.textItalic}
-            onBold={props.onTextBold}
-            onItalic={props.onTextItalic}
-            look={props.textLook}
-            onLook={props.onTextLook}
-            transition={props.transition}
-            onTransition={props.onTransition}
-            disabled={wordsOff}
-          />
-        )}
-          {props.themeCard}
+          <div className="st-lo__col">
+            {hasLook && (
+              <TextSettingsCard
+                textScale={props.textScale}
+                onTextScale={props.onTextScale}
+                bold={props.textBold}
+                italic={props.textItalic}
+                onBold={props.onTextBold}
+                onItalic={props.onTextItalic}
+                look={props.textLook}
+                onLook={props.onTextLook}
+                transition={props.transition}
+                onTransition={props.onTransition}
+                disabled={wordsOff}
+              />
+            )}
+            {props.themeCard}
+          </div>
         </div>
-        {props.cameraCard}
       </div>
 
       {props.children}

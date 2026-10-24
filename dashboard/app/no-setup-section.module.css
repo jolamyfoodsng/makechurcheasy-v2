@@ -1,0 +1,115 @@
+/* "No scenes to build" — uses the homepage tokens defined on .home in homepage.module.css. */
+.section {
+  background: var(--surface);
+  padding: var(--home-section-space, 6.5rem) var(--home-gutter, 2rem);
+}
+
+.panel {
+  width: min(100%, var(--home-page-width, 100rem));
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 4rem;
+  align-items: center;
+}
+
+.copy { min-width: 0; }
+
+.section .title {
+  margin: 1.25rem 0 1.5rem;
+  color: var(--ink);
+  font-size: clamp(2rem, 3.4vw, 3.25rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -.02em;
+}
+.section .title span { color: var(--copper); }
+.section .text {
+  max-width: 34rem;
+  color: var(--secondary);
+  font-size: var(--home-body-size, 1.25rem);
+  line-height: 1.65;
+}
+
+.section .compare {
+  max-width: 34rem;
+  margin-top: 1.25rem;
+  padding: 1rem 1.25rem;
+  border-left: 3px solid var(--copper);
+  background: var(--paper);
+  color: var(--secondary);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+.compare strong { color: var(--ink); }
+
+.section .note {
+  margin-top: 1.5rem;
+  color: var(--muted);
+  font-size: .9375rem;
+}
+.note a {
+  display: inline-flex;
+  align-items: center;
+  gap: .25rem;
+  margin-left: .25rem;
+  color: var(--copper);
+  font-weight: 700;
+  white-space: nowrap;
+}
+.note a:hover { color: var(--copper-hover); }
+
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: .75rem;
+}
+.steps li {
+  display: flex;
+  gap: 1.25rem;
+  align-items: flex-start;
+  padding: 1.5rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 8px;
+  color: var(--copper);
+  background: var(--copper-light);
+}
+
+.num {
+  display: block;
+  color: var(--copper);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.section .steps h3 {
+  margin: .25rem 0 .25rem;
+  color: var(--ink);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  line-height: 1.3;
+}
+.section .steps p { color: var(--secondary); font-size: 1rem; line-height: 1.55; }
+
+@media (max-width: 900px) {
+  .panel { grid-template-columns: minmax(0, 1fr); gap: 2.5rem; }
+}
+
+@media (max-width: 640px) {
+  .section { padding: 4rem 1rem; }
+  .steps li { padding: 1.25rem; }
+}

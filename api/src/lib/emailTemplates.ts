@@ -996,9 +996,9 @@ export function trialActivatedEmail(params: TrialEmailParams): SendEmailOptions 
 export function activationRequiredWelcomeEmail(params: {
   userName: string;
   userEmail: string;
-  trialDays?: number;
+  trialDays: number;
 }): SendEmailOptions {
-  const { userName, userEmail, trialDays = 7 } = params;
+  const { userName, userEmail, trialDays } = params;
   return {
     to: userEmail,
     subject: "Your first MakeChurchEazy setup starts here",

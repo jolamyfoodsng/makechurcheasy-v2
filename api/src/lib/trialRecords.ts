@@ -12,6 +12,7 @@ import clientPromise from "./mongodb";
 import type { ObjectId } from "mongodb";
 import type { TrialStatus } from "@/types/schemas";
 import { markUserConverted } from "./offerMatch";
+import { legacyTrialDurationDays } from "./trialDuration";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -385,7 +386,7 @@ export async function migrateEmbeddedTrial(user: any): Promise<string | null> {
     status: t.status || (t.active ? "active" : "expired"),
     startedAt: t.startedAt || now,
     endsAt: t.endsAt || now,
-    durationDays: t.durationDays || 7,
+    durationDays: legacyTrialDurationDays(t),
     extendedDays: t.extendedDays || 0,
     extensionCount: t.extensionCount || 0,
     stoppedAt: t.stoppedAt || null,

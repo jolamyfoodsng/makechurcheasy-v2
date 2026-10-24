@@ -1,0 +1,134 @@
+/* Feature cards under Verse AI, in the desktop app's dark theme
+   (desktop/docs/DESIGN_SYSTEM.md §3 dark tokens, System Blue accent). The band is dark on purpose
+   inside the otherwise light homepage, so the tokens are set locally here. */
+.bento {
+  --bg: #18181B;
+  --surface: #202023;
+  --surface-raised: #2C2C30;
+  --text-primary: #F4F4F5;
+  --text-secondary: #D1D1D6;
+  --text-muted: #A1A1AA;
+  --border: #36363B;
+  --border-strong: #505057;
+  --primary: #0067C0;
+  --accent-blue: #4DA3F0;
+  background: var(--bg);
+  color: var(--text-primary);
+  padding: var(--home-section-space, 6.5rem) var(--home-gutter, 2rem);
+}
+
+.inner { width: min(100%, var(--home-page-width, 100rem)); margin: 0 auto; }
+
+.header { max-width: 60rem; margin: 0 auto 3.5rem; text-align: center; }
+.bento .eyebrow {
+  margin: 0 0 1.25rem;
+  color: var(--accent-blue);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: .15em;
+}
+.bento .title {
+  margin: 0 0 1.5rem;
+  color: var(--text-primary);
+  font-size: clamp(2.25rem, 4.4vw, 4rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -.02em;
+}
+.bento .title span { color: var(--accent-blue); }
+.bento .subtitle { margin: 0; color: var(--text-secondary); font-size: var(--home-body-size, 1.25rem); }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 2rem;
+  min-width: 0;
+  transition: border-color 150ms ease;
+}
+.card:hover { border-color: var(--border-strong); }
+
+.icon {
+  display: inline-grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 6px;
+  color: var(--accent-blue);
+  background: rgba(0, 103, 192, .18);
+  border: 1px solid rgba(77, 163, 240, .35);
+}
+
+.bento .card h3 {
+  margin: 1.5rem 0 .75rem;
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -.01em;
+}
+.bento .card > p { margin: 0; color: var(--text-muted); font-size: 1.0625rem; line-height: 1.6; }
+
+.points {
+  list-style: none;
+  margin: auto 0 0;
+  padding: 1.5rem 0 0;
+  display: grid;
+  gap: .5rem;
+}
+.points li {
+  position: relative;
+  padding-left: 1.25rem;
+  color: var(--text-secondary);
+  font-size: .9375rem;
+  font-weight: 600;
+}
+.points li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: .55em;
+  width: .5rem;
+  height: .5rem;
+  border-radius: 50%;
+  background: var(--accent-blue);
+}
+
+.bento .note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  margin: 2rem auto 0;
+  color: var(--text-muted);
+  font-size: .9375rem;
+  text-align: center;
+}
+.note svg { flex: none; color: var(--accent-blue); }
+
+@media (max-width: 1024px) {
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+  .bento { padding: 4rem 1rem; }
+  .grid { grid-template-columns: minmax(0, 1fr); }
+  .card { padding: 1.5rem; }
+  .bento .note { align-items: flex-start; text-align: left; }
+  .note svg { margin-top: .2em; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card { transition: none; }
+}

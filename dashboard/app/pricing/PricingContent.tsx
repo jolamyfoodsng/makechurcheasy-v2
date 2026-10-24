@@ -56,9 +56,9 @@ export default function PricingContent({
         {embedded ? (
           <div style={{ textAlign: "center", marginBottom: "32px" }}>
             <p className={styles.eyebrow}>ROOM TO GROW</p>
-            <h2 style={{ fontSize: "clamp(28px, 3vw, 42px)", fontWeight: 800, color: "#0f172a", lineHeight: 1.25 }}>
+            <h2 style={{ fontSize: "clamp(36px, 4vw, 60px)", fontWeight: 700, color: "#0f172a", lineHeight: 1.1, letterSpacing: "-.02em", marginTop: "16px" }}>
               Simple plans.<br />
-              <span style={{ color: "#64748b", fontWeight: 700 }}>For your church media team.</span>
+              <span style={{ color: "#1D4ED8" }}>For your church media team.</span>
             </h2>
           </div>
         ) : (

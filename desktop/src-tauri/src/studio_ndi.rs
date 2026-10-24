@@ -182,6 +182,8 @@ fn ndi() -> Result<&'static Ndi, String> {
 }
 
 /// The loaded NDI runtime, for NDI out (studio_ndi_out.rs) to look up the sender functions.
+/// NDI out is macOS-only for now, so other platforms never call it.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 pub(crate) fn library() -> Result<&'static libloading::Library, String> {
     ndi().map(|n| &n._lib)
 }

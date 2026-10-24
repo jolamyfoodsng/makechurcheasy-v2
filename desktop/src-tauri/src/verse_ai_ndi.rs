@@ -26,6 +26,8 @@ pub struct NdiOutStatus {
 static LAST_ERROR: Mutex<String> = Mutex::new(String::new());
 
 /// Prints a step, and in debug builds also appends it to $TMPDIR/makechurcheasy-verse-ai-ndi.log.
+/// Only the macOS sender uses it.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 fn log(message: &str) {
     println!("[Verse AI NDI] {message}");
     #[cfg(debug_assertions)]

@@ -26,6 +26,8 @@ pub struct NdiOutStatus {
 static LAST_ERROR: Mutex<String> = Mutex::new(String::new());
 
 /// Prints a step, and in debug builds also appends it to $TMPDIR/makechurcheasy-ndi-out.log.
+/// Only the macOS sender uses it.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 fn log(message: &str) {
     println!("[NDI out] {message}");
     #[cfg(debug_assertions)]

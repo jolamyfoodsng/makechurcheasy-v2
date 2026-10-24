@@ -10497,7 +10497,9 @@ pub fn run() {
             get_presentation_remote_info,
             discover_remote_obs_hosts,
             #[cfg(target_os = "macos")]
-            app_icon::set_app_icon
+            app_icon::set_app_icon,
+            #[cfg(not(target_os = "macos"))]
+            set_app_icon
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

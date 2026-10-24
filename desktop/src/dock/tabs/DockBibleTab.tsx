@@ -7529,49 +7529,23 @@ function DockBibleTab({
         }
       }
 
-      let nextChapter = selectedChapter;
+      // The last verse of a chapter is the end of the line: the up and down arrows stop there instead of
+      // rolling into the next chapter and putting its first verse on the screen. Chapters change with the
+      // chapter arrows (or the left and right keys). The same goes for the first verse going up.
       let nextVerse = selectedVerse ?? 1;
-      let nextVerseCount = verseCount;
-
       if (delta > 0) {
-        if (nextVerse < verseCount) {
-          nextVerse += 1;
-        } else {
-          const maxChapter = BOOK_CHAPTERS[selectedBook] ?? selectedChapter;
-          if (selectedChapter >= maxChapter) return;
-          nextChapter = selectedChapter + 1;
-          try {
-            const { getVerseCount } = await import("../../bible/bibleData");
-            nextVerseCount = await getVerseCount(selectedBook, nextChapter, activeTranslation) || 30;
-          } catch {
-            nextVerseCount = 30;
-          }
-          nextVerse = 1;
-        }
-      } else if (nextVerse > 1) {
-        nextVerse -= 1;
+        if (nextVerse >= verseCount) return;
+        nextVerse += 1;
       } else {
-        if (selectedChapter <= 1) return;
-        nextChapter = selectedChapter - 1;
-        try {
-          const { getVerseCount } = await import("../../bible/bibleData");
-          nextVerseCount = await getVerseCount(selectedBook, nextChapter, activeTranslation) || 30;
-        } catch {
-          nextVerseCount = 30;
-        }
-        nextVerse = nextVerseCount;
-      }
-
-      if (nextChapter !== selectedChapter) {
-        setSelectedChapter(nextChapter);
-        setVerseCount(nextVerseCount);
+        if (nextVerse <= 1) return;
+        nextVerse -= 1;
       }
 
       setSelectedVerse(nextVerse);
       selectedVerseRef.current = nextVerse;
 
       // Landing on a split verse: start at its first part (going down) or its last part (going up).
-      if (!compareEnabled && nextChapter === selectedChapter) {
+      if (!compareEnabled) {
         const landingParts = versePartsInList(nextVerse);
         if (landingParts.length > 1) {
           const landingIndex = delta > 0 ? 0 : landingParts.length - 1;
@@ -7581,7 +7555,7 @@ function DockBibleTab({
       }
       setActiveVersePart(null);
 
-      await goLiveVerse(selectedBook, nextChapter, nextVerse, {
+      await goLiveVerse(selectedBook, selectedChapter, nextVerse, {
         translation: activeTranslation,
         columnIndex: activeColumnIndex,
       });

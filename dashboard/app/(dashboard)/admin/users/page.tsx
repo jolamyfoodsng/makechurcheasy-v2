@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import BulkDeletePanel from "./BulkDeletePanel";
 import { getPlanConfig, type PlanConfig } from "@/lib/planConfigService";
 import type { ActivityScoreBreakdown } from "@/lib/userActivityScore";
 import { countRetention, formatDaysSinceUse, RETENTION_ORDER, RETENTION_STYLE, type RetentionInfo, type RetentionStatus } from "@/lib/userRetention";
@@ -1857,6 +1858,8 @@ export default function AdminUsersPage() {
           <option value="__none">No app version ({versionOptions.none})</option>
         </select>
       </div>
+
+      <BulkDeletePanel users={users} onDone={() => fetchUsers(true)} />
 
       {/* Are the users still with us? Counted from the last time each one really used the product. */}
       <div className="mb-4 rounded-xl border border-slate-800 bg-gray-900/60 p-3" aria-label="Are users still with us">

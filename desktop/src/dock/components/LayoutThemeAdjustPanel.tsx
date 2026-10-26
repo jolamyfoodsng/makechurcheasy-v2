@@ -3,8 +3,8 @@
  *
  * Layer themes carry their own fonts, colours, effects and label style, so the
  * full Text / Layout editors don't apply to them. Operators only get what they
- * actually need on a Sunday: text size, reference size and (lower thirds)
- * how high the graphic sits. Everything else is changed by customising the
+ * actually need on a Sunday: text size, the heading (on / off, size and
+ * alignment) and (lower thirds) how high the graphic sits. Everything else is changed by customising the
  * theme on the app's Themes page.
  */
 import { useMemo, type CSSProperties } from "react";
@@ -14,6 +14,9 @@ import ThemeLayoutPreview, { SAMPLE_THEME_CONTENT } from "../../themes/layout/Th
 import {
   applyLayoutAdjust,
   isLayoutAdjustDefault,
+  LAYOUT_HEADING_ALIGNS,
+  layoutHeadingAlignOf,
+  type LayoutHeadingAlign,
   LAYOUT_LINE_MAX,
   LAYOUT_LINE_MIN,
   LAYOUT_OFFSET_MAX,
@@ -21,6 +24,7 @@ import {
   LAYOUT_SCALE_MAX,
   LAYOUT_SCALE_MIN,
   readLayoutAdjust,
+  readLayoutHeadingAlign,
   readLayoutShowTitle,
 } from "../../themes/layout/adjust";
 import { hasHeading, isHeadingShown } from "../../themes/layout/heading";
@@ -116,15 +120,17 @@ export default function LayoutThemeAdjustPanel({ themeName, layout, quickSetting
   const { t } = useTranslation();
   const adjust = readLayoutAdjust(quickSettings);
   const titleOverride = readLayoutShowTitle(quickSettings);
+  const headingAlignOverride = readLayoutHeadingAlign(quickSettings);
   const canToggleTitle = hasHeading(layout);
   // What the output will do: the Dock's choice, else the theme's own Heading setting.
   const titleShown = titleOverride ?? isHeadingShown(layout);
+  const headingAlign = headingAlignOverride ?? layoutHeadingAlignOf(layout);
   const isLowerThird = layout.format === "lower-third";
   const content = PREVIEW_CONTENT[scope === "global" ? "bible" : scope];
   const previewLayout = useMemo(
-    () => applyLayoutAdjust(layout, { ...adjust, layoutShowTitle: titleOverride }),
+    () => applyLayoutAdjust(layout, { ...adjust, layoutShowTitle: titleOverride, layoutHeadingAlign: headingAlignOverride }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [layout, adjust.layoutTextScale, adjust.layoutRefScale, adjust.layoutLineHeight, adjust.layoutOffsetY, titleOverride],
+    [layout, adjust.layoutTextScale, adjust.layoutRefScale, adjust.layoutLineHeight, adjust.layoutOffsetY, titleOverride, headingAlignOverride],
   );
 
   const set = (patch: Partial<DockFullscreenQuickThemeSettings>) =>
@@ -132,11 +138,21 @@ export default function LayoutThemeAdjustPanel({ themeName, layout, quickSetting
 
   const referenceLabel = scope === "bible"
     ? t("bgPicker.layoutRefSize", "Reference size")
-    : t("bgPicker.layoutLabelSize", "Label size");
+    : t("bgPicker.layoutHeadingSize", "Heading size");
 
   const titleLabel = scope === "bible"
     ? t("bgPicker.layoutShowReference", "Show reference")
-    : t("bgPicker.layoutShowTitle", "Show title");
+    : t("bgPicker.layoutShowHeading", "Heading");
+
+  const alignLabel = scope === "bible"
+    ? t("bgPicker.layoutReferenceAlign", "Reference alignment")
+    : t("bgPicker.layoutHeadingAlign", "Heading alignment");
+
+  const alignOptions: Record<LayoutHeadingAlign, { label: string; icon: string }> = {
+    left: { label: t("bgPicker.alignLeft", "Left"), icon: "format_align_left" },
+    center: { label: t("bgPicker.alignCenter", "Center"), icon: "format_align_center" },
+    right: { label: t("bgPicker.alignRight", "Right"), icon: "format_align_right" },
+  };
 
   return (
     <div className="dtb-layout-adjust">
@@ -157,16 +173,6 @@ export default function LayoutThemeAdjustPanel({ themeName, layout, quickSetting
         step={5}
         format={(v) => `${v}%`}
         onChange={(v) => set({ layoutTextScale: v })}
-      />
-
-      <AdjustSlider
-        label={referenceLabel}
-        value={adjust.layoutRefScale}
-        min={LAYOUT_SCALE_MIN}
-        max={LAYOUT_SCALE_MAX}
-        step={5}
-        format={(v) => `${v}%`}
-        onChange={(v) => set({ layoutRefScale: v })}
       />
 
       <AdjustSlider
@@ -197,6 +203,47 @@ export default function LayoutThemeAdjustPanel({ themeName, layout, quickSetting
         </div>
       )}
 
+      {/* The heading's size and alignment sit with its on / off switch. */}
+      {(titleShown || !canToggleTitle) && (
+        <AdjustSlider
+          label={referenceLabel}
+          value={adjust.layoutRefScale}
+          min={LAYOUT_SCALE_MIN}
+          max={LAYOUT_SCALE_MAX}
+          step={5}
+          format={(v) => `${v}%`}
+          onChange={(v) => set({ layoutRefScale: v })}
+        />
+      )}
+
+      {canToggleTitle && titleShown && (
+        <div className="dtb-icon-segmented dtb-layout-adjust__field">
+          <div className="dtb-setting-info">
+            <span className="dtb-position-label">{alignLabel}</span>
+          </div>
+          <div
+            className="dtb-icon-segmented__options"
+            role="group"
+            aria-label={alignLabel}
+            style={{ "--dtb-icon-segment-count": LAYOUT_HEADING_ALIGNS.length } as CSSProperties}
+          >
+            {LAYOUT_HEADING_ALIGNS.map((value) => (
+              <button
+                key={value}
+                type="button"
+                className={`dtb-icon-segmented__button${headingAlign === value ? " dtb-icon-segmented__button--active" : ""}`}
+                onClick={() => set({ layoutHeadingAlign: value })}
+                title={alignOptions[value].label}
+                aria-label={alignOptions[value].label}
+                aria-pressed={headingAlign === value}
+              >
+                <Icon name={alignOptions[value].icon} size={15} />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {isLowerThird && (
         <AdjustSlider
           label={t("bgPicker.layoutPosition", "Move up / down")}
@@ -212,8 +259,8 @@ export default function LayoutThemeAdjustPanel({ themeName, layout, quickSetting
       <button
         type="button"
         className="dtb-layout-adjust__reset"
-        disabled={isLayoutAdjustDefault({ ...adjust, layoutShowTitle: titleOverride })}
-        onClick={() => set({ layoutTextScale: 100, layoutRefScale: 100, layoutLineHeight: 100, layoutOffsetY: 0, layoutShowTitle: undefined })}
+        disabled={isLayoutAdjustDefault({ ...adjust, layoutShowTitle: titleOverride, layoutHeadingAlign: headingAlignOverride })}
+        onClick={() => set({ layoutTextScale: 100, layoutRefScale: 100, layoutLineHeight: 100, layoutOffsetY: 0, layoutShowTitle: undefined, layoutHeadingAlign: undefined })}
       >
         <Icon name="restart_alt" size={14} />
         <span>{t("bgPicker.layoutReset", "Back to the theme's sizes")}</span>

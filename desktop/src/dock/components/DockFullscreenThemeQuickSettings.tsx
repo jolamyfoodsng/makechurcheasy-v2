@@ -77,6 +77,7 @@ export type DockFullscreenQuickThemeSettings = Pick<
     | "layoutRefScale"
     | "layoutLineHeight"
     | "layoutShowTitle"
+    | "layoutHeadingAlign"
     | "layoutBold"
     | "layoutItalic"
     | "layoutOffsetY"

@@ -22445,6 +22445,24 @@ html.mv-theme-light .tc-preview-area {
   font-weight: 600;
 }
 
+.tc-inspector-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tc-inspector-reset {
+  height: 24px;
+  padding: 0 8px;
+  gap: 4px;
+  font-size: 11px;
+}
+
+.tc-inspector-reset:focus-visible {
+  outline: 2px solid var(--tc-primary);
+  outline-offset: 1px;
+}
+
 .tc-inspector-variant-badge {
   font-size: 10px;
   font-family: var(--font-mono, "SF Mono", monospace);

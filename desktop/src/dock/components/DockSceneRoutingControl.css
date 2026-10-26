@@ -27,7 +27,7 @@
   color: var(--dock-text-dim, #94A3B8);
 }
 
-.dock-scene-routing-popover__refresh {
+.dock-scene-routing-popover__head .dock-scene-routing-popover__refresh {
   flex: none;
   width: 28px;
   min-height: 28px;
@@ -209,4 +209,147 @@
 .dock-scene-routing-popover__footer .dock-btn {
   flex: none;
   min-width: 76px;
+}
+
+/* "Send to a display": a projector or TV plugged into this computer. */
+.dock-scene-routing-control__display {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dock-scene-routing-control__toggle.is-disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.dock-scene-routing-control__toggle.is-disabled:hover {
+  border-color: var(--dock-border);
+}
+
+.dock-scene-routing-control__display-row {
+  cursor: pointer;
+}
+
+.dock-scene-routing-control__display-row.is-disabled {
+  cursor: default;
+}
+
+.dock-scene-routing-control__display-row.is-disabled .dock-scene-routing-control__check {
+  cursor: default;
+}
+
+.dock-scene-routing-control__display-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--dock-text);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dock-scene-routing-control__display-row.is-disabled .dock-scene-routing-control__display-name {
+  color: var(--dock-text-dim);
+}
+
+.dock-scene-routing-control__display-meta {
+  flex: none;
+  color: var(--dock-text-dim);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.dock-scene-routing-control__display .dock-scene-routing-control__hint {
+  margin-top: 0;
+}
+
+/* Operator notice when the display could not be used (missing, unplugged). */
+.dock-display-output-notice {
+  position: fixed;
+  left: 50%;
+  bottom: 60px;
+  z-index: 10001;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: min(360px, calc(100vw - 16px));
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--dock-yellow, var(--warning)) 45%, var(--dock-border));
+  border-radius: 4px;
+  background: var(--dock-surface);
+  color: var(--dock-text);
+  font-size: 12px;
+  line-height: 1.4;
+  transform: translateX(-50%);
+}
+
+.dock-display-output-notice__icon {
+  flex: none;
+  margin-top: 1px;
+  color: var(--dock-yellow, var(--warning));
+}
+
+.dock-display-output-notice__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.dock-display-output-notice .dock-display-output-notice__close {
+  flex: none;
+  width: 22px;
+  min-height: 22px;
+  padding: 0;
+}
+
+/* Display picker radios: a filled dot when chosen (the default radio read as empty on the dock's dark rows). */
+.dock-scene-routing-control__display-row input[type="radio"].dock-scene-routing-control__check {
+  appearance: none;
+  -webkit-appearance: none;
+  display: inline-block;
+  border: 1.5px solid var(--dock-text-dim);
+  border-radius: 50%;
+  background: transparent;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dock-scene-routing-control__display-row input[type="radio"].dock-scene-routing-control__check:checked {
+  border-color: var(--dock-accent);
+  box-shadow: inset 0 0 0 3px var(--dock-surface), inset 0 0 0 8px var(--dock-accent);
+}
+
+.dock-scene-routing-control__display-row input[type="radio"].dock-scene-routing-control__check:focus-visible {
+  outline: 2px solid var(--dock-accent);
+  outline-offset: 2px;
+}
+
+.dock-scene-routing-control__display-row input[type="radio"].dock-scene-routing-control__check:disabled {
+  border-color: var(--dock-border);
+  background: var(--dock-surface-alt);
+}
+
+.dock-scene-routing-control__display-row .dock-scene-routing-control__mode-select {
+  flex: none;
+}
+
+.dock-display-output-notice.is-info {
+  border-color: color-mix(in srgb, var(--dock-accent) 45%, var(--dock-border));
+}
+
+.dock-display-output-notice.is-info .dock-display-output-notice__icon {
+  color: var(--dock-accent);
+}
+
+.dock-display-list__close-all.dock-btn {
+  flex: none;
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--dock-text-dim);
+}
+
+.dock-display-list__close-all.dock-btn:hover:not(:disabled) {
+  color: var(--dock-text);
 }

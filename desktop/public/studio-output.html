@@ -324,7 +324,7 @@ video { outline: none; }
       var appliedPacket = {};
       var hideTimers = {};
       var lastRevision = 0;
-      var PAGE_REV = 12;
+      var PAGE_REV = 13;
       var lastScreenKey = '';
       var lastMediaKey = '';
 
@@ -1368,9 +1368,12 @@ video { outline: none; }
       setInterval(refreshIdle, 500);
 
       var fetching = false;
+      // A change that arrives while a fetch is running is fetched right after it, not at the next poll.
+      var refetch = false;
       function refresh() {
-        if (fetching) return;
+        if (fetching) { refetch = true; return; }
         fetching = true;
+        refetch = false;
         fetch('/api/studio-state?since=' + lastRevision, { cache: 'no-store' })
           .then(function (r) {
             if (!r.ok) { diag.err = 'HTTP ' + r.status; return null; }
@@ -1379,7 +1382,10 @@ video { outline: none; }
           })
           .then(applyState)
           .catch(function () { diag.err = 'no answer'; /* the app may be restarting */ })
-          .then(function () { fetching = false; });
+          .then(function () {
+            fetching = false;
+            if (refetch) refresh();
+          });
       }
       refresh();
       setInterval(refresh, 400);

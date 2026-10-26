@@ -151,6 +151,7 @@ const SECTION_DEFINITIONS: ReadonlyArray<{
     label: "Notes and note appearance",
     keys: [
       { baseKey: "ocs-dock-notes-v1", scope: "user" },
+      { baseKey: "ocs-dock-notes-v1-saved-at", scope: "user" },
       { baseKey: "ocs-dock-notes-preferences", scope: "user" },
       ...backgroundPickerTransferKeys(["notes"]),
     ],

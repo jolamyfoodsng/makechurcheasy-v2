@@ -53,10 +53,13 @@ import {
   createFirstLtTab,
   FIRST_LT_TAB_ID,
   ltTabEditorId,
+  LT_TAB_NAME_MAX,
   ltTabLimitForPlan,
   MINISTRY_LT_TABS_STORAGE_KEY,
   newLtTabId,
   parseLtTabs,
+  renameLtTab,
+  setLtTabPinned,
   updateLtTab,
   usableLtTabs,
   type MinistryLtTab,
@@ -485,6 +488,14 @@ export default function DockMinistryTab({
     ?? { tabs: [createFirstLtTab(null)], activeId: FIRST_LT_TAB_ID }
   ));
   const ltTabsTouchedRef = useRef(false);
+  // Renaming a tab in place, and the tab's Rename / Pin / Close menu.
+  const [ltTabRename, setLtTabRename] = useState<{ id: string; value: string } | null>(null);
+  // Enter/Esc end the rename before the input's blur does, so read it from a ref and end it once.
+  const ltTabRenameRef = useRef(ltTabRename);
+  ltTabRenameRef.current = ltTabRename;
+  const [ltTabMenu, setLtTabMenu] = useState<{ id: string; x: number; y: number } | null>(null);
+  const ltTabRefs = useRef(new Map<string, HTMLDivElement>());
+  const ltTabMenuRef = useRef<HTMLDivElement | null>(null);
   const ltEditorFlushRef = useRef<(() => void) | null>(null);
   // Tabs that have a lower third on screen. With one shared OBS source that is at most one.
   const [liveLtTabIds, setLiveLtTabIds] = useState<string[]>([]);
@@ -982,6 +993,53 @@ export default function DockMinistryTab({
     }
     commitLtTabs(next);
   }, [ltTabsState.tabs, activeLtTab.id, liveLtTabIds, ltPerTab, commitLtTabs]);
+
+  const focusLtTab = useCallback((id: string) => {
+    window.setTimeout(() => ltTabRefs.current.get(id)?.focus(), 0);
+  }, []);
+
+  const finishLtTabRename = useCallback((save: boolean, refocus = true) => {
+    const rename = ltTabRenameRef.current;
+    if (!rename) return;
+    ltTabRenameRef.current = null;
+    setLtTabRename(null);
+    if (save) {
+      const tabs = renameLtTab(ltTabsState.tabs, rename.id, rename.value);
+      if (tabs !== ltTabsState.tabs) commitLtTabs({ ...ltTabsState, tabs });
+    }
+    if (refocus) focusLtTab(rename.id);
+  }, [ltTabsState, commitLtTabs, focusLtTab]);
+
+  // "Tab N" follows the position, so an unnamed tab keeps its label as its name when it moves.
+  const handlePinLtTab = useCallback((id: string, pinned: boolean, label: string) => {
+    const tabs = setLtTabPinned(renameLtTab(ltTabsState.tabs, id, label), id, pinned);
+    if (tabs !== ltTabsState.tabs) commitLtTabs({ ...ltTabsState, tabs });
+    focusLtTab(id);
+  }, [ltTabsState, commitLtTabs, focusLtTab]);
+
+  const openLtTabMenu = useCallback((id: string, x: number, y: number) => {
+    setLtTabMenu({ id, x: Math.min(x, window.innerWidth - 180), y: Math.min(y, window.innerHeight - 130) });
+  }, []);
+
+  const closeLtTabMenu = useCallback((refocus: boolean) => {
+    setLtTabMenu((current) => {
+      if (current && refocus) focusLtTab(current.id);
+      return null;
+    });
+  }, [focusLtTab]);
+
+  // The menu closes on any click elsewhere; it opens with its first item focused.
+  useEffect(() => {
+    if (!ltTabMenu) return;
+    ltTabMenuRef.current?.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus();
+    const close = () => setLtTabMenu(null);
+    window.addEventListener("click", close);
+    window.addEventListener("blur", close);
+    return () => {
+      window.removeEventListener("click", close);
+      window.removeEventListener("blur", close);
+    };
+  }, [ltTabMenu]);
 
   const setTickerColorOverride = useCallback((key: TickerColorKey, value: string) => {
     setSettings((current) => {
@@ -2033,22 +2091,69 @@ export default function DockMinistryTab({
                 {ltTabs.map((tab, i) => {
                   const active = tab.id === activeLtTab.id;
                   const entry = tab.themeKey ? ltFavorites.find((e) => ltEntryKey(e) === tab.themeKey) : undefined;
-                  const label = t("ministry.ltTabLabel", { n: i + 1, defaultValue: "Tab {{n}}" });
+                  const label = tab.name ?? t("ministry.ltTabLabel", { n: i + 1, defaultValue: "Tab {{n}}" });
+                  const renaming = ltTabRename?.id === tab.id;
+                  const canClose = ltTabs.length > 1 && !tab.pinned;
                   return (
                     <div
                       key={tab.id}
+                      ref={(el) => { if (el) ltTabRefs.current.set(tab.id, el); else ltTabRefs.current.delete(tab.id); }}
                       role="tab"
                       aria-selected={active}
+                      aria-haspopup="menu"
                       tabIndex={0}
-                      className={`dock-lt-tabs__tab${active ? " dock-lt-tabs__tab--active" : ""}`}
-                      title={entry ? `${label} · ${entry.label}` : label}
+                      className={`dock-lt-tabs__tab${active ? " dock-lt-tabs__tab--active" : ""}${tab.pinned ? " dock-lt-tabs__tab--pinned" : ""}`}
+                      title={`${entry ? `${label} · ${entry.label}` : label}\n${t("ministry.ltTabHint", "Double-click or F2 to rename. Right-click or Shift+F10 for more.")}`}
                       onClick={() => handleSwitchLtTab(tab.id)}
-                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSwitchLtTab(tab.id); } }}
-                      onAuxClick={(e) => { if (e.button === 1 && ltTabs.length > 1) handleCloseLtTab(tab.id); }}
+                      onDoubleClick={() => setLtTabRename({ id: tab.id, value: label })}
+                      onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); openLtTabMenu(tab.id, e.clientX, e.clientY); }}
+                      onKeyDown={(e) => {
+                        if (e.target !== e.currentTarget) return;
+                        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSwitchLtTab(tab.id); return; }
+                        if (e.key === "F2") { e.preventDefault(); setLtTabRename({ id: tab.id, value: label }); return; }
+                        if (e.key === "ContextMenu" || (e.key === "F10" && e.shiftKey)) {
+                          e.preventDefault();
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          openLtTabMenu(tab.id, rect.left, rect.bottom + 2);
+                          return;
+                        }
+                        if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+                          e.preventDefault();
+                          const next = ltTabs[(i + (e.key === "ArrowRight" ? 1 : -1) + ltTabs.length) % ltTabs.length];
+                          ltTabRefs.current.get(next.id)?.focus();
+                        }
+                      }}
+                      onAuxClick={(e) => { if (e.button === 1 && canClose) handleCloseLtTab(tab.id); }}
                     >
                       {liveLtTabIds.includes(tab.id) && <span className="dock-lt-tabs__live" aria-label={t("ministry.live", "Live")} />}
-                      <span className="dock-lt-tabs__label">{label}</span>
-                      {ltTabs.length > 1 && (
+                      {tab.pinned && (
+                        <span className="dock-lt-tabs__pin" role="img" aria-label={t("ministry.ltTabPinned", "Pinned")}>
+                          <Icon name="push_pin" size={10} />
+                        </span>
+                      )}
+                      {renaming ? (
+                        <input
+                          className="dock-lt-tabs__rename"
+                          value={ltTabRename.value}
+                          maxLength={LT_TAB_NAME_MAX}
+                          size={Math.max(4, Math.min(LT_TAB_NAME_MAX, ltTabRename.value.length + 1))}
+                          aria-label={t("ministry.ltTabRenameLabel", "Tab name")}
+                          autoFocus
+                          onFocus={(e) => e.currentTarget.select()}
+                          onChange={(e) => setLtTabRename({ id: tab.id, value: e.target.value.replace(/^\s+/, "") })}
+                          onClick={(e) => e.stopPropagation()}
+                          onDoubleClick={(e) => e.stopPropagation()}
+                          onKeyDown={(e) => {
+                            e.stopPropagation();
+                            if (e.key === "Enter") { e.preventDefault(); finishLtTabRename(true); }
+                            if (e.key === "Escape") { e.preventDefault(); finishLtTabRename(false); }
+                          }}
+                          onBlur={() => finishLtTabRename(true, false)}
+                        />
+                      ) : (
+                        <span className="dock-lt-tabs__label">{label}</span>
+                      )}
+                      {canClose && (
                         <button
                           type="button"
                           className="dock-lt-tabs__close"
@@ -2078,6 +2183,58 @@ export default function DockMinistryTab({
                 <Icon name="add" size={14} />
               </button>
             </div>
+            {ltTabMenu && (() => {
+              const menuTab = ltTabs.find((tab) => tab.id === ltTabMenu.id);
+              if (!menuTab) return null;
+              const menuIndex = ltTabs.indexOf(menuTab);
+              const menuLabel = menuTab.name ?? t("ministry.ltTabLabel", { n: menuIndex + 1, defaultValue: "Tab {{n}}" });
+              return (
+                <div
+                  ref={ltTabMenuRef}
+                  className="dock-lt-tabs__menu"
+                  role="menu"
+                  aria-label={menuLabel}
+                  style={{ top: ltTabMenu.y, left: ltTabMenu.x }}
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape" || e.key === "Tab") { e.preventDefault(); closeLtTabMenu(true); return; }
+                    if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+                    e.preventDefault();
+                    const items = Array.from(e.currentTarget.querySelectorAll<HTMLButtonElement>("button:not(:disabled)"));
+                    const at = items.indexOf(document.activeElement as HTMLButtonElement);
+                    items[(at + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length]?.focus();
+                  }}
+                >
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="dock-lt-tabs__menu-item"
+                    onClick={() => { setLtTabMenu(null); setLtTabRename({ id: menuTab.id, value: menuLabel }); }}>
+                    <Icon name="edit" size={14} />
+                    <span>{t("ministry.ltTabRename", "Rename")}</span>
+                    <kbd>F2</kbd>
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="dock-lt-tabs__menu-item"
+                    onClick={() => { setLtTabMenu(null); handlePinLtTab(menuTab.id, !menuTab.pinned, menuLabel); }}>
+                    <Icon name={menuTab.pinned ? "pin_off" : "push_pin"} size={14} />
+                    <span>{menuTab.pinned ? t("ministry.ltTabUnpin", "Unpin tab") : t("ministry.ltTabPin", "Pin tab")}</span>
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="dock-lt-tabs__menu-item"
+                    disabled={ltTabs.length <= 1 || Boolean(menuTab.pinned)}
+                    title={menuTab.pinned ? t("ministry.ltTabUnpinToClose", "Unpin the tab to close it") : undefined}
+                    onClick={() => { setLtTabMenu(null); handleCloseLtTab(menuTab.id); }}>
+                    <Icon name="close" size={14} />
+                    <span>{t("ministry.closeTab", "Close tab")}</span>
+                  </button>
+                </div>
+              );
+            })()}
             {ltTabLimit !== 1 && (
               <div className="dock-lt-source-mode" role="radiogroup" aria-label={t("ministry.ltSourceMode", "How tabs go to OBS")}>
                 <span className="dock-lt-source-mode__label">{t("ministry.ltSourceModeLabel", "In OBS")}</span>

@@ -204,12 +204,14 @@ export default function DockBottomToolbar({
           {onClear && !clearInOverflow && (
             <button
               type="button"
-              className="dock-btm-toolbar__clear dock-btm-toolbar__clear--bible"
+              className={`dock-btm-toolbar__clear dock-btm-toolbar__clear--bible${sourceVisible ? " is-live" : ""}`}
               onClick={onClear}
               disabled={clearDisabled}
+              aria-pressed={!sourceVisible}
               title={resolvedClearLabel}
             >
-              <span>{t("dock.bottomToolbar.hideBible")}</span>
+              <Icon name={visibilityIcon} size={14} />
+              <span>{resolvedClearLabel}</span>
             </button>
           )}
           {centerAction && (

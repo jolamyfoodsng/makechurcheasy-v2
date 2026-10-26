@@ -61,6 +61,7 @@ import { fetchLatestPublishedRelease } from "../services/updateService";
 import { normalizeOBSWebSocketUrl } from "../services/obsWebSocketUrl";
 import DockDropOverlay from "./DockDropOverlay";
 import DockUploadToasts from "./DockUploadToasts";
+import DockDisplayOutputNotice from "./components/DockDisplayOutputNotice";
 import { DockUpgradeModal } from "./components/DockUpgradeModal";
 import LoadingScreen from "../components/LoadingScreen";
 import DockBrowserZoomWarning from "./components/DockBrowserZoomWarning";
@@ -2317,6 +2318,9 @@ function DockPageContent({
         progress={uploadProgress}
         onDismiss={dismissToast}
       />
+
+      {/* ── "Send to a display" problems (display missing or unplugged) ── */}
+      <DockDisplayOutputNotice />
 
       {dockSaveFeedback && (
         <div className="dock-feedback-toast-stack" aria-live="polite" aria-atomic="true">

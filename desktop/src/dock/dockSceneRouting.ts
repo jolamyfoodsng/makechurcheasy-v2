@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { readNativeDockSetting, writeNativeDockSetting } from "../services/localDockSettings";
+import { DEFAULT_DOCK_DISPLAY_OUTPUT, normalizeDockDisplayOutput, type DockDisplayOutput } from "./dockDisplayOutput";
 
 export type DockSceneRouteModule =
   | "bible"
@@ -24,6 +25,8 @@ export interface DockSceneRoute {
   sceneName: string;
   targets: DockSceneRouteTarget[];
   syncPresentation: boolean;
+  /** "Send to a display": also show it full screen on a projector or TV plugged into this computer. */
+  display?: DockDisplayOutput;
 }
 
 const SCENE_ROUTING_STORAGE_KEY = "dock-scene-routing-v1";
@@ -34,6 +37,7 @@ const DEFAULT_SCENE_ROUTE: DockSceneRoute = {
   targets: [],
   // "Also update MCE Presentation" is on unless the operator turns it off.
   syncPresentation: true,
+  display: { ...DEFAULT_DOCK_DISPLAY_OUTPUT },
 };
 
 type StoredSceneRoutes = Partial<Record<DockSceneRouteModule, Partial<DockSceneRoute>>>;
@@ -64,7 +68,7 @@ function normalizeTargets(value: unknown, legacySceneName: string): DockSceneRou
 }
 
 export function normalizeDockSceneRoute(value: unknown): DockSceneRoute {
-  if (!value || typeof value !== "object") return { ...DEFAULT_SCENE_ROUTE };
+  if (!value || typeof value !== "object") return { ...DEFAULT_SCENE_ROUTE, display: { ...DEFAULT_DOCK_DISPLAY_OUTPUT } };
   const candidate = value as Partial<DockSceneRoute> & { targets?: unknown };
   const legacySceneName = typeof candidate.sceneName === "string" ? candidate.sceneName.trim() : "";
   const targets = normalizeTargets(candidate.targets, legacySceneName);
@@ -74,6 +78,7 @@ export function normalizeDockSceneRoute(value: unknown): DockSceneRoute {
     targets,
     // Only an explicit false switches it off; a route saved before this option existed keeps it on.
     syncPresentation: candidate.syncPresentation !== false,
+    display: normalizeDockDisplayOutput(candidate.display),
   };
 }
 
@@ -115,4 +120,40 @@ export function useDockSceneRoute(module: DockSceneRouteModule): [DockSceneRoute
   }, [module]);
 
   return [route, updateRoute];
+}
+
+/** One place a tab's content goes while Output is on. */
+export type DockOutputDestination =
+  | { kind: "scene"; name: string; mode: DockSceneOutputMode }
+  | { kind: "presentation"; name: string }
+  | { kind: "display"; name: string; mode: DockSceneOutputMode };
+
+/** Scene routing or "Send to a display" is on, so content no longer goes only to MCE Presentation. */
+export function isDockOutputRouted(route: DockSceneRoute): boolean {
+  return (route.enabled && getDockSceneRouteTargets(route).length > 0) || Boolean(route.display?.enabled);
+}
+
+/** Every place a send reaches with this route, in the order the operator reads them. */
+export function getDockOutputDestinations(route: DockSceneRoute): DockOutputDestination[] {
+  const scenes = route.enabled ? getDockSceneRouteTargets(route) : [];
+  const destinations: DockOutputDestination[] = scenes.map((target) => ({
+    kind: "scene",
+    name: target.sceneName,
+    mode: target.mode,
+  }));
+  // Without scene targets the tab sends to MCE Presentation as usual.
+  if (scenes.length === 0 || route.syncPresentation) {
+    destinations.push({ kind: "presentation", name: "MCE Presentation" });
+  }
+  if (route.display?.enabled) {
+    destinations.push({ kind: "display", name: route.display.monitorName || "Display", mode: route.display.mode ?? "fullscreen" });
+  }
+  return destinations;
+}
+
+/** "MCE Presentation only": turn off the scenes and the display, keeping their saved choices. */
+export function presentationOnlyRoutePatch(route: DockSceneRoute): Partial<DockSceneRoute> {
+  return route.display
+    ? { enabled: false, display: { ...route.display, enabled: false } }
+    : { enabled: false };
 }

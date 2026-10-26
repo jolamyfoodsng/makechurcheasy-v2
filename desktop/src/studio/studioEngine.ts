@@ -309,7 +309,7 @@ export interface StudioBrand {
 }
 
 /** Bumped when public/studio-output.html changes in a way an already-open projector window must reload for. */
-export const OUTPUT_PAGE_REV = 12;
+export const OUTPUT_PAGE_REV = 13;
 
 export interface StudioProgramState {
   revision: number;
@@ -500,10 +500,13 @@ export function goLiveItem(item: StudioItem, mode: StudioMode): Promise<boolean>
     packets[previous] = blankPacket(mode);
   }
   let media = program.media;
+  let mediaControl = program.mediaControl;
   let alt = program.alt;
   liveText = null;
   if (item.module === "media") {
     media = item.media;
+    // A new picture or video starts fresh (playing, from the top), like goLive.
+    mediaControl = { ...DEFAULT_MEDIA_CONTROL, loop: item.media.loop, muted: item.media.muted, fit: item.media.fit, seekRev: Date.now() };
     if (altMode) alt = { mode: altMode, packets: alt?.packets ?? blankPackets(altMode), active: "media" };
   } else {
     packets[item.module] = item.data;
@@ -516,7 +519,7 @@ export function goLiveItem(item: StudioItem, mode: StudioMode): Promise<boolean>
       alt = { mode: altMode, packets: altPackets, active: item.module };
     }
   }
-  return commit({ ...program, active: item.module, screen: "live", logoUrl: undefined, churchName: undefined, logoBg: undefined, packets, media, alt });
+  return commit({ ...program, active: item.module, screen: "live", logoUrl: undefined, churchName: undefined, logoBg: undefined, packets, media, mediaControl, alt });
 }
 
 /** Set the Screen Mix layers (what is `shown` appears on Program and Preview screens). */

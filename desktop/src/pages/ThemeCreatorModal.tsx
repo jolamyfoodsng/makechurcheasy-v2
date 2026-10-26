@@ -30,6 +30,7 @@ import {
   Plus,
   Undo2,
   Redo2,
+  RotateCcw,
   Copy,
   Trash2,
   Save,
@@ -75,6 +76,8 @@ import { fullscreenFromLowerThird, lowerThirdFromFullscreen } from "../themes/la
 import ThemeLayoutPreview from "../themes/layout/ThemeLayoutPreview";
 import LayerPanel from "../themes/layout/editor/LayerPanel";
 import LayerCanvasOverlay from "../themes/layout/editor/LayerCanvasOverlay";
+import { continuesLastEdit, historyShortcut, isTextEntryTarget, type LastEdit } from "../themes/layout/editor/editHistory";
+import { isMacPlatform } from "../studio/shortcuts";
 import { alignLayerPatch, getLayer, isBackdropLayer, nudgeLayer, removeLayer, updateLayer, type AlignHow } from "../themes/layout/editor/layoutOps";
 import type { ThemeContent, ThemeLayer, ThemeLayout } from "../themes/layout/types";
 
@@ -632,48 +635,48 @@ export default function ThemeCreatorModal({ onClose, onSaved, editTheme, initial
   const redoStackRef = useRef<BibleThemeSettings[]>([]);
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
+  // The settings on screen, readable without waiting for a render (rapid edits chain on it).
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
+  const lastEditRef = useRef<LastEdit | null>(null);
 
   const handleUndo = useCallback(() => {
-    if (undoStackRef.current.length === 0) return;
     const prev = undoStackRef.current[undoStackRef.current.length - 1];
+    if (!prev) return;
     undoStackRef.current = undoStackRef.current.slice(0, -1);
-    setActiveSettings((current) => {
-      redoStackRef.current = [...redoStackRef.current, { ...current }];
-      setCanUndo(undoStackRef.current.length > 0);
-      setCanRedo(true);
-      return prev;
-    });
+    redoStackRef.current = [...redoStackRef.current, settingsRef.current];
+    lastEditRef.current = null;
+    settingsRef.current = prev;
+    setActiveSettings(prev);
+    setCanUndo(undoStackRef.current.length > 0);
+    setCanRedo(true);
   }, [setActiveSettings]);
 
   const handleRedo = useCallback(() => {
-    if (redoStackRef.current.length === 0) return;
     const next = redoStackRef.current[redoStackRef.current.length - 1];
+    if (!next) return;
     redoStackRef.current = redoStackRef.current.slice(0, -1);
-    setActiveSettings((current) => {
-      undoStackRef.current = [...undoStackRef.current, { ...current }];
-      setCanUndo(true);
-      setCanRedo(redoStackRef.current.length > 0);
-      return next;
-    });
+    undoStackRef.current = [...undoStackRef.current, settingsRef.current];
+    lastEditRef.current = null;
+    settingsRef.current = next;
+    setActiveSettings(next);
+    setCanUndo(true);
+    setCanRedo(redoStackRef.current.length > 0);
   }, [setActiveSettings]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "z" && !e.shiftKey) {
-        e.preventDefault();
-        handleUndo();
-      }
-      if ((e.metaKey || e.ctrlKey) && e.key === "z" && e.shiftKey) {
-        e.preventDefault();
-        handleRedo();
-      }
-      if ((e.metaKey || e.ctrlKey) && e.key === "y") {
-        e.preventDefault();
-        handleRedo();
-      }
+      const action = historyShortcut(e);
+      // In a text field the field's own undo wins.
+      if (!action || e.isComposing || isTextEntryTarget(e.target)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (action === "undo") handleUndo();
+      else handleRedo();
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    // Capture phase, so nothing else on the page can swallow the shortcut first.
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => window.removeEventListener("keydown", handleKeyDown, true);
   }, [handleUndo, handleRedo]);
 
   // ── Variant Management ──
@@ -794,6 +797,71 @@ export default function ThemeCreatorModal({ onClose, onSaved, editTheme, initial
     setCanRedo(false);
     setBaselineEpoch((n) => n + 1);
   }, [activeVariant]);
+
+  /**
+   * Clicking a theme in the library swaps in its look for ONE format only — the
+   * look on screen (or the theme's own format when it has only the other one).
+   * The other look, the name and the categories stay as they are, and the swap
+   * is an edit like any other: Undo brings the old look back, and closing asks to save.
+   */
+  const handlePickLibraryTheme = useCallback((theme: BibleTheme) => {
+    const lookFor = (variant: VariantType) => {
+      const v = variant === "fullscreen" ? theme.variants?.fullscreen : theme.variants?.lowerThird;
+      if (v?.settings) return { settings: v.settings, rawTemplate: v.rawTemplate ?? null };
+      if (theme.templateType === variant && theme.settings) return { settings: theme.settings, rawTemplate: theme.rawTemplate ?? null };
+      return null;
+    };
+    const ownFormat: VariantType = theme.settings?.layout?.format ?? (theme.templateType === "lower-third" ? "lower-third" : "fullscreen");
+    const target: VariantType = lookFor(activeVariant) ? activeVariant : ownFormat;
+    const look = lookFor(target) ?? { settings: theme.settings, rawTemplate: theme.rawTemplate ?? null };
+    const next = normalizeThemeSettings({ ...DEFAULT_THEME_SETTINGS, ...look.settings });
+    const before = target === "fullscreen" ? fullscreenSettings : lowerThirdSettings;
+
+    if (target !== activeVariant) handleSwitchVariant(target); // clears the other format's history
+    undoStackRef.current = [...undoStackRef.current.slice(-49), before];
+    redoStackRef.current = [];
+    lastEditRef.current = null;
+    if (target === activeVariant) settingsRef.current = next;
+    if (target === "fullscreen") {
+      setFullscreenSettings(next);
+      setFullscreenRawTemplate(look.rawTemplate);
+    } else {
+      setLowerThirdSettings(next);
+      setLowerThirdRawTemplate(look.rawTemplate);
+    }
+    setCanUndo(true);
+    setCanRedo(false);
+    // A new, unnamed theme takes the picked theme's name; a named one keeps its own.
+    if (!name.trim() && theme.name) setName(theme.name);
+  }, [activeVariant, fullscreenSettings, lowerThirdSettings, handleSwitchVariant, name]);
+
+  // Each look as it was when the editor opened (or a theme was loaded / started new): what Reset goes back to.
+  type Looks = Record<VariantType, { settings: BibleThemeSettings; rawTemplate: BibleThemeRawTemplate | null }>;
+  const currentLooks: Looks = {
+    fullscreen: { settings: fullscreenSettings, rawTemplate: fullscreenRawTemplate },
+    "lower-third": { settings: lowerThirdSettings, rawTemplate: lowerThirdRawTemplate },
+  };
+  const latestLooksRef = useRef(currentLooks);
+  latestLooksRef.current = currentLooks;
+  const [openedLooks, setOpenedLooks] = useState<Looks>(currentLooks);
+  const openedLooksRef = useRef(openedLooks);
+  openedLooksRef.current = openedLooks;
+  const openedLook = openedLooks[activeVariant];
+  const canResetLook = JSON.stringify([settings, activeRawTemplate]) !== JSON.stringify([openedLook.settings, openedLook.rawTemplate]);
+
+  /** Puts the look on screen back to how it was when the editor opened. The other look is left alone; Undo brings the changes back. */
+  const handleResetLook = useCallback(() => {
+    const opened = openedLooksRef.current[activeVariant];
+    undoStackRef.current = [...undoStackRef.current.slice(-49), settingsRef.current];
+    redoStackRef.current = [];
+    lastEditRef.current = null;
+    settingsRef.current = opened.settings;
+    setActiveSettings(opened.settings);
+    if (activeVariant === "fullscreen") setFullscreenRawTemplate(opened.rawTemplate);
+    else setLowerThirdRawTemplate(opened.rawTemplate);
+    setCanUndo(true);
+    setCanRedo(false);
+  }, [activeVariant, setActiveSettings]);
 
   const handleNewTheme = useCallback(() => {
     setFullscreenSettings(defaultSettingsForVariant("fullscreen"));
@@ -1011,14 +1079,20 @@ export default function ThemeCreatorModal({ onClose, onSaved, editTheme, initial
   // ── Handlers ──
 
   const patch = useCallback((partial: Partial<BibleThemeSettings>) => {
-    setActiveSettings((prev) => {
-      const next = normalizeThemeSettings({ ...prev, ...partial });
-      undoStackRef.current = [...undoStackRef.current.slice(-49), { ...prev }];
-      redoStackRef.current = [];
-      setCanUndo(true);
-      setCanRedo(false);
-      return next;
-    });
+    const prev = settingsRef.current;
+    const next = normalizeThemeSettings({ ...prev, ...partial });
+    // A slider drag or a burst of typing is one undo step.
+    const editKey = Object.keys(partial).sort().join(",");
+    const now = Date.now();
+    if (!continuesLastEdit(lastEditRef.current, editKey, now) || undoStackRef.current.length === 0) {
+      undoStackRef.current = [...undoStackRef.current.slice(-49), prev];
+    }
+    lastEditRef.current = { key: editKey, at: now };
+    redoStackRef.current = [];
+    settingsRef.current = next;
+    setActiveSettings(next);
+    setCanUndo(true);
+    setCanRedo(false);
   }, [setActiveSettings]);
 
   const activeLayout = settings.layout ?? null;
@@ -1264,8 +1338,12 @@ export default function ThemeCreatorModal({ onClose, onSaved, editTheme, initial
   latestSnapshotRef.current = themeSnapshot;
   useEffect(() => {
     baselineSnapshotRef.current = latestSnapshotRef.current;
+    setOpenedLooks(latestLooksRef.current);
     // The editor normalises a few settings right after it opens or loads a theme: that is not an edit.
-    const settle = window.setTimeout(() => { baselineSnapshotRef.current = latestSnapshotRef.current; }, 500);
+    const settle = window.setTimeout(() => {
+      baselineSnapshotRef.current = latestSnapshotRef.current;
+      setOpenedLooks(latestLooksRef.current);
+    }, 500);
     return () => window.clearTimeout(settle);
   }, [baselineEpoch]);
   const [confirmClose, setConfirmClose] = useState(false);
@@ -1355,10 +1433,10 @@ export default function ThemeCreatorModal({ onClose, onSaved, editTheme, initial
       {/* ── Top Toolbar ── */}
       <div className="tc-toolbar">
         <div className="tc-toolbar-left">
-          <button className="tc-toolbar-btn" onClick={handleUndo} disabled={!canUndo} title="Undo (Ctrl+Z)">
+          <button className="tc-toolbar-btn" onClick={handleUndo} disabled={!canUndo} title={isMacPlatform() ? "Undo (⌘Z)" : "Undo (Ctrl+Z)"}>
             <Undo2 size={16} />
           </button>
-          <button className="tc-toolbar-btn" onClick={handleRedo} disabled={!canRedo} title="Redo (Ctrl+Shift+Z)">
+          <button className="tc-toolbar-btn" onClick={handleRedo} disabled={!canRedo} title={isMacPlatform() ? "Redo (⇧⌘Z)" : "Redo (Ctrl+Y)"}>
             <Redo2 size={16} />
           </button>
           <div className="tc-toolbar-separator" />
@@ -1457,7 +1535,7 @@ export default function ThemeCreatorModal({ onClose, onSaved, editTheme, initial
               <div
                 key={theme.id}
                 className={`tc-theme-card${editTheme?.id === theme.id ? " active" : ""}`}
-                onClick={() => handleLoadTheme(theme)}
+                onClick={() => handlePickLibraryTheme(theme)}
               >
                 <div
                   className="tc-theme-card-thumb"
@@ -1679,9 +1757,21 @@ export default function ThemeCreatorModal({ onClose, onSaved, editTheme, initial
         <aside className="tc-inspector">
           <div className="tc-inspector-header">
             <span className="tc-inspector-title">SETTINGS</span>
-            <span className="tc-inspector-variant-badge">
-              {activeVariant === "fullscreen" ? "Fullscreen" : "Lower Third"}
-            </span>
+            <div className="tc-inspector-header-actions">
+              <span className="tc-inspector-variant-badge">
+                {activeVariant === "fullscreen" ? "Fullscreen" : "Lower Third"}
+              </span>
+              <button
+                type="button"
+                className="tc-toolbar-btn tc-inspector-reset"
+                onClick={handleResetLook}
+                disabled={!canResetLook}
+                title={`Put the ${activeVariant === "fullscreen" ? "full-screen" : "lower-third"} look back to how it was when you opened it (Undo brings your changes back)`}
+              >
+                <RotateCcw size={13} />
+                Reset
+              </button>
+            </div>
           </div>
 
           {activeLayout ? (

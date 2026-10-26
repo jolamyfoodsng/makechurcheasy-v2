@@ -61,6 +61,7 @@ import { getPresentationRemoteAccessInfo } from "./services/presentationRemote";
 import { dockBridge } from "./services/dockBridge";
 import { initDockCommandHandler } from "./services/dockCommandHandler";
 import { initMobileRemoteCommandBridge } from "./services/mobileRemoteCommandBridge";
+import { startDockDisplayHost } from "./studio/dockDisplayHost";
 import { automationRunner } from "./services/automationRunner";
 import { hasTauriInvoke, safeTauriInvoke } from "./services/tauriSafe";
 import { getUserScopedKey } from "./services/userScopedStorage";
@@ -92,7 +93,7 @@ import {
   saveWorshipDockSongSaveResult,
   type WorshipDockSongSavePayload,
 } from "./services/worshipDockInterop";
-import { appendTextToDockNotes, loadDockNotes, syncDockNotesToDock } from "./dock/dockNotesStorage";
+import { appendTextToDockNotes, loadDockNotes, loadDockNotesSavedAt, syncDockNotesToDock } from "./dock/dockNotesStorage";
 import type { DockNotesAppendCommand } from "./services/dockNotesInterop";
 import { getLiveToolsSnapshot, syncLiveToolsToDock } from "./live-tools/liveToolStore";
 import { getCountdownSnapshot } from "./countdowns/countdownStore";
@@ -634,7 +635,7 @@ function App() {
   const sendNotesToDock = useCallback((notes = loadDockNotes()) => {
     dockBridge.sendState({
       type: "state:notes-updated",
-      payload: { notes, snapshot: true },
+      payload: { notes, savedAt: loadDockNotesSavedAt(), snapshot: true },
       timestamp: Date.now(),
     });
     void syncDockNotesToDock(notes);
@@ -698,6 +699,9 @@ function App() {
 
     // Dynamic app icon — updates macOS dock icon based on OBS + speech state
     const unsubAppStatus = appStatusManager.init();
+
+    // The OBS Dock's "Output → Send to a display" asks this window to open a projector.
+    const stopDockDisplayHost = startDockDisplayHost();
 
     // The LM service owns the speech engine and its large optional Bible
     // retrieval path. Keep it out of startup; initialize it only when the
@@ -1005,7 +1009,7 @@ function App() {
             void syncDockNotesToDock(result.notes);
             dockBridge.sendState({
               type: "state:notes-updated",
-              payload: { notes: result.notes, commandId: payload.commandId },
+              payload: { notes: result.notes, savedAt: loadDockNotesSavedAt(), commandId: payload.commandId },
               timestamp: Date.now(),
             });
           }
@@ -1100,6 +1104,7 @@ function App() {
       unsubLmDock?.();
       stopLmRelayWatch();
       unsubAppStatus();
+      stopDockDisplayHost();
     };
   }, []);
 

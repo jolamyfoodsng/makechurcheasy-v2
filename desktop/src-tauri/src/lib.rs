@@ -10128,6 +10128,45 @@ async fn open_studio_projector(
     Ok(())
 }
 
+#[cfg(target_os = "macos")]
+extern "C" {
+    fn mce_projector_cover_screen(ns_window: *mut std::ffi::c_void);
+    fn mce_projector_raise(ns_window: *mut std::ffi::c_void);
+}
+
+/// macOS: cover the projector's screen above other apps' windows and the menu bar, on every
+/// Space and without taking the keyboard ("raise" only brings it back in front). Native full
+/// screen gives the window its own Space, where an OBS projector on that screen can stay in
+/// front. Other systems keep the window's normal full screen, so this does nothing there.
+#[tauri::command]
+async fn present_studio_projector(app: tauri::AppHandle, label: String, raise_only: bool) -> Result<(), String> {
+    use tauri::Manager;
+    if !label.starts_with("studio-projector-") {
+        return Err("Invalid projector label".to_string());
+    }
+    let window = app
+        .get_webview_window(&label)
+        .ok_or_else(|| "The projector window is not open.".to_string())?;
+    #[cfg(target_os = "macos")]
+    {
+        // Raw pointers aren't Send; AppKit is only touched on the main thread below.
+        let ns_window = window.ns_window().map_err(|e| e.to_string())? as usize;
+        app.run_on_main_thread(move || unsafe {
+            if raise_only {
+                mce_projector_raise(ns_window as *mut std::ffi::c_void);
+            } else {
+                mce_projector_cover_screen(ns_window as *mut std::ffi::c_void);
+            }
+        })
+        .map_err(|e| e.to_string())?;
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = (window, raise_only);
+    }
+    Ok(())
+}
+
 pub fn run() {
     // Load .env file so Rust commands can read env vars (e.g. OPENCODE_API_KEY)
     dotenvy::dotenv().ok();
@@ -10407,6 +10446,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             copy_to_clipboard,
             open_studio_projector,
+            present_studio_projector,
             studio_ndi_out::start_studio_ndi_out,
             studio_ndi_out::stop_studio_ndi_out,
             studio_ndi_out::get_studio_ndi_out_status,

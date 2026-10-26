@@ -109,7 +109,8 @@ import {
   type DockThemesRefreshedDetail,
 } from "../dockThemeRefresh";
 import { normalizeCompareThemeSettings } from "../compareThemeConfig";
-import { useDockSceneRoute } from "../dockSceneRouting";
+import { presentationOnlyRoutePatch, useDockSceneRoute } from "../dockSceneRouting";
+import { useDockDisplayOutput } from "../useDockDisplayOutput";
 import { isDockTabVisible } from "../dockTabVisibility";
 import DockNotesTab from "./DockNotesTab";
 import {
@@ -1583,6 +1584,7 @@ function DockWorshipTab({
   const presentationLinkMode = isPresentationLinkTarget(presentationOutputTarget);
   const fullscreenOnlyMode = Boolean(fullscreenOnly);
   const [sceneRoute, updateSceneRoute] = useDockSceneRoute("worship");
+  const { sendToDisplay, clearDisplay } = useDockDisplayOutput("worship", sceneRoute, updateSceneRoute);
   const hasSceneRoute = sceneRoute.enabled && sceneRoute.targets.length > 0;
   const worshipSceneRouteConfirmedRef = useRef(false);
   const [pendingWorshipRouteConfirm, setPendingWorshipRouteConfirm] = useState<{
@@ -1609,6 +1611,11 @@ function DockWorshipTab({
     options?: DockOverlayFitOptions,
     pushOptions?: { bypassSceneRoute?: boolean },
   ) => {
+    // "Send to a display" runs beside OBS (with or without scene targets) and never holds it up.
+    sendToDisplay(data, {
+      fullscreen: liveFullscreenThemeSettingsRef.current,
+      lowerThird: liveLowerThirdThemeSettingsRef.current,
+    });
     if (!hasSceneRoute || pushOptions?.bypassSceneRoute) {
       return dockObsClient.pushWorshipLyrics(data, options);
     }
@@ -1628,9 +1635,19 @@ function DockWorshipTab({
     }));
     if (sceneRoute.syncPresentation) return dockObsClient.pushWorshipLyrics(data, options);
     return null;
-  }, [hasSceneRoute, sceneRoute.targets, sceneRoute.syncPresentation]);
+  }, [hasSceneRoute, sceneRoute.targets, sceneRoute.syncPresentation, sendToDisplay]);
+
+  /** The lower-third fast path skips pushWorshipToConfiguredOutput, so it feeds the display itself. */
+  const pushWorshipLowerThirdFast = useCallback((data: DockTabContentPushData, fitOptions?: DockOverlayFitOptions) => {
+    sendToDisplay(data, {
+      fullscreen: liveFullscreenThemeSettingsRef.current,
+      lowerThird: liveLowerThirdThemeSettingsRef.current,
+    });
+    return dockObsClient.pushWorshipOverlayFast(data, fitOptions);
+  }, [sendToDisplay]);
 
   const clearWorshipFromConfiguredOutput = useCallback(async () => {
+    clearDisplay();
     if (!hasSceneRoute) {
       await dockObsClient.clearWorshipLyrics();
       return;
@@ -1639,7 +1656,7 @@ function DockWorshipTab({
       dockObsClient.clearSceneRouteSource("worship", target.sceneName)
     )));
     if (sceneRoute.syncPresentation) await dockObsClient.clearWorshipLyrics();
-  }, [hasSceneRoute, sceneRoute.targets, sceneRoute.syncPresentation]);
+  }, [clearDisplay, hasSceneRoute, sceneRoute.targets, sceneRoute.syncPresentation]);
   // The Dock settings database has already been hydrated by DockAuthGate.
   // Show the last local song snapshot immediately while the main app bridge
   // refreshes it in the background.
@@ -2939,7 +2956,7 @@ function DockWorshipTab({
       const pushLive = () => effectiveUseSceneRoute
         ? pushWorshipToConfiguredOutput(payload.obsData, fitOptions)
         : payload.obsData.overlayMode === "lower-third"
-          ? dockObsClient.pushWorshipOverlayFast(payload.obsData, fitOptions)
+          ? pushWorshipLowerThirdFast(payload.obsData, fitOptions)
           : pushWorshipToConfiguredOutput(payload.obsData, fitOptions, { bypassSceneRoute: true });
       // Fullscreen and lower-third use different OBS paths. Queue them at the
       // dock boundary so a slower fullscreen mutation cannot finish after the
@@ -4161,14 +4178,14 @@ function DockWorshipTab({
     if (!pendingWorshipRouteConfirm) return;
     const { idx, options } = pendingWorshipRouteConfirm;
     setPendingWorshipRouteConfirm(null);
-    updateSceneRoute({ enabled: false });
+    updateSceneRoute(presentationOnlyRoutePatch(sceneRoute));
     if (sceneRoute.targets.length > 0) {
       await Promise.allSettled(sceneRoute.targets.map((t) => (
         dockObsClient.clearSceneRouteSource("worship", t.sceneName)
       )));
     }
     void goLiveSection(idx, { ...options, bypassSceneRoute: true });
-  }, [goLiveSection, pendingWorshipRouteConfirm, sceneRoute.targets, updateSceneRoute]);
+  }, [goLiveSection, pendingWorshipRouteConfirm, sceneRoute, updateSceneRoute]);
 
   const handleCancelWorshipRouteConfirm = useCallback(() => {
     setPendingWorshipRouteConfirm(null);

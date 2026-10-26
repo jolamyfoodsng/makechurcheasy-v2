@@ -10,7 +10,7 @@
  * and this module closes the window.
  */
 import { availableMonitors, currentMonitor, PhysicalPosition, PhysicalSize, type Monitor } from "@tauri-apps/api/window";
-import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
+import { getAllWebviewWindows, WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { invoke } from "@tauri-apps/api/core";
 import { getOverlayBaseUrl } from "../services/overlayUrl";
 import { toLoopbackBase } from "./studioEngine";
@@ -131,6 +131,48 @@ let relayHooked = false;
 function notify(): void {
   const list = listOpenProjectors();
   for (const listener of listeners) listener(list);
+  syncScreenWatch();
+}
+
+// ── A projector's screen is unplugged: close it ────────────────────────────
+// A screen projector sits above everything (macOS) or is full screen, so it must never be left on
+// another screen. macOS hides it natively the moment its screen goes (projector_window.m); this
+// closes the window for good, on every system, within a second.
+
+const SCREEN_WATCH_MS = 1000;
+const screenLostListeners = new Set<(projector: OpenProjector) => void>();
+let screenWatchTimer: ReturnType<typeof setInterval> | null = null;
+
+/** Called when a projector was closed because its screen was disconnected. Returns an unsubscribe. */
+export function onProjectorScreenLost(listener: (projector: OpenProjector) => void): () => void {
+  screenLostListeners.add(listener);
+  return () => { screenLostListeners.delete(listener); };
+}
+
+async function checkProjectorScreens(): Promise<void> {
+  const onScreens = listOpenProjectors().filter((p) => p.monitorKey);
+  if (onScreens.length === 0) return;
+  let keys: Set<string>;
+  try {
+    keys = new Set((await availableMonitors()).map(monitorKey));
+  } catch {
+    return;
+  }
+  for (const projector of onScreens) {
+    if (keys.has(projector.monitorKey as string) || !projectors.has(projector.label)) continue;
+    await closeProjector(projector.label).catch(() => undefined);
+    for (const listener of screenLostListeners) listener(projector);
+  }
+}
+
+function syncScreenWatch(): void {
+  const needed = listOpenProjectors().some((p) => p.monitorKey);
+  if (needed && !screenWatchTimer) {
+    screenWatchTimer = setInterval(() => { void checkProjectorScreens(); }, SCREEN_WATCH_MS);
+  } else if (!needed && screenWatchTimer) {
+    clearInterval(screenWatchTimer);
+    screenWatchTimer = null;
+  }
 }
 
 export function listOpenProjectors(): OpenProjector[] {
@@ -183,6 +225,8 @@ export async function closeProjector(label: string): Promise<void> {
 
 /** Close every projector (or every one of a feed). */
 export async function closeAllProjectors(feed?: ProjectorFeed): Promise<void> {
+  // Windows this page lost track of (after a reload) are closed too.
+  await adoptStrayProjectors();
   const labels = listOpenProjectors().filter((p) => !feed || p.feed === feed).map((p) => p.label);
   await Promise.all(labels.map((label) => closeProjector(label)));
   if (!feed || feed === "program") await destroyWindow(LEGACY_LABEL);
@@ -212,6 +256,83 @@ async function createProjectorWindow(options: {
   return win;
 }
 
+const IS_MAC = typeof navigator !== "undefined" && /Mac/i.test(navigator.platform || navigator.userAgent);
+
+/**
+ * macOS, second screen: cover it above other apps' windows (an OBS projector included) and the
+ * menu bar, without its own Space and without taking the keyboard. Returns false when the running
+ * app can't (an older build), so the caller uses normal full screen.
+ */
+async function presentOnScreen(label: string, raiseOnly: boolean): Promise<boolean> {
+  if (!IS_MAC) return false;
+  try {
+    await invoke("present_studio_projector", { label, raiseOnly });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function feedFromLabel(label: string): ProjectorFeed | null {
+  const feed = label.slice(LABEL_PREFIX.length).split("-")[0];
+  return feed === "program" || feed === "alt" || feed === "preview" ? feed : null;
+}
+
+function track(label: string, win: WebviewWindow, entry: OpenProjector, note: string): void {
+  projectors.set(label, entry);
+  const openedAt = Date.now();
+  void win.once("tauri://destroyed", () => {
+    if (!expectedClose.delete(label)) {
+      lastSurpriseClose = `It closed itself ${((Date.now() - openedAt) / 1000).toFixed(1)}s after opening (${note}).`;
+      console.warn("[projector]", lastSurpriseClose);
+    }
+    if (projectors.delete(label)) notify();
+  });
+}
+
+/**
+ * Projector windows this page doesn't know about (left from before the app window reloaded) are
+ * taken back, so the next open reuses them instead of stacking another "Program Projector" on the
+ * same screen. A second one of the same feed on the same screen is closed.
+ */
+export async function adoptStrayProjectors(): Promise<void> {
+  let windows: WebviewWindow[];
+  try {
+    windows = await getAllWebviewWindows();
+  } catch {
+    return;
+  }
+  const strays = windows.filter((win) => win.label.startsWith(LABEL_PREFIX) && !projectors.has(win.label));
+  if (strays.length === 0) return;
+  const monitors = await availableMonitors().catch(() => [] as Monitor[]);
+  let changed = false;
+  for (const win of strays) {
+    const feed = feedFromLabel(win.label);
+    let monitor: Monitor | null = null;
+    let decorated = true;
+    try {
+      decorated = await win.isDecorated();
+      if (!decorated) {
+        const at = await win.outerPosition();
+        monitor = monitors.find((m) => (
+          at.x >= m.position.x && at.x < m.position.x + m.size.width
+          && at.y >= m.position.y && at.y < m.position.y + m.size.height
+        )) ?? null;
+      }
+    } catch {
+      /* treat it as a window */
+    }
+    const key = monitor ? monitorKey(monitor) : null;
+    if (!feed || listOpenProjectors().some((p) => p.feed === feed && p.monitorKey === key)) {
+      await closeProjector(win.label);
+      continue;
+    }
+    track(win.label, win, { label: win.label, feed, monitorKey: key, where: monitor?.name?.trim() || (decorated ? "Window" : "Display") }, "adopted");
+    changed = true;
+  }
+  if (changed) notify();
+}
+
 /** The projector is already open: bring it forward (rebuilding a full-screen window right away leaves a blank one). */
 async function reuseProjector(existing: OpenProjector, focus: boolean): Promise<OpenProjector | null> {
   const win = await WebviewWindow.getByLabel(existing.label);
@@ -222,6 +343,7 @@ async function reuseProjector(existing: OpenProjector, focus: boolean): Promise<
   try {
     await win.show();
     if (focus) await win.setFocus();
+    else if (existing.monitorKey) await presentOnScreen(existing.label, true);
   } catch {
     /* ignore */
   }
@@ -232,8 +354,18 @@ async function reuseProjector(existing: OpenProjector, focus: boolean): Promise<
  * Open a Program or Preview projector on a screen (full screen) or in a window.
  * A screen holds one projector: opening a new one there replaces the old one.
  */
-export async function openProjector(feed: ProjectorFeed, target: ProjectorTarget): Promise<OpenProjector> {
+export async function openProjector(
+  feed: ProjectorFeed,
+  target: ProjectorTarget,
+  options: {
+    /** Only this exact screen: fail instead of using another one (the Dock's "Send to a display"). */
+    exactMonitor?: boolean;
+    /** Leave the Studio's remembered Output screen alone. */
+    rememberScreen?: boolean;
+  } = {},
+): Promise<OpenProjector> {
   hookRelay();
+  await adoptStrayProjectors();
   if (target === "window") {
     const open = listOpenProjectors().find((p) => p.feed === feed && p.monitorKey === null);
     if (open) {
@@ -267,7 +399,9 @@ export async function openProjector(feed: ProjectorFeed, target: ProjectorTarget
   } else {
     const monitors = await availableMonitors();
     const current = await currentMonitor();
-    const monitor = monitors.find((m) => monitorKey(m) === target)
+    const exact = monitors.find((m) => monitorKey(m) === target);
+    if (options.exactMonitor && !exact) throw new Error("That display is no longer connected.");
+    const monitor = exact
       ?? monitors.find((m) => !sameMonitor(m, current))
       ?? current
       ?? monitors[0];
@@ -305,21 +439,16 @@ export async function openProjector(feed: ProjectorFeed, target: ProjectorTarget
     await win.setPosition(new PhysicalPosition(monitor.position.x, monitor.position.y));
     await win.setSize(new PhysicalSize(monitor.size.width, monitor.size.height));
     await win.show();
-    await win.setFullscreen(true);
+    // macOS second screen: above everything there, no own Space. Elsewhere: normal full screen.
+    if (isControl || !(await presentOnScreen(label, false))) await win.setFullscreen(true);
     if (isControl) await win.setFocus().catch(() => undefined);
-    if (feed === "program") saveOutputMonitor(key);
-    if (feed === "alt") saveAltMonitor(key);
+    if (options.rememberScreen !== false) {
+      if (feed === "program") saveOutputMonitor(key);
+      if (feed === "alt") saveAltMonitor(key);
+    }
   }
 
-  projectors.set(label, entry);
-  const openedAt = Date.now();
-  void win.once("tauri://destroyed", () => {
-    if (!expectedClose.delete(label)) {
-      lastSurpriseClose = `It closed itself ${((Date.now() - openedAt) / 1000).toFixed(1)}s after opening (${url}).`;
-      console.warn("[projector]", lastSurpriseClose);
-    }
-    if (projectors.delete(label)) notify();
-  });
+  track(label, win, entry, url);
   notify();
   return entry;
 }

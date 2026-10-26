@@ -193,34 +193,46 @@
   cursor: not-allowed;
 }
 
+/* Hide / Show: neutral while hidden, red only while the content is on screen. */
 .dock-btm-toolbar--collapsed .dock-btm-toolbar__clear {
-  flex: 1;
-  order: 0;
-  margin-top: 0;
-  min-width: 50px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 6px;
-  border: 1px solid var(--error-border, #991B1B);
+  flex: 0 1 auto;
+  min-width: 0;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--dock-border);
   border-radius: var(--radius, 4px);
-  background: var(--error-bg, #7F1D1D);
-  color: var(--error, #DC2626);
-  font-family: var(--font-body);
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  background: var(--dock-surface-alt);
+  color: var(--dock-text);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.dock-btm-toolbar--collapsed .dock-btm-toolbar__clear span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dock-btm-toolbar--collapsed .dock-btm-toolbar__clear.is-live {
+  border-color: var(--dock-red-soft-border);
+  background: var(--dock-red-soft);
+  color: var(--dock-red-text);
 }
 
 .dock-btm-toolbar--collapsed .dock-btm-toolbar__clear:hover {
-  background: rgba(220, 38, 38, 0.1);
-  border-color: var(--error, #DC2626);
+  border-color: var(--dock-border-active);
+  background: var(--dock-surface-hover);
 }
 
-.dock-btm-toolbar--collapsed .dock-btm-toolbar__clear:active {
-  background: rgba(220, 38, 38, 0.15);
+.dock-btm-toolbar--collapsed .dock-btm-toolbar__clear.is-live:hover {
+  border-color: var(--dock-red);
+  background: var(--dock-red-soft);
+}
+
+.dock-btm-toolbar--collapsed .dock-btm-toolbar__clear:focus-visible {
+  outline: 2px solid var(--dock-accent);
+  outline-offset: 1px;
 }
 
 .dock-btm-toolbar--collapsed .dock-btm-toolbar__clear:disabled {
@@ -229,27 +241,32 @@
 }
 
 /* ── Collapsed state ── */
-.dock-btm-toolbar--collapsed {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  /* align-items: center; */
+/* [ Hide / Show ] [ centre action ] [ expand ] — each keeps its own width, nothing overlaps. */
+.dock-btm-toolbar.dock-btm-toolbar--collapsed {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
   gap: 6px;
   padding: 6px 10px;
+  min-width: 0;
 }
-
-.dock-btm-toolbar.dock-btm-toolbar--collapsed button.dock-btm-toolbar__clear.dock-btm-toolbar__clear--bible {
-  display: block !important;
-}
-
 
 .dock-btm-toolbar--collapsed .dock-btm-toolbar__icon-btn {
-  flex: 0 0 28px;
+  flex: 0 0 auto;
+  margin-left: auto;
 }
 
 .dock-btm-toolbar--collapsed .dock-btm-toolbar__center--collapsed {
   display: inline-flex;
+  flex: 1 1 auto;
   align-items: center;
   justify-content: center;
+  min-width: 0;
+}
+
+.dock-btm-toolbar--collapsed .dock-btm-toolbar__center--collapsed > * {
+  max-width: 100%;
   min-width: 0;
 }
 

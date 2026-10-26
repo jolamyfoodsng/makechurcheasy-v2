@@ -14,6 +14,7 @@ import { getEffectivePlan } from "./trial";
 import { loadRealUseTimes } from "./userRetention";
 import { logAuditEvent } from "./auditLog";
 import {
+  subscriptionCountsAsBilling,
   whyProtected,
   type DeletionCandidate,
   type VersionRule,
@@ -82,19 +83,55 @@ export async function loadCandidates(db: Db, ids: string[]): Promise<{ candidate
   );
 
   const versionsByUser = new Map<string, string[]>();
+  // "Last opened" uses the same signals as the Users page: the user's own lastActive/lastLogin, the newest
+  // device ping, the newest security session and the newest activity event.
+  const openedTimes = new Map<string, number>();
+  const noteOpened = (userId: unknown, at: unknown) => {
+    if (!userId || !at) return;
+    const ms = new Date(at as string | Date).getTime();
+    if (!Number.isFinite(ms) || ms <= 0) return;
+    const key = String(userId);
+    if (ms > (openedTimes.get(key) ?? 0)) openedTimes.set(key, ms);
+  };
+  for (const u of users) {
+    noteOpened(u._id, u.lastActive);
+    noteOpened(u._id, u.lastLogin);
+  }
   const devices = await db
     .collection("devices")
-    .aggregate<{ _id: string; versions: Array<string | null> }>([
+    .aggregate<{ _id: string; versions: Array<string | null>; latestSeen?: string | Date | null }>([
       { $match: { userId: { $in: foundIds }, $or: [{ status: "active" }, { status: { $exists: false } }] } },
-      { $group: { _id: "$userId", versions: { $addToSet: "$appVersion" } } },
+      { $group: { _id: "$userId", versions: { $addToSet: "$appVersion" }, latestSeen: { $max: "$lastSeen" } } },
     ])
     .toArray();
   for (const d of devices) {
     versionsByUser.set(String(d._id), (d.versions || []).map((v) => String(v || "").trim()).filter(Boolean));
+    noteOpened(d._id, d.latestSeen);
   }
+  const sessions = await db
+    .collection("security_sessions")
+    .aggregate<{ _id: unknown; latest: string | Date | null }>([
+      { $match: { userId: { $in: variants }, lastActive: { $ne: null } } },
+      { $group: { _id: "$userId", latest: { $max: "$lastActive" } } },
+    ])
+    .toArray();
+  for (const row of sessions) noteOpened(row._id, row.latest);
+  const events = await db
+    .collection("activity_events")
+    .aggregate<{ _id: unknown; latest: string | Date | null }>([
+      { $match: { userId: { $in: variants } } },
+      { $group: { _id: "$userId", latest: { $max: { $ifNull: ["$timestamp", "$createdAt"] } } } },
+    ])
+    .toArray();
+  for (const row of events) noteOpened(row._id, row.latest);
 
+  // Only subscriptions that bill (or billed) count; an ended free-plan record left by a finished trial does not.
+  const subscriptionDocs = await db
+    .collection("subscriptions")
+    .find<{ userId: unknown; plan?: unknown; status?: unknown }>({ userId: { $in: variants } }, { projection: { userId: 1, plan: 1, status: 1 } })
+    .toArray();
   const withSubscription = new Set(
-    (await db.collection("subscriptions").distinct("userId", { userId: { $in: variants } })).map(String),
+    subscriptionDocs.filter((sub) => subscriptionCountsAsBilling(sub)).map((sub) => String(sub.userId)),
   );
   const withPayment = new Set<string>();
   const billedUserIds = await db
@@ -129,6 +166,7 @@ export async function loadCandidates(db: Db, ids: string[]): Promise<{ candidate
       hasSubscriptionRecord: withSubscription.has(id),
       hasPaymentRecord: withPayment.has(id),
       lastUseAt: realUse.get(id)?.lastUseAt ?? null,
+      lastOpenedAt: openedTimes.has(id) ? new Date(openedTimes.get(id) as number).toISOString() : null,
       versions,
     };
   });

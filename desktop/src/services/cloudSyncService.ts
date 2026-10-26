@@ -637,10 +637,16 @@ export async function restoreSnapshot(
   if (options.includeNotes !== false && data.notes?.items) {
     if (options.mode === "merge") {
       const existing = loadDockNotes();
-      const existingIds = new Set(existing.map((n) => n.id));
-      const newItems = data.notes.items.filter((n) => !existingIds.has(n.id));
-      saveDockNotes([...newItems, ...existing]);
-      restoredCounts.notesCount = newItems.length + existing.length;
+      const existingById = new Map(existing.map((n) => [n.id, n]));
+      const newItems = data.notes.items.filter((n) => !existingById.has(n.id));
+      // A note in both copies keeps whichever version was edited last.
+      const backupById = new Map(data.notes.items.map((n) => [n.id, n]));
+      const kept = existing.map((n) => {
+        const backup = backupById.get(n.id);
+        return backup && (backup.updatedAt ?? 0) > (n.updatedAt ?? 0) ? backup : n;
+      });
+      saveDockNotes([...newItems, ...kept]);
+      restoredCounts.notesCount = newItems.length + kept.length;
     } else {
       saveDockNotes(data.notes.items);
       restoredCounts.notesCount = data.notes.items.length;

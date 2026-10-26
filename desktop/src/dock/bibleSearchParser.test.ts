@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseBibleSearch } from "./bibleSearchParser";
+import { parseBibleSearch, parseSavedBibleSearch } from "./bibleSearchParser";
 
 describe("Bible reference search parser", () => {
   it("drops impossible compact verse candidates", () => {
@@ -272,5 +272,29 @@ describe("Bible reference search parser", () => {
       expect(macroResults[0]?.isMacro).toBe(true);
       expect(macroResults[0]?.book).toBe("2 Corinthians");
     });
+  });
+});
+
+describe("saved Bible search labels (recent searches and favorites)", () => {
+  const ref = (label: string) => {
+    const r = parseSavedBibleSearch(label);
+    return r ? [r.book, r.chapter, r.verse, r.endVerse ?? null] : null;
+  };
+
+  it("opens the verse when the label ends in a translation", () => {
+    expect(ref("John 3:16 — KJV")).toEqual(["John", 3, 16, null]);
+    expect(ref("John 3:16 (KJV)")).toEqual(["John", 3, 16, null]);
+    expect(ref("John 3:16 - NIV")).toEqual(["John", 3, 16, null]);
+  });
+
+  it("keeps verse ranges and plain references", () => {
+    expect(ref("Romans 8:28-30")).toEqual(["Romans", 8, 28, 30]);
+    expect(ref("Romans 8:28-30 — NIV")).toEqual(["Romans", 8, 28, 30]);
+    expect(ref("John 3:16")).toEqual(["John", 3, 16, null]);
+    expect(ref("Psalms 23")?.slice(0, 2)).toEqual(["Psalms", 23]);
+  });
+
+  it("returns nothing for an empty label", () => {
+    expect(parseSavedBibleSearch("   ")).toBeUndefined();
   });
 });

@@ -1316,3 +1316,19 @@ function matchBooksByName(query: string): BibleSearchResult[] {
   results.sort((a, b) => b.score - a.score);
   return results.slice(0, 8);
 }
+
+/**
+ * Parses a saved search label (a recent search or favorite). Labels can end in a translation,
+ * e.g. "John 3:16 — KJV" or "John 3:16 (KJV)", which parseBibleSearch reads as the book alone,
+ * so that suffix is dropped first. A suffix must contain a letter, so a verse range such as
+ * "Romans 8:28-30" is kept.
+ */
+export function parseSavedBibleSearch(label: string): BibleSearchResult | undefined {
+  const trimmed = label.trim();
+  if (!trimmed) return undefined;
+  const clean = trimmed
+    .replace(/\s*[—–-]\s*(?=[A-Za-z0-9]*[A-Za-z])[A-Za-z0-9]{2,}\s*$/, "")
+    .replace(/\s*\((?=[A-Za-z0-9]*[A-Za-z])[A-Za-z0-9]{2,}\)\s*$/, "")
+    .trim();
+  return parseBibleSearch(clean)[0] || parseBibleSearch(trimmed)[0];
+}

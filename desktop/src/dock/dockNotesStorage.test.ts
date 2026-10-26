@@ -1,11 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  DOCK_NOTES_KEY,
+  DOCK_NOTES_SAVED_AT_KEY,
   appendTextToDockNotes,
   loadDockNotes,
   resolveDockNotesPresentationSettings,
   saveDockNotesPreferences,
 } from "./dockNotesStorage";
 import type { DockFullscreenQuickThemeSettings } from "./components/DockFullscreenThemeQuickSettings";
+import { removeNativeDockSetting } from "../services/localDockSettings";
 
 function createMemoryStorage(): Storage {
   const data = new Map<string, string>();
@@ -28,6 +31,9 @@ function createMemoryStorage(): Storage {
 describe("dock notes presentation settings", () => {
   beforeEach(() => {
     vi.stubGlobal("localStorage", createMemoryStorage());
+    // Notes are read from the on-disk copy too; start each test without one.
+    void removeNativeDockSetting(DOCK_NOTES_KEY);
+    void removeNativeDockSetting(DOCK_NOTES_SAVED_AT_KEY);
   });
 
   afterEach(() => {

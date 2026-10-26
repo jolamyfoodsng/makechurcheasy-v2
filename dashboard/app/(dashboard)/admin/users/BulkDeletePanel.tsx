@@ -16,14 +16,35 @@ export interface BulkDeleteUser {
   appVersions?: string[];
   isActive: boolean;
   lastUsed: string | null;
+  lastOpened?: string | null;
+  lastLogin?: string | null;
   trial?: { active: boolean } | null;
   ambassador?: { active: boolean } | null;
   adminTemporaryPlan?: { active: boolean } | null;
   adminManagedSubscription?: { active: boolean } | null;
 }
 
-type RuleKind = "olderThan" | "exact" | "none";
-type Rule = { olderThan: string } | { exact: string } | { none: true };
+type RuleKind = "any" | "olderThan" | "exact" | "none";
+type Rule = { olderThan: string } | { exact: string } | { none: true } | { any: true };
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+/** The server never deletes anyone seen in the last 30 days, so 30 is the shortest choice. */
+const INACTIVE_DAY_OPTIONS = [30, 60, 90, 180];
+
+/** Newest of last opened, last sign-in and last real use, in ms. Null if never seen. */
+function lastSeenMs(u: BulkDeleteUser): number | null {
+  const times = [u.lastOpened, u.lastLogin, u.lastUsed]
+    .map((t) => (t ? Date.parse(t) : NaN))
+    .filter((n) => Number.isFinite(n) && n > 0);
+  return times.length > 0 ? Math.max(...times) : null;
+}
+
+function describeLastSeen(u: BulkDeleteUser, now: number): string {
+  const ms = lastSeenMs(u);
+  if (ms === null) return "never opened";
+  const days = Math.floor((now - ms) / DAY_MS);
+  return days <= 0 ? "seen today" : `last seen ${days} day${days === 1 ? "" : "s"} ago`;
+}
 
 interface PlanUser { id: string; email: string; name: string; appVersions: string[] }
 interface Skipped { id: string; email: string; reason: string }
@@ -52,12 +73,23 @@ function compareVersions(a: string, b: string): number {
 }
 
 function matches(u: BulkDeleteUser, kind: RuleKind, version: string): boolean {
+  if (kind === "any") return true;
   const list = versionsOf(u);
   if (kind === "none") return list.length === 0;
   if (kind === "exact") return list.some((v) => compareVersions(v, version) === 0);
   if (list.length === 0) return false;
   const best = list.reduce((a, b) => (compareVersions(b, a) > 0 ? b : a));
   return compareVersions(best, version) < 0;
+}
+
+/** Statuses that mean nothing is billed any more. Matches subscriptionCountsAsBilling on the server. */
+const ENDED_SUBSCRIPTION_STATUSES = new Set(["cancelled", "canceled", "expired", "inactive", "ended"]);
+
+/** A free-plan subscription that has ended (what a finished trial leaves behind) is not billing. */
+function hasBillingSubscription(u: BulkDeleteUser): boolean {
+  if (!u.subscriptionStatus) return false;
+  const freePlan = u.plan === "" || u.plan === "free";
+  return !(freePlan && ENDED_SUBSCRIPTION_STATUSES.has(u.subscriptionStatus.trim().toLowerCase()));
 }
 
 /** A first filter so the list only shows people who could be deleted. The server checks everyone again. */
@@ -69,7 +101,7 @@ function looksProtected(u: BulkDeleteUser): boolean {
     Boolean(u.ambassador?.active) ||
     Boolean(u.adminTemporaryPlan?.active) ||
     Boolean(u.adminManagedSubscription?.active) ||
-    Boolean(u.subscriptionStatus) ||
+    hasBillingSubscription(u) ||
     u.isActive
   );
 }
@@ -97,7 +129,8 @@ function downloadCsv(name: string, rows: string[][]) {
 
 export default function BulkDeletePanel({ users, onDone }: { users: BulkDeleteUser[]; onDone: () => void }) {
   const [open, setOpen] = useState(false);
-  const [kind, setKind] = useState<RuleKind>("olderThan");
+  const [kind, setKind] = useState<RuleKind>("any");
+  const [inactiveDays, setInactiveDays] = useState(30);
   const [version, setVersion] = useState("3.3");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState<string>("");
@@ -112,10 +145,12 @@ export default function BulkDeletePanel({ users, onDone }: { users: BulkDeleteUs
     return Array.from(set).sort((a, b) => compareVersions(b, a));
   }, [users]);
 
-  const validVersion = kind === "none" || /^\d+(\.\d+){0,3}$/.test(version.replace(/^v/i, ""));
+  const validVersion = kind === "none" || kind === "any" || /^\d+(\.\d+){0,3}$/.test(version.replace(/^v/i, ""));
   const rule: Rule | null = !validVersion
     ? null
-    : kind === "none"
+    : kind === "any"
+      ? { any: true }
+      : kind === "none"
       ? { none: true }
       : kind === "exact"
         ? { exact: version.replace(/^v/i, "") }
@@ -125,8 +160,15 @@ export default function BulkDeletePanel({ users, onDone }: { users: BulkDeleteUs
     () => (validVersion ? users.filter((u) => matches(u, kind, version)) : []),
     [users, kind, version, validVersion],
   );
-  const candidates = useMemo(() => matched.filter((u) => !looksProtected(u)), [matched]);
-  const protectedCount = matched.length - candidates.length;
+  const now = useMemo(() => Date.now(), [users]);
+  // Only people who have neither opened nor used the app for the chosen number of days are offered.
+  const inactive = useMemo(
+    () => matched.filter((u) => { const ms = lastSeenMs(u); return ms === null || now - ms >= inactiveDays * DAY_MS; }),
+    [matched, inactiveDays, now],
+  );
+  const candidates = useMemo(() => inactive.filter((u) => !looksProtected(u)), [inactive]);
+  const recentCount = matched.length - inactive.length;
+  const protectedCount = inactive.length - candidates.length;
   const allSelected = candidates.length > 0 && candidates.every((u) => selected.has(u.id));
   const chosen = candidates.filter((u) => selected.has(u.id));
 
@@ -222,22 +264,23 @@ export default function BulkDeletePanel({ users, onDone }: { users: BulkDeleteUs
           onClick={() => setOpen(true)}
           className="inline-flex items-center gap-2 px-3.5 py-2 text-sm font-semibold rounded-xl border border-red-800/60 bg-red-950/30 text-red-300 hover:bg-red-900/40 transition"
         >
-          <Trash2 className="w-4 h-4" aria-hidden="true" /> Bulk delete by app version
+          <Trash2 className="w-4 h-4" aria-hidden="true" /> Bulk delete inactive users
         </button>
       </div>
     );
   }
 
   return (
-    <section className="mb-4 rounded-xl border border-red-900/60 bg-red-950/10 p-4" aria-label="Bulk delete users by app version">
+    <section className="mb-4 rounded-xl border border-red-900/60 bg-red-950/10 p-4" aria-label="Bulk delete inactive users">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-base font-bold text-slate-50 flex items-center gap-2">
-            <Trash2 className="w-4 h-4 text-red-400" aria-hidden="true" /> Bulk delete by app version
+            <Trash2 className="w-4 h-4 text-red-400" aria-hidden="true" /> Bulk delete inactive users
           </h2>
           <p className="text-xs text-slate-400 mt-1 max-w-2xl">
-            Deleting removes the user and their personal data and cannot be undone. Admins, trials, paid plans, anyone with billing
-            records and anyone who used the product in the last 30 days are never deleted.
+            Lists people who have not opened or used MakeChurchEazy for the time you choose. Deleting removes the user and their
+            personal data and cannot be undone. Admins, trials, paid plans, anyone with billing records and anyone who opened or
+            used the product in the last 30 days are never deleted.
           </p>
         </div>
         <button type="button" onClick={() => { setOpen(false); resetFlow(); }} aria-label="Close bulk delete" className="p-1.5 rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-800">
@@ -247,11 +290,20 @@ export default function BulkDeletePanel({ users, onDone }: { users: BulkDeleteUs
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <select
+          value={inactiveDays}
+          onChange={(e) => changeRule(() => setInactiveDays(Number(e.target.value)))}
+          className="h-10 px-3 rounded-xl border border-slate-700 bg-gray-900 text-sm text-slate-100"
+          aria-label="Not opened or used for"
+        >
+          {INACTIVE_DAY_OPTIONS.map((d) => <option key={d} value={d}>Not opened or used for {d}+ days</option>)}
+        </select>
+        <select
           value={kind}
           onChange={(e) => changeRule(() => { const k = e.target.value as RuleKind; setKind(k); if (k === "exact" && versionList[0]) setVersion(versionList[versionList.length - 1]); if (k === "olderThan") setVersion("3.3"); })}
           className="h-10 px-3 rounded-xl border border-slate-700 bg-gray-900 text-sm text-slate-100"
           aria-label="Which users"
         >
+          <option value="any">Any app version</option>
           <option value="olderThan">App version older than</option>
           <option value="exact">Exactly this app version</option>
           <option value="none">No app version recorded</option>
@@ -278,8 +330,9 @@ export default function BulkDeletePanel({ users, onDone }: { users: BulkDeleteUs
           </select>
         )}
         <span className="text-sm text-slate-300">
-          {matched.length} match · <strong className="text-slate-50">{candidates.length} can be deleted</strong>
-          {protectedCount > 0 && <span className="text-slate-500"> · {protectedCount} kept (paid, trial, admin or recently used)</span>}
+          <strong className="text-slate-50">{candidates.length} can be deleted</strong>
+          {recentCount > 0 && <span className="text-slate-500"> · {recentCount} opened or used in the last {inactiveDays} days</span>}
+          {protectedCount > 0 && <span className="text-slate-500"> · {protectedCount} kept (paid, trial, admin or billing)</span>}
         </span>
       </div>
       {kind === "none" && (
@@ -318,7 +371,7 @@ export default function BulkDeletePanel({ users, onDone }: { users: BulkDeleteUs
                     <span className="text-slate-400 break-all">{u.email}</span>
                   </span>
                   <span className="text-xs text-slate-400 whitespace-nowrap">
-                    {versionsOf(u).map((v) => `v${v}`).join(", ") || "no version"}
+                    {describeLastSeen(u, now)} · {versionsOf(u).map((v) => `v${v}`).join(", ") || "no version"}
                   </span>
                 </label>
               </li>

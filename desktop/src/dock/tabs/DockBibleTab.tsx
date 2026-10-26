@@ -41,6 +41,7 @@ import type {
 } from "../../services/voiceBibleTypes";
 import {
   parseBibleSearch,
+  parseSavedBibleSearch,
   type BibleSearchResult,
 } from "../bibleSearchParser";
 import {
@@ -138,7 +139,8 @@ import {
 } from "../../services/dockPreferenceStorage";
 import { invoke } from "@tauri-apps/api/core";
 import { dockObsClient, type DockBiblePushData, type DockOverlayFitOptions } from "../dockObsClient";
-import { useDockSceneRoute } from "../dockSceneRouting";
+import { presentationOnlyRoutePatch, useDockSceneRoute } from "../dockSceneRouting";
+import { useDockDisplayOutput } from "../useDockDisplayOutput";
 import { isDockTabVisible } from "../dockTabVisibility";
 import { themeSupportsBibleOverlayMode } from "../../bible/themeVariantSupport";
 import {
@@ -1668,11 +1670,7 @@ function renderHighlightedKeywordText(text: string, query: string): React.ReactN
 function formatCompactBibleReference(text: string): string {
   const trimmed = text.trim();
   if (!trimmed) return "";
-  const clean = trimmed
-    .replace(/\s*[—–-]\s*[A-Za-z0-9]{2,}\s*$/, "")
-    .replace(/\s*\([A-Za-z0-9]{2,}\)\s*$/, "")
-    .trim();
-  const parsed = parseBibleSearch(clean)[0] || parseBibleSearch(trimmed)[0];
+  const parsed = parseSavedBibleSearch(trimmed);
   if (parsed && parsed.book) {
     const abbrev = bookAbbrev(parsed.book) || parsed.book.slice(0, 4);
     if (parsed.chapter !== null && parsed.verse !== null) {
@@ -1707,6 +1705,7 @@ function DockBibleTab({
   const presentationLinkMode = isPresentationLinkTarget(presentationOutputTarget);
   const fullscreenOnlyMode = Boolean(fullscreenOnly);
   const [sceneRoute, updateSceneRoute] = useDockSceneRoute("bible");
+  const { sendToDisplay, clearDisplay } = useDockDisplayOutput("bible", sceneRoute, updateSceneRoute);
   const hasSceneRoute = sceneRoute.enabled && sceneRoute.targets.length > 0;
   const bibleSceneRouteConfirmedRef = useRef(false);
   const [pendingVerseRouteConfirm, setPendingVerseRouteConfirm] = useState<{
@@ -1733,6 +1732,12 @@ function DockBibleTab({
     // boundary so a future action cannot accidentally touch the MCE Bible
     // source even if it forgets an earlier presentation-mode branch.
     if (presentationLinkMode) return null;
+    // "Send to a display" runs beside OBS (with or without scene targets) and never holds it up.
+    sendToDisplay(data, {
+      fullscreen: liveFullscreenThemeSettingsRef.current as Record<string, unknown> | null,
+      fullscreenOverrides: fullscreenLiveOverridesRef.current,
+      lowerThird: liveLowerThirdThemeSettingsRef.current as Record<string, unknown> | null,
+    });
     if (!hasSceneRoute || pushOptions?.bypassSceneRoute) {
       return dockObsClient.pushBible(data, options);
     }
@@ -1765,10 +1770,25 @@ function DockBibleTab({
     }));
     if (sceneRoute.syncPresentation) return dockObsClient.pushBible(data, options);
     return null;
-  }, [hasSceneRoute, presentationLinkMode, sceneRoute.targets, sceneRoute.syncPresentation]);
+  }, [hasSceneRoute, presentationLinkMode, sceneRoute.targets, sceneRoute.syncPresentation, sendToDisplay]);
+
+  /** The lower-third fast path skips pushBibleToConfiguredOutput, so it feeds the display itself. */
+  const pushBibleLowerThirdFast = useCallback((
+    payload: Parameters<typeof dockObsClient.pushBibleOverlayFast>[0],
+    displayData: object,
+    fitOptions?: DockOverlayFitOptions,
+  ) => {
+    sendToDisplay(displayData, {
+      fullscreen: liveFullscreenThemeSettingsRef.current as Record<string, unknown> | null,
+      fullscreenOverrides: fullscreenLiveOverridesRef.current,
+      lowerThird: liveLowerThirdThemeSettingsRef.current as Record<string, unknown> | null,
+    });
+    return dockObsClient.pushBibleOverlayFast(payload, fitOptions);
+  }, [sendToDisplay]);
 
   const clearBibleFromConfiguredOutput = useCallback(async () => {
     if (presentationLinkMode) return;
+    clearDisplay();
     if (!hasSceneRoute) {
       await dockObsClient.clearBible();
       return;
@@ -1777,7 +1797,7 @@ function DockBibleTab({
       dockObsClient.clearSceneRouteSource("bible", target.sceneName)
     )));
     if (sceneRoute.syncPresentation) await dockObsClient.clearBible();
-  }, [hasSceneRoute, presentationLinkMode, sceneRoute.targets, sceneRoute.syncPresentation]);
+  }, [clearDisplay, hasSceneRoute, presentationLinkMode, sceneRoute.targets, sceneRoute.syncPresentation]);
   const initialPrefsRef = useRef<DockBiblePreferences | null>(null);
   if (initialPrefsRef.current === null) {
     initialPrefsRef.current = loadDockBiblePreferences();
@@ -3580,7 +3600,7 @@ function DockBibleTab({
       const pushLive = () => hasSceneRoute
         ? pushBibleToConfiguredOutput(stageData as unknown as DockBiblePushData, fitOptions)
         : liveOverlayMode === "lower-third"
-          ? dockObsClient.pushBibleOverlayFast(lowerThirdPayload, fitOptions)
+          ? pushBibleLowerThirdFast(lowerThirdPayload, stageData, fitOptions)
           : pushBibleToConfiguredOutput(stageData as unknown as DockBiblePushData, fitOptions);
 
       const measurement = await pushLive();
@@ -4273,7 +4293,7 @@ function DockBibleTab({
       const pushLive = () => effectiveUseSceneRoute
         ? pushBibleToConfiguredOutput(stageData as unknown as DockBiblePushData, fitOptions)
         : liveOverlayMode === "lower-third"
-          ? dockObsClient.pushBibleOverlayFast(lowerThirdPayload, fitOptions)
+          ? pushBibleLowerThirdFast(lowerThirdPayload, stageData, fitOptions)
           : pushBibleToConfiguredOutput(stageData as unknown as DockBiblePushData, fitOptions, { bypassSceneRoute: true });
 
       // In fullscreen mode, publish the selected verse to the already-loaded Bible
@@ -6406,7 +6426,7 @@ function DockBibleTab({
 
   const applyRecentBibleSearch = useCallback(
     (query: string) => {
-      const recentResult = parseBibleSearch(query)[0];
+      const recentResult = parseSavedBibleSearch(query);
       setSearchQuery("");
       setShowRecentSearches(false);
       setShowDropdown(false);
@@ -6420,7 +6440,7 @@ function DockBibleTab({
   );
 
   const handleFavoriteClick = useCallback((favorite: DockFavoriteBibleSearch) => {
-    const result = parseBibleSearch(favorite.reference)[0];
+    const result = parseSavedBibleSearch(favorite.reference);
     setSearchQuery("");
     setShowRecentSearches(false);
     setShowDropdown(false);
@@ -6542,14 +6562,14 @@ function DockBibleTab({
     if (!pendingVerseRouteConfirm) return;
     const { book, chapter, verse, options } = pendingVerseRouteConfirm;
     setPendingVerseRouteConfirm(null);
-    updateSceneRoute({ enabled: false });
+    updateSceneRoute(presentationOnlyRoutePatch(sceneRoute));
     if (sceneRoute.targets.length > 0) {
       await Promise.allSettled(sceneRoute.targets.map((t) => (
         dockObsClient.clearSceneRouteSource("bible", t.sceneName)
       )));
     }
     void goLiveVerse(book, chapter, verse, { ...options, bypassSceneRoute: true });
-  }, [goLiveVerse, pendingVerseRouteConfirm, sceneRoute.targets, updateSceneRoute]);
+  }, [goLiveVerse, pendingVerseRouteConfirm, sceneRoute, updateSceneRoute]);
 
   const handleCancelBibleRouteConfirm = useCallback(() => {
     setPendingVerseRouteConfirm(null);

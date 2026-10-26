@@ -11,6 +11,10 @@ import TextStyleControls from "../../components/TextStyleControls";
 import { textStyleCapabilityFor, textStyleKey } from "../../lowerthirds/textStyle";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { isDockTabVisible } from "../dockTabVisibility";
+
+/** The Ctrl or Cmd key, spelled the way this computer's keyboard does. */
+const PRIMARY_KEY_LABEL = typeof navigator !== "undefined" && /Mac|iPhone|iPad/i.test(`${navigator.platform} ${navigator.userAgent}`) ? "⌘" : "Ctrl";
 import type { ContentSlot, SlotState } from "../../lowerthirds/contentSlots";
 import {
   deleteSlot,
@@ -290,6 +294,7 @@ export default function DockLowerThirdEditor({
 
   // ── Preview modal ──
   const [showPreview, setShowPreview] = useState(false);
+  const layoutRef = useRef<HTMLDivElement | null>(null);
 
   // ── Variable values ──
   const [variableValues, setVariableValues] = useState<Record<string, string>>(() => initialSlotState.variableValues);
@@ -811,11 +816,8 @@ export default function DockLowerThirdEditor({
   }, []);
 
   // ── Slot click: flush current slot, then load clicked slot's data (or defaults for empty) ──
-  const handleSlotClick = useCallback((index: number, slot: ContentSlot | null, e: React.MouseEvent) => {
-    if (e.button !== 0) return;
-    e.preventDefault();
-
-    // No-op: clicking the already-active slot does nothing
+  const selectSlot = useCallback((index: number, slot: ContentSlot | null) => {
+    // No-op: choosing the already-active slot does nothing
     if (activeSlotIndex === index) return;
 
     if (autoSaveTimerRef.current) {
@@ -861,6 +863,12 @@ export default function DockLowerThirdEditor({
       setSelectedSpeakerIdx(null);
     }
   }, [activeSlotIndex, theme, handleRecallSlot]);
+
+  const handleSlotClick = useCallback((index: number, slot: ContentSlot | null, e: React.MouseEvent) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    selectSlot(index, slot);
+  }, [selectSlot]);
 
   // ── Slot right-click: always open menu ──
   const handleSlotContextMenu = useCallback((e: React.MouseEvent, index: number) => {
@@ -940,8 +948,57 @@ export default function DockLowerThirdEditor({
     onAnimateOut(url);
   }, [theme, variableValues, customStyles, position, animationIn, exitStyle, size, onAnimateOut, kineticTheme]);
 
+  // ── Keyboard shortcuts (only while this editor is on screen) ──
+  //   1 to 7 ........................ pick a saved slot (same as clicking its number)
+  //   P ............................. open Preview
+  //   Ctrl/Cmd + Enter .............. Send to OBS
+  //   Ctrl/Cmd + Shift + Enter ...... Animate Out
+  // The digits and P are ignored while typing in a field. The two on-air actions need Ctrl/Cmd so they are never
+  // hit by accident, and they work from inside a text field. The dock's own Ctrl/Cmd + 1 to 6 tab keys, Ctrl/Cmd + F
+  // and Alt + Shift + K/T// are taken before this runs, so none of these clash with them.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.repeat) return;
+      if (!isDockTabVisible(layoutRef.current)) return;
+      if (showPreview || contextMenu || document.querySelector('[aria-modal="true"]')) return;
+
+      const primary = event.metaKey || event.ctrlKey;
+      if (primary && event.key === "Enter") {
+        if (event.altKey) return;
+        event.preventDefault();
+        if (sending) return;
+        if (event.shiftKey) {
+          if (onAnimateOut) handleAnimateOut();
+        } else {
+          // Press the real Send button, so a routed scene still asks the same question as a click does.
+          layoutRef.current?.querySelector<HTMLButtonElement>(".dock-lt-send-btn")?.click();
+        }
+        return;
+      }
+
+      if (primary || event.altKey || event.shiftKey) return;
+      const target = event.target;
+      if (target instanceof HTMLElement && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName))) return;
+
+      if (/^[1-7]$/.test(event.key)) {
+        const index = Number(event.key) - 1;
+        if (index < slots.length) {
+          event.preventDefault();
+          selectSlot(index, slots[index]);
+        }
+        return;
+      }
+      if (event.key.toLowerCase() === "p") {
+        event.preventDefault();
+        setShowPreview(true);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [showPreview, contextMenu, sending, slots, selectSlot, onAnimateOut, handleAnimateOut]);
+
   return (
-    <div className="dock-lt-editor-layout">
+    <div className="dock-lt-editor-layout" ref={layoutRef}>
       {/* ── Preview (fixed top) ── */}
 
 
@@ -1417,7 +1474,7 @@ export default function DockLowerThirdEditor({
                   <li
                     key={idx}
                     className={`dock-lt-slot${activeSlotIndex === idx ? " dock-lt-slot--active" : ""}${slot ? " dock-lt-slot--filled" : " dock-lt-slot--empty"}`}
-                    title={slot?.label}
+                    title={`${slot?.label ? `${slot.label} · ` : ""}Press ${idx + 1}`}
                     onClick={(e) => handleSlotClick(idx, slot, e)}
                     onContextMenu={(e) => handleSlotContextMenu(e, idx)}
                   >
@@ -1432,7 +1489,7 @@ export default function DockLowerThirdEditor({
           type="button"
           className="dock-btn dock-btn--sm dock-lt-preview-btn"
           onClick={() => setShowPreview(true)}
-          title="Preview this lower third with your text and styles (nothing is sent to OBS)"
+          title="Preview this lower third with your text and styles (nothing is sent to OBS) · P"
         >
           <Icon name="visibility" size={14} />
           <span>Preview</span>
@@ -1443,6 +1500,8 @@ export default function DockLowerThirdEditor({
           onSend={handleSend}
           sending={sending}
           disabled={sending}
+          className="dock-btn dock-btn--sm dock-btn--primary dock-lt-send-btn"
+          shortcutHint={`${PRIMARY_KEY_LABEL}+Enter`}
           style={{ flex: 1 }}
         />
         {onAnimateOut && (
@@ -1451,7 +1510,7 @@ export default function DockLowerThirdEditor({
             className={`dock-btn dock-btn--sm ${sending ? "dock-btn--loading" : ""}`}
             onClick={handleAnimateOut}
             disabled={sending}
-            title={t("lowerThird.animateOut")}>
+            title={`${t("lowerThird.animateOut")} · ${PRIMARY_KEY_LABEL}+Shift+Enter`}>
             <Icon name="animation" size={14} />
             <span>{t("lowerThird.animateOut")}</span>
           </button>

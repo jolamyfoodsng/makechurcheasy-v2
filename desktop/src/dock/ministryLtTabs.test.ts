@@ -1,12 +1,17 @@
 import { describe, expect, it } from "vitest";
 import {
   canAddLtTab,
+  cleanLtTabName,
   cloneLtTab,
   closeLtTab,
   FIRST_LT_TAB_ID,
   ltTabEditorId,
+  LT_TAB_NAME_MAX,
   ltTabLimitForPlan,
+  orderLtTabs,
   parseLtTabs,
+  renameLtTab,
+  setLtTabPinned,
   usableLtTabs,
   type MinistryLtTab,
 } from "./ministryLtTabs";
@@ -57,5 +62,79 @@ describe("ministry lower-third tabs", () => {
       tabs: [{ id: "a", themeKey: null }],
       activeId: "a",
     });
+  });
+
+  it("cleans tab names", () => {
+    expect(cleanLtTabName("  Pastor   welcome \n")).toBe("Pastor welcome");
+    expect(cleanLtTabName("   ")).toBeUndefined();
+    expect(cleanLtTabName(42)).toBeUndefined();
+    expect(cleanLtTabName("x".repeat(80))).toHaveLength(LT_TAB_NAME_MAX);
+  });
+
+  it("renames a tab and keeps the old name when the new one is empty", () => {
+    const named = renameLtTab(tabs, "b", "  Announcements ");
+    expect(named[1]).toEqual({ id: "b", themeKey: "lt:b", name: "Announcements" });
+    expect(renameLtTab(named, "b", "   ")).toBe(named);
+    expect(renameLtTab(named, "b", "Announcements")).toBe(named);
+    expect(renameLtTab(named, "missing", "X")).toBe(named);
+  });
+
+  it("puts pinned tabs first and keeps the rest in order", () => {
+    const pinnedC = setLtTabPinned(tabs, "c", true);
+    expect(pinnedC.map((t) => t.id)).toEqual(["c", FIRST_LT_TAB_ID, "b"]);
+    expect(pinnedC[0].pinned).toBe(true);
+    const pinnedCB = setLtTabPinned(pinnedC, "b", true);
+    expect(pinnedCB.map((t) => t.id)).toEqual(["c", "b", FIRST_LT_TAB_ID]);
+    // Unpinning lands at the start of the unpinned tabs.
+    const unpinnedC = setLtTabPinned(pinnedCB, "c", false);
+    expect(unpinnedC.map((t) => t.id)).toEqual(["b", "c", FIRST_LT_TAB_ID]);
+    expect("pinned" in unpinnedC[1]).toBe(false);
+    expect(setLtTabPinned(pinnedC, "c", true)).toBe(pinnedC);
+    expect(orderLtTabs(tabs)).toBe(tabs);
+  });
+
+  it("keeps an unnamed tab's label when pinning moves it", () => {
+    // The Dock names a tab after its "Tab N" label before pinning it.
+    const pinned = setLtTabPinned(renameLtTab(tabs, "c", "Tab 3"), "c", true);
+    expect(pinned[0]).toEqual({ id: "c", themeKey: null, name: "Tab 3", pinned: true });
+    const named = renameLtTab(tabs, "b", "Sermon");
+    expect(renameLtTab(named, "b", "Sermon")).toBe(named);
+  });
+
+  it("won't close a pinned tab", () => {
+    const pinned = setLtTabPinned(tabs, "b", true);
+    expect(closeLtTab(pinned, "b", "b")).toEqual({ tabs: pinned, activeId: "b" });
+    expect(closeLtTab(pinned, "c", "c").tabs.map((t) => t.id)).toEqual(["b", FIRST_LT_TAB_ID]);
+  });
+
+  it("clones without the name or pin, after the pinned tabs", () => {
+    const pinned = renameLtTab(setLtTabPinned(tabs, "b", true), "b", "Sermon");
+    const next = cloneLtTab(pinned, "b", "x");
+    expect(next.map((t) => t.id)).toEqual(["b", "x", FIRST_LT_TAB_ID, "c"]);
+    expect(next[1]).toEqual({ id: "x", themeKey: "lt:b" });
+  });
+
+  it("saves and loads names and pins", () => {
+    const edited = renameLtTab(setLtTabPinned(tabs, "c", true), "c", "Welcome");
+    const roundTrip = parseLtTabs(JSON.parse(JSON.stringify({ tabs: edited, activeId: "c" })));
+    expect(roundTrip).toEqual({ tabs: edited, activeId: "c" });
+  });
+
+  it("loads tabs saved before names and pins existed", () => {
+    const old = { tabs: [{ id: FIRST_LT_TAB_ID, themeKey: "lt:a", size: "sm" }, { id: "b", themeKey: "lt:b" }], activeId: "b" };
+    expect(parseLtTabs(old)).toEqual(old);
+  });
+
+  it("cleans bad saved names and pins and puts pinned tabs first", () => {
+    const parsed = parseLtTabs({
+      tabs: [
+        { id: "a", themeKey: null, name: "   ", pinned: "yes" },
+        { id: "b", themeKey: null, name: "  Offering  ", pinned: true },
+      ],
+    });
+    expect(parsed?.tabs).toEqual([
+      { id: "b", themeKey: null, name: "Offering", pinned: true },
+      { id: "a", themeKey: null },
+    ]);
   });
 });

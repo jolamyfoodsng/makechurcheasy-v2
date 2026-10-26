@@ -72,6 +72,8 @@ import {
 import { scheduleMceBrowserSourceRefresh } from "../services/obsBrowserSourceRefresh";
 import { scheduleRetiredMceSourceCleanup } from "../services/retiredMceSources";
 import { recordPresentationHistory } from "./dockScheduleService";
+import { hasHeading } from "../themes/layout/heading";
+import { isThemeLayout } from "../themes/layout/types";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -747,13 +749,27 @@ export function normalizeDockTabLabelMode(value: unknown): DockTabLabelMode {
   return DOCK_TAB_LABEL_MODES.includes(value as DockTabLabelMode) ? (value as DockTabLabelMode) : "auto";
 }
 
-/** Builds the label for a song or note; returns `legacy` in "auto" mode. */
+/** True when the theme settings carry a layer theme that has a heading (label line). */
+export function themeHasLayerHeading(settings: unknown): boolean {
+  const layout = settings && typeof settings === "object" ? (settings as { layout?: unknown }).layout : undefined;
+  return isThemeLayout(layout) && hasHeading(layout);
+}
+
+/**
+ * Builds the label for a song or note; returns `legacy` in "auto" mode.
+ * Layer themes with a heading get "Song · Section" in "auto" mode, so the heading
+ * the theme was designed with shows (its own Show / Hide still decides).
+ */
 export function resolveDockTabLabel(
   mode: DockTabLabelMode,
   data: { songTitle?: string; sectionLabel?: string; noteTitle?: string },
   legacy: string,
+  options: { layerHeading?: boolean } = {},
 ): string {
-  if (mode === "auto") return legacy;
+  if (mode === "auto") {
+    if (!options.layerHeading) return legacy;
+    mode = "title-section";
+  }
   if (mode === "none") return "";
   const title = String(data.noteTitle || data.songTitle || "").trim();
   const section = String(data.sectionLabel || "").trim();
@@ -825,12 +841,14 @@ export class DockObsClient {
 
   private tabLabel(
     tab: string,
-    data: { songTitle?: string; sectionLabel?: string; noteTitle?: string; backgroundOnly?: boolean },
+    data: { songTitle?: string; sectionLabel?: string; noteTitle?: string; backgroundOnly?: boolean; bibleThemeSettings?: unknown },
     legacy: string,
   ): string {
     if (data.backgroundOnly) return "";
     if (tab !== "worship" && tab !== "notes") return legacy;
-    return resolveDockTabLabel(this._tabLabelMode[tab], data, legacy);
+    return resolveDockTabLabel(this._tabLabelMode[tab], data, legacy, {
+      layerHeading: tab === "worship" && themeHasLayerHeading(data.bibleThemeSettings),
+    });
   }
   /** Last overlay mode for the unified Bible source ("fullscreen" | "lower-third") */
   private _lastBibleMode: string = "";

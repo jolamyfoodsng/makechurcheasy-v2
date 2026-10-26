@@ -378,6 +378,8 @@ export interface BibleThemeSettings {
   layoutLineHeight?: number;
   /** Dock: show / hide the theme's title (reference / label). Missing = the theme's own setting. */
   layoutShowTitle?: boolean;
+  /** Dock: line the heading up left / center / right of the text. Missing = where the theme puts it. */
+  layoutHeadingAlign?: "left" | "center" | "right";
   /** Dock: bold / italic for the verse text of a layout theme (undefined = as the theme is designed). */
   layoutBold?: boolean;
   layoutItalic?: boolean;

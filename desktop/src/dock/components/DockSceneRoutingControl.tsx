@@ -3,18 +3,29 @@ import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { isUserSelectableObsScene } from "../../services/dockSceneNames";
 import { dockObsClient } from "../dockObsClient";
-import type {
-  DockSceneOutputMode,
-  DockSceneRoute,
-  DockSceneRouteModule,
-  DockSceneRouteTarget,
+import {
+  isDockOutputRouted,
+  presentationOnlyRoutePatch,
+  type DockSceneOutputMode,
+  type DockSceneRoute,
+  type DockSceneRouteModule,
+  type DockSceneRouteTarget,
 } from "../dockSceneRouting";
+import DockRoutedOutputMenu from "./DockRoutedOutputMenu";
 import { ensureObsConnected } from "../obsConnectionGuard";
 import Icon from "../DockIcon";
 import "./DockSceneRoutingControl.css";
 import "./DockSceneRouteSendControl.css";
 import { useDockOutputTarget } from "../dockOutputTargetContext";
 import { isPresentationLinkTarget } from "../dockPresentationTarget";
+import {
+  DEFAULT_DOCK_DISPLAY_OUTPUT,
+  resolveDockDisplayTarget,
+  supportsDockDisplayOutput,
+  type DockDisplayChoice,
+} from "../dockDisplayOutput";
+import { useDockDisplays } from "../useDockDisplays";
+import DockDisplayList from "./DockDisplayList";
 
 interface Props {
   module: DockSceneRouteModule;
@@ -60,36 +71,16 @@ function DockSceneRoutingControlInner({
   const [popoverPosition, setPopoverPosition] = useState<{ top: number; left: number } | null>(null);
 
   const targets = route.targets ?? [];
-  const targetCount = targets.length;
-  const isMulti = targetCount > 1;
-  const primarySceneName = targets[0]?.sceneName ?? "";
-  const hasActiveRoute = Boolean(route.enabled && targetCount > 0);
-  const targetSummary = targets.map((t) => t.sceneName).filter(Boolean).join(", ");
-  const badgeText = targetCount === 0 ? "" : targetCount === 1 ? primarySceneName : `${targetCount} Scenes`;
-
-  const confirmTitle = isMulti
-    ? t("sceneRouting.sendToConfirmTitleMulti", "Send to {{count}} target scenes?", { count: targetCount })
-    : t("sceneRouting.sendToConfirmTitleSingle", "Send to {{scene}}?", { scene: primarySceneName });
-
-  const confirmDesc = isMulti
-    ? (itemLabel
-      ? t("sceneRouting.sendToConfirmDescMultiCustom", "Your {{item}} is currently set to project to {{count}} scenes:", { item: itemLabel, count: targetCount })
-      : t("sceneRouting.sendToConfirmDescMulti", "Currently set to project to {{count}} scenes:", { count: targetCount }))
-    : (itemLabel
-      ? t("sceneRouting.sendToConfirmDescSingleCustom", "Your {{item}} is currently set to project to {{scene}}.", { item: itemLabel, scene: primarySceneName })
-      : t("sceneRouting.sendToConfirmDescSingleContent", "Currently set to project to {{scene}}.", { scene: primarySceneName }));
-
-  const sendToTargetLabel = isMulti
-    ? t("sceneRouting.sendToTargetOptionMulti", "Yes, send to all {{count}} scenes", { count: targetCount })
-    : t("sceneRouting.sendToTargetOptionSingle", "Yes, send to {{scene}}", { scene: primarySceneName });
-
-  const sendToTargetSub = isMulti
-    ? t("sceneRouting.sendToTargetSubMulti", "Projects to {{scenes}}", { scenes: targetSummary })
-    : t("sceneRouting.sendToTargetSubSingle", "Projects to {{scene}}", { scene: primarySceneName });
-
-  const sendToMceSub = isMulti
-    ? t("sceneRouting.sendToMceAloneSubMulti", "Turns off target scenes and sends to presentation")
-    : t("sceneRouting.sendToMceAloneSubSingle", "Turns off {{scene}} and sends to presentation", { scene: primarySceneName });
+  const supportsDisplay = supportsDockDisplayOutput(module);
+  const displayOn = supportsDisplay && Boolean(route.display?.enabled);
+  // Scenes or a display are on: the button opens "Output is on" instead of the settings.
+  const hasActiveRoute = isDockOutputRouted(route);
+  const routedNames = [
+    ...(route.enabled ? targets.map((target) => target.sceneName).filter(Boolean) : []),
+    ...(displayOn && route.display ? [route.display.monitorName || "Display"] : []),
+  ];
+  const targetSummary = routedNames.join(", ");
+  const badgeText = routedNames.length <= 1 ? (routedNames[0] ?? "") : `${routedNames.length} outputs`;
 
   const handleConfirmRouted = () => {
     setOpen(false);
@@ -98,8 +89,8 @@ function DockSceneRoutingControlInner({
 
   const handleSendToMceAlone = () => {
     setOpen(false);
-    onRouteChange({ enabled: false });
-    void Promise.allSettled(route.targets.map((t) => (
+    onRouteChange(presentationOnlyRoutePatch(route));
+    void Promise.allSettled((route.enabled ? route.targets : []).map((t) => (
       dockObsClient.clearSceneRouteSource(module, t.sceneName)
     )));
     if (onSend) void onSend({ bypassSceneRoute: true });
@@ -148,6 +139,9 @@ function DockSceneRoutingControlInner({
       void loadScenes();
     }
   }, [hasActiveRoute, loadScenes, open, showAdvancedSettings]);
+
+  const settingsVisible = open && (!hasActiveRoute || showAdvancedSettings);
+  const { displays, error: displayError } = useDockDisplays(settingsVisible && supportsDisplay && !disabled);
 
   useEffect(() => {
     if (!open) return;
@@ -294,6 +288,36 @@ function DockSceneRoutingControlInner({
     }
     setDraftRoute((current) => ({ ...current, enabled }));
   };
+  const draftDisplay = draftRoute.display ?? DEFAULT_DOCK_DISPLAY_OUTPUT;
+  const connectedDisplays = displays ?? [];
+  const externalDisplays = connectedDisplays.filter((display) => !display.isComputerScreen);
+  const savedResolution = resolveDockDisplayTarget({ ...draftDisplay, enabled: Boolean(draftDisplay.monitorKey) }, connectedDisplays);
+  const selectedDisplayKey = savedResolution.status === "ready" ? savedResolution.display.key : draftDisplay.monitorKey;
+  const savedDisplayMissing = Boolean(draftDisplay.monitorKey) && displays !== null && savedResolution.status !== "ready";
+  const onlyComputerScreen = displays !== null && externalDisplays.length === 0;
+  const handleDisplayEnabledChange = (enabled: boolean) => {
+    setDraftRoute((current) => {
+      const display = current.display ?? DEFAULT_DOCK_DISPLAY_OUTPUT;
+      if (!enabled) return { ...current, display: { ...display, enabled: false } };
+      const keep = savedResolution.status === "ready" ? savedResolution.display : null;
+      const pick = keep ?? externalDisplays[0];
+      if (!pick) return current;
+      return { ...current, display: { ...display, enabled: true, monitorKey: pick.key, monitorName: pick.name } };
+    });
+  };
+  const handleDisplayModeChange = (mode: DockSceneOutputMode) => {
+    setDraftRoute((current) => ({
+      ...current,
+      display: { ...(current.display ?? DEFAULT_DOCK_DISPLAY_OUTPUT), mode },
+    }));
+  };
+  const handleDisplayPick = (display: DockDisplayChoice) => {
+    if (display.isComputerScreen) return;
+    setDraftRoute((current) => ({
+      ...current,
+      display: { ...(current.display ?? DEFAULT_DOCK_DISPLAY_OUTPUT), enabled: true, monitorKey: display.key, monitorName: display.name },
+    }));
+  };
   const handleSave = () => {
     onRouteChange(draftRoute);
     setOpen(false);
@@ -302,18 +326,21 @@ function DockSceneRoutingControlInner({
     setDraftRoute(route);
     setOpen(false);
   };
-  const summary = route.enabled && route.targets.length > 0
+  const sceneSummary = route.enabled && route.targets.length > 0
     ? route.targets.length === 1
       ? `${t("sceneRouting.to", "To")} ${route.targets[0].sceneName}`
       : `${t("sceneRouting.to", "To")} ${route.targets.length} ${t("sceneRouting.scenes", "scenes")}`
     : t("sceneRouting.presentation", "MCE Presentation");
+  const summary = displayOn && route.display
+    ? `${sceneSummary} + ${route.display.monitorName || t("sceneRouting.display", "display")}`
+    : sceneSummary;
 
   return (
     <div ref={controlRef} style={{ position: "relative", display: "inline-flex", width: showLabel ? "100%" : undefined }}>
       <button
         type="button"
         ref={triggerRef}
-        className={`dock-btm-toolbar__icon-btn${route.enabled ? " dock-btm-toolbar__icon-btn--active" : ""}${showLabel ? " dock-scene-routing-control__trigger--labelled" : ""}${hasActiveRoute ? " dock-scene-route-send-btn--routed" : ""}`}
+        className={`dock-btm-toolbar__icon-btn${route.enabled || displayOn ? " dock-btm-toolbar__icon-btn--active" : ""}${showLabel ? " dock-scene-routing-control__trigger--labelled" : ""}${hasActiveRoute ? " dock-scene-route-send-btn--routed" : ""}`}
         onClick={() => {
           setShowAdvancedSettings(false);
           setOpen((value) => !value);
@@ -358,7 +385,7 @@ function DockSceneRoutingControlInner({
             boxSizing: "border-box",
             padding: 12,
             border: "1px solid var(--dock-border)",
-            borderRadius: 10,
+            borderRadius: 6,
             background: "var(--dock-surface)",
             boxShadow: "0 12px 32px rgba(0, 0, 0, 0.45)",
             color: "var(--dock-text)",
@@ -366,92 +393,16 @@ function DockSceneRoutingControlInner({
           }}
         >
           {hasActiveRoute && !showAdvancedSettings ? (
-            <div className="dock-scene-route-send-menu">
-              {/* Header */}
-              <div className="dock-scene-route-send-menu__head">
-                <div className="dock-scene-route-send-menu__badge-row">
-                  <div className="dock-scene-route-send-menu__title">
-                    {confirmTitle}
-                  </div>
-                  <button
-                    type="button"
-                    className="dock-btn dock-btn--ghost dock-btn--compact dock-scene-route-send-menu__close"
-                    onClick={() => setOpen(false)}
-                    title={t("common.close", "Close")}
-                    aria-label={t("common.close", "Close")}
-                  >
-                    <Icon name="close" size={14} />
-                  </button>
-                </div>
-                <div className="dock-scene-route-send-menu__desc">
-                  {confirmDesc}
-                </div>
-                {isMulti && (
-                  <div className="dock-scene-route-send-menu__scenes-list">
-                    {targets.map((t) => (
-                      <span key={t.sceneName} className="dock-scene-route-send-menu__scene-tag">
-                        <Icon name="check" size={11} /> {t.sceneName}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Option 1: Yes, send to target scene(s) */}
-              <button
-                type="button"
-                className="dock-btn dock-scene-route-send-menu__action-btn dock-scene-route-send-menu__action-btn--routed"
-                onClick={handleConfirmRouted}
-                title={sendToTargetLabel}
-              >
-                <div className="dock-scene-route-send-menu__btn-main">
-                  <Icon name="play_arrow" size={14} />
-                  <span>{sendToTargetLabel}</span>
-                </div>
-                <div className="dock-scene-route-send-menu__btn-sub">
-                  {sendToTargetSub}
-                </div>
-              </button>
-
-              {/* Option 2: No, send to MCE Presentation alone */}
-              <button
-                type="button"
-                className="dock-btn dock-scene-route-send-menu__action-btn dock-scene-route-send-menu__action-btn--disable"
-                onClick={handleSendToMceAlone}
-                title={t("sceneRouting.sendToMceAlone", "No, send to MCE Presentation alone")}
-              >
-                <div className="dock-scene-route-send-menu__btn-main">
-                  <Icon name="desktop_windows" size={15} />
-                  <span>{t("sceneRouting.sendToMceAlone", "No, send to MCE Presentation alone")}</span>
-                </div>
-                <div className="dock-scene-route-send-menu__btn-sub">
-                  {sendToMceSub}
-                </div>
-              </button>
-
-              {/* Option 3: Configure target scenes */}
-              <button
-                type="button"
-                className="dock-btn dock-btn--ghost dock-btn--compact"
-                style={{ justifyContent: "flex-start", padding: "6px 8px", fontSize: 11.5, color: "var(--dock-text-dim)" }}
-                onClick={handleOpenAdvanced}
-              >
-                <Icon name="settings" size={13} />
-                <span>{t("sceneRouting.configureTargets", "Configure target scenes & settings...")}</span>
-              </button>
-
-              {/* Footer */}
-              <div className="dock-scene-route-send-menu__footer">
-                <button
-                  type="button"
-                  className="dock-btn dock-btn--ghost dock-btn--compact"
-                  style={{ fontSize: 11, color: "var(--dock-text-dim)" }}
-                  onClick={() => setOpen(false)}
-                >
-                  {t("common.cancel", "Cancel")}
-                </button>
-              </div>
-            </div>
+            <DockRoutedOutputMenu
+              route={route}
+              variant="menu"
+              itemLabel={itemLabel}
+              showFormats={module === "bible" || module === "worship" || module === "notes"}
+              onSend={onSend ? handleConfirmRouted : undefined}
+              onPresentationOnly={handleSendToMceAlone}
+              onConfigure={handleOpenAdvanced}
+              onClose={() => setOpen(false)}
+            />
           ) : (
             <div className="dock-scene-routing-popover">
               {hasActiveRoute && (
@@ -543,6 +494,48 @@ function DockSceneRoutingControlInner({
                     : t("sceneRouting.targetScenesSimpleHint", "Select one or more scenes for this output.")}
                 </small>
               </div>
+
+              {supportsDisplay && (
+                <div className="dock-scene-routing-control__display">
+                  <label
+                    className={`dock-scene-routing-control__toggle${draftDisplay.enabled ? " is-on" : ""}${onlyComputerScreen && !draftDisplay.enabled ? " is-disabled" : ""}`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="dock-scene-routing-control__check"
+                      checked={draftDisplay.enabled}
+                      disabled={!draftDisplay.enabled && (displays === null || onlyComputerScreen)}
+                      onChange={(event) => handleDisplayEnabledChange(event.target.checked)}
+                    />
+                    <span className="dock-scene-routing-control__toggle-copy">
+                      <span className="dock-scene-routing-control__label">{t("sceneRouting.sendToDisplay", "Send to a display")}</span>
+                      <small>{t("sceneRouting.sendToDisplayHint", "Show it full screen on a projector or TV plugged into this computer.")}</small>
+                    </span>
+                  </label>
+                  <DockDisplayList
+                    displays={displays}
+                    error={displayError}
+                    selectedKey={draftDisplay.enabled ? selectedDisplayKey : ""}
+                    name={`dock-display-${module}`}
+                    onPick={handleDisplayPick}
+                    missingName={savedDisplayMissing ? (draftDisplay.monitorName || t("sceneRouting.savedDisplay", "Saved display")) : undefined}
+                    selectedExtra={(display) => (
+                      <select
+                        className="dock-scene-routing-control__mode-select"
+                        value={draftDisplay.mode}
+                        aria-label={`${display.name} ${t("sceneRouting.outputFormat", "output format")}`}
+                        onClick={(event) => event.stopPropagation()}
+                        onChange={(event) => handleDisplayModeChange(event.target.value as DockSceneOutputMode)}
+                      >
+                        {formatOptions.map((option) => (
+                          <option key={option.value} value={option.value}>{option.label}</option>
+                        ))}
+                      </select>
+                    )}
+                    hint={t("sceneRouting.displayHint", "Works alongside the scenes above. One projector per display.")}
+                  />
+                </div>
+              )}
 
               <label className="dock-scene-routing-control__sync">
                 <input

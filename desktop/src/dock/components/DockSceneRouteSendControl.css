@@ -42,131 +42,146 @@
 }
 
 /* Popover menu anchored to the button */
-.dock-scene-route-send-menu {
+/* "Output is on": where this tab's content goes, and what the operator can do about it.
+   Used by the Output button, the routed Send button and the first-send confirm dialog. */
+.dock-routed-output {
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: 8px;
+  min-width: 0;
   font-size: 12px;
   line-height: 1.4;
-  color: var(--dock-text, #f8fafc);
+  color: var(--dock-text);
 }
 
-.dock-scene-route-send-menu__head {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--dock-border, #334155);
-}
-
-.dock-scene-route-send-menu__badge-row {
+.dock-routed-output__head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
+  gap: 8px;
 }
 
-.dock-scene-route-send-menu__close {
+.dock-routed-output__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--dock-text);
+}
+
+/* Small "on air" marker so the operator sees routing is active at a glance. */
+.dock-routed-output__dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  /* App token: this menu is portalled outside .dock-root, where the --dock-* status colours live. */
+  background: var(--warning);
+}
+
+.dock-routed-output__head .dock-routed-output__close {
   flex: none;
   width: 24px;
   min-height: 24px;
   padding: 0;
-  color: var(--dock-text-dim, #94a3b8);
+  color: var(--dock-text-dim);
 }
 
-.dock-scene-route-send-menu__close:hover {
-  color: var(--dock-text, #f8fafc);
+.dock-routed-output__close:hover {
+  color: var(--dock-text);
 }
 
-.dock-scene-route-send-menu__title {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--dock-text, #f8fafc);
-  margin: 0;
-  line-height: 1.3;
+.dock-routed-output__lead {
+  color: var(--dock-text-dim);
+  font-size: 11px;
 }
 
-.dock-scene-route-send-menu__desc {
-  font-size: 11.5px;
-  color: var(--dock-text-dim, #94a3b8);
-  line-height: 1.35;
-}
-
-.dock-scene-route-send-menu__scenes-list {
+.dock-routed-output__list {
   display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  margin-top: 4px;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--dock-border);
+  border-radius: 4px;
+  background: var(--dock-surface-alt);
 }
 
-.dock-scene-route-send-menu__scene-tag {
+.dock-routed-output__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 32px;
+  padding: 4px 10px;
+  border-bottom: 1px solid var(--dock-border);
+}
+
+.dock-routed-output__row:last-child {
+  border-bottom: none;
+}
+
+.dock-routed-output__row-icon {
+  flex: none;
+  color: var(--dock-text-dim);
+}
+
+.dock-routed-output__row-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dock-routed-output__row-detail {
+  flex: none;
+  color: var(--dock-text-dim);
+  font-size: 11px;
+}
+
+.dock-routed-output__note {
+  color: var(--dock-text-dim);
+  font-size: 11px;
+}
+
+.dock-routed-output .dock-routed-output__send {
+  flex: none;
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: rgba(245, 158, 11, 0.15);
-  border: 1px solid rgba(245, 158, 11, 0.35);
-  color: #fef08a;
-  font-size: 10.5px;
-  font-weight: 700;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  height: 34px;
 }
 
-.dock-scene-route-send-menu__action-btn {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: flex-start !important;
-  text-align: left !important;
-  width: 100% !important;
-  padding: 9px 12px !important;
-  border-radius: 8px !important;
-  cursor: pointer;
-  border: 1px solid var(--dock-border, #334155);
-  background: var(--dock-surface-alt, #1f2937);
-  gap: 3px;
-  transition: all 0.15s ease;
-  min-height: unset !important;
+.dock-routed-output__send span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.dock-scene-route-send-menu__action-btn--routed {
-  border-color: var(--dock-border, #334155);
+.dock-routed-output__actions {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  gap: 8px;
 }
 
-.dock-scene-route-send-menu__action-btn--routed:hover {
-  border-color: var(--dock-accent, #2563eb);
-  background: color-mix(in srgb, var(--dock-surface-alt, #1f2937) 80%, var(--dock-accent, #2563eb) 20%);
-}
-
-.dock-scene-route-send-menu__action-btn--disable {
-  border-color: rgba(37, 99, 235, 0.4);
-  background: rgba(37, 99, 235, 0.12);
-}
-
-.dock-scene-route-send-menu__action-btn--disable:hover {
-  border-color: var(--dock-accent, #2563eb);
-  background: rgba(37, 99, 235, 0.22);
-}
-
-.dock-scene-route-send-menu__btn-main {
-  display: flex;
+.dock-routed-output__actions .dock-btn {
+  display: inline-flex;
   align-items: center;
-  gap: 7px;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: var(--dock-text, #f8fafc);
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
 }
 
-.dock-scene-route-send-menu__btn-sub {
-  font-size: 11px;
-  color: var(--dock-text-dim, #94a3b8);
-  padding-left: 21px;
-  line-height: 1.35;
-  font-weight: normal;
-}
-
-.dock-scene-route-send-menu__footer {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  padding-top: 2px;
+.dock-routed-output__actions .dock-btn span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

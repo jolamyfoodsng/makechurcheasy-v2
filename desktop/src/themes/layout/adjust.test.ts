@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyLayoutAdjust, isLayoutAdjustDefault, layoutVerseStyle, pickLayoutAdjust, readLayoutAdjust, readLayoutBackdrop, resolveBackdropMediaUrl } from "./adjust";
+import { applyLayoutAdjust, isLayoutAdjustDefault, layoutHeadingAlignOf, layoutVerseStyle, pickLayoutAdjust, readLayoutAdjust, readLayoutBackdrop, resolveBackdropMediaUrl } from "./adjust";
 import type { LayerAnimation, ThemeLayout } from "./types";
 
 // Every layer needs an "in" and an "out" animation; these tests don't care which.
@@ -303,5 +303,62 @@ describe("layout adjust: bold and italic", () => {
       layers: LT.layers.map((l) => (l.id === "verse" ? { ...l, style: { ...l.style, fontWeight: 800, italic: true } } : l)),
     };
     expect(layoutVerseStyle(heavy)).toEqual({ bold: true, italic: true });
+  });
+});
+
+describe("layout adjust: heading alignment", () => {
+  // Lyric box at x 120–1620; a hugged label tab sits on its left edge.
+  const TAB: ThemeLayout = {
+    version: 1,
+    format: "lower-third",
+    swap: "content",
+    layers: [
+      { id: "verse", name: "Verse", type: "text", content: "{text}", anchor: "top-left", x: 120, y: 820, w: 1500, h: 150, style: { fontSize: 44 }, ...anim },
+      { id: "label", name: "Label", type: "text", content: "{reference}", anchor: "bottom-left", x: 120, y: 810, w: 900, h: "auto", style: { hug: true, fill: "#1b1550", fontSize: 24, textTransform: "uppercase" }, ...anim },
+    ],
+  };
+  const label = (layout: ThemeLayout) => layout.layers.find((l) => l.id === "label")!;
+
+  it("reads where the theme puts the heading", () => {
+    expect(layoutHeadingAlignOf(TAB)).toBe("left");
+    expect(layoutHeadingAlignOf(LT)).toBe("left");
+  });
+
+  it("lines the heading up with the centre or right of the lyrics", () => {
+    const centre = label(applyLayoutAdjust(TAB, { layoutHeadingAlign: "center" }));
+    expect(centre).toMatchObject({ anchor: "bottom-center", x: 870, y: 810 });
+    expect(centre.style.align).toBe("center");
+    const right = label(applyLayoutAdjust(TAB, { layoutHeadingAlign: "right" }));
+    expect(right).toMatchObject({ anchor: "bottom-right", x: 1620 });
+    expect(right.style.align).toBe("right");
+    const left = label(applyLayoutAdjust(TAB, { layoutHeadingAlign: "left" }));
+    expect(left).toMatchObject({ anchor: "bottom-left", x: 120 });
+  });
+
+  it("leaves the lyrics where they are", () => {
+    const out = applyLayoutAdjust(TAB, { layoutHeadingAlign: "right" });
+    expect(out.layers.find((l) => l.id === "verse")).toEqual(TAB.layers[0]);
+  });
+
+  it("moves a heading made of several labels together", () => {
+    const two: ThemeLayout = {
+      ...TAB,
+      layers: [
+        TAB.layers[0],
+        { id: "a", name: "A", type: "text", heading: true, content: "{title}", anchor: "top-left", x: 120, y: 760, w: 300, h: "auto", style: { fontSize: 24 }, ...anim },
+        { id: "b", name: "B", type: "text", heading: true, content: "{subtitle}", anchor: "top-left", x: 440, y: 760, w: 200, h: "auto", style: { fontSize: 24 }, ...anim },
+      ],
+    };
+    const out = applyLayoutAdjust(two, { layoutHeadingAlign: "right" });
+    // The pair spans 120–640; its right edge moves to the lyrics' right edge (1620).
+    expect(out.layers.find((l) => l.id === "a")!.x).toBe(1100);
+    expect(out.layers.find((l) => l.id === "b")!.x).toBe(1420);
+  });
+
+  it("is stored with the other quick settings and counts as a change", () => {
+    expect(pickLayoutAdjust({ layoutHeadingAlign: "center", other: 1 })).toEqual({ layoutHeadingAlign: "center" });
+    expect(pickLayoutAdjust({ layoutHeadingAlign: "middle" })).toEqual({});
+    expect(isLayoutAdjustDefault({ layoutHeadingAlign: "right" })).toBe(false);
+    expect(applyLayoutAdjust(TAB, {})).toBe(TAB);
   });
 });

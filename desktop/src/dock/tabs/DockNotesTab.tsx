@@ -72,8 +72,10 @@ import {
 } from "../dockTranslation";
 import {
   DOCK_NOTES_KEY,
+  DOCK_NOTES_SAVED_AT_KEY,
   DOCK_NOTES_BROADCAST_CHANNEL,
   DOCK_NOTES_UPDATED_EVENT,
+  acceptIncomingDockNotes,
   appendTextToDockNotes,
   applyQuickSettingsToNotesTheme,
   getDockNotesThemeForMode,
@@ -89,7 +91,11 @@ import {
   type DockNotesOverlayMode,
 } from "../dockNotesStorage";
 import { getUserScopedKey } from "../../services/userScopedStorage";
-import { readNativeDockSetting, writeNativeDockSetting } from "../../services/localDockSettings";
+import {
+  readNativeDockSetting,
+  reloadNativeDockSettings,
+  writeNativeDockSetting,
+} from "../../services/localDockSettings";
 import {
   loadDockNotesAppendCommands,
   type DockNotesAppendCommand,
@@ -102,7 +108,8 @@ import {
 } from "../noteTextTools";
 import { paginateNoteSections, preserveNoteSections, splitNoteBodyIntoSections } from "../noteSlideParser";
 import { normalizeDockMultilineText } from "../textLineBreaks";
-import { useDockSceneRoute } from "../dockSceneRouting";
+import { presentationOnlyRoutePatch, useDockSceneRoute } from "../dockSceneRouting";
+import { useDockDisplayOutput } from "../useDockDisplayOutput";
 import {
   addNoteToActiveSchedule,
   addWholeNoteToActiveSchedule,
@@ -519,6 +526,7 @@ export default function DockNotesTab({
   const { t } = useTranslation();
   const presentationLinkMode = isPresentationLinkTarget(presentationOutputTarget);
   const [sceneRoute, updateSceneRoute] = useDockSceneRoute("notes");
+  const { sendToDisplay, clearDisplay } = useDockDisplayOutput("notes", sceneRoute, updateSceneRoute);
   const hasSceneRoute = sceneRoute.enabled && sceneRoute.targets.length > 0;
 
   const notesSceneRouteConfirmedRef = useRef(false);
@@ -541,6 +549,11 @@ export default function DockNotesTab({
     options?: DockOverlayFitOptions,
     pushOptions?: { bypassSceneRoute?: boolean },
   ) => {
+    // "Send to a display" runs beside OBS (with or without scene targets) and never holds it up.
+    sendToDisplay(data, {
+      fullscreen: liveFullscreenThemeSettingsRef.current,
+      lowerThird: liveLowerThirdThemeSettingsRef.current,
+    });
     if (!hasSceneRoute || pushOptions?.bypassSceneRoute) {
       return dockObsClient.pushNotesLyrics(data, options);
     }
@@ -560,9 +573,19 @@ export default function DockNotesTab({
     }));
     if (sceneRoute.syncPresentation) return dockObsClient.pushNotesLyrics(data, options);
     return null;
-  }, [hasSceneRoute, sceneRoute.targets, sceneRoute.syncPresentation]);
+  }, [hasSceneRoute, sceneRoute.targets, sceneRoute.syncPresentation, sendToDisplay]);
+
+  /** The lower-third fast path skips pushNotesToConfiguredOutput, so it feeds the display itself. */
+  const pushNotesLowerThirdFast = useCallback((data: DockTabContentPushData, fitOptions?: DockOverlayFitOptions) => {
+    sendToDisplay(data, {
+      fullscreen: liveFullscreenThemeSettingsRef.current,
+      lowerThird: liveLowerThirdThemeSettingsRef.current,
+    });
+    return dockObsClient.pushNotesOverlayFast(data, fitOptions);
+  }, [sendToDisplay]);
 
   const clearNotesFromConfiguredOutput = useCallback(async () => {
+    clearDisplay();
     if (!hasSceneRoute) {
       await dockObsClient.clearNotesLyrics();
       return;
@@ -571,7 +594,7 @@ export default function DockNotesTab({
       dockObsClient.clearSceneRouteSource("notes", target.sceneName)
     )));
     if (sceneRoute.syncPresentation) await dockObsClient.clearNotesLyrics();
-  }, [hasSceneRoute, sceneRoute.targets, sceneRoute.syncPresentation]);
+  }, [clearDisplay, hasSceneRoute, sceneRoute.targets, sceneRoute.syncPresentation]);
   const initialPrefsRef = useRef<DockNotesPreferences | null>(null);
   if (initialPrefsRef.current === null) {
     initialPrefsRef.current = loadDockNotesPreferences();
@@ -861,11 +884,12 @@ export default function DockNotesTab({
     }, 1500);
   }, []);
 
-  const refreshNotes = useCallback((incomingNotes?: DockNote[]) => {
-    const localNotes = loadDockNotes();
+  const refreshNotes = useCallback((incomingNotes?: DockNote[], incomingSavedAt?: number) => {
+    // Another window's copy can be older than this one (the app sends its own
+    // copy when the Dock opens), so merge it: the newest edit of each note wins.
     const next = Array.isArray(incomingNotes)
-      ? (incomingNotes.length > 0 || localNotes.length === 0 ? incomingNotes : localNotes)
-      : localNotes;
+      ? acceptIncomingDockNotes(incomingNotes, incomingSavedAt)
+      : loadDockNotes();
     setNotes(next);
     setSelectedNote((current) => {
       if (!current) return current;
@@ -931,15 +955,15 @@ export default function DockNotesTab({
       if (event.key === getUserScopedKey(DOCK_NOTES_KEY)) refreshNotes();
     };
     const handleNotesUpdated = (event: Event) => {
-      const detail = (event as CustomEvent<{ notes?: DockNote[] }>).detail;
-      refreshNotes(detail?.notes);
+      const detail = (event as CustomEvent<{ notes?: DockNote[]; savedAt?: number }>).detail;
+      refreshNotes(detail?.notes, detail?.savedAt);
     };
 
     let bc: BroadcastChannel | null = null;
     try {
       bc = new BroadcastChannel(DOCK_NOTES_BROADCAST_CHANNEL);
-      bc.onmessage = (event: MessageEvent<{ type?: string; notes?: DockNote[] }>) => {
-        if (event.data?.type === "notes-updated") refreshNotes(event.data.notes);
+      bc.onmessage = (event: MessageEvent<{ type?: string; notes?: DockNote[]; savedAt?: number }>) => {
+        if (event.data?.type === "notes-updated") refreshNotes(event.data.notes, event.data.savedAt);
       };
     } catch {
       bc = null;
@@ -955,7 +979,14 @@ export default function DockNotesTab({
   }, [refreshNotes]);
 
   useEffect(() => {
-    if (isActive) refreshNotes();
+    if (!isActive) return;
+    refreshNotes();
+    // The app may have saved notes since this Dock started; read the disk copy again.
+    let disposed = false;
+    void reloadNativeDockSettings([DOCK_NOTES_KEY, DOCK_NOTES_SAVED_AT_KEY])
+      .then(() => { if (!disposed) refreshNotes(); })
+      .catch(() => undefined);
+    return () => { disposed = true; };
   }, [isActive, refreshNotes]);
 
   useEffect(() => {
@@ -978,8 +1009,8 @@ export default function DockNotesTab({
   useEffect(() => {
     const unsubscribe = dockClient.onState((msg) => {
       if (msg.type !== "state:notes-updated") return;
-      const payload = msg.payload as { notes?: DockNote[] } | null;
-      refreshNotes(payload?.notes);
+      const payload = msg.payload as { notes?: DockNote[]; savedAt?: number } | null;
+      refreshNotes(payload?.notes, payload?.savedAt);
     });
     return unsubscribe;
   }, [refreshNotes]);
@@ -1334,7 +1365,7 @@ export default function DockNotesTab({
       const pushLive = () => (hasSceneRoute && !pushOptions?.bypassSceneRoute)
         ? pushNotesToConfiguredOutput(payload.obsData, fitOptions, pushOptions)
         : payload.obsData.overlayMode === "lower-third"
-        ? dockObsClient.pushNotesOverlayFast(payload.obsData, fitOptions)
+        ? pushNotesLowerThirdFast(payload.obsData, fitOptions)
         : pushNotesToConfiguredOutput(payload.obsData, fitOptions, pushOptions);
       if (fitOptions?.waitForFit) {
         return pushLive()
@@ -1639,14 +1670,14 @@ export default function DockNotesTab({
     if (!pendingNotesRouteConfirm) return;
     const { idx, quickSettingsOverride, fitOptions } = pendingNotesRouteConfirm;
     setPendingNotesRouteConfirm(null);
-    updateSceneRoute({ enabled: false });
+    updateSceneRoute(presentationOnlyRoutePatch(sceneRoute));
     if (sceneRoute.targets.length > 0) {
       await Promise.allSettled(sceneRoute.targets.map((t) => (
         dockObsClient.clearSceneRouteSource("notes", t.sceneName)
       )));
     }
     void pushNoteSlide(idx, quickSettingsOverride, fitOptions, { bypassSceneRoute: true });
-  }, [pendingNotesRouteConfirm, pushNoteSlide, sceneRoute.targets, updateSceneRoute]);
+  }, [pendingNotesRouteConfirm, pushNoteSlide, sceneRoute, updateSceneRoute]);
 
   const handleCancelNotesRouteConfirm = useCallback(() => {
     setPendingNotesRouteConfirm(null);

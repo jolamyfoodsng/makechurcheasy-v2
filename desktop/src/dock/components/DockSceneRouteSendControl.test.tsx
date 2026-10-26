@@ -67,7 +67,7 @@ describe("DockSceneRouteSendControl", () => {
       />
     );
 
-    expect(html).toContain("2 Scenes");
+    expect(html).toContain("2 outputs");
     expect(html).toContain('title="LIVESTREAM, BRB SCENE"');
     expect(html).toContain("dock-scene-route-send-btn--routed");
   });

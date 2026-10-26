@@ -8,6 +8,7 @@ import { parseVersionRule, type VersionRule } from "@/lib/userDeleteRules";
 const MAX_PER_REQUEST = 100;
 
 function describeRule(rule: VersionRule): string {
+  if ("any" in rule) return "any app version";
   if ("none" in rule) return "app version not recorded";
   if ("exact" in rule) return `app version ${rule.exact}`;
   return `app version older than ${rule.olderThan}`;
@@ -16,10 +17,10 @@ function describeRule(rule: VersionRule): string {
 /**
  * POST /api/admin/users/bulk-delete  (admin only)
  *
- * Body: { userIds: string[], rule: { olderThan } | { exact } | { none: true }, dryRun?: boolean, confirmCount?: number }
+ * Body: { userIds: string[], rule: { olderThan } | { exact } | { none: true } | { any: true }, dryRun?: boolean, confirmCount?: number }
  *
  * Every user is checked again here, whatever the admin page selected: admins, trials, paid plans, anyone with
- * billing records, and anyone who used the product in the last 30 days are skipped.
+ * billing records, and anyone who used the product or opened the app in the last 30 days are skipped.
  * dryRun (the default) deletes nothing and returns who would go and who would be skipped.
  * A real delete needs confirmCount equal to the number of users that would be deleted right now, so a
  * selection that changed since it was reviewed is refused instead of deleting something unexpected.

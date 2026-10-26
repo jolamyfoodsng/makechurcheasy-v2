@@ -35,6 +35,15 @@ fn main() {
             .compile("ndi_out_snapshot");
         println!("cargo:rerun-if-changed=ndi_out_snapshot.m");
 
+        // Studio projectors on a second screen: above other windows, no own Space (lib.rs present_studio_projector).
+        cc::Build::new()
+            .file("projector_window.m")
+            .flag("-fobjc-arc")
+            .flag("-isysroot")
+            .flag(&sdk_path)
+            .compile("projector_window");
+        println!("cargo:rerun-if-changed=projector_window.m");
+
         // Link Cocoa framework at the linker stage (cc only compiles, not links).
         println!("cargo:rustc-link-lib=framework=Cocoa");
         println!("cargo:rustc-link-lib=framework=WebKit");

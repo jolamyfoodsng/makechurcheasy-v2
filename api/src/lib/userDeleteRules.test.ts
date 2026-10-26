@@ -4,6 +4,7 @@ import {
   highestVersion,
   matchesVersionRule,
   parseVersionRule,
+  subscriptionCountsAsBilling,
   whyProtected,
   type DeletionCandidate,
 } from "./userDeleteRules";
@@ -101,5 +102,49 @@ describe("who is protected", () => {
 
   it("protects anyone who really used the product in the last 30 days", () => {
     expect(whyProtected(candidate({ lastUseAt: "2026-10-10T00:00:00Z" }), rule, "admin1", NOW)).toBe("Used the product in the last 30 days");
+  });
+});
+
+describe("subscriptionCountsAsBilling", () => {
+  it("does not count the ended free record a finished trial leaves behind", () => {
+    expect(subscriptionCountsAsBilling({ plan: "free", status: "cancelled" })).toBe(false);
+    expect(subscriptionCountsAsBilling({ plan: "free", status: "canceled" })).toBe(false);
+    expect(subscriptionCountsAsBilling({ plan: "free", status: "expired" })).toBe(false);
+    expect(subscriptionCountsAsBilling({ status: "cancelled" })).toBe(false);
+  });
+
+  it("counts paid plans and anything still active, whatever the plan", () => {
+    expect(subscriptionCountsAsBilling({ plan: "basic", status: "cancelled" })).toBe(true);
+    expect(subscriptionCountsAsBilling({ plan: "growth", status: "active" })).toBe(true);
+    expect(subscriptionCountsAsBilling({ plan: "free", status: "active" })).toBe(true);
+    expect(subscriptionCountsAsBilling({ plan: "free", status: "past_due" })).toBe(true);
+    expect(subscriptionCountsAsBilling({})).toBe(true);
+  });
+});
+
+describe("inactive-user rules", () => {
+  const NOW_MS = Date.parse("2026-10-25T00:00:00Z");
+
+  it("matches every version with the any rule", () => {
+    expect(parseVersionRule({ any: true })).toEqual({ any: true });
+    expect(matchesVersionRule([], { any: true })).toBe(true);
+    expect(matchesVersionRule(["3.24.0"], { any: true })).toBe(true);
+  });
+
+  it("protects anyone who opened the app in the last 30 days, even without real use", () => {
+    expect(whyProtected(candidate({ lastOpenedAt: "2026-10-20T00:00:00Z" }), { any: true }, "admin1", NOW_MS)).toBe(
+      "Opened the app in the last 30 days",
+    );
+  });
+
+  it("lets go of someone who neither opened nor used it for over a month", () => {
+    expect(
+      whyProtected(
+        candidate({ lastOpenedAt: "2026-09-01T00:00:00Z", lastUseAt: "2026-08-01T00:00:00Z" }),
+        { any: true },
+        "admin1",
+        NOW_MS,
+      ),
+    ).toBeNull();
   });
 });

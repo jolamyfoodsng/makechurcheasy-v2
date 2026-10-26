@@ -58,10 +58,13 @@ describe("DockSceneRouteConfirmDialog", () => {
       />
     );
 
-    expect(html).toContain("Send to BRB SCENE?");
-    expect(html).toContain("Yes, send to BRB SCENE");
-    expect(html).toContain("Projects to BRB SCENE");
-    expect(html).toContain("No, send to MCE Presentation alone");
+    // Every output it will reach, so the operator knows Output is on before sending.
+    expect(html).toContain("Send to these outputs?");
+    expect(html).toContain("Your scripture goes to:");
+    expect(html).toContain("BRB SCENE");
+    expect(html).toContain("MCE Presentation");
+    expect(html).toContain("Send to 2 outputs");
+    expect(html).toContain("Presentation only");
     expect(html).toContain("Cancel");
     expect(html.toLowerCase()).not.toContain("sanctuary");
   });
@@ -88,11 +91,12 @@ describe("DockSceneRouteConfirmDialog", () => {
       />
     );
 
-    expect(html).toContain("Send to 2 target scenes?");
-    expect(html).toContain("Yes, send to all 2 scenes");
+    expect(html).toContain("Send to these outputs?");
+    expect(html).toContain("Send to 3 outputs");
     expect(html).toContain("BRB SCENE");
     expect(html).toContain("OVERFLOW ROOM");
-    expect(html).toContain("No, send to MCE Presentation alone");
+    expect(html).toContain("Full screen");
+    expect(html).toContain("Presentation only");
     expect(html.toLowerCase()).not.toContain("sanctuary");
   });
 });

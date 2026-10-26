@@ -83,7 +83,7 @@ describe("DockSceneRoutingControl", () => {
 
     expect(html).toContain("dock-scene-route-send-btn--routed");
     expect(html).toContain("dock-scene-route-send-btn__route-badge");
-    expect(html).toContain("2 Scenes");
+    expect(html).toContain("2 outputs");
     expect(html.toLowerCase()).not.toContain("sanctuary");
   });
 });

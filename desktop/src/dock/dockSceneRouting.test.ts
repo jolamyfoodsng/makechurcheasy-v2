@@ -17,7 +17,13 @@ import presentationBridgeSource from "../services/presentationDockBridge.ts?raw"
 import worshipOverlaySource from "../../public/mce-worship-overlay.html?raw";
 import notesOverlaySource from "../../public/mce-note.html?raw";
 import lowerThirdOverlaySource from "../../public/lower-third-overlay.html?raw";
-import { getDockSceneRouteTargets, normalizeDockSceneRoute } from "./dockSceneRouting";
+import {
+  getDockOutputDestinations,
+  getDockSceneRouteTargets,
+  isDockOutputRouted,
+  normalizeDockSceneRoute,
+  presentationOnlyRoutePatch,
+} from "./dockSceneRouting";
 
 describe("dock scene routing", () => {
   it("gives every selected-scene overlay its own stable source name", () => {
@@ -46,6 +52,7 @@ describe("dock scene routing", () => {
       sceneName: "Camera",
       targets: [{ sceneName: "Camera", mode: "inherit" }],
       syncPresentation: false,
+      display: { enabled: false, monitorKey: "", monitorName: "", mode: "fullscreen" },
     });
 
     const route = normalizeDockSceneRoute({
@@ -422,5 +429,43 @@ describe("dock scene routing", () => {
     // A mode switch while the source is hidden snaps instead of cross-fading.
     expect(source).toContain("obsSourceVisibleChanged");
     expect(source).toContain("const snapToLayer = Boolean(activeMode) && (document.hidden || !_mceSourceVisible);");
+  });
+});
+
+describe("routed output summary", () => {
+  const base = normalizeDockSceneRoute({
+    enabled: true,
+    targets: [{ sceneName: "invite_your_friends", mode: "lower-third" }],
+    syncPresentation: false,
+    display: { enabled: true, monitorKey: "pj", monitorName: "EPSON PJ" },
+  });
+
+  it("lists every place a send reaches", () => {
+    expect(isDockOutputRouted(base)).toBe(true);
+    expect(getDockOutputDestinations(base)).toEqual([
+      { kind: "scene", name: "invite_your_friends", mode: "lower-third" },
+      { kind: "display", name: "EPSON PJ", mode: "fullscreen" },
+    ]);
+    expect(getDockOutputDestinations({ ...base, syncPresentation: true }).map((d) => d.kind))
+      .toEqual(["scene", "presentation", "display"]);
+  });
+
+  it("still sends to MCE Presentation when only a display is added", () => {
+    const displayOnly = { ...base, enabled: false };
+    expect(isDockOutputRouted(displayOnly)).toBe(true);
+    expect(getDockOutputDestinations(displayOnly).map((d) => d.kind)).toEqual(["presentation", "display"]);
+  });
+
+  it("is not routed when scenes and display are off", () => {
+    const off = normalizeDockSceneRoute({ enabled: false, targets: [{ sceneName: "BRB", mode: "inherit" }] });
+    expect(isDockOutputRouted(off)).toBe(false);
+    expect(getDockOutputDestinations(off)).toEqual([{ kind: "presentation", name: "MCE Presentation" }]);
+  });
+
+  it("MCE Presentation only turns off scenes and display but keeps the saved choices", () => {
+    const patched = normalizeDockSceneRoute({ ...base, ...presentationOnlyRoutePatch(base) });
+    expect(isDockOutputRouted(patched)).toBe(false);
+    expect(patched.targets).toEqual(base.targets);
+    expect(patched.display).toEqual({ enabled: false, monitorKey: "pj", monitorName: "EPSON PJ", mode: "fullscreen" });
   });
 });

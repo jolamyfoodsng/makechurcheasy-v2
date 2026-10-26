@@ -5,7 +5,8 @@
  * travel with the theme packet; applied by the overlay just before drawing.
  */
 import { hasTokens, isVerseTextPattern } from "./content";
-import { DESIGN_HEIGHT, DESIGN_WIDTH, type LayerAnimation, type ThemeLayer, type ThemeLayout } from "./types";
+import { headingLayers } from "./heading";
+import { DESIGN_HEIGHT, DESIGN_WIDTH, type LayerAnchor, type LayerAnimation, type ThemeLayer, type ThemeLayout } from "./types";
 
 export interface LayoutAdjustSettings {
   /** Verse / lyric / note text size, percent of the theme's own (100 = as designed). */
@@ -16,6 +17,8 @@ export interface LayoutAdjustSettings {
   layoutLineHeight?: number;
   /** Show or hide the theme's title (reference / label line). Missing = as the theme is set. */
   layoutShowTitle?: boolean;
+  /** Line the heading up with the left, centre or right of the text. Missing = where the theme puts it. */
+  layoutHeadingAlign?: LayoutHeadingAlign;
   /** Verse / lyric / note text: bold on or off. Missing = as the theme is designed. */
   layoutBold?: boolean;
   /** Verse / lyric / note text: italic on or off. Missing = as the theme is designed. */
@@ -25,6 +28,9 @@ export interface LayoutAdjustSettings {
   /** Full screen: darken the background, percent (0 = as designed). */
   layoutBackdropDarkness?: number;
 }
+
+export type LayoutHeadingAlign = "left" | "center" | "right";
+export const LAYOUT_HEADING_ALIGNS: readonly LayoutHeadingAlign[] = ["left", "center", "right"];
 
 /** Weight used when the operator turns Bold on / off for a theme's verse text. */
 export const LAYOUT_BOLD_WEIGHT = 700;
@@ -45,7 +51,7 @@ function num(value: unknown): number | undefined {
 }
 
 /** Reads the adjust fields from theme settings / quick settings (missing = as designed). */
-export function readLayoutAdjust(source: unknown): Required<Omit<LayoutAdjustSettings, "layoutBackdropDarkness" | "layoutShowTitle" | "layoutBold" | "layoutItalic">> {
+export function readLayoutAdjust(source: unknown): Required<Omit<LayoutAdjustSettings, "layoutBackdropDarkness" | "layoutShowTitle" | "layoutHeadingAlign" | "layoutBold" | "layoutItalic">> {
   const s = (source && typeof source === "object" ? source : {}) as Record<string, unknown>;
   return {
     layoutTextScale: clamp(num(s.layoutTextScale) ?? 100, LAYOUT_SCALE_MIN, LAYOUT_SCALE_MAX),
@@ -59,6 +65,23 @@ export function readLayoutAdjust(source: unknown): Required<Omit<LayoutAdjustSet
 export function readLayoutShowTitle(source: unknown): boolean | undefined {
   const s = (source && typeof source === "object" ? source : {}) as Record<string, unknown>;
   return typeof s.layoutShowTitle === "boolean" ? s.layoutShowTitle : undefined;
+}
+
+/** The Dock's heading alignment: left / center / right when the operator chose, undefined = as the theme is designed. */
+export function readLayoutHeadingAlign(source: unknown): LayoutHeadingAlign | undefined {
+  const s = (source && typeof source === "object" ? source : {}) as Record<string, unknown>;
+  return LAYOUT_HEADING_ALIGNS.includes(s.layoutHeadingAlign as LayoutHeadingAlign) ? (s.layoutHeadingAlign as LayoutHeadingAlign) : undefined;
+}
+
+/** Where the theme itself puts its heading (what the alignment buttons show before anything is chosen). */
+export function layoutHeadingAlignOf(layout: ThemeLayout | undefined | null): LayoutHeadingAlign {
+  if (!layout) return "left";
+  const ids = headingLayers(layout).text;
+  const label = layout.layers.find((layer) => ids.has(layer.id));
+  if (!label) return "left";
+  // A label that hugs its words sits where its anchor puts it; a full-width one by its text alignment.
+  if (label.style?.hug) return anchorColumn(label.anchor);
+  return label.style?.align ?? "left";
 }
 
 /** The Dock's Bold / Italic buttons: true / false when the operator chose, undefined = as the theme is designed. */
@@ -87,6 +110,8 @@ export function pickLayoutAdjust(source: unknown): LayoutAdjustSettings {
   if (num(s.layoutRefScale) !== undefined) out.layoutRefScale = num(s.layoutRefScale);
   if (num(s.layoutLineHeight) !== undefined) out.layoutLineHeight = num(s.layoutLineHeight);
   if (typeof s.layoutShowTitle === "boolean") out.layoutShowTitle = s.layoutShowTitle;
+  const headingAlign = readLayoutHeadingAlign(s);
+  if (headingAlign) out.layoutHeadingAlign = headingAlign;
   if (typeof s.layoutBold === "boolean") out.layoutBold = s.layoutBold;
   if (typeof s.layoutItalic === "boolean") out.layoutItalic = s.layoutItalic;
   if (num(s.layoutOffsetY) !== undefined) out.layoutOffsetY = num(s.layoutOffsetY);
@@ -101,6 +126,7 @@ export function isLayoutAdjustDefault(adjust: LayoutAdjustSettings): boolean {
     && a.layoutLineHeight === 100
     && a.layoutOffsetY === 0
     && readLayoutShowTitle(adjust) === undefined
+    && readLayoutHeadingAlign(adjust) === undefined
     && readLayoutTextStyle(adjust).bold === undefined
     && readLayoutTextStyle(adjust).italic === undefined;
 }
@@ -394,6 +420,61 @@ function growVerseBoxes(layers: ThemeLayer[], factor: number): ThemeLayer[] {
   });
 }
 
+// ───────────────────────────── heading alignment ─────────────────────────────
+
+function anchorColumn(anchor: LayerAnchor | undefined): LayoutHeadingAlign {
+  const x = ANCHOR_SHIFT_X[anchor ?? "top-left"] ?? 0;
+  return x === 0 ? "left" : x === -1 ? "right" : "center";
+}
+
+/** The same anchor row (top / middle / bottom) with another column. */
+function anchorWithColumn(anchor: LayerAnchor | undefined, column: LayoutHeadingAlign): LayerAnchor {
+  const a = anchor ?? "top-left";
+  const row = a.startsWith("top") ? "top" : a.startsWith("bottom") ? "bottom" : "middle";
+  if (row === "middle") return (column === "center" ? "center" : `middle-${column}`) as LayerAnchor;
+  return `${row}-${column}` as LayerAnchor;
+}
+
+/**
+ * Lines the heading up with the left edge, centre or right edge of the verse / lyric
+ * text (or, with no verse text, of the heading's own box). A single label moves on
+ * its own; a heading made of several labels moves together so they keep their spacing.
+ */
+function alignHeading(layers: ThemeLayer[], layout: ThemeLayout, align: LayoutHeadingAlign): ThemeLayer[] {
+  const heading = headingLayers({ ...layout, layers });
+  const ids = new Set([...heading.text, ...heading.decor]);
+  if (!heading.text.size) return layers;
+  const byId = new Map(layers.map((layer) => [layer.id, layer]));
+  // Children of a heading layer follow their parent.
+  const movers = layers.filter((layer) => ids.has(layer.id) && !(layer.parentId && ids.has(layer.parentId)));
+  const verse = layers.find((layer) => layer.type === "text" && isVerseTextPattern(layer.content) && !layer.hidden);
+  const span = verse ? absoluteRect(verse, byId) : null;
+  const pick = (left: number, right: number) => (align === "left" ? left : align === "right" ? right : (left + right) / 2);
+  const originLeft = (layer: ThemeLayer) => {
+    const parent = layer.parentId ? byId.get(layer.parentId) : undefined;
+    return parent ? absoluteRect(parent, byId).left : 0;
+  };
+  const texts = movers.filter((layer) => layer.type === "text");
+
+  if (texts.length > 1) {
+    const rects = movers.map((layer) => absoluteRect(layer, byId));
+    const left = Math.min(...rects.map((r) => r.left));
+    const right = Math.max(...rects.map((r) => r.right));
+    const dx = Math.round(pick(span?.left ?? left, span?.right ?? right) - pick(left, right));
+    if (!dx) return layers;
+    return layers.map((layer) => (movers.includes(layer) ? { ...layer, x: layer.x + dx } : layer));
+  }
+
+  return layers.map((layer) => {
+    if (!movers.includes(layer)) return layer;
+    const rect = absoluteRect(layer, byId);
+    const target = pick(span?.left ?? rect.left, span?.right ?? rect.right);
+    const next: ThemeLayer = { ...layer, anchor: anchorWithColumn(layer.anchor, align), x: Math.round(target - originLeft(layer)) };
+    if (layer.type === "text") next.style = { ...layer.style, align };
+    return next;
+  });
+}
+
 /** The layout with the operator's size / position / background changes applied (same object when none). */
 export function applyLayoutAdjust(layout: ThemeLayout, source: unknown): ThemeLayout {
   const a = readLayoutAdjust(source);
@@ -410,7 +491,8 @@ export function applyLayoutAdjust(layout: ThemeLayout, source: unknown): ThemeLa
   const titleChanged = nextShowHeading !== layout.showHeading;
   const textStyle = readLayoutTextStyle(source);
   const styleChanged = textStyle.bold !== undefined || textStyle.italic !== undefined;
-  if (a.layoutTextScale === 100 && a.layoutRefScale === 100 && a.layoutLineHeight === 100 && offset === 0 && !backdropChanged && !ltOff && !ltFill && !titleChanged && !styleChanged) return layout;
+  const headingAlign = readLayoutHeadingAlign(source);
+  if (a.layoutTextScale === 100 && a.layoutRefScale === 100 && a.layoutLineHeight === 100 && offset === 0 && !backdropChanged && !ltOff && !ltFill && !titleChanged && !styleChanged && !headingAlign) return layout;
   const textK = a.layoutTextScale / 100;
   const refK = a.layoutRefScale / 100;
   const lineK = a.layoutLineHeight / 100;
@@ -441,7 +523,8 @@ export function applyLayoutAdjust(layout: ThemeLayout, source: unknown): ThemeLa
   });
   const stripped = ltOff ? stripLowerThirdBackground(layers) : ltFill && ltBackdrop ? applyLowerThirdBackdrop(layers, ltBackdrop) : layers;
   const grown = growVerseBoxes(stripped, textK * lineK);
-  const finalLayers = backdropChanged && backdrop ? applyBackdrop(grown, backdrop) : grown;
+  const aligned = headingAlign ? alignHeading(grown, layout, headingAlign) : grown;
+  const finalLayers = backdropChanged && backdrop ? applyBackdrop(aligned, backdrop) : aligned;
   const out: ThemeLayout = { ...layout, layers: finalLayers };
   if (titleChanged) {
     if (nextShowHeading === undefined) delete out.showHeading;

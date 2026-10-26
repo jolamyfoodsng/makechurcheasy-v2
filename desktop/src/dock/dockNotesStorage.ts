@@ -5,7 +5,11 @@ import type { DockFullscreenQuickThemeSettings } from "./components/DockFullscre
 import { normalizeCompareThemeSettings } from "./compareThemeConfig";
 import { loadDockFavoriteBibleThemes } from "./dockThemeData";
 import { getUserScopedKey } from "../services/userScopedStorage";
-import { readNativeDockSetting, writeNativeDockSetting } from "../services/localDockSettings";
+import {
+  isNativeDockSettingsHydrated,
+  readNativeDockSetting,
+  writeNativeDockSetting,
+} from "../services/localDockSettings";
 import { pickLayoutAdjust } from "../themes/layout/adjust";
 
 export type DockNotesOverlayMode = "fullscreen" | "lower-third";
@@ -50,6 +54,7 @@ export interface DockNotesPresentationSettings {
 }
 
 export const DOCK_NOTES_KEY = "ocs-dock-notes-v1";
+export const DOCK_NOTES_SAVED_AT_KEY = "ocs-dock-notes-v1-saved-at";
 export const DOCK_NOTES_PREFS_KEY = "ocs-dock-notes-preferences";
 export const DOCK_NOTES_UPDATED_EVENT = "mce-dock-notes-updated";
 export const DOCK_NOTES_BROADCAST_CHANNEL = "mce-dock-notes-storage";
@@ -106,12 +111,12 @@ function isDockNotesOverlayMode(value: unknown): value is DockNotesOverlayMode {
   return value === "fullscreen" || value === "lower-third";
 }
 
-function notifyDockNotesUpdated(notes: DockNote[]): void {
+function notifyDockNotesUpdated(notes: DockNote[], savedAt: number): void {
   if (typeof window === "undefined") return;
-  window.dispatchEvent(new CustomEvent(DOCK_NOTES_UPDATED_EVENT, { detail: { notes } }));
+  window.dispatchEvent(new CustomEvent(DOCK_NOTES_UPDATED_EVENT, { detail: { notes, savedAt } }));
   try {
     const bc = new BroadcastChannel(DOCK_NOTES_BROADCAST_CHANNEL);
-    bc.postMessage({ type: "notes-updated", notes });
+    bc.postMessage({ type: "notes-updated", notes, savedAt });
     bc.close();
   } catch {
     // BroadcastChannel is not available in every embedded browser context.
@@ -262,33 +267,144 @@ export function applyQuickSettingsToNotesTheme(
   };
 }
 
-export function loadDockNotes(): DockNote[] {
-  if (typeof localStorage === "undefined") return [];
-  const parsed = normalizeDockNotes(safeJsonParse<unknown>(readScopedStorage(DOCK_NOTES_KEY), []));
-  if (parsed.length > 0) return parsed;
+/** One copy of the notes list (browser storage, the on-disk copy, a message). */
+export interface DockNotesCopy {
+  notes: DockNote[];
+  /** When the whole list was last saved. Missing for older copies and files. */
+  savedAt?: number;
+}
 
-  // Browser storage in the OBS Dock is not durable (it can be reset or read
-  // under a different key while the app restarts after an update). The notes
-  // are also kept in the app's on-disk Dock settings, so recover from there.
-  const durable = normalizeDockNotes(readNativeDockSetting<unknown>(DOCK_NOTES_KEY));
-  if (durable.length > 0) {
-    try {
-      localStorage.setItem(getUserScopedKey(DOCK_NOTES_KEY), JSON.stringify(durable));
-    } catch {
-      // Ignore storage failures inside OBS/browser dock contexts.
+function copySavedAt(copy: DockNotesCopy): number {
+  if (typeof copy.savedAt === "number" && Number.isFinite(copy.savedAt)) return copy.savedAt;
+  // Older copies have no list timestamp: they are as new as their newest note.
+  return copy.notes.reduce((newest, note) => Math.max(newest, Number(note.updatedAt) || 0), 0);
+}
+
+/**
+ * Combine copies of the notes list so the newest edit always wins.
+ *
+ * The OBS Dock and the main window each keep their own browser copy, and the
+ * app keeps one on disk. An old copy used to replace a newer one whole, so
+ * yesterday's notes came back after a restart. Now the most recently saved
+ * list decides which notes exist (so deletions stick), a note edited later in
+ * another copy keeps that edit, and a note created in another copy after this
+ * list was saved is kept.
+ */
+export function mergeDockNotesCopies(copies: DockNotesCopy[]): DockNotesCopy {
+  const ranked = copies
+    .map((copy) => ({ notes: normalizeDockNotes(copy.notes), savedAt: copySavedAt(copy) }))
+    .sort((a, b) => b.savedAt - a.savedAt);
+  const [newest, ...older] = ranked;
+  if (!newest) return { notes: [], savedAt: 0 };
+
+  const byId = new Map(newest.notes.map((note) => [note.id, note]));
+  const added: DockNote[] = [];
+  for (const copy of older) {
+    for (const note of copy.notes) {
+      const current = byId.get(note.id);
+      if (current) {
+        if ((Number(note.updatedAt) || 0) > (Number(current.updatedAt) || 0)) byId.set(note.id, note);
+      } else if ((Number(note.updatedAt) || 0) > newest.savedAt) {
+        byId.set(note.id, note);
+        added.push(note);
+      }
     }
   }
-  return durable;
+
+  return {
+    notes: [...added, ...newest.notes.map((note) => byId.get(note.id) ?? note)],
+    savedAt: newest.savedAt,
+  };
+}
+
+function readSavedAt(raw: unknown): number | undefined {
+  const value = typeof raw === "string" ? Number(raw) : raw;
+  return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : undefined;
+}
+
+function readLocalNotesCopy(): DockNotesCopy {
+  return {
+    notes: normalizeDockNotes(safeJsonParse<unknown>(readScopedStorage(DOCK_NOTES_KEY), [])),
+    savedAt: readSavedAt(readScopedStorage(DOCK_NOTES_SAVED_AT_KEY)),
+  };
+}
+
+function readDurableNotesCopy(): DockNotesCopy | null {
+  const raw = readNativeDockSetting<unknown>(DOCK_NOTES_KEY);
+  if (raw === undefined) return null;
+  return {
+    notes: normalizeDockNotes(raw),
+    savedAt: readSavedAt(readNativeDockSetting<unknown>(DOCK_NOTES_SAVED_AT_KEY)),
+  };
+}
+
+function writeLocalNotesCopy(copy: DockNotesCopy): void {
+  localStorage.setItem(getUserScopedKey(DOCK_NOTES_KEY), JSON.stringify(copy.notes));
+  if (copy.savedAt) localStorage.setItem(getUserScopedKey(DOCK_NOTES_SAVED_AT_KEY), String(copy.savedAt));
+}
+
+function writeDurableNotesCopy(copy: DockNotesCopy): void {
+  // Durable copy on disk (SQLite via the desktop app) so notes survive updates.
+  void writeNativeDockSetting(DOCK_NOTES_KEY, copy.notes);
+  if (copy.savedAt) void writeNativeDockSetting(DOCK_NOTES_SAVED_AT_KEY, copy.savedAt);
+}
+
+function sameNotes(a: DockNote[], b: DockNote[]): boolean {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
+/**
+ * Merge `extra` copies with this window's own copy and the on-disk copy, and
+ * store the result in whichever of those was out of date.
+ */
+function loadMergedDockNotes(extra: DockNotesCopy[] = []): DockNotesCopy {
+  const local = readLocalNotesCopy();
+  const durable = readDurableNotesCopy();
+  const merged = mergeDockNotesCopies([local, ...(durable ? [durable] : []), ...extra]);
+
+  try {
+    if (!sameNotes(merged.notes, local.notes) || (merged.savedAt ?? 0) > (local.savedAt ?? 0)) {
+      writeLocalNotesCopy(merged);
+    }
+  } catch {
+    // Ignore storage failures inside OBS/browser dock contexts.
+  }
+  // Only correct the disk copy once it has been read; writing before then
+  // could replace newer notes this window has not seen yet.
+  const durableOutOfDate = durable ? !sameNotes(merged.notes, durable.notes) : merged.notes.length > 0;
+  if (durableOutOfDate && isNativeDockSettingsHydrated()) writeDurableNotesCopy(merged);
+  return merged;
+}
+
+export function loadDockNotes(): DockNote[] {
+  if (typeof localStorage === "undefined") return [];
+  return loadMergedDockNotes().notes;
+}
+
+/** When the notes list was last saved, for messages sent to other windows. */
+export function loadDockNotesSavedAt(): number | undefined {
+  if (typeof localStorage === "undefined") return undefined;
+  return readSavedAt(readScopedStorage(DOCK_NOTES_SAVED_AT_KEY));
+}
+
+/**
+ * Take notes sent from another window (the app, the Dock, a shared file) and
+ * keep whichever version of each note is newest. Returns the merged list.
+ */
+export function acceptIncomingDockNotes(notes: DockNote[], savedAt?: number): DockNote[] {
+  if (typeof localStorage === "undefined") return normalizeDockNotes(notes);
+  return loadMergedDockNotes([{ notes, savedAt }]).notes;
 }
 
 export function saveDockNotes(items: DockNote[], notify = true): void {
   if (typeof localStorage === "undefined") return;
-  // Durable copy on disk (SQLite via the desktop app) so notes survive updates.
-  void writeNativeDockSetting(DOCK_NOTES_KEY, items);
+  // Never stamp a save older than the copy it replaces (clock changes).
+  const savedAt = Math.max(Date.now(), (readSavedAt(readScopedStorage(DOCK_NOTES_SAVED_AT_KEY)) ?? 0) + 1);
+  writeDurableNotesCopy({ notes: items, savedAt });
   try {
-    localStorage.setItem(getUserScopedKey(DOCK_NOTES_KEY), JSON.stringify(items));
+    writeLocalNotesCopy({ notes: items, savedAt });
     if (notify) {
-      notifyDockNotesUpdated(items);
+      notifyDockNotesUpdated(items, savedAt);
       import("../services/cloudSyncService").then((m) => m.triggerDebouncedAutoSync()).catch(() => { });
     }
   } catch {

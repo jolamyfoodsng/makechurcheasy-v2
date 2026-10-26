@@ -61,6 +61,7 @@ import { addMediaToActiveSchedule } from "../dockScheduleService";
 import { getUserScopedKey } from "../../services/userScopedStorage";
 import { readNativeDockSetting, writeNativeDockSetting } from "../../services/localDockSettings";
 import { isUserSelectableObsScene } from "../../services/dockSceneNames";
+import DockMediaDisplayDialog from "../components/DockMediaDisplayDialog";
 import { useTranslation } from "react-i18next";
 import {
   clearPresentationScreen,
@@ -651,6 +652,15 @@ function canSendEntryToScene(entry: DockMediaEntry): boolean {
   return Boolean(entry.uploadFile || entry.libraryItem);
 }
 
+/** Pictures and videos can go to a display (the Studio projector); sound has nothing to show. */
+function canSendEntryToDisplay(entry: DockMediaEntry): boolean {
+  return (entry.kind === "image" || entry.kind === "video") && canSendEntryToScene(entry);
+}
+
+function displayMediaFromEntry(entry: DockMediaEntry): Pick<MediaItem, "type" | "name" | "url" | "diskFileName"> {
+  return entry.libraryItem ?? { type: entry.kind, name: entry.name, url: "", diskFileName: entry.uploadFile };
+}
+
 function createLibraryEntry(item: MediaItem, overlayBaseUrl: string, originLabel: string): DockMediaEntry {
   const prefKey = `media:${item.filePath || item.diskFileName || item.id}`;
   const isDocumentPage = item.source === "document-conversion" && item.documentPageNumber;
@@ -943,6 +953,7 @@ function DockMediaTab({
   const [savingDocumentControls, setSavingDocumentControls] = useState(false);
   const [sendingDocumentPage, setSendingDocumentPage] = useState<string | null>(null);
   const [sceneSendEntry, setSceneSendEntry] = useState<DockMediaEntry | null>(null);
+  const [displaySendEntry, setDisplaySendEntry] = useState<DockMediaEntry | null>(null);
   const [sceneSendChoices, setSceneSendChoices] = useState<string[]>([]);
   const [sceneSendSelection, setSceneSendSelection] = useState("");
   const [sceneSendLoading, setSceneSendLoading] = useState(false);
@@ -7040,6 +7051,18 @@ let _cachedGlobalUploadsDir: string | null = null;
         </div>
       )}
 
+      {!presentationLinkMode && displaySendEntry && (() => {
+        const sendOptions = getEntrySendOptions(displaySendEntry);
+        return (
+          <DockMediaDisplayDialog
+            name={getEntryPrefs(displaySendEntry).label?.trim() || displaySendEntry.name}
+            media={displayMediaFromEntry(displaySendEntry)}
+            options={{ fit: sendOptions.fitMode, muted: sendOptions.muted, loop: sendOptions.looping }}
+            onClose={() => setDisplaySendEntry(null)}
+          />
+        );
+      })()}
+
       {mediaContextMenu && (() => {
         const contextEntry = mediaContextMenu.entry;
         const contextPrefs = getEntryPrefs(contextEntry);
@@ -7162,6 +7185,20 @@ let _cachedGlobalUploadsDir: string | null = null;
               >
                 <Icon name="send" size={16} />
                 <span className="dock-media-context-menu__label">{t('media.sendToScene')}</span>
+              </button>
+            )}
+            {!presentationLinkMode && canSendEntryToDisplay(contextEntry) && (
+              <button
+                type="button"
+                role="menuitem"
+                className="dock-media-context-menu__item"
+                onClick={() => {
+                  setDisplaySendEntry(contextEntry);
+                  setMediaContextMenu(null);
+                }}
+              >
+                <Icon name="tv" size={16} />
+                <span className="dock-media-context-menu__label">{t('media.sendToDisplay', 'Send to a display')}</span>
               </button>
             )}
             <button

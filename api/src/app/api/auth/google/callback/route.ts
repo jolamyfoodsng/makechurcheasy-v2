@@ -436,8 +436,8 @@ export async function GET(req: NextRequest) {
 
     let destination = returnUrl;
     if (createdNewAccount && !referralApplied) {
-      // A new Google account must enter a referral code before it can use the dashboard (the flag is
-      // cleared when a code is applied, and the dashboard sends them back here until then).
+      // A new Google account is prompted for an optional referral code (the flag is cleared when a
+      // code is applied or the prompt is skipped, and the dashboard sends them here until then).
       try {
         await db.collection("users").updateOne({ _id: user._id }, { $set: { referralRequired: true } });
       } catch (err) {

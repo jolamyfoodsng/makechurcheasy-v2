@@ -2,11 +2,11 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertTriangle, CheckCircle2, Gift, Loader2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Gift, Loader2, SkipForward } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthShell } from "@/components/AuthLayout";
 import { useReferralCodeCheck } from "@/hooks/useReferralCodeCheck";
-import { applyReferralCode, getReferrals } from "@/lib/api";
+import { applyReferralCode, dismissReferralPrompt, getReferrals } from "@/lib/api";
 
 const PENDING_REFERRAL_CODE_KEY = "mce_pending_referral_code";
 
@@ -16,8 +16,8 @@ function normalizeReferralCode(value: string): string {
 
 /**
  * The page after "Continue with Google" for a brand-new account that arrived without a referral
- * code in the link. They must enter a valid one (checked right away, errors show under the field)
- * before they can go on. The dashboard sends them back here until it is applied.
+ * code in the link. A code is optional, same as email/password signup: entering one is checked
+ * right away (errors show under the field), but "Skip for now" moves on without one.
  */
 export default function SignupReferralPage() {
   return (
@@ -47,6 +47,7 @@ function ReferralStep() {
     linkCodeWasInvalid ? "The referral code from your link wasn't valid. Enter another one to continue." : "",
   );
   const [submitting, setSubmitting] = useState(false);
+  const [skipping, setSkipping] = useState(false);
   const [ready, setReady] = useState(false);
   const check = useReferralCodeCheck(code);
 
@@ -101,6 +102,17 @@ function ReferralStep() {
       setSubmitting(false);
       setServerError(err?.message || "Could not apply this referral code. Please try again.");
     }
+  }
+
+  async function handleSkip() {
+    if (submitting || skipping) return;
+    setSkipping(true);
+    try {
+      await dismissReferralPrompt();
+    } catch {
+      // Skipping is best-effort: still let them through even if the dismiss call fails.
+    }
+    leave();
   }
 
   if (authLoading || !mongoUser || !ready) {
@@ -182,6 +194,22 @@ function ReferralStep() {
           >
             {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
             {submitting ? "Applying…" : "Apply code and continue"}
+          </button>
+
+          <div className="flex items-center gap-3 py-1">
+            <div className="h-px flex-1 bg-slate-200" />
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">or</span>
+            <div className="h-px flex-1 bg-slate-200" />
+          </div>
+
+          <button
+            type="button"
+            onClick={handleSkip}
+            disabled={submitting || skipping}
+            className="h-12 rounded-xl border-2 border-slate-900 bg-white text-sm font-bold text-slate-900 transition-all hover:bg-slate-900 hover:text-white active:bg-slate-800 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+          >
+            {skipping ? <Loader2 className="w-4 h-4 animate-spin" /> : <SkipForward className="w-4 h-4" />}
+            {skipping ? "Skipping…" : "I don't have a code — skip this step"}
           </button>
         </form>
 

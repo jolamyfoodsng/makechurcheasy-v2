@@ -385,11 +385,12 @@ export async function dismissReferralPrompt(userId: string): Promise<string> {
   const now = new Date().toISOString();
   const client = await clientPromise;
   const db = client.db();
-  const flagged = await db.collection("users").findOne({ _id: userObjectId }, { projection: { referralRequired: 1 } });
-  if (flagged?.referralRequired) throw new Error("A referral code is required to continue");
   await db
     .collection("users")
-    .updateOne({ _id: userObjectId }, { $set: { referralPromptSkippedAt: now } });
+    .updateOne(
+      { _id: userObjectId },
+      { $set: { referralPromptSkippedAt: now }, $unset: { referralRequired: "" } },
+    );
   return now;
 }
 

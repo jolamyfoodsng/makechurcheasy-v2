@@ -182,6 +182,48 @@ async function sendWithSmtp(message: TransactionalEmailMessage): Promise<EmailDe
   }
 }
 
+export interface EmailProviderStatus {
+  providers: EmailProviderName[];
+  smtp: {
+    configured: boolean;
+    host: string | null;
+    port: number | null;
+    user: string | null;
+    from: string | null;
+    loginOk: boolean | null;
+    error: string | null;
+  };
+}
+
+/** Which providers are active and whether the SMTP login works — for the admin email status check. */
+export async function getEmailProviderStatus(): Promise<EmailProviderStatus> {
+  const env = process.env;
+  const configured = isSmtpConfigured(env);
+  let loginOk: boolean | null = null;
+  let error: string | null = null;
+  if (configured) {
+    try {
+      await getSmtpTransporter().verify();
+      loginOk = true;
+    } catch (err) {
+      loginOk = false;
+      error = err instanceof Error ? err.message : String(err);
+    }
+  }
+  return {
+    providers: getEmailProviderChain(env),
+    smtp: {
+      configured,
+      host: env.SMTP_HOST?.trim() || null,
+      port: env.SMTP_PORT ? parseInt(env.SMTP_PORT, 10) : null,
+      user: env.SMTP_USER?.trim() || null,
+      from: configured ? smtpSender({ email: "" }, env).email : null,
+      loginOk,
+      error,
+    },
+  };
+}
+
 async function sendWithProvider(
   provider: EmailProviderName,
   message: TransactionalEmailMessage,

@@ -7,6 +7,8 @@ import {
   listAppVersionsInUse,
   listBroadcastCampaigns,
   normalizeAppVersionFilters,
+  normalizeRecipientEmails,
+  SELECTED_USERS_AUDIENCE,
   previewBroadcastAudience,
   runBroadcastCampaign,
   type CreateBroadcastInput,
@@ -28,7 +30,7 @@ export async function GET(req: NextRequest) {
  * POST /api/admin/broadcast-emails
  *
  * Body: { subject, bodyText, ctaLabel?, ctaUrl?, audience, appVersions?: string[],
- *         discountCode?: string, scheduledFor?: ISO string | null, dryRun?: boolean, confirmCount?: number }
+ *         discountCode?: string, recipientEmails?: string[] (with audience "selected_users"), scheduledFor?: ISO string | null, dryRun?: boolean, confirmCount?: number }
  *
  * dryRun (the default) sends nothing: it previews who matches the audience right now.
  * A real send/schedule needs confirmCount equal to the live recipient count, so a
@@ -48,6 +50,7 @@ export async function POST(req: NextRequest) {
   const ctaUrl = typeof body.ctaUrl === "string" ? body.ctaUrl.trim() : "";
   const appVersions = normalizeAppVersionFilters(body.appVersions);
   const discountCode = normalizeDiscountCode(body.discountCode);
+  const recipientEmails = audience === SELECTED_USERS_AUDIENCE ? normalizeRecipientEmails(body.recipientEmails) : [];
   const scheduledFor = typeof body.scheduledFor === "string" && body.scheduledFor ? body.scheduledFor : null;
   const dryRun = body.dryRun !== false;
 
@@ -73,7 +76,7 @@ export async function POST(req: NextRequest) {
 
   let preview: Awaited<ReturnType<typeof previewBroadcastAudience>>;
   try {
-    preview = await previewBroadcastAudience({ audience, appVersions, discountCode: discountCode || null });
+    preview = await previewBroadcastAudience({ audience, appVersions, discountCode: discountCode || null, recipientEmails });
   } catch (err) {
     if (err instanceof BroadcastTargetError) return NextResponse.json({ error: err.message }, { status: 400 });
     throw err;
@@ -103,6 +106,7 @@ export async function POST(req: NextRequest) {
     audience,
     appVersions,
     discountCode: discountCode || null,
+    recipientEmails,
     scheduledFor,
   };
 

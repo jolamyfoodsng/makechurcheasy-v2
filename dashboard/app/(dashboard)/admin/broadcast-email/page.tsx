@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CheckCircle2, Clock4, Code2, Eye, FileText, Loader2, Mail, RefreshCw, Save, Send, Trash2, TriangleAlert, X } from "lucide-react";
+import { CheckCircle2, Clock4, Code2, Eye, FileText, Loader2, Mail, MousePointerClick, RefreshCw, Save, Send, Trash2, TriangleAlert, Users, X } from "lucide-react";
 
 type Audience =
   | "all_users"
@@ -18,9 +18,11 @@ type Audience =
   | "inactive_30d"
   | "active_7d"
   | "active_30d"
-  | "never_opened_app";
+  | "never_opened_app"
+  | "selected_users";
 
 const AUDIENCES: Array<{ value: Audience; label: string; hint: string }> = [
+  { value: "selected_users", label: "Specific people (e.g. a test to yourself)", hint: "Only the account emails you list below" },
   { value: "all_users", label: "Everyone", hint: "Every registered user" },
   { value: "free_users", label: "Free plan", hint: "Users on the free plan" },
   { value: "paid_users", label: "Paying subscribers", hint: "Active paid accounts" },
@@ -64,6 +66,10 @@ function majorVersions(versions: AppVersionInUse[]): AppVersionInUse[] {
     .sort((a, b) => Number(b.version) - Number(a.version));
 }
 
+function parseEmailList(value: string): string[] {
+  return [...new Set(value.split(/[\s,;]+/).map((v) => v.trim().toLowerCase()).filter(Boolean))];
+}
+
 function parseVersionList(value: string): string[] {
   return [...new Set(value.split(",").map((v) => v.trim().replace(/^v/i, "")).filter(Boolean))];
 }
@@ -91,6 +97,35 @@ interface Campaign {
   createdAt: string;
   sendCompletedAt: string | null;
   stats: { recipients: number; sent: number; failed: number; skippedOptOut: number; capped: boolean };
+  engagement?: { delivered: number; opened: number; clicked: number };
+  recipientEmails?: string[] | null;
+}
+
+type RecipientFilter = "all" | "opened" | "clicked" | "not_opened" | "failed";
+
+interface CampaignRecipient {
+  _id: string;
+  email: string;
+  status: "sent" | "failed";
+  error: string | null;
+  sentAt: string;
+  openedAt: string | null;
+  openCount: number;
+  clickedAt: string | null;
+  clickCount: number;
+  clicks: Array<{ url: string; at: string }>;
+}
+
+const RECIPIENT_FILTERS: Array<{ value: RecipientFilter; label: string }> = [
+  { value: "all", label: "Everyone" },
+  { value: "opened", label: "Opened" },
+  { value: "clicked", label: "Clicked" },
+  { value: "not_opened", label: "Not opened" },
+  { value: "failed", label: "Failed" },
+];
+
+function percent(part: number, whole: number) {
+  return whole > 0 ? `${Math.round((part / whole) * 100)}%` : "—";
 }
 
 type Toast = { type: "success" | "error"; message: string };
@@ -105,11 +140,18 @@ const defaultForm = {
   audience: "all_users" as Audience,
   appVersions: "",
   discountCode: "",
+  recipientEmails: "",
   scheduleMode: "send_now" as "send_now" | "schedule_later",
   scheduledFor: "",
 };
 
-type Preview = { recipientCount: number; skippedOptOut: number; capped: boolean };
+type Preview = {
+  recipientCount: number;
+  skippedOptOut: number;
+  capped: boolean;
+  notFound?: string[];
+  skippedIneligible?: number;
+};
 
 function formatDate(value?: string | null) {
   if (!value) return "—";
@@ -156,6 +198,32 @@ export default function AdminBroadcastEmailPage() {
   const [previewingEmail, setPreviewingEmail] = useState(false);
   const [appVersionsInUse, setAppVersionsInUse] = useState<AppVersionInUse[]>([]);
   const [discounts, setDiscounts] = useState<ActiveDiscount[]>([]);
+  const [openCampaign, setOpenCampaign] = useState<Campaign | null>(null);
+  const [recipientFilter, setRecipientFilter] = useState<RecipientFilter>("all");
+  const [recipients, setRecipients] = useState<CampaignRecipient[]>([]);
+  const [loadingRecipients, setLoadingRecipients] = useState(false);
+
+  useEffect(() => {
+    if (!openCampaign) return;
+    let cancelled = false;
+    setLoadingRecipients(true);
+    fetch(`/api/admin/broadcast-emails/${openCampaign._id}/recipients?filter=${recipientFilter}`, { credentials: "include" })
+      .then((res) => res.json().then((body) => ({ ok: res.ok, body })))
+      .then(({ ok, body }) => {
+        if (cancelled) return;
+        if (!ok) throw new Error(body.error || "Failed to load recipients");
+        setRecipients(body.recipients || []);
+      })
+      .catch((error) => {
+        if (!cancelled) setToast({ type: "error", message: error instanceof Error ? error.message : "Failed to load recipients" });
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingRecipients(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [openCampaign, recipientFilter]);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   function updateForm(patch: Partial<typeof form>) {
@@ -342,7 +410,8 @@ export default function AdminBroadcastEmailPage() {
       ctaLabel: form.ctaLabel.trim() || undefined,
       ctaUrl: form.discountCode ? undefined : form.ctaUrl.trim() || undefined,
       audience: form.audience,
-      appVersions: parseVersionList(form.appVersions),
+      appVersions: form.audience === "selected_users" ? [] : parseVersionList(form.appVersions),
+      recipientEmails: form.audience === "selected_users" ? parseEmailList(form.recipientEmails) : undefined,
       discountCode: form.discountCode || undefined,
       scheduledFor: form.scheduleMode === "schedule_later" && form.scheduledFor ? new Date(form.scheduledFor).toISOString() : null,
     };
@@ -365,7 +434,13 @@ export default function AdminBroadcastEmailPage() {
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error || "Failed to preview audience");
-      setPreview({ recipientCount: body.recipientCount, skippedOptOut: body.skippedOptOut, capped: body.capped });
+      setPreview({
+        recipientCount: body.recipientCount,
+        skippedOptOut: body.skippedOptOut,
+        capped: body.capped,
+        notFound: body.notFound,
+        skippedIneligible: body.skippedIneligible,
+      });
       setConfirming(true);
     } catch (error) {
       setToast({ type: "error", message: error instanceof Error ? error.message : "Failed to preview audience" });
@@ -403,7 +478,9 @@ export default function AdminBroadcastEmailPage() {
   }
 
   const audienceEntry = AUDIENCES.find((a) => a.value === form.audience);
-  const selectedVersions = parseVersionList(form.appVersions);
+  const isSelectedUsers = form.audience === "selected_users";
+  const selectedVersions = isSelectedUsers ? [] : parseVersionList(form.appVersions);
+  const selectedEmails = parseEmailList(form.recipientEmails);
   const selectedDiscount = discounts.find((d) => d.offerCode === form.discountCode);
   const versionFamilies = majorVersions(appVersionsInUse);
 
@@ -607,6 +684,21 @@ export default function AdminBroadcastEmailPage() {
             {audienceEntry ? <p className="adm-hint">{audienceEntry.hint}</p> : null}
           </div>
 
+          {isSelectedUsers ? (
+          <div>
+            <label className="adm-label" htmlFor="broadcast-recipients">Send to these accounts</label>
+            <textarea
+              id="broadcast-recipients"
+              className="adm-input w-full min-h-[80px]"
+              value={form.recipientEmails}
+              onChange={(e) => updateForm({ recipientEmails: e.target.value })}
+              placeholder={"you@yourchurch.org\nsomeone@example.com"}
+            />
+            <p className="adm-hint">
+              Account emails, one per line or separated by commas (up to 50). Use your own address to test the email, the discount link and the open/click tracking before sending to everyone.
+            </p>
+          </div>
+          ) : (
           <div>
             <label className="adm-label" htmlFor="broadcast-versions">Desktop app version (optional)</label>
             {versionFamilies.length ? (
@@ -641,6 +733,7 @@ export default function AdminBroadcastEmailPage() {
               Only people whose desktop app is on one of these versions. &ldquo;4&rdquo; matches every 4.x release. Leave blank for everyone in the audience.
             </p>
           </div>
+          )}
 
           <div className="adm-card p-4 space-y-3" style={{ background: "var(--mce-admin-bg)" }}>
             <div className="adm-seg flex-wrap" role="group" aria-label="When to send">
@@ -727,7 +820,11 @@ export default function AdminBroadcastEmailPage() {
                       <Clock4 className="h-3 w-3" />
                       {c.status === "scheduled" ? formatDate(c.scheduledFor) : formatDate(c.sendCompletedAt || c.createdAt)}
                     </span>
-                    <span>{AUDIENCES.find((a) => a.value === c.audience)?.label || c.audience}</span>
+                    <span>
+                      {c.audience === "selected_users"
+                        ? (c.recipientEmails || []).slice(0, 2).join(", ") + ((c.recipientEmails?.length || 0) > 2 ? ` +${(c.recipientEmails?.length || 0) - 2}` : "")
+                        : AUDIENCES.find((a) => a.value === c.audience)?.label || c.audience}
+                    </span>
                   </div>
                   <div className="mt-2.5 grid grid-cols-3 gap-2">
                     <div className="rounded-md px-2.5 py-1.5" style={{ background: "var(--mce-admin-surface-raised)" }}>
@@ -745,6 +842,31 @@ export default function AdminBroadcastEmailPage() {
                   </div>
                   {c.stats.skippedOptOut > 0 ? (
                     <p className="adm-hint mt-1.5">{c.stats.skippedOptOut} skipped (unsubscribed from marketing email)</p>
+                  ) : null}
+                  {c.status !== "scheduled" ? (
+                    <div className="mt-2.5 flex items-center justify-between gap-2">
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-[var(--mce-admin-text-muted)]">
+                        <span className="inline-flex items-center gap-1">
+                          <Eye className="h-3 w-3" />
+                          Opened <strong className="text-[var(--mce-admin-text)]">{c.engagement?.opened ?? 0}</strong> ({percent(c.engagement?.opened ?? 0, c.engagement?.delivered ?? c.stats.sent)})
+                        </span>
+                        <span className="inline-flex items-center gap-1">
+                          <MousePointerClick className="h-3 w-3" />
+                          Clicked <strong className="text-[var(--mce-admin-text)]">{c.engagement?.clicked ?? 0}</strong> ({percent(c.engagement?.clicked ?? 0, c.engagement?.delivered ?? c.stats.sent)})
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        className="adm-btn adm-btn--ghost !h-7 !px-2.5 !text-[12px]"
+                        onClick={() => {
+                          setRecipientFilter("all");
+                          setRecipients([]);
+                          setOpenCampaign(c);
+                        }}
+                      >
+                        <Users className="h-3.5 w-3.5" /> Who opened / clicked
+                      </button>
+                    </div>
                   ) : null}
                 </div>
               ))}
@@ -770,7 +892,10 @@ export default function AdminBroadcastEmailPage() {
 
             <div className="rounded-lg border p-3.5 space-y-1.5 text-[13px]" style={{ borderColor: "var(--mce-admin-border)" }}>
               <p><span className="text-[var(--mce-admin-text-muted)]">Subject:</span> <span className="text-[var(--mce-admin-text)] font-medium">{form.subject}</span></p>
-              <p><span className="text-[var(--mce-admin-text-muted)]">Audience:</span> <span className="text-[var(--mce-admin-text)] font-medium">{audienceEntry?.label}</span></p>
+              <p>
+                <span className="text-[var(--mce-admin-text-muted)]">Audience:</span>{" "}
+                <span className="text-[var(--mce-admin-text)] font-medium">{isSelectedUsers ? selectedEmails.join(", ") : audienceEntry?.label}</span>
+              </p>
               {selectedVersions.length ? (
                 <p><span className="text-[var(--mce-admin-text-muted)]">App versions:</span> <span className="text-[var(--mce-admin-text)] font-medium">{selectedVersions.join(", ")}</span></p>
               ) : null}
@@ -780,6 +905,12 @@ export default function AdminBroadcastEmailPage() {
               <p><span className="text-[var(--mce-admin-text-muted)]">Recipients right now:</span> <span className="text-[var(--mce-admin-text)] font-semibold">{preview.recipientCount.toLocaleString()}</span></p>
               {preview.skippedOptOut > 0 ? (
                 <p className="text-[var(--mce-admin-text-muted)]">{preview.skippedOptOut.toLocaleString()} more opted out of marketing email and will be skipped.</p>
+              ) : null}
+              {preview.notFound?.length ? (
+                <p className="text-[var(--mce-admin-warning)]">No account found for: {preview.notFound.join(", ")}</p>
+              ) : null}
+              {preview.skippedIneligible ? (
+                <p className="text-[var(--mce-admin-warning)]">{preview.skippedIneligible} skipped because the discount isn&apos;t available to them.</p>
               ) : null}
               {preview.capped ? (
                 <p className="text-[var(--mce-admin-warning)]">This audience is larger than the per-campaign cap — only the first batch will be sent.</p>
@@ -793,10 +924,91 @@ export default function AdminBroadcastEmailPage() {
               <button type="button" className="adm-btn adm-btn--ghost" onClick={() => setConfirming(false)} disabled={sending}>
                 Cancel
               </button>
-              <button type="button" className="adm-btn adm-btn--primary" onClick={() => void handleConfirmSend()} disabled={sending}>
+              <button type="button" className="adm-btn adm-btn--primary" onClick={() => void handleConfirmSend()} disabled={sending || preview.recipientCount === 0}>
                 {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                {form.scheduleMode === "schedule_later" ? "Confirm schedule" : `Send to ${preview.recipientCount.toLocaleString()} people`}
+                {form.scheduleMode === "schedule_later" ? "Confirm schedule" : `Send to ${preview.recipientCount.toLocaleString()} ${preview.recipientCount === 1 ? "person" : "people"}`}
               </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {openCampaign ? (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 px-4 py-8" role="dialog" aria-modal="true">
+          <div className="adm-card flex w-full max-w-3xl flex-col overflow-hidden" style={{ maxHeight: "90vh" }}>
+            <div className="flex items-start justify-between gap-3 border-b p-4" style={{ borderColor: "var(--mce-admin-border)" }}>
+              <div className="min-w-0">
+                <h2 className="truncate text-[15px] font-semibold text-[var(--mce-admin-text)]">{openCampaign.subject}</h2>
+                <p className="adm-hint">
+                  Opened {openCampaign.engagement?.opened ?? 0} · Clicked {openCampaign.engagement?.clicked ?? 0} · Delivered {openCampaign.engagement?.delivered ?? openCampaign.stats.sent}.
+                  Opens are approximate — some mail apps load or block images on their own; clicks are exact.
+                </p>
+              </div>
+              <button type="button" className="adm-icon-btn" onClick={() => setOpenCampaign(null)} aria-label="Close recipients">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="border-b px-4 py-2.5" style={{ borderColor: "var(--mce-admin-border)" }}>
+              <div className="adm-seg flex-wrap" role="group" aria-label="Filter recipients">
+                {RECIPIENT_FILTERS.map((f) => (
+                  <button
+                    key={f.value}
+                    type="button"
+                    className={`adm-seg__item ${recipientFilter === f.value ? "adm-seg__item--active" : ""}`}
+                    onClick={() => setRecipientFilter(f.value)}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              {loadingRecipients ? (
+                <div className="adm-empty">
+                  <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" />
+                  Loading…
+                </div>
+              ) : recipients.length === 0 ? (
+                <div className="adm-empty">No one here yet.</div>
+              ) : (
+                <table className="w-full text-left text-[12px]">
+                  <thead className="text-[var(--mce-admin-text-muted)]">
+                    <tr>
+                      <th className="px-4 py-2 font-medium">Email</th>
+                      <th className="px-4 py-2 font-medium">Opened</th>
+                      <th className="px-4 py-2 font-medium">Clicked</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recipients.map((r) => (
+                      <tr key={r._id} className="border-t align-top" style={{ borderColor: "var(--mce-admin-border)" }}>
+                        <td className="px-4 py-2 text-[var(--mce-admin-text)]">
+                          {r.email}
+                          {r.status === "failed" ? (
+                            <div className="text-[var(--mce-admin-danger)]">Not delivered{r.error ? ` — ${r.error}` : ""}</div>
+                          ) : null}
+                        </td>
+                        <td className="px-4 py-2 text-[var(--mce-admin-text-muted)]">
+                          {r.openedAt ? `${formatDate(r.openedAt)}${r.openCount > 1 ? ` · ${r.openCount}×` : ""}` : "—"}
+                        </td>
+                        <td className="px-4 py-2 text-[var(--mce-admin-text-muted)]">
+                          {r.clickedAt ? (
+                            <>
+                              {formatDate(r.clickedAt)}
+                              {r.clickCount > 1 ? ` · ${r.clickCount}×` : ""}
+                              {[...new Set(r.clicks.map((k) => k.url))].map((url) => (
+                                <div key={url} className="max-w-[260px] truncate text-[var(--mce-admin-text)]" title={url}>{url}</div>
+                              ))}
+                            </>
+                          ) : (
+                            "—"
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
           </div>
         </div>

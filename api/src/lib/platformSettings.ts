@@ -192,6 +192,10 @@ export interface PlatformSettings {
   };
   notifications: {
     welcomeEmail: boolean;
+    /** Admin-written welcome subject; empty keeps the built-in subject. */
+    welcomeEmailSubject: string;
+    /** Admin-written welcome message ({{name}} = the user's name); empty keeps the built-in intro. */
+    welcomeEmailMessage: string;
     trialExpiryReminder: boolean;
     paymentReminder: boolean;
     securityAlerts: boolean;
@@ -388,6 +392,8 @@ const DEFAULTS: Omit<PlatformSettings, "_id" | "updatedAt" | "updatedBy"> = {
   },
   notifications: {
     welcomeEmail: true,
+    welcomeEmailSubject: "",
+    welcomeEmailMessage: "",
     trialExpiryReminder: true,
     paymentReminder: true,
     securityAlerts: true,

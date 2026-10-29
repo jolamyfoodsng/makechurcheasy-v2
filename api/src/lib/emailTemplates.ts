@@ -474,13 +474,37 @@ export function verificationCodeEmail(code: string): SendEmailOptions {
   };
 }
 
+/** The welcome subject/message an admin set in Settings → Notifications. */
+export interface WelcomeEmailOverrides {
+  welcomeEmailSubject?: string;
+  welcomeEmailMessage?: string;
+}
+
+/** The admin's welcome message as email paragraphs, or null to keep the built-in intro. */
+function customWelcomeIntro(userName: string, custom?: WelcomeEmailOverrides): string | null {
+  const message = custom?.welcomeEmailMessage?.trim();
+  if (!message) return null;
+  return message
+    .replace(/\{\{\s*name\s*\}\}/gi, userName || "there")
+    .split(/\n{2,}/)
+    .map((block) => escapeEmailText(block.trim()).replace(/\n/g, "<br />"))
+    .filter(Boolean)
+    .map((block) => paragraph(block))
+    .join("");
+}
+
+function customWelcomeSubject(fallback: string, custom?: WelcomeEmailOverrides): string {
+  return custom?.welcomeEmailSubject?.trim() || fallback;
+}
+
 export function welcomeEmail(params: {
   userName: string;
   userEmail: string;
   trialDays: number;
   trialEndsAt: string;
+  custom?: WelcomeEmailOverrides;
 }): SendEmailOptions {
-  const { userName, userEmail, trialDays, trialEndsAt } = params;
+  const { userName, userEmail, trialDays, trialEndsAt, custom } = params;
   const endDate = new Date(trialEndsAt).toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
@@ -489,12 +513,12 @@ export function welcomeEmail(params: {
 
   return {
     to: userEmail,
-    subject: "Welcome to MakeChurchEazy! 🎉",
+    subject: customWelcomeSubject("Welcome to MakeChurchEazy! 🎉", custom),
     html: wrap(
       "Welcome",
       `
         ${heading("Welcome to MakeChurchEazy!")}
-        ${paragraph(`Hi ${userName}, your email is verified and your account is ready. MakeChurchEazy helps your church deliver powerful presentations, go live to several platforms at once, translate services in real time, and transcribe sermons — all from one app.`)}
+        ${customWelcomeIntro(userName, custom) ?? paragraph(`Hi ${userName}, your email is verified and your account is ready. MakeChurchEazy helps your church deliver powerful presentations, go live to several platforms at once, translate services in real time, and transcribe sermons — all from one app.`)}
         ${card([
         ["Trial", `${trialDays} days of full access`],
         ["Expires", endDate],
@@ -997,15 +1021,17 @@ export function activationRequiredWelcomeEmail(params: {
   userName: string;
   userEmail: string;
   trialDays: number;
+  custom?: WelcomeEmailOverrides;
 }): SendEmailOptions {
-  const { userName, userEmail, trialDays } = params;
+  const { userName, userEmail, trialDays, custom } = params;
   return {
     to: userEmail,
-    subject: "Your first MakeChurchEazy setup starts here",
+    subject: customWelcomeSubject("Your first MakeChurchEazy setup starts here", custom),
     html: wrap(
       "First setup",
       `
         ${heading("Let's get your first presentation running")}
+        ${customWelcomeIntro(userName, custom) ?? ""}
         ${paragraph(`Hi ${userName}, your MakeChurchEazy account is ready. Your Growth access starts when you connect OBS, so your trial time is reserved for when you can actually use the product.`)}
         ${card([
           ["First step", "Open MakeChurchEazy Desktop"],
@@ -1724,6 +1750,63 @@ export function offerFreePeriodEndingEmail(params: OfferFreePeriodEndingEmailPar
         ${card([["Your offer", `${percentOff}% off for ${months}`], ["Code", escapeEmailText(promoCode)]])}
         ${button(ctaUrl, `Keep Basic at ${percentOff}% off`)}
         ${paragraph("If you don't subscribe, your account simply returns to the Free plan. Nothing is charged.", { color: "#94a3b8", mt: 8 })}
+        ${unsubscribeFooter(unsubscribeUrl)}
+      `
+    ),
+  };
+}
+
+export interface AdminBroadcastEmailParams {
+  toEmail: string;
+  subject: string;
+  /** Plain text body; blank lines separate paragraphs. Ignored when `bodyHtml` is set. */
+  bodyText: string;
+  /** Raw HTML pasted by the admin — used as-is in place of `bodyText` when present. */
+  bodyHtml?: string;
+  ctaLabel?: string;
+  ctaUrl?: string;
+  unsubscribeUrl: string;
+  /** Attached discount: adds a code card and points the button at the plans page with the code applied. */
+  discount?: BroadcastDiscount;
+}
+
+export interface BroadcastDiscount {
+  code: string;
+  percentOff: number;
+  durationMonths: number;
+  claimUrl: string;
+}
+
+/** The email an admin sends from Admin > Broadcast Email to a chosen audience. */
+export function adminBroadcastEmail(params: AdminBroadcastEmailParams): SendEmailOptions {
+  const { toEmail, subject, bodyText, bodyHtml, unsubscribeUrl, discount } = params;
+  // A discount email always ends with a button that opens the plans page with the code applied.
+  const ctaUrl = discount ? discount.claimUrl : params.ctaUrl;
+  const ctaLabel = discount ? params.ctaLabel || `Claim ${discount.percentOff}% off` : params.ctaLabel;
+  const content = bodyHtml
+    ? bodyHtml
+    : bodyText
+        .split(/\n{2,}/)
+        .map((block) => escapeEmailText(block.trim()).replace(/\n/g, "<br />"))
+        .filter(Boolean)
+        .map((block) => paragraph(block))
+        .join("");
+
+  return {
+    to: toEmail,
+    subject,
+    html: wrap(
+      subject,
+      `
+        ${bodyHtml ? "" : heading(escapeEmailText(subject))}
+        ${content}
+        ${discount ? card([
+          ["Discount", `${discount.percentOff}% off`],
+          ["Code", escapeEmailText(discount.code)],
+          ["Applies for", `${discount.durationMonths} month${discount.durationMonths === 1 ? "" : "s"}`],
+        ]) : ""}
+        ${ctaLabel && ctaUrl ? button(ctaUrl, ctaLabel) : ""}
+        ${discount ? paragraph("The code is applied for you when you open the link. You can also enter it on the Plans page of your dashboard.", { color: "#94a3b8" }) : ""}
         ${unsubscribeFooter(unsubscribeUrl)}
       `
     ),

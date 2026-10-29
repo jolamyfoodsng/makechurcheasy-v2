@@ -80,6 +80,8 @@ export const COLLECTIONS = {
   USAGE_EVENTS: "usage_events",
   ANNOUNCEMENTS: "announcements",
   ANNOUNCEMENT_DELIVERIES: "announcement_deliveries",
+  BROADCAST_CAMPAIGNS: "broadcast_campaigns",
+  BROADCAST_EMAIL_TEMPLATES: "broadcast_email_templates",
   DISCOUNT_REDEMPTIONS: "discount_redemptions",
   USER_OFFERS: "user_offers",
   OFFER_JOURNEYS: "offer_journeys",

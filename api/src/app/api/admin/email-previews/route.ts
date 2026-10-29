@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/adminAuth";
 import { renderEmailHtml } from "@/lib/emailBranding";
+import { getPlatformSettings } from "@/lib/platformSettings";
 import {
   adminManagedSubscriptionEmail,
   adminTemporaryPlanEndedEmail,
@@ -74,6 +75,7 @@ function withRecipient(email: { to: string; subject: string; html: string }, to 
 }
 
 async function buildEmailPreviews(): Promise<EmailPreview[]> {
+  const { notifications } = await getPlatformSettings();
   const previews = [
     preview(
       "login-code",
@@ -109,6 +111,7 @@ async function buildEmailPreviews(): Promise<EmailPreview[]> {
         ...SAMPLE_USER,
         trialDays: 14,
         trialEndsAt: SAMPLE_DATES.trialEndsAt,
+        custom: notifications,
       }),
     ),
     preview(

@@ -72,6 +72,8 @@ export interface PlatformSettings {
   };
   notifications: {
     welcomeEmail: boolean;
+    welcomeEmailSubject: string;
+    welcomeEmailMessage: string;
     trialExpiryReminder: boolean;
     paymentReminder: boolean;
     securityAlerts: boolean;
@@ -200,6 +202,8 @@ export const DEFAULT_SETTINGS: PlatformSettings = {
   },
   notifications: {
     welcomeEmail: true,
+    welcomeEmailSubject: "",
+    welcomeEmailMessage: "",
     trialExpiryReminder: true,
     paymentReminder: true,
     securityAlerts: true,

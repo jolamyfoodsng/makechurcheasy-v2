@@ -61,6 +61,38 @@ function remainingMonthsAfterCheckout(durationMonths: number, billingCycle: Disc
   return Math.max(0, durationMonths - 1);
 }
 
+/** The live discount (an active announcement carrying an offer code) behind `code`, or null. */
+export async function findActiveDiscount(code: string): Promise<Announcement | null> {
+  const normalizedCode = normalizeDiscountCode(code);
+  if (!normalizedCode) return null;
+  const now = new Date().toISOString();
+  const client = await clientPromise;
+  return client
+    .db()
+    .collection<Announcement>(COLLECTIONS.ANNOUNCEMENTS)
+    .findOne(
+      {
+        offerCode: normalizedCode,
+        offerDiscountPercent: { $gt: 0 },
+        status: "active",
+        publishAt: { $lte: now },
+        $or: [{ expiresAt: null }, { expiresAt: { $exists: false } }, { expiresAt: { $gt: now } }],
+      },
+      { collation: { locale: "en", strength: 2 }, sort: { priority: -1, createdAt: -1 } },
+    );
+}
+
+/** The dashboard link that opens the plans page with the code already applied. */
+export function discountClaimUrl(announcement: Announcement): string {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://makechurcheazy.com";
+  const params = new URLSearchParams({
+    promo: announcement.offerCode || "",
+    plan: asStringArray(announcement.offerApplicablePlans)[0] || "growth",
+    billing: asStringArray(announcement.offerApplicableBillingCycles)[0] || "monthly",
+  });
+  return `${appUrl}/subscription/plans?${params.toString()}`;
+}
+
 export async function resolveDiscountCode({
   code,
   user,
@@ -85,21 +117,7 @@ export async function resolveDiscountCode({
     throw new DiscountCodeError("This plan does not have a valid price.");
   }
 
-  const now = new Date().toISOString();
-  const client = await clientPromise;
-  const db = client.db();
-  const announcement = await db
-    .collection<Announcement>(COLLECTIONS.ANNOUNCEMENTS)
-    .findOne(
-      {
-        offerCode: normalizedCode,
-        offerDiscountPercent: { $gt: 0 },
-        status: "active",
-        publishAt: { $lte: now },
-        $or: [{ expiresAt: null }, { expiresAt: { $exists: false } }, { expiresAt: { $gt: now } }],
-      },
-      { collation: { locale: "en", strength: 2 }, sort: { priority: -1, createdAt: -1 } },
-    );
+  const announcement = await findActiveDiscount(normalizedCode);
 
   if (!announcement) {
     throw new DiscountCodeError("This discount code is not active.");

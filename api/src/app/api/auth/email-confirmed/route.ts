@@ -107,6 +107,7 @@ export async function POST(req: NextRequest) {
             userEmail: mongoUser.email,
             trialDays: trialData.durationDays ?? 30,
             trialEndsAt: trialData.endsAt ?? "",
+            custom: platformSettings.notifications,
           })
         );
         await db.collection("users").updateOne(
@@ -130,6 +131,7 @@ export async function POST(req: NextRequest) {
             userName: mongoUser.name || "there",
             userEmail: mongoUser.email,
             trialDays: trialClaimResult.assignment?.durationDays || 30,
+            custom: platformSettings.notifications,
           })
         );
         await db.collection("users").updateOne(

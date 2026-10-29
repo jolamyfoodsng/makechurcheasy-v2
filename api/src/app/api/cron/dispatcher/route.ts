@@ -66,6 +66,21 @@ async function handleDispatch(req: NextRequest) {
       results.userTrialAndPayments = await runAllUserTrialAndPaymentChecks();
     }
 
+    // 1b. Scheduled Admin > Broadcast Email sends that are now due (*/15 * * * *):
+    if (runAll || cronParam.includes("*/15") || !cronParam) {
+      try {
+        const { GET: runBroadcastDispatch } = await import("@/app/api/cron/broadcast-dispatch/route");
+        const broadcastReq = new NextRequest(new URL("/api/cron/broadcast-dispatch", req.url), {
+          headers: { authorization: `Bearer ${CRON_SECRET}` },
+        });
+        const broadcastRes = await runBroadcastDispatch(broadcastReq);
+        results.broadcastDispatch = await broadcastRes.json().catch(() => ({ status: broadcastRes.status }));
+      } catch (err) {
+        console.error("[Cron Dispatcher] Broadcast dispatch failed:", err);
+        results.broadcastDispatch = { error: err instanceof Error ? err.message : "Failed" };
+      }
+    }
+
     // 2. Subscription lifecycle (0 2 * * *):
     if (runAll || cronParam.includes("0 2 *")) {
       try {

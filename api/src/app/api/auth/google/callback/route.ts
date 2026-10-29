@@ -412,6 +412,7 @@ export async function GET(req: NextRequest) {
                 userEmail: user.email,
                 trialDays: welcomeData.durationDays,
                 trialEndsAt: welcomeData.endsAt,
+                custom: platformSettings.notifications,
               })
             ).then(() => db.collection("users").updateOne(
               { _id: result.insertedId },

@@ -513,7 +513,10 @@ export default function AdminBroadcastEmailPage() {
       <header className="adm-header">
         <div>
           <h1 className="adm-title">Broadcast Email</h1>
-          <p className="adm-subtitle">Compose one email and send it to all users or a chosen segment.</p>
+          <p className="adm-subtitle">
+            Compose one email and send it to all users or a chosen segment. The automatic email new users get is set in{" "}
+            <a href="/admin/settings?tab=notifications" className="underline">Welcome email settings</a>.
+          </p>
         </div>
         <button type="button" className="adm-icon-btn" onClick={() => void load(true)} disabled={refreshing || loading} aria-label="Refresh" title="Refresh">
           <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />

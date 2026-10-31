@@ -210,6 +210,23 @@ async function handleDispatch(req: NextRequest) {
       }
     }
 
+    // 10. Stale data cleanup — old error logs and audit events (0 3 * * *). A manual
+    // full run only reports counts; only the real daily cron deletes.
+    if (runAll || cronParam.includes("0 3 *")) {
+      try {
+        const apply = cronParam.includes("0 3 *");
+        const { GET: runStaleDataCleanup } = await import("@/app/api/cron/stale-data-cleanup/route");
+        const cleanupReq = new NextRequest(new URL(`/api/cron/stale-data-cleanup?apply=${apply}`, req.url), {
+          headers: { authorization: `Bearer ${CRON_SECRET}` },
+        });
+        const cleanupRes = await runStaleDataCleanup(cleanupReq);
+        results.staleDataCleanup = await cleanupRes.json().catch(() => ({ status: cleanupRes.status }));
+      } catch (err) {
+        console.error("[Cron Dispatcher] Stale data cleanup failed:", err);
+        results.staleDataCleanup = { error: err instanceof Error ? err.message : "Failed" };
+      }
+    }
+
     return NextResponse.json({ success: true, ...results });
   } catch (error) {
     console.error("[Cron Dispatcher] Fatal error during dispatch:", error);

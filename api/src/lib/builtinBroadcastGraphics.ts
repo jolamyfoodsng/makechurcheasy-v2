@@ -640,12 +640,20 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "sortOrder": 77
   },
   {
+    "graphicId": "lt-pkg-quote-highlight-card",
+    "name": "Quote · Highlight Card",
+    "category": "quotes",
+    "accentColor": "#1d4ed8",
+    "description": "A clean quote card with inline colour highlights: wrap a word in *asterisks* to make it stand out, or *[#hex]word* to give it its own colour — same markup as the Scripture overlays. A speaker name sits below.",
+    "sortOrder": 78
+  },
+  {
     "graphicId": "lt-pkg-sermon-portrait-card",
     "name": "Sermon Quote · Portrait Card",
     "category": "quotes",
     "accentColor": "#3b2a24",
     "description": "Full-screen sermon quote: a warm card with the speaker's round photo on top, the quote with *emphasised* words in the highlight colour, and the name below.",
-    "sortOrder": 78
+    "sortOrder": 79
   },
   {
     "graphicId": "lt-pkg-sermon-clean-panel",
@@ -653,7 +661,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "quotes",
     "accentColor": "#0f2470",
     "description": "Full-screen sermon quote on a white panel over a colour field, with an optional round photo and social handle. *Asterisk* words use the highlight colour.",
-    "sortOrder": 79
+    "sortOrder": 80
   },
   {
     "graphicId": "lt-pkg-sermon-scripture-highlight",
@@ -661,7 +669,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "quotes",
     "accentColor": "#b3221d",
     "description": "Full-screen sermon quote in a black box with a white frame, a name plate underneath and an optional round photo. *Asterisk* words use the highlight colour.",
-    "sortOrder": 80
+    "sortOrder": 81
   },
   {
     "graphicId": "lt-pkg-sermon-split-portrait",
@@ -669,7 +677,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "quotes",
     "accentColor": "#14161b",
     "description": "Full-screen sermon quote with a large photo on the left and bold type on the right. *Asterisk* words get a highlighted block in the highlight colour.",
-    "sortOrder": 81
+    "sortOrder": 82
   },
   {
     "graphicId": "lt-pkg-speaker-bar-strip",
@@ -677,7 +685,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "speaker",
     "accentColor": "#0f6e8c",
     "description": "Name on a solid bar with the title on a white strip below it. The bar wipes in from the left, the strip follows and each line slides into place",
-    "sortOrder": 82
+    "sortOrder": 83
   },
   {
     "graphicId": "lt-pkg-speaker-offset-strip",
@@ -685,7 +693,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "speaker",
     "accentColor": "#0f6e8c",
     "description": "Name bar with the title strip set off to the right underneath, like a step. The bar wipes in, then the strip wipes the other way",
-    "sortOrder": 83
+    "sortOrder": 84
   },
   {
     "graphicId": "lt-pkg-speaker-underline-duo",
@@ -693,7 +701,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "speaker",
     "accentColor": "#0f6e8c",
     "description": "First and last name in capitals over thin rules, the last name larger and stepped to the right. No box, just lines that draw across and letters that rise",
-    "sortOrder": 84
+    "sortOrder": 85
   },
   {
     "graphicId": "lt-pkg-speaker-solid-box",
@@ -701,7 +709,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "speaker",
     "accentColor": "#0f6e8c",
     "description": "Name in bold capitals with the title underneath, together in one solid box. The box wipes up and the words rise inside it",
-    "sortOrder": 85
+    "sortOrder": 86
   },
   {
     "graphicId": "lt-pkg-speaker-bold-outline",
@@ -709,7 +717,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "speaker",
     "accentColor": "#0f6e8c",
     "description": "A big name in capitals inside a white outline, the title tucked in at the bottom right. The frame opens from the middle and the name sweeps in",
-    "sortOrder": 86
+    "sortOrder": 87
   },
   {
     "graphicId": "lt-pkg-speaker-wide-box",
@@ -717,7 +725,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "speaker",
     "accentColor": "#0f6e8c",
     "description": "Name and title on one wide coloured box with generous room. The box stretches out from the left and both lines rise in",
-    "sortOrder": 87
+    "sortOrder": 88
   },
   {
     "graphicId": "lt-pkg-speaker-stacked-pair",
@@ -725,7 +733,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "speaker",
     "accentColor": "#0f6e8c",
     "description": "Name on a coloured bar stacked on a white title bar of the same width. The bars wipe in one after the other and the text rises",
-    "sortOrder": 88
+    "sortOrder": 89
   },
   {
     "graphicId": "lt-pkg-speaker-split-name",
@@ -733,7 +741,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "speaker",
     "accentColor": "#0f6e8c",
     "description": "First name on a coloured block, last name on a white block beside it, both in heavy capitals. The blocks wipe towards each other",
-    "sortOrder": 89
+    "sortOrder": 90
   },
   {
     "graphicId": "lt-pkg-speaker-thin-frame",
@@ -741,7 +749,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "speaker",
     "accentColor": "#0f6e8c",
     "description": "Name and title inside a thin white frame. A light, open look that suits busy pictures. The frame opens from the middle and the words slide in",
-    "sortOrder": 90
+    "sortOrder": 91
   },
   {
     "graphicId": "lt-pkg-speaker-clean-text",
@@ -749,7 +757,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "speaker",
     "accentColor": "#0f6e8c",
     "description": "Just the name and title, no box. Bold white type with a soft shadow so it reads over any picture. Each line rises out of a mask",
-    "sortOrder": 91
+    "sortOrder": 92
   },
   {
     "graphicId": "lt-pkg-speaker-spaced-caps",
@@ -757,7 +765,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "speaker",
     "accentColor": "#0f6e8c",
     "description": "Name in widely spaced capitals on a coloured bar with the title centred on a small white strip below. The letters settle into place as the bar opens from the middle",
-    "sortOrder": 92
+    "sortOrder": 93
   },
   {
     "graphicId": "lt-pkg-speaker-two-tone-tag",
@@ -765,6 +773,6 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "speaker",
     "accentColor": "#0f6e8c",
     "description": "A large first name on a coloured block, the last name on a white block beside it and the title on a small coloured tag underneath. Each piece wipes in in turn",
-    "sortOrder": 93
+    "sortOrder": 94
   }
 ];

@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Multi-View: new template in the gallery + its edit screen</title>
+<style>
+  :root {
+    --bg: #0B0E14; --panel: #11151D; --raised: #161B25; --border: #242A36; --border2: #1b202a;
+    --text: #F2F4F7; --text2: #C7CCD6; --muted: #8993A4;
+    --green: #22C55E; --blue-chip: #1E3A66; --blue-card: #173F72;
+    --accent: #4DA3F0; --terra: #C14E29;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1920px; height: 1550px; background: var(--bg); color: var(--text);
+    font: 14px/1.4 -apple-system, "Segoe UI", system-ui, sans-serif; overflow: hidden; }
+  .shell { display: grid; grid-template-columns: 1920px; }
+  .page { padding: 28px 36px 40px; }
+  .eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .14em; color: var(--muted); text-transform: uppercase; }
+  h1 { font-size: 34px; font-weight: 800; letter-spacing: -.01em; margin-top: 6px; }
+  .sub { color: var(--muted); margin-top: 8px; font-size: 15px; max-width: 900px; line-height: 1.5; }
+  .search { margin-top: 20px; height: 48px; border: 1px solid var(--border); border-radius: 8px;
+    background: var(--panel); color: var(--muted); display: flex; align-items: center; padding: 0 16px; font-size: 14.5px; }
+
+  .banner { margin-top: 18px; border: 1px solid #2a3450; border-left: 4px solid var(--accent); border-radius: 6px;
+    background: #121a2b; padding: 14px 18px; display: flex; gap: 14px; align-items: flex-start; }
+  .banner .ic { width: 22px; height: 22px; border-radius: 4px; background: #27406e; flex: none; margin-top: 1px; }
+  .banner b { font-size: 15px; display: block; margin-bottom: 2px; }
+  .banner span { color: var(--muted); font-size: 13.5px; }
+
+  .tabs { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 22px; }
+  .tab { height: 40px; padding: 0 16px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--panel); color: var(--text2); display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; }
+  .tab.on { background: var(--green); border-color: var(--green); color: #052e13; }
+  .tab .n { background: rgba(255,255,255,.14); border-radius: 10px; padding: 1px 8px; font-size: 12px; }
+  .tab.on .n { background: rgba(0,0,0,.18); }
+
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: 22px; }
+  .card { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--panel); }
+  .card .prev { position: relative; height: 176px; background: var(--blue-card); }
+  .card .prev.new { background: #0E0E10; }
+  .card .badge { position: absolute; right: 10px; bottom: 10px; background: rgba(0,0,0,.55); color: #fff;
+    font-size: 11.5px; font-weight: 700; padding: 3px 9px; border-radius: 4px; }
+  .card .new-pill { position: absolute; left: 10px; top: 10px; background: var(--green); color: #052e13;
+    font-size: 11px; font-weight: 800; letter-spacing: .04em; padding: 3px 9px; border-radius: 4px; }
+  .card .meta { padding: 12px 14px 14px; }
+  .card .meta b { font-size: 14.5px; font-weight: 700; display: block; }
+  .card .meta span { color: var(--muted); font-size: 12.5px; }
+  .slotlbl { position: absolute; color: #cfe0ff; font-size: 11px; font-weight: 600; opacity: .8; }
+
+  .scene { position: absolute; inset: 0; overflow: hidden; }
+  .inner { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; }
+
+  /* === EDIT SCREEN (right side callout) === */
+  .arrowdown { display: flex; align-items: center; gap: 14px; margin: 30px 0 22px; color: var(--muted); font-size: 14px; }
+  .arrowdown::before, .arrowdown::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+
+  .editor { border: 1px solid var(--border); border-radius: 10px; background: var(--panel); overflow: hidden; }
+  .ehead { display: flex; align-items: center; gap: 14px; padding: 16px 20px; border-bottom: 1px solid var(--border); background: var(--raised); }
+  .ehead h2 { font-size: 19px; font-weight: 700; }
+  .ehead .pill { font-size: 11.5px; font-weight: 700; padding: 3px 9px; border-radius: 4px; background: rgba(34,197,94,.18); color: #6fe3a0; }
+  .ehead .spacer { flex: 1; }
+  .ebtn { height: 38px; padding: 0 16px; border-radius: 7px; border: 1px solid var(--border); background: var(--panel); color: var(--text); font-weight: 600; font-size: 13.5px; display: flex; align-items: center; gap: 8px; }
+  .ebtn.primary { background: var(--green); border-color: var(--green); color: #052e13; }
+
+  .ebody { display: grid; grid-template-columns: 240px 1fr 360px; height: 586px; }
+  .layers { border-right: 1px solid var(--border); padding: 14px; }
+  .layers h4 { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+  .layer { display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: 6px; margin-bottom: 4px; font-size: 13.5px; }
+  .layer.on { background: rgba(77,163,240,.16); color: #fff; }
+  .layer .dot { width: 9px; height: 9px; border-radius: 2px; flex: none; }
+  .layer .dot.b { background: #5b8def; } .layer .dot.s { background: #3FB27F; } .layer .dot.c { background: #94a3b8; } .layer .dot.i { background: #a78bfa; }
+  .layer em { font-style: normal; color: var(--muted); font-size: 11.5px; margin-left: auto; }
+
+  .canvaswrap { display: flex; align-items: center; justify-content: center; padding: 16px; background: #05060a; }
+  .canvas { position: relative; width: 952px; height: 536px; border: 1px solid #2a3040; border-radius: 4px; overflow: hidden; }
+
+  .props { padding: 14px 18px; overflow: auto; }
+  .psec { margin-bottom: 14px; }
+  .psec h4 { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+  .prow { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+  .field label { display: block; color: var(--muted); font-size: 11.5px; margin-bottom: 4px; }
+  .field .in { height: 34px; border: 1px solid var(--border); border-radius: 6px; background: var(--raised); display: flex; align-items: center; padding: 0 10px; font-size: 13px; color: var(--text); }
+  .swrow { display: flex; gap: 8px; }
+  .sw { width: 36px; height: 36px; border-radius: 6px; border: 2px solid var(--border); }
+  .sw.on { border-color: var(--accent); }
+  .fontpick { height: 36px; border: 1px solid var(--border); border-radius: 6px; background: var(--raised); display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font-size: 13.5px; }
+
+  .footbar { display: flex; align-items: center; gap: 16px; padding: 14px 20px; border-top: 1px solid var(--border); background: var(--raised); }
+  .footbar .ok { display: flex; align-items: center; gap: 8px; color: var(--text2); font-size: 13.5px; }
+  .footbar .ok i { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+
+  .abs { position: absolute; }
+  .person { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<div class="shell"><div class="page">
+
+  <div class="eyebrow">MULTI-VIEW</div>
+  <h1>Multi-View Layouts</h1>
+  <div class="sub">Choose the screen arrangement first. Add your own OBS scenes, Scripture, media, and overlays after selecting a layout.</div>
+  <div class="search">Search layouts...</div>
+
+  <div class="banner">
+    <div class="ic"></div>
+    <div><b>Scripture Circle is a complete look, not just a layout</b><span>Pick it and it already knows what to do with Scripture — camera, verse panel and animation all included. Everything else below still works the old way: layout first, then assign your own content.</span></div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab on">All <span class="n">24</span></div>
+    <div class="tab">Added <span class="n">5</span></div>
+    <div class="tab">Multi-source</div>
+    <div class="tab">Scripture <span class="n">2</span></div>
+    <div class="tab">Translation</div>
+    <div class="tab">Speaker Focus</div>
+    <div class="tab">Combined</div>
+    <div class="tab">Media</div>
+    <div class="tab">Custom</div>
+  </div>
+
+  <div class="grid">
+    <!-- NEW TEMPLATE CARD -->
+    <div class="card" style="outline:2px solid var(--green);outline-offset:-1px">
+      <div class="prev new">
+        <span class="new-pill">NEW · READY TO USE</span>
+        <div class="scene" id="newCard"></div>
+        <span class="badge">Scripture look</span>
+      </div>
+      <div class="meta"><b>Scripture Circle</b><span>Camera in a circle, verse on parchment, Terracotta</span></div>
+    </div>
+
+    <div class="card">
+      <div class="prev" style="background:#173F72">
+        <span class="slotlbl" style="right:14px;top:14px;background:#2c5aa0;padding:4px 10px;border-radius:4px">Picture-in-Picture</span>
+        <span class="slotlbl" style="left:50%;top:60%;transform:translateX(-50%)">Main Content</span>
+        <span class="badge">2 slots</span>
+      </div>
+      <div class="meta"><b>Full Frame + Inset</b><span>A full-canvas layout with a smaller inset area.</span></div>
+    </div>
+
+    <div class="card">
+      <div class="prev" style="background:#173F72">
+        <span class="slotlbl" style="left:24%;top:48%">Left</span>
+        <span class="slotlbl" style="left:74%;top:48%">Right</span>
+        <span class="badge">2 slots</span>
+      </div>
+      <div class="meta"><b>Two-Up Split</b><span>Two equal content areas side by side.</span></div>
+    </div>
+
+    <div class="card">
+      <div class="prev" style="background:#173F72;border-bottom:2px solid #0d2b52">
+        <span class="slotlbl" style="left:24%;top:30%">Top Left</span>
+        <span class="slotlbl" style="left:74%;top:30%">Top Right</span>
+        <span class="slotlbl" style="left:24%;top:72%">Bottom Left</span>
+        <span class="slotlbl" style="left:74%;top:72%">Bottom Right</span>
+        <span class="badge">4 slots</span>
+      </div>
+      <div class="meta"><b>Four-Up Grid</b><span>Four equal content areas for monitoring.</span></div>
+    </div>
+  </div>
+
+  <div class="arrowdown">Click the new card to open its edit screen — same place every other template opens</div>
+
+  <!-- ============ EDIT SCREEN ============ -->
+  <div class="editor">
+    <div class="ehead">
+      <h2>Editing: Scripture Circle</h2>
+      <span class="pill">Multi-View look</span>
+      <span class="spacer"></span>
+      <span style="color:var(--muted);font-size:13px">Dock → OBS → Multi-View → Scripture Circle</span>
+      <div class="ebtn">Preview in OBS</div>
+      <div class="ebtn primary">Save &amp; Create Scene</div>
+    </div>
+
+    <div class="ebody">
+      <div class="layers">
+        <h4>Layers</h4>
+        <div class="layer on"><span class="dot b"></span>Verse panel<em>text</em></div>
+        <div class="layer"><span class="dot s"></span>Main Camera<em>your scene</em></div>
+        <div class="layer"><span class="dot i"></span>White ring<em>shape</em></div>
+        <div class="layer"><span class="dot c"></span>Background<em>wedge</em></div>
+        <div class="layer"><span class="dot b"></span>LIVE badge<em>text</em></div>
+
+        <h4 style="margin-top:22px">Camera circle</h4>
+        <div class="field" style="margin-bottom:8px"><label>Diameter</label><div class="in">720 px</div></div>
+        <div class="field" style="margin-bottom:8px"><label>Position</label><div class="in">102, 94</div></div>
+        <div class="field"><label>Ring width</label><div class="in">11 px</div></div>
+        <h4 style="margin-top:22px">When it updates</h4>
+        <div style="font-size:12.5px;color:var(--muted);line-height:1.5">Click a verse in the Bible tab → this panel's text updates in OBS. The camera does not move again.</div>
+      </div>
+
+      <div class="canvaswrap">
+        <div class="canvas" id="canvas"></div>
+      </div>
+
+      <div class="props">
+        <div class="psec">
+          <h4>Colors</h4>
+          <span style="color:var(--muted);font-size:12px;display:block;margin-bottom:8px">Background wedge</span>
+          <div class="swrow">
+            <div class="sw on" style="background:#C14E29"></div>
+            <div class="sw" style="background:#1E3A66"></div>
+            <div class="sw" style="background:#14503d"></div>
+            <div class="sw" style="background:#3B2F63"></div>
+            <div class="sw" style="background:#2C2C30;display:grid;place-items:center;color:#fff;font-size:16px">+</div>
+          </div>
+          <span style="color:var(--muted);font-size:12px;display:block;margin:12px 0 8px">Verse text</span>
+          <div class="swrow">
+            <div class="sw on" style="background:#17171B"></div>
+            <div class="sw" style="background:#fff;border-color:#555"></div>
+            <div class="sw" style="background:#0e2a1d"></div>
+          </div>
+        </div>
+
+        <div class="psec">
+          <h4>Typography</h4>
+          <div class="fontpick"><span>Helvetica Neue — Bold</span><span style="color:var(--muted)">▾</span></div>
+          <div class="prow" style="margin-top:8px">
+            <div class="field"><label>Verse size</label><div class="in">96 px</div></div>
+            <div class="field"><label>Reference size</label><div class="in">43 px</div></div>
+          </div>
+          <div class="prow">
+            <div class="field"><label>Line height</label><div class="in">1.16</div></div>
+            <div class="field"><label>Letter spacing</label><div class="in">-0.022em</div></div>
+          </div>
+        </div>
+
+        <div class="psec">
+          <h4>Verse Panel</h4>
+          <div class="prow">
+            <div class="field"><label>Width</label><div class="in">1320 px</div></div>
+            <div class="field"><label>Shrink to fit</label><div class="in">On</div></div>
+          </div>
+          <div class="field" style="margin-bottom:0"><label>Reference format</label><div class="in">ROMANS 3:1 · KJV</div></div>
+        </div>
+
+        <div class="psec">
+          <h4>Animation</h4>
+          <div class="prow">
+            <div class="field"><label>Verse in</label><div class="in">Fade up ▾</div></div>
+            <div class="field"><label>Verse out</label><div class="in">Fade ▾</div></div>
+          </div>
+          <div class="field"><label>Duration</label><div class="in">450 ms</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footbar">
+      <span class="ok"><i></i> This camera, color and type are saved with the look. Saving creates (or updates) the <b style="color:#fff">MV: Scripture Circle</b> scene in OBS — once.</span>
+    </div>
+  </div>
+
+</div></div>
+
+<script>
+  const person = `
+    <svg viewBox="0 0 720 720" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%;display:block">
+      <defs>
+        <linearGradient id="room" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3A2318"/><stop offset=".55" stop-color="#55331F"/><stop offset="1" stop-color="#241610"/></linearGradient>
+        <radialGradient id="warm" cx="26%" cy="22%" r="52%"><stop offset="0" stop-color="#F0B96E" stop-opacity=".75"/><stop offset="1" stop-color="#F0B96E" stop-opacity="0"/></radialGradient>
+      </defs>
+      <rect width="720" height="720" fill="url(#room)"/><rect width="720" height="720" fill="url(#warm)"/>
+      <circle cx="120" cy="330" r="62" fill="#F3C078" opacity=".34"/>
+      <circle cx="612" cy="250" r="48" fill="#E9A95E" opacity=".26"/>
+      <circle cx="528" cy="430" r="86" fill="#2F6B4A" opacity=".30"/>
+      <path d="M86 720 C104 556 206 492 360 492 C514 492 616 556 634 720 Z" fill="#1A1A1F"/>
+      <path d="M312 404 h96 v104 c0 26 -96 26 -96 0 Z" fill="#6A4229"/>
+      <ellipse cx="360" cy="296" rx="116" ry="142" fill="#7E4F33"/>
+      <path d="M252 300 C256 404 300 440 360 440 C420 440 464 404 468 300 C454 392 410 418 360 418 C310 418 266 392 252 300Z" fill="#412315" opacity=".85"/>
+      <path d="M244 272 C236 160 484 160 476 272 C462 206 414 182 360 182 C306 182 258 206 244 272Z" fill="#17110D"/>
+      <ellipse cx="318" cy="288" rx="15" ry="9" fill="#120C08"/><ellipse cx="402" cy="288" rx="15" ry="9" fill="#120C08"/>
+      <rect x="352" y="392" width="46" height="200" rx="23" transform="rotate(-12 375 492)" fill="#17171A"/>
+      <ellipse cx="366" cy="404" rx="30" ry="28" transform="rotate(-12 366 404)" fill="#2B2B31"/>
+    </svg>`;
+
+  const sceneHtml = (sel) => `
+    <div class="abs" style="inset:0;background:radial-gradient(120% 90% at 78% 18%, #F7F3EB, #EFE8DC 70%)"></div>
+    <div class="abs" style="inset:0;background:#C14E29;clip-path:polygon(0 0, 602px 0, 392px 1080px, 0 1080px)"></div>
+    <div class="abs" style="left:102px;top:94px;width:720px;height:720px;border-radius:50%;overflow:hidden;box-shadow:0 0 0 11px #fff;${sel ? 'outline:3px solid #4DA3F0;outline-offset:4px' : ''}">${person}</div>
+    <div class="abs" style="left:128px;top:822px;background:#9E3C1C;color:#fff;padding:11px 22px 12px;border-radius:5px;font:700 27px/1 Helvetica,Arial,sans-serif;letter-spacing:.26em">LIVE</div>
+    <div class="abs" style="left:920px;top:150px;font:700 31px/1 Helvetica,Arial,sans-serif;letter-spacing:.36em;color:#C14E29">SCRIPTURE</div>
+    <div class="abs" style="left:920px;top:216px;width:912px;font:800 96px/1.16 Helvetica,Arial,sans-serif;letter-spacing:-.022em;color:#17171B">What advantage then hath the Jew? or what profit is there of circumcision?</div>
+    <div class="abs" style="left:922px;top:846px;width:168px;height:8px;background:#C14E29"></div>
+    <div class="abs" style="left:920px;top:892px;font:700 43px/1 Helvetica,Arial,sans-serif;letter-spacing:.15em;color:#17171B">ROMANS 3:1 &nbsp;|&nbsp; KJV</div>`;
+
+  function paintScene(elId, scaleTo, selected) {
+    const el = document.getElementById(elId);
+    const inner = document.createElement('div');
+    inner.className = 'inner';
+    inner.style.transform = `scale(${scaleTo / 1920})`;
+    inner.innerHTML = sceneHtml(selected);
+    el.appendChild(inner);
+  }
+  paintScene('newCard', 440, false);
+  paintScene('canvas', 952, true);
+</script>
+</body>
+</html>

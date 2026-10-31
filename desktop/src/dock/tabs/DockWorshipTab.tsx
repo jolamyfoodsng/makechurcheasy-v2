@@ -1663,6 +1663,8 @@ function DockWorshipTab({
   const [documentImportOpen, setDocumentImportOpen] = useState(false);
   const [songs, setSongs] = useState<DockSong[]>(() => loadCachedSongs());
   const rawSongsRef = useRef<DockSong[]>([]);
+  // Songs removed here stay hidden even if an older song list arrives before the app has removed them.
+  const removedSongIdsRef = useRef<Set<string>>(new Set());
   // Initialize from localStorage so the limit is known immediately
   const [songLimit, setSongLimit] = useState<number>(() => {
     try {
@@ -2191,7 +2193,9 @@ function DockWorshipTab({
     [],
   );
 
-  const applySongLimit = useCallback((nextSongs: DockSong[]) => {
+  const applySongLimit = useCallback((incomingSongs: DockSong[]) => {
+    const removed = removedSongIdsRef.current;
+    const nextSongs = removed.size > 0 ? incomingSongs.filter((song) => !removed.has(song.id)) : incomingSongs;
     rawSongsRef.current = nextSongs;
     let limit = songLimitRef.current;
     // Fallback: read from localStorage if ref is still unset
@@ -3707,7 +3711,10 @@ function DockWorshipTab({
     const songTitle = songDeleteTarget.title;
     setDeletingSong(true);
     try {
-      await archiveSong(songId);
+      removedSongIdsRef.current.add(songId);
+      dockClient.sendCommand({ type: "worship:song-archive", payload: { id: songId }, timestamp: Date.now() });
+      // The app removes it from the library; this copy only matters when the dock shares the app's storage.
+      await archiveSong(songId).catch((err) => console.warn("[DockWorshipTab] local archive failed:", err));
       setSongs((current) => {
         const next = current.filter((song) => song.id !== songId);
         rawSongsRef.current = next;

@@ -310,6 +310,9 @@ interface DockPageProps {
   hidePresentationLinkCard?: boolean;
 }
 
+/** Set once the church has answered the Program background question shown after the update. */
+const PROGRAM_BACKGROUND_ASKED_KEY = "ocs-dock-program-background-asked-v1";
+
 function DockPageContent({
   externalObsSession = false,
   presentationBibleLmSplit = false,
@@ -480,6 +483,21 @@ function DockPageContent({
       console.warn("[Dock] Failed to apply OBS output routing:", error);
     });
   }, [updateProjectionSettings]);
+
+  // Program background is Off by default. After this update every church is asked once whether
+  // they want it; until they answer it stays Off.
+  const [askProgramBackground, setAskProgramBackground] = useState(
+    () => isNativeDockSettingsHydrated() && readNativeDockSetting<boolean>(PROGRAM_BACKGROUND_ASKED_KEY) !== true,
+  );
+  useEffect(() => {
+    if (askProgramBackground && loadProjectionSettings().sceneMode !== "no-clone") updateProjectionSceneMode("no-clone");
+    // Only when the question first shows.
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const answerProgramBackground = useCallback((on: boolean) => {
+    writeNativeDockSetting(PROGRAM_BACKGROUND_ASKED_KEY, true);
+    setAskProgramBackground(false);
+    updateProjectionSceneMode(on ? "auto-duplicate" : "no-clone");
+  }, [updateProjectionSceneMode]);
 
   const updateKeywordMatchDirectPush = useCallback((enabled: boolean) => {
     setKeywordMatchPushDirectlyToObs(enabled);
@@ -2402,6 +2420,33 @@ function DockPageContent({
                 }}
               >
                 {t('dock.changeLanguage') || 'Change Language'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {askProgramBackground && (
+        <div className="dock-dialog-backdrop" role="presentation">
+          <div className="dock-dialog dock-dialog--compact" role="dialog" aria-modal="true" aria-labelledby="dock-program-bg-title">
+            <div className="dock-dialog__header">
+              <div>
+                <div className="dock-dialog__eyebrow">{t('page.sceneRouting', 'Scene Routing')}</div>
+                <h2 id="dock-program-bg-title" className="dock-dialog__title">
+                  {t('page.programBackgroundAskTitle', 'Turn on Program background?')}
+                </h2>
+              </div>
+            </div>
+            <div className="dock-dialog__body">
+              <p style={{ margin: 0, color: "var(--dock-text-secondary)", lineHeight: 1.5 }}>
+                {t('page.programBackgroundAskDesc', 'Shows your Program scene (cameras) behind verses and lyrics. You can change this later.')}
+              </p>
+            </div>
+            <div className="dock-dialog__footer">
+              <button type="button" className="dock-btn dock-btn--ghost" onClick={() => answerProgramBackground(true)}>
+                {t('page.programBackgroundAskOn', 'Turn on')}
+              </button>
+              <button type="button" className="dock-btn dock-btn--primary" onClick={() => answerProgramBackground(false)}>
+                {t('page.programBackgroundAskOff', 'Keep off')}
               </button>
             </div>
           </div>

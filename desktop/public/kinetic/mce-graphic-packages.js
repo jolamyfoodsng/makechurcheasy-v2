@@ -45,7 +45,8 @@
    * }
    *
    * Template tags: {{key}} text · {{key|br}} text with "|" as a line break ·
-   * {{key|rich}} like |br, and *words* in asterisks become <span class="hl"> (important words) ·
+   * {{key|rich}} like |br, and *words* in asterisks become <span class="hl"> (important words);
+   * *[#hex]words* picks the highlight's own colour instead (same markup as the Scripture overlays) ·
    * {{key|words}} / {{key|chars}} text split into <span class="w"> words / <span class="ch"> letters ·
    * {{icon:key}} / {{icon=mail}} glyph icon · {{brands:key}} / {{brand=youtube}} brand icons ·
    * {{image:key|fallbackKey}} picture or fallback text · {{#key}}…{{/key}} only when key has a value.
@@ -137,10 +138,17 @@
   }
 
   /* ---------- {{key|rich}}: text where *words* between asterisks become <span class="hl"> (the
-   * graphic's own "important words" style); Enter or "|" is a line break. ---------- */
+   * graphic's own "important words" style), or *[#hex]words* for a highlight in that colour —
+   * same syntax and rules as the Scripture overlays' safeEmText (mce-multiview-scripture-*.html).
+   * Enter or "|" is a line break. Runs on text that is already HTML-escaped, so a quote can never
+   * inject markup; only a bare #hex (3-8 hex digits) is accepted as a colour. ---------- */
   function richText(raw) {
     return String(raw == null ? "" : raw).split(/\r?\n|\|/).map(function (line) {
-      return esc(line).replace(/\*([^*]+)\*/g, '<span class="hl">$1</span>');
+      return esc(line).replace(/\*(?=\S)(?:\[(#[0-9a-fA-F]{3,8})\])?([^*\n]*?\S)\*/g, function (_m, color, words) {
+        return color
+          ? '<span class="hl" style="color:' + color + '">' + words + "</span>"
+          : '<span class="hl">' + words + "</span>";
+      });
     }).join("<br>");
   }
 

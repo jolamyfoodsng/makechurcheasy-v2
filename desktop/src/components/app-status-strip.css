@@ -25,6 +25,17 @@
   min-width: 0;
 }
 
+.app-status-strip__side--start {
+  gap: 8px;
+}
+
+.app-status-strip__side--start .live-status-bar__inner--inline {
+  flex-wrap: nowrap;
+  padding: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
 .app-status-strip__side--end {
   margin-left: auto;
 }

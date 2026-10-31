@@ -55,6 +55,6 @@ describe("theme list", () => {
   it("has unique ids", () => {
     const ids = LAYOUT_PRESET_THEMES.map((t) => t.id);
     expect(new Set(ids).size).toBe(ids.length);
-    expect(ids.length).toBe(6 + 1 + 1 + 5 + 15);
+    expect(ids.length).toBe(6 + 1 + 1 + 1 + 1 + 5 + 15);
   });
 });

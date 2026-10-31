@@ -92,6 +92,8 @@ export const COLLECTIONS = {
   NOWPAYMENTS_INTENTS: "nowpayments_payment_intents",
   FLUTTERWAVE_INTENTS: "flutterwave_payment_intents",
   BLOG_POSTS: "blog_posts",
+  /** Admin-uploaded Multi-View "complete look" packages (see lib/multiviewLooks.ts). */
+  MULTIVIEW_LOOK_PACKAGES: "multiview_look_packages",
 } as const;
 
 // ─── Index Initialization ────────────────────────────────────────────────────

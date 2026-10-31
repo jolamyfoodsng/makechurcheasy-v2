@@ -352,7 +352,7 @@ function isAncestor(layer: ThemeLayer, of: ThemeLayer, byId: Map<string, ThemeLa
  * free space above and below it: never past the card it sits in, the screen
  * edge, or another layer (reference, translation, heading boxes, logos).
  */
-function growVerseBoxes(layers: ThemeLayer[], factor: number): ThemeLayer[] {
+function growVerseBoxes(layers: ThemeLayer[], factor: number, headingShown = true): ThemeLayer[] {
   if (factor <= 1.001) return layers;
   const visible = layers.filter((l) => !l.hidden);
   const byId = new Map(visible.map((l) => [l.id, l]));
@@ -400,17 +400,45 @@ function growVerseBoxes(layers: ThemeLayer[], factor: number): ThemeLayer[] {
     }
 
     const height = v.bottom - v.top;
-    let extra = Math.round(height * (factor - 1));
-    const roomUp = Math.max(0, v.top - top);
-    const roomDown = Math.max(0, bottom - v.bottom);
-    extra = Math.min(extra, roomUp + roomDown);
-    if (extra < 2) return verse;
+    // Bigger text in the same width wraps onto more lines too, so it needs about factor² the height;
+    // anything less and auto-fit shrinks it straight back and the size buttons seem to do nothing.
+    const wanted = Math.round(height * (factor * factor - 1));
     // Grow evenly, then let whichever side still has room take the rest.
-    let up = Math.min(roomUp, extra / 2);
-    let down = Math.min(roomDown, extra - up);
-    up = Math.min(roomUp, extra - down);
-    up = Math.round(up);
-    down = Math.round(down);
+    const split = (extra: number, roomUp: number, roomDown: number) => {
+      extra = Math.min(extra, roomUp + roomDown);
+      let a = Math.min(roomUp, extra / 2);
+      const b = Math.min(roomDown, extra - a);
+      a = Math.min(roomUp, extra - b);
+      return [a, b] as const;
+    };
+    // First the free space up to the layers around it…
+    const [up1, down1] = split(wanted, Math.max(0, v.top - top), Math.max(0, bottom - v.bottom));
+    // …then, when the church asked for more than that, past them up to the screen edge. Only a parent
+    // card still holds it in, because the card clips whatever is drawn outside it.
+    let up2 = 0;
+    let down2 = 0;
+    if (!parent && wanted - up1 - down1 >= 2) {
+      // A showing title / reference still stops it, so the words never run over the heading.
+      let spillTop = SCREEN_MARGIN;
+      let spillBottom = DESIGN_HEIGHT - SCREEN_MARGIN;
+      if (headingShown) {
+        for (const l of visible) {
+          if (l.id === verse.id || l.type !== "text" || !hasTokens(l.content) || isVerseTextPattern(l.content)) continue;
+          const r = absoluteRect(l, byId);
+          if (r.right <= v.left + 1 || r.left >= v.right - 1) continue;
+          if ((r.top + r.bottom) / 2 < vMid) spillTop = Math.max(spillTop, Math.min(v.top - up1, r.bottom + GROW_GAP));
+          else spillBottom = Math.min(spillBottom, Math.max(v.bottom + down1, r.top - GROW_GAP));
+        }
+      }
+      [up2, down2] = split(
+        wanted - up1 - down1,
+        Math.max(0, v.top - up1 - spillTop),
+        Math.max(0, spillBottom - (v.bottom + down1)),
+      );
+    }
+    const up = Math.round(up1 + up2);
+    const down = Math.round(down1 + down2);
+    if (up + down < 2) return verse;
     const newH = height + up + down;
     const localTop = verse.y + (ANCHOR_SHIFT_Y[verse.anchor] ?? 0) * height - up;
     const y = Math.round(localTop - (ANCHOR_SHIFT_Y[verse.anchor] ?? 0) * newH);
@@ -513,6 +541,8 @@ export function applyLayoutAdjust(layout: ThemeLayout, source: unknown): ThemeLa
         if (k !== 1) {
           if (typeof style.fontSize === "number") style.fontSize = Math.round(style.fontSize * k);
           if (typeof style.minFontSize === "number") style.minFontSize = Math.round(style.minFontSize * k);
+          // A line cap would shrink bigger verse text back to the old size, so it grows with the text.
+          if (isVerse && k > 1 && typeof style.maxLines === "number") style.maxLines = Math.ceil(style.maxLines * k);
         }
         if (lk !== 1) style.lineHeight = Math.round((style.lineHeight || 1.3) * lk * 100) / 100;
         next = { ...next, style };
@@ -522,7 +552,7 @@ export function applyLayoutAdjust(layout: ThemeLayout, source: unknown): ThemeLa
     return next;
   });
   const stripped = ltOff ? stripLowerThirdBackground(layers) : ltFill && ltBackdrop ? applyLowerThirdBackdrop(layers, ltBackdrop) : layers;
-  const grown = growVerseBoxes(stripped, textK * lineK);
+  const grown = growVerseBoxes(stripped, textK * lineK, nextShowHeading !== false);
   const aligned = headingAlign ? alignHeading(grown, layout, headingAlign) : grown;
   const finalLayers = backdropChanged && backdrop ? applyBackdrop(aligned, backdrop) : aligned;
   const out: ThemeLayout = { ...layout, layers: finalLayers };

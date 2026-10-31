@@ -30,6 +30,7 @@ import {
   Radio,
   MonitorPlay,
   Send,
+  LayoutGrid,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -61,6 +62,7 @@ const broadcastReachItems: NavItem[] = [
   { path: "/admin/settings?tab=notifications", label: "Welcome Email", icon: MailOpen },
   { path: "/admin/multistream", label: "Multi-Stream Usage", icon: Radio },
   { path: "/admin/broadcast-graphics", label: "Broadcast Graphics", icon: MonitorPlay },
+  { path: "/admin/multiview-looks", label: "Multi-View Looks", icon: LayoutGrid },
   { path: "/admin/tutorials", label: "Tutorials", icon: GraduationCap },
   { path: "/admin/release-mirror", label: "Release Mirror", icon: UploadCloud },
 ];

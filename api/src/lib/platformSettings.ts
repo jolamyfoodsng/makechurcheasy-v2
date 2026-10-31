@@ -68,7 +68,7 @@ export const DEFAULT_ADMIN_CONTROLS: AdminControls = {
     presentationLink: true,
   },
   speech: { model: "universal-streaming-english", dailyMinutesCap: 0 },
-  signup: { maxSignupsPerIpPerDay: 5, maxSignupsPerDevicePerDay: 2, blockDisposableEmails: true, blockedDomains: [] },
+  signup: { maxSignupsPerIpPerDay: 50, maxSignupsPerDevicePerDay: 2, blockDisposableEmails: true, blockedDomains: [] },
   support: DEFAULT_SUPPORT_CONTENT,
 };
 

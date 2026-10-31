@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Multi-View: pick a look (design mockup)</title>
+<style>
+  /* App tokens from desktop/docs/DESIGN_SYSTEM.md (dark). Mockup only. */
+  :root {
+    --bg: #18181B; --surface: #202023; --raised: #2C2C30; --hover: #38383D;
+    --text: #F4F4F5; --text2: #D1D1D6; --muted: #A1A1AA; --border: #36363B; --strong: #505057;
+    --primary: #0067C0; --primary-soft: rgba(0, 103, 192, .16); --accent: #4DA3F0;
+    --success: #3FB27F; --radius: 4px; --radius-lg: 6px;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1600px; height: 1000px; background: var(--bg); color: var(--text); font: 13px/1.4 -apple-system, "Segoe UI", system-ui, sans-serif; overflow: hidden; }
+
+  .page { display: grid; grid-template-rows: 64px 1fr 214px 56px; height: 1000px; }
+
+  /* header */
+  .head { display: flex; align-items: center; gap: 16px; padding: 0 24px; border-bottom: 1px solid var(--border); }
+  .head h1 { font-size: 22px; font-weight: 700; letter-spacing: -.01em; }
+  .head .sub { color: var(--muted); font-size: 13px; }
+  .spacer { flex: 1; }
+  .chip { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text2); }
+  .chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
+  .chip b { color: var(--text); font-weight: 600; }
+  .chip .caret { color: var(--muted); font-size: 10px; }
+
+  /* middle */
+  .main { display: grid; grid-template-columns: 1016px 1fr; gap: 24px; padding: 24px; min-height: 0; }
+  .stage-wrap { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .stage { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #0b0b0d; border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+  .scene { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; overflow: hidden; }
+  .stage .scene { transform: scale(var(--s)); }
+  .tools { display: flex; gap: 8px; align-items: center; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 14px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--raised); color: var(--text); font-weight: 600; }
+  .btn.primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+  .hint { color: var(--muted); }
+
+  /* selection box and guides on the live preview */
+  .sel { position: absolute; border: 2px solid var(--accent); box-shadow: 0 0 0 1px rgba(0,0,0,.4); pointer-events: none; }
+  .sel i { position: absolute; width: 14px; height: 14px; background: #fff; border: 2px solid var(--accent); border-radius: 2px; }
+  .sel i:nth-child(1) { left: -8px; top: -8px; } .sel i:nth-child(2) { right: -8px; top: -8px; }
+  .sel i:nth-child(3) { left: -8px; bottom: -8px; } .sel i:nth-child(4) { right: -8px; bottom: -8px; }
+  .sel i:nth-child(5) { left: calc(50% - 7px); top: -8px; } .sel i:nth-child(6) { left: calc(50% - 7px); bottom: -8px; }
+  .sel i:nth-child(7) { left: -8px; top: calc(50% - 7px); } .sel i:nth-child(8) { right: -8px; top: calc(50% - 7px); }
+  .tag { position: absolute; left: 0; top: -34px; padding: 4px 8px; background: var(--accent); color: #04223a; font-weight: 700; font-size: 12px; border-radius: 2px; white-space: nowrap; }
+  .guide { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1px dashed rgba(77,163,240,.7); }
+
+  /* side panel */
+  .side { display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 12px 16px 16px; }
+  .card h3 { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; display: flex; justify-content: space-between; }
+  .card h3 span { text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--muted); }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label { color: var(--muted); font-size: 12px; }
+  .input { height: 34px; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--raised); color: var(--text); font-variant-numeric: tabular-nums; }
+  .input em { color: var(--muted); font-style: normal; }
+  .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; height: 34px; background: var(--raised); margin-top: 12px; }
+  .seg div { display: grid; place-items: center; color: var(--text2); border-right: 1px solid var(--border); font-weight: 600; }
+  .seg div:last-child { border-right: 0; }
+  .seg .on { background: var(--primary); color: #fff; }
+  .swatches { display: flex; gap: 8px; }
+  .sw { width: 52px; height: 52px; border-radius: var(--radius); border: 2px solid var(--border); position: relative; overflow: hidden; }
+  .sw.on { border-color: var(--accent); }
+  .sw small { position: absolute; left: 0; right: 0; bottom: 0; text-align: center; font-size: 10px; background: rgba(0,0,0,.55); color: #fff; padding: 1px 0; }
+  .swlabel { margin-top: 8px; color: var(--text2); }
+  .swlabel b { color: var(--text); }
+
+  /* template strip */
+  .strip { border-top: 1px solid var(--border); padding: 12px 24px 0; display: flex; flex-direction: column; gap: 10px; background: #1b1b1e; min-height: 0; }
+  .tabs { display: flex; gap: 20px; align-items: center; }
+  .tabs a { color: var(--muted); font-weight: 600; padding-bottom: 6px; border-bottom: 3px solid transparent; }
+  .tabs a.on { color: var(--text); border-color: var(--accent); }
+  .thumbs { display: flex; gap: 16px; }
+  .th { width: 232px; display: flex; flex-direction: column; gap: 6px; }
+  .th .frame { position: relative; width: 232px; height: 130px; border: 2px solid var(--border); border-radius: var(--radius); overflow: hidden; background: #0b0b0d; }
+  .th.on .frame { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(77,163,240,.25); }
+  .th .scene { transform: scale(.1208); }
+  .th b { font-size: 12.5px; font-weight: 600; color: var(--text2); display: flex; justify-content: space-between; }
+  .th.on b { color: var(--text); }
+  .th b span { color: var(--accent); font-weight: 600; }
+
+  /* footer */
+  .foot { display: flex; align-items: center; gap: 16px; padding: 0 24px; border-top: 1px solid var(--border); background: var(--surface); }
+  .foot .ok { display: flex; align-items: center; gap: 8px; color: var(--text2); }
+  .foot .ok i { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
+
+  /* ===== scene building blocks (1920 x 1080) ===== */
+  .abs { position: absolute; }
+  .serif { font-family: "Iowan Old Style", "Palatino", Georgia, "Times New Roman", serif; }
+  .cam { position: absolute; overflow: hidden; background: linear-gradient(160deg, #1d5a5a 0%, #0f3a3f 55%, #0a2530 100%); }
+  .cam svg { position: absolute; left: 0; bottom: 0; width: 100%; height: 100%; }
+  .live { position: absolute; display: flex; align-items: center; gap: 12px; font: 700 28px/1 -apple-system, system-ui, sans-serif; letter-spacing: .12em; color: #fff; text-shadow: 0 2px 6px rgba(0,0,0,.5); }
+  .live i { width: 22px; height: 22px; border-radius: 50%; background: #D4A853; }
+  .eyebrow { position: absolute; display: flex; align-items: center; gap: 28px; font: 500 30px/1 -apple-system, system-ui, sans-serif; letter-spacing: .5em; }
+  .eyebrow u { display: block; width: 280px; height: 3px; background: #B8924A; }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="head">
+    <h1>Multi-View</h1>
+    <span class="sub">Pick a look. We place your camera for you.</span>
+    <span class="spacer"></span>
+    <span class="chip"><span class="dot"></span> OBS connected</span>
+    <span class="chip">Camera scene: <b>Main Camera</b> <span class="caret">▼</span></span>
+    <span class="chip">Canvas <b>1920 × 1080</b></span>
+  </header>
+
+  <section class="main">
+    <div class="stage-wrap">
+      <div class="stage" id="stage"><div class="scene" id="mainScene"></div>
+        <div class="sel" id="sel"><span class="tag">Camera · 700 × 960</span><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="guide" style="left:50%"></div>
+      </div>
+      <div class="tools">
+        <span class="btn">Center</span>
+        <span class="btn">Reset position</span>
+        <span class="btn">Show safe area</span>
+        <span class="spacer"></span>
+        <span class="hint">Drag the camera to move it. Drag a corner to resize. It snaps to the middle.</span>
+      </div>
+    </div>
+
+    <aside class="side">
+      <div class="card">
+        <h3>Camera window <span>Saved with this look</span></h3>
+        <div class="row">
+          <div class="field"><label>Left</label><div class="input">42 <em>px</em></div></div>
+          <div class="field"><label>Top</label><div class="input">64 <em>px</em></div></div>
+          <div class="field"><label>Width</label><div class="input">700 <em>px</em></div></div>
+          <div class="field"><label>Height</label><div class="input">960 <em>px</em></div></div>
+        </div>
+        <div class="seg"><div class="on">Fill</div><div>Fit</div><div>Custom crop</div></div>
+        <div class="row" style="margin-top:12px">
+          <div class="field"><label>Corner radius</label><div class="input">14 <em>px</em></div></div>
+          <div class="field"><label>Focus</label><div class="input">Face ▾</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Frame</h3>
+        <div class="swatches">
+          <div class="sw" style="background:#2C2C30"><small>None</small></div>
+          <div class="sw" style="background:#2C2C30;box-shadow:inset 0 0 0 3px rgba(255,255,255,.7)"><small>Clean</small></div>
+          <div class="sw on" style="background:#2C2C30;box-shadow:inset 0 0 0 3px #D4A853, inset 0 0 0 6px rgba(212,168,83,.25)"><small>Gold</small></div>
+          <div class="sw" style="background:#2C2C30;box-shadow:inset 0 0 0 3px #4DA3F0, inset 0 0 8px #4DA3F0"><small>Glow</small></div>
+        </div>
+        <div class="swlabel"><b>Church Broadcast</b> · gold double line</div>
+      </div>
+
+      <div class="card">
+        <h3>Background</h3>
+        <div class="swatches">
+          <div class="sw on" style="background:linear-gradient(135deg,#14503d,#0b2f25)"><small>Forest</small></div>
+          <div class="sw" style="background:linear-gradient(135deg,#1b2a52,#0d1530)"><small>Navy</small></div>
+          <div class="sw" style="background:linear-gradient(135deg,#f3ead4,#e5d7b6)"><small>Cream</small></div>
+          <div class="sw" style="background:#2C2C30;display:grid;place-items:center;color:var(--text2);font-size:22px">+<small>Image</small></div>
+        </div>
+        <div class="swlabel">Verse panel: <b>Parchment</b> · text <b>Dark green</b></div>
+      </div>
+    </aside>
+  </section>
+
+  <section class="strip">
+    <div class="tabs"><a class="on">Scripture</a><a>Worship</a><a>Announcements</a><a>Camera only</a><span class="spacer"></span><span class="hint">6 looks · each one sets the theme and the camera together</span></div>
+    <div class="thumbs" id="thumbs"></div>
+  </section>
+
+  <footer class="foot">
+    <span class="ok"><i></i> Applied to MCE Presentation. Your camera moves when a verse goes live.</span>
+    <span class="spacer"></span>
+    <span class="btn">Preview in OBS</span>
+    <span class="btn primary">Apply look</span>
+  </footer>
+</div>
+
+<script>
+  const cam = (x, y, w, h, r, frame) => `
+    <div class="cam" style="left:${x}px;top:${y}px;width:${w}px;height:${h}px;border-radius:${r}px;${frame || ''}">
+      <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMax slice">
+        <defs><radialGradient id="g${x}${y}" cx="50%" cy="30%" r="70%"><stop offset="0" stop-color="#d9b27a" stop-opacity=".35"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient></defs>
+        <rect width="100" height="100" fill="url(#g${x}${y})"/>
+        <path d="M14 100 C16 76 30 70 50 70 C70 70 84 76 86 100 Z" fill="#1e1e22"/>
+        <ellipse cx="50" cy="48" rx="13" ry="16" fill="#6b4a3a"/>
+        <path d="M37 44 C38 30 62 30 63 44 C58 38 42 38 37 44Z" fill="#141416"/>
+      </svg>
+    </div>`;
+  const gold = 'border:4px solid #D4A853;box-shadow:0 0 0 3px rgba(212,168,83,.25);';
+  const grain = 'radial-gradient(rgba(255,255,255,.05) 1px, transparent 1.4px) 0 0/9px 9px';
+
+  const T = [
+    { id: 'panel', name: 'Scripture Panel', tag: 'Selected', html: () => `
+      <div class="abs" style="inset:0;background:${grain}, linear-gradient(135deg,#14503d,#0b2f25)"></div>
+      ${cam(42, 64, 700, 960, 14, gold)}
+      <div class="live" style="left:86px;top:112px"><i></i>LIVE</div>
+      <div class="abs" style="left:780px;top:0;width:1140px;height:1080px;background:radial-gradient(120% 90% at 30% 20%,#f7f0de,#ebe0c6)"></div>
+      <div class="abs" style="left:762px;top:0;width:3px;height:1080px;background:#B8924A"></div>
+      <div class="eyebrow" style="left:840px;top:112px;color:#1b2a22">SCRIPTURE<u></u></div>
+      <div class="abs serif" style="left:820px;top:240px;width:1020px;font-size:96px;line-height:1.08;font-weight:700;color:#0e2a1d;letter-spacing:-.01em"><sup style="font-size:40px;vertical-align:top;position:relative;top:14px;margin-right:10px">1</sup>What advantage then hath the Jew? or what profit is there of circumcision?</div>
+      <div class="abs" style="left:840px;top:790px;width:1000px;height:3px;background:#B8924A"></div>
+      <div class="abs" style="left:840px;top:830px;font:800 64px/1 -apple-system,system-ui,sans-serif;color:#0e2a1d;letter-spacing:.02em">ROMANS 3:1</div>
+      <div class="abs" style="right:80px;top:846px;font:600 36px/1 -apple-system,system-ui,sans-serif;color:#0e2a1d;letter-spacing:.12em">KJV</div>` },
+
+    { id: 'wide', name: 'Wide Verse', html: () => `
+      <div class="abs" style="inset:0;background:${grain}, linear-gradient(160deg,#17264d,#0b132b)"></div>
+      ${cam(1170, 90, 700, 394, 10, gold)}
+      <div class="eyebrow" style="left:90px;top:100px;color:#D4A853">SCRIPTURE<u></u></div>
+      <div class="abs serif" style="left:90px;top:230px;width:980px;font-size:92px;line-height:1.1;font-weight:700;color:#fff">For God so loved the world, that he gave his only begotten Son.</div>
+      <div class="abs" style="left:90px;top:820px;width:700px;height:3px;background:#D4A853"></div>
+      <div class="abs" style="left:90px;top:860px;font:800 64px/1 -apple-system,system-ui,sans-serif;color:#D4A853">JOHN 3:16</div>
+      <div class="abs" style="left:1170px;top:540px;width:700px;font:500 34px/1.5 -apple-system,system-ui,sans-serif;color:#9fb0d9">Room for a second camera, a logo or the speaker's name.</div>` },
+
+    { id: 'center', name: 'Centered Frame', html: () => `
+      <div class="abs" style="inset:0;background:${grain}, linear-gradient(180deg,#26262b,#121214)"></div>
+      ${cam(360, 70, 1200, 675, 8, gold)}
+      <div class="abs serif" style="left:200px;top:800px;width:1520px;text-align:center;font-size:72px;line-height:1.12;font-weight:700;color:#fff">The Lord is my shepherd; I shall not want.</div>
+      <div class="abs" style="left:0;top:975px;width:1920px;text-align:center;font:800 48px/1 -apple-system,system-ui,sans-serif;color:#D4A853;letter-spacing:.14em">PSALM 23:1 · KJV</div>` },
+
+    { id: 'split', name: 'Split Dark', html: () => `
+      <div class="abs" style="inset:0;background:#17171a"></div>
+      ${cam(0, 0, 960, 1080, 0, '')}
+      <div class="abs" style="left:960px;top:0;width:6px;height:1080px;background:#0067C0"></div>
+      <div class="eyebrow" style="left:1040px;top:120px;color:#4DA3F0;letter-spacing:.4em">SCRIPTURE<u style="background:#0067C0;width:160px"></u></div>
+      <div class="abs serif" style="left:1040px;top:260px;width:780px;font-size:84px;line-height:1.12;font-weight:700;color:#f4f4f5">And we know that all things work together for good.</div>
+      <div class="abs" style="left:1040px;top:860px;font:800 60px/1 -apple-system,system-ui,sans-serif;color:#f4f4f5">ROMANS 8:28</div>` },
+
+    { id: 'worship', name: 'Worship Lyrics', html: () => `
+      <div class="abs" style="inset:0;background:${grain}, linear-gradient(150deg,#2c1b4d,#140c28)"></div>
+      ${cam(1090, 70, 770, 433, 10, 'border:4px solid rgba(255,255,255,.55);')}
+      <div class="eyebrow" style="left:90px;top:100px;color:#e9d8ff;letter-spacing:.4em">NOW SINGING<u style="background:#b693f0;width:160px"></u></div>
+      <div class="abs" style="left:90px;top:230px;width:900px;font:800 92px/1.18 -apple-system,system-ui,sans-serif;color:#fff">Amazing grace,<br>how sweet the sound,<br>that saved a wretch<br>like me</div>
+      <div class="abs" style="left:90px;top:900px;font:600 40px/1 -apple-system,system-ui,sans-serif;color:#cdb6f5">Amazing Grace · Verse 1</div>` },
+
+    { id: 'announce', name: 'Announcement', html: () => `
+      <div class="abs" style="inset:0;background:${grain}, linear-gradient(135deg,#f3ead4,#e5d7b6)"></div>
+      ${cam(120, 190, 600, 600, 300, 'border:6px solid #14503d;')}
+      <div class="eyebrow" style="left:860px;top:210px;color:#14503d">THIS FRIDAY<u style="background:#14503d;width:200px"></u></div>
+      <div class="abs serif" style="left:860px;top:320px;width:900px;font-size:140px;line-height:1;font-weight:700;color:#0e2a1d">Youth Night</div>
+      <div class="abs" style="left:860px;top:560px;width:900px;font:500 52px/1.35 -apple-system,system-ui,sans-serif;color:#2c4a3b">6:30 PM · Main hall<br>Food, games and worship</div>` },
+  ];
+
+  // big live preview (selected look)
+  const stage = document.getElementById('stage');
+  const mainScene = document.getElementById('mainScene');
+  mainScene.innerHTML = T[0].html();
+  const s = stage.clientWidth / 1920;
+  stage.style.setProperty('--s', s);
+  const sel = document.getElementById('sel');
+  sel.style.left = (42 * s - 2) + 'px'; sel.style.top = (64 * s - 2) + 'px';
+  sel.style.width = (700 * s + 4) + 'px'; sel.style.height = (960 * s + 4) + 'px';
+
+  // strip
+  const thumbs = document.getElementById('thumbs');
+  thumbs.innerHTML = T.map((t, i) => `
+    <div class="th ${i === 0 ? 'on' : ''}">
+      <div class="frame"><div class="scene">${t.html()}</div></div>
+      <b>${t.name}<span>${t.tag || ''}</span></b>
+    </div>`).join('');
+</script>
+</body>
+</html>

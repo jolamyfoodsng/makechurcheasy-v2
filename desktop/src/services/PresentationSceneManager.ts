@@ -26,6 +26,36 @@ import { obsService } from "./obsService";
 import { getOverlayBaseUrlSync } from "./overlayUrl";
 import { buildVersionedOverlayUrl } from "./overlayVersion";
 
+/** Same native setting key the Dock uses for the Program scenes it put under MCE Presentation. */
+const PROGRAM_BACKGROUND_MANAGED_SCENES_KEY = "ocs-dock-program-background-scenes-v1";
+
+/** Reads the Dock's Program background choice fresh; unreadable counts as off. */
+async function programBackgroundIsOn(): Promise<boolean> {
+  try {
+    const [{ reloadNativeDockSettings }, { loadProjectionSettings }] = await Promise.all([
+      import("./localDockSettings"),
+      import("../dock/dockProjectionSettings"),
+    ]);
+    await reloadNativeDockSettings(["ocs-dock-projection-settings"]);
+    return loadProjectionSettings().sceneMode === "auto-duplicate";
+  } catch {
+    return false;
+  }
+}
+
+async function rememberProgramBackgroundScene(name: string): Promise<void> {
+  try {
+    const { readNativeDockSetting, writeNativeDockSetting } = await import("./localDockSettings");
+    const stored = readNativeDockSetting<unknown>(PROGRAM_BACKGROUND_MANAGED_SCENES_KEY);
+    const names = new Set(Array.isArray(stored) ? stored.filter((v): v is string => typeof v === "string") : []);
+    if (names.has(name)) return;
+    names.add(name);
+    await writeNativeDockSetting(PROGRAM_BACKGROUND_MANAGED_SCENES_KEY, [...names].sort());
+  } catch {
+    // Best effort: without the record the Dock just leaves this one in place.
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
@@ -240,6 +270,10 @@ class PresentationSceneManager {
     this._assertConnected();
     const sceneName = PRESENTATION_SCENE_NAME;
 
+    // Dock → Advanced OBS Output → Program background. Off (the default) keeps MCE Presentation
+    // overlay-only, so nothing is put under it from here either.
+    if (!(await programBackgroundIsOn())) return;
+
     // Get the current program scene name from OBS
     let programSceneName: string;
     try {
@@ -267,6 +301,8 @@ class PresentationSceneManager {
 
       // Add the program scene as a scene source
       const sceneItemId = await obsService.createSceneItem(sceneName, programSceneName);
+      // Recorded like the Dock's own, so turning Program background off removes it again.
+      void rememberProgramBackgroundScene(programSceneName);
 
       // Move it to the bottom of the source stack (z-index 0)
       // By setting it to position 0 in the scene item order

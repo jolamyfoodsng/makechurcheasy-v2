@@ -40,6 +40,24 @@
   color: var(--text-muted);
 }
 
+.mvg-rename-input {
+  width: 100%;
+  padding: 8px 12px;
+  min-height: 38px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 4px);
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+
+.mvg-rename-input:focus {
+  border-color: var(--primary);
+}
+
 /* ── Layout guidance ── */
 .mvg-guidance {
   display: flex;

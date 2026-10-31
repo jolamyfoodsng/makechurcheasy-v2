@@ -1,13 +1,15 @@
 /**
  * AppStatusStrip.tsx — slim bar at the top of the app.
  *
- *   left:  "Free plan · Upgrade"          (only while the user is on the Free plan)
+ *   left:  live status pills (OBS Connected, Listening…)
+ *          "Free plan · Upgrade"          (only while the user is on the Free plan)
  *   right: "Having any issues? Contact support · WhatsApp"   (always, quiet)
  *          "6 days left · Update now"     (only while a forced update is counting down)
  */
 
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import Icon from "./Icon";
+import LiveStatusBar from "./LiveStatusBar";
 import { HelpCircle, MessageCircle } from "./icons/NativeIcons";
 import { useAdminControls } from "../hooks/useAdminControls";
 import { openSupportDialog } from "../services/supportDialog";
@@ -102,7 +104,8 @@ export default function AppStatusStrip() {
 
   return (
     <div className={`app-status-strip${isFree ? " app-status-strip--free" : ""}`} role="status">
-      <div className="app-status-strip__side">
+      <div className="app-status-strip__side app-status-strip__side--start">
+        <LiveStatusBar inline />
         {isFree && (
           <div className="app-status-strip__chip app-status-strip__chip--plan">
             <Icon name="star" size={13} />

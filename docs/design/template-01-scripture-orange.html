@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Template 01 — Scripture Circle (Terracotta)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; background: #F2EDE4; }
+  .stage { position: relative; width: 1920px; height: 1080px; overflow: hidden;
+    font-family: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif; }
+
+  /* paper tone on the cream side */
+  .paper { position: absolute; inset: 0; background:
+      radial-gradient(120% 90% at 78% 18%, #F7F3EB, #EFE8DC 70%);
+  }
+  .grain { position: absolute; inset: 0; opacity: .5;
+    background: radial-gradient(rgba(0,0,0,.035) 1px, transparent 1.3px) 0 0/7px 7px; }
+
+  /* terracotta wedge, left */
+  .wedge { position: absolute; inset: 0; background: #C14E29;
+    clip-path: polygon(0 0, 602px 0, 392px 1080px, 0 1080px); }
+  .wedge::after { content: ""; position: absolute; inset: 0;
+    background: linear-gradient(200deg, rgba(255,255,255,.10), rgba(0,0,0,.14)); }
+
+  /* camera hole + ring */
+  .cam { position: absolute; left: 102px; top: 94px; width: 720px; height: 720px;
+    border-radius: 50%; overflow: hidden; box-shadow: 0 0 0 11px #FFFFFF, 0 26px 60px rgba(60,20,8,.30); }
+  .cam svg { width: 100%; height: 100%; display: block; }
+
+  .live { position: absolute; left: 128px; top: 822px; display: flex; align-items: center; gap: 14px;
+    background: #9E3C1C; color: #fff; padding: 11px 22px 12px; border-radius: 5px;
+    font-size: 27px; font-weight: 700; letter-spacing: .26em; }
+
+  /* right column */
+  .eyebrow { position: absolute; left: 920px; top: 150px; font-size: 31px; font-weight: 700;
+    letter-spacing: .36em; color: #C14E29; }
+  .verse { position: absolute; left: 920px; top: 216px; width: 912px;
+    font-size: 96px; line-height: 1.16; font-weight: 800; letter-spacing: -.022em; color: #17171B; }
+  .rule { position: absolute; left: 922px; top: 846px; width: 168px; height: 8px; background: #C14E29; }
+  .ref { position: absolute; left: 920px; top: 892px; display: flex; align-items: center; gap: 30px;
+    font-size: 43px; font-weight: 700; letter-spacing: .15em; color: #17171B; }
+  .ref i { display: block; width: 3px; height: 46px; background: #B9A894; }
+  .ref em { font-style: normal; letter-spacing: .2em; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="paper"></div>
+  <div class="grain"></div>
+  <div class="wedge"></div>
+
+  <div class="cam">
+    <svg viewBox="0 0 720 720" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="room" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#3A2318"/><stop offset=".55" stop-color="#55331F"/><stop offset="1" stop-color="#241610"/>
+        </linearGradient>
+        <radialGradient id="warm" cx="26%" cy="22%" r="52%">
+          <stop offset="0" stop-color="#F0B96E" stop-opacity=".75"/><stop offset="1" stop-color="#F0B96E" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="shirt" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#232329"/><stop offset="1" stop-color="#121216"/>
+        </linearGradient>
+      </defs>
+      <rect width="720" height="720" fill="url(#room)"/>
+      <rect width="720" height="720" fill="url(#warm)"/>
+      <circle cx="120" cy="330" r="62" fill="#F3C078" opacity=".34"/>
+      <circle cx="612" cy="250" r="48" fill="#E9A95E" opacity=".26"/>
+      <circle cx="528" cy="430" r="86" fill="#2F6B4A" opacity=".30"/>
+      <rect x="236" y="0" width="22" height="470" fill="#1b1008" opacity=".45"/>
+
+      <!-- shoulders -->
+      <path d="M86 720 C104 556 206 492 360 492 C514 492 616 556 634 720 Z" fill="url(#shirt)"/>
+      <!-- neck -->
+      <path d="M312 404 h96 v104 c0 26 -96 26 -96 0 Z" fill="#6A4229"/>
+      <!-- head -->
+      <ellipse cx="360" cy="296" rx="116" ry="142" fill="#7E4F33"/>
+      <!-- jaw shadow / beard -->
+      <path d="M252 300 C256 404 300 440 360 440 C420 440 464 404 468 300 C454 392 410 418 360 418 C310 418 266 392 252 300Z" fill="#412315" opacity=".85"/>
+      <!-- hair -->
+      <path d="M244 272 C236 160 484 160 476 272 C462 206 414 182 360 182 C306 182 258 206 244 272Z" fill="#17110D"/>
+      <!-- brow + eyes -->
+      <ellipse cx="318" cy="288" rx="15" ry="9" fill="#120C08"/>
+      <ellipse cx="402" cy="288" rx="15" ry="9" fill="#120C08"/>
+      <!-- arm + hand -->
+      <path d="M430 720 C436 606 486 560 556 566 L634 720 Z" fill="#1A1A1F"/>
+      <path d="M402 560 c34 -22 74 -14 86 16 c10 26 -8 50 -36 56 c-30 6 -62 -12 -66 -38 c-2 -14 4 -26 16 -34Z" fill="#7E4F33"/>
+      <!-- mic -->
+      <rect x="352" y="392" width="46" height="200" rx="23" transform="rotate(-12 375 492)" fill="#17171A"/>
+      <ellipse cx="366" cy="404" rx="30" ry="28" transform="rotate(-12 366 404)" fill="#2B2B31"/>
+    </svg>
+  </div>
+
+  <div class="live">LIVE</div>
+
+  <div class="eyebrow">SCRIPTURE</div>
+  <div class="verse">What advantage then hath the Jew? or what profit is there of circumcision?</div>
+  <div class="rule"></div>
+  <div class="ref">ROMANS 3:1 <i></i> <em>KJV</em></div>
+</div>
+</body>
+</html>

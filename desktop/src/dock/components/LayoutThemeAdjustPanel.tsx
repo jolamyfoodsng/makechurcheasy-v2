@@ -142,7 +142,7 @@ export default function LayoutThemeAdjustPanel({ themeName, layout, quickSetting
 
   const titleLabel = scope === "bible"
     ? t("bgPicker.layoutShowReference", "Show reference")
-    : t("bgPicker.layoutShowHeading", "Heading");
+    : t("bgPicker.layoutShowTitle", "Show title");
 
   const alignLabel = scope === "bible"
     ? t("bgPicker.layoutReferenceAlign", "Reference alignment")

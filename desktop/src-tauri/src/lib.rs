@@ -2873,6 +2873,36 @@ fn write_dock_data(name: &str, data: &str) -> Result<(), String> {
     Ok(())
 }
 
+/// Same idea as resolve_dock_data_path, but for a `.html` file instead of `.json` — used for
+/// admin-uploaded Multi-View looks, whose markup needs a real URL an OBS browser source can
+/// point at (not just a JSON blob read by the app). The /uploads/* static route below infers the
+/// Content-Type from the file's own extension at serve time (overlay_content_type_for_extension),
+/// not from which command wrote it, so a plain .html file here is served as text/html with no
+/// further changes needed to that route.
+fn resolve_dock_html_path(name: &str) -> Result<(String, std::path::PathBuf), String> {
+    let safe = name
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric() || *c == '-' || *c == '_')
+        .collect::<String>();
+    if safe.is_empty() {
+        return Err("Invalid data name".to_string());
+    }
+
+    let uploads_dir = app_dir()?.join("uploads");
+    fs::create_dir_all(&uploads_dir).map_err(|e| format!("Failed to create uploads dir: {}", e))?;
+    Ok((safe.clone(), uploads_dir.join(format!("{}.html", safe))))
+}
+
+/// Save an admin-uploaded Multi-View look's HTML to ~/Documents/MakeChurchEazy/uploads/<name>.html
+/// so OBS's browser source (and the in-app preview) can load it from /uploads/<name>.html.
+#[tauri::command]
+fn save_dock_html(name: String, html: String) -> Result<(), String> {
+    let (safe, path) = resolve_dock_html_path(&name)?;
+    fs::write(&path, &html).map_err(|e| format!("Failed to write dock html: {}", e))?;
+    println!("[Tauri] Saved dock html '{}' ({} bytes)", safe, html.len());
+    Ok(())
+}
+
 /// Save dock-shared data to a JSON file in the uploads directory.
 /// The overlay server can then serve it to the dock page.
 /// `name` is the filename (e.g. "worship-songs"), `.json` is appended.
@@ -10488,6 +10518,7 @@ pub fn run() {
             get_memory_usage,
             save_dock_data,
             load_dock_data,
+            save_dock_html,
             load_dock_settings,
             save_dock_setting,
             delete_dock_setting,

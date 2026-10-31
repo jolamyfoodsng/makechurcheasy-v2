@@ -28,6 +28,33 @@ import { getEffectivePlan } from "../services/licenseService";
 import { checkEntitlementSync } from "../services/entitlementClient";
 import Icon from "../components/Icon";
 import UpgradeModal from "../components/UpgradeModal";
+import ModalDialog from "../components/ModalDialog";
+import { Pencil, Trash2 } from "../components/icons/NativeIcons";
+import ScriptureCircleGalleryCard from "./ScriptureCircleGalleryCard";
+import ScriptureCircleEditor from "./ScriptureCircleEditor";
+import ScriptureCirclePreview from "./ScriptureCirclePreview";
+import { deleteScriptureCircleTheme, listScriptureCircleThemes, renameScriptureCircleTheme, type ScriptureCircleTheme } from "../multiview/scriptureCircleLook";
+import ScriptureArchGalleryCard from "./ScriptureArchGalleryCard";
+import ScriptureArchEditor from "./ScriptureArchEditor";
+import ScriptureArchPreview from "./ScriptureArchPreview";
+import { deleteScriptureArchTheme, listScriptureArchThemes, renameScriptureArchTheme, type ScriptureArchTheme } from "../multiview/scriptureArchLook";
+import ScriptureGoldCircleGalleryCard from "./ScriptureGoldCircleGalleryCard";
+import ScriptureGoldCircleEditor from "./ScriptureGoldCircleEditor";
+import ScriptureGoldCirclePreview from "./ScriptureGoldCirclePreview";
+import { deleteScriptureGoldCircleTheme, listScriptureGoldCircleThemes, renameScriptureGoldCircleTheme, type ScriptureGoldCircleTheme } from "../multiview/scriptureGoldCircleLook";
+import {
+  listCustomMultiViewLooks,
+  refreshMultiviewLookCatalog,
+  MULTIVIEW_LOOKS_CATALOG_UPDATED_EVENT,
+  type CustomMultiViewLook,
+} from "../multiview/customLookCatalog";
+
+/** A "My" tab entry from any of the three scripture+camera looks, tagged by which one it is so the
+ *  card knows which preview/editor/CRUD functions to use (they're mixed together in one list). */
+type MyThemeEntry =
+  | { kind: "circle"; theme: ScriptureCircleTheme }
+  | { kind: "arch"; theme: ScriptureArchTheme }
+  | { kind: "gold-circle"; theme: ScriptureGoldCircleTheme };
 import "./MultiViewGalleryPage.css";
 
 // ── Dock layout storage helpers ────────────────────────────────────────────
@@ -79,6 +106,15 @@ function saveGalleryLayoutToDock(layout: GalleryLayout): void {
   existing.unshift(dockEntry);
   saveDockLayouts(existing);
 }
+
+// Built-in gallery categories plus a "My" tab for the operator's own saved items
+// (e.g. Scripture Circle themes) — kept out of GALLERY_CATEGORIES since that list
+// also describes real GalleryLayout.category values, which "my" is not.
+const FILTER_TABS: { key: GalleryLayoutCategory | "all" | "my"; label: string; icon: string }[] = [
+  ...GALLERY_CATEGORIES.slice(0, 2),
+  { key: "my", label: "My", icon: "person" },
+  ...GALLERY_CATEGORIES.slice(2),
+];
 
 // ── Slot content type → display info ───────────────────────────────────────
 
@@ -313,7 +349,7 @@ function OBSDisconnectedModal({ onClose }: { onClose: () => void }) {
 export default function MultiViewGalleryPage() {
   const { t } = useTranslation();
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<GalleryLayoutCategory | "all">("all");
+  const [filter, setFilter] = useState<GalleryLayoutCategory | "all" | "my">("all");
   const [previewLayout, setPreviewLayout] = useState<GalleryLayout | null>(null);
   const [obsConnected, setObsConnected] = useState(obsService.status === "connected");
   const [showDisconnected, setShowDisconnected] = useState(false);
@@ -326,6 +362,117 @@ export default function MultiViewGalleryPage() {
   } | null>(null);
   const [addedIds, setAddedIds] = useState<Set<string>>(() => loadLocalAddedLayoutIds());
   const [, setRenderTick] = useState(0);
+  const [editingCircle, setEditingCircle] = useState(false);
+  const [editingCircleThemeId, setEditingCircleThemeId] = useState<string | undefined>(undefined);
+  const [circleThemes, setCircleThemes] = useState<ScriptureCircleTheme[]>(() => listScriptureCircleThemes());
+
+  const openCircleEditor = useCallback((themeId?: string) => {
+    setEditingCircleThemeId(themeId);
+    setEditingCircle(true);
+  }, []);
+
+  const closeCircleEditor = useCallback(() => {
+    setEditingCircle(false);
+    setEditingCircleThemeId(undefined);
+    setCircleThemes(listScriptureCircleThemes());
+  }, []);
+
+  // Scripture Arch — same editor/theme pattern as Scripture Circle, its own state.
+  const [editingArch, setEditingArch] = useState(false);
+  const [editingArchThemeId, setEditingArchThemeId] = useState<string | undefined>(undefined);
+  const [archThemes, setArchThemes] = useState<ScriptureArchTheme[]>(() => listScriptureArchThemes());
+
+  const openArchEditor = useCallback((themeId?: string) => {
+    setEditingArchThemeId(themeId);
+    setEditingArch(true);
+  }, []);
+
+  const closeArchEditor = useCallback(() => {
+    setEditingArch(false);
+    setEditingArchThemeId(undefined);
+    setArchThemes(listScriptureArchThemes());
+  }, []);
+
+  // Scripture Gold Circle — same editor/theme pattern as Scripture Circle, its own state.
+  const [editingGoldCircle, setEditingGoldCircle] = useState(false);
+  const [editingGoldCircleThemeId, setEditingGoldCircleThemeId] = useState<string | undefined>(undefined);
+  const [goldCircleThemes, setGoldCircleThemes] = useState<ScriptureGoldCircleTheme[]>(() => listScriptureGoldCircleThemes());
+
+  const openGoldCircleEditor = useCallback((themeId?: string) => {
+    setEditingGoldCircleThemeId(themeId);
+    setEditingGoldCircle(true);
+  }, []);
+
+  const closeGoldCircleEditor = useCallback(() => {
+    setEditingGoldCircle(false);
+    setEditingGoldCircleThemeId(undefined);
+    setGoldCircleThemes(listScriptureGoldCircleThemes());
+  }, []);
+
+  // The "My" tab lists saved themes from all three scripture+camera looks together, newest first.
+  const myThemeEntries = useMemo<MyThemeEntry[]>(() => {
+    const entries: MyThemeEntry[] = [
+      ...circleThemes.map((theme): MyThemeEntry => ({ kind: "circle", theme })),
+      ...archThemes.map((theme): MyThemeEntry => ({ kind: "arch", theme })),
+      ...goldCircleThemes.map((theme): MyThemeEntry => ({ kind: "gold-circle", theme })),
+    ];
+    return entries.sort((a, b) => b.theme.updatedAt.localeCompare(a.theme.updatedAt));
+  }, [circleThemes, archThemes, goldCircleThemes]);
+
+  // Native confirm()/prompt() are never used in this app — the dialog plugin's confirm/ask
+  // commands aren't in src-tauri/capabilities (only dialog:allow-save is granted), so calling them
+  // here would silently resolve truthy and then reject in the background. Use ModalDialog instead.
+  const [deleteThemeTarget, setDeleteThemeTarget] = useState<MyThemeEntry | null>(null);
+  const [renameThemeTarget, setRenameThemeTarget] = useState<MyThemeEntry | null>(null);
+  const [renameThemeDraft, setRenameThemeDraft] = useState("");
+
+  const handleDeleteTheme = useCallback((entry: MyThemeEntry) => {
+    setDeleteThemeTarget(entry);
+  }, []);
+
+  const confirmDeleteTheme = useCallback(() => {
+    if (!deleteThemeTarget) return;
+    if (deleteThemeTarget.kind === "circle") {
+      deleteScriptureCircleTheme(deleteThemeTarget.theme.id);
+      setCircleThemes(listScriptureCircleThemes());
+    } else if (deleteThemeTarget.kind === "arch") {
+      deleteScriptureArchTheme(deleteThemeTarget.theme.id);
+      setArchThemes(listScriptureArchThemes());
+    } else {
+      deleteScriptureGoldCircleTheme(deleteThemeTarget.theme.id);
+      setGoldCircleThemes(listScriptureGoldCircleThemes());
+    }
+    setDeleteThemeTarget(null);
+  }, [deleteThemeTarget]);
+
+  const handleRenameTheme = useCallback((entry: MyThemeEntry) => {
+    setRenameThemeDraft(entry.theme.name);
+    setRenameThemeTarget(entry);
+  }, []);
+
+  const confirmRenameTheme = useCallback(() => {
+    if (!renameThemeTarget) return;
+    const name = renameThemeDraft.trim();
+    if (name && name !== renameThemeTarget.theme.name) {
+      if (renameThemeTarget.kind === "circle") {
+        renameScriptureCircleTheme(renameThemeTarget.theme.id, name);
+        setCircleThemes(listScriptureCircleThemes());
+      } else if (renameThemeTarget.kind === "arch") {
+        renameScriptureArchTheme(renameThemeTarget.theme.id, name);
+        setArchThemes(listScriptureArchThemes());
+      } else {
+        renameScriptureGoldCircleTheme(renameThemeTarget.theme.id, name);
+        setGoldCircleThemes(listScriptureGoldCircleThemes());
+      }
+    }
+    setRenameThemeTarget(null);
+  }, [renameThemeTarget, renameThemeDraft]);
+
+  const openEditorForEntry = useCallback((entry: MyThemeEntry) => {
+    if (entry.kind === "circle") openCircleEditor(entry.theme.id);
+    else if (entry.kind === "arch") openArchEditor(entry.theme.id);
+    else openGoldCircleEditor(entry.theme.id);
+  }, [openCircleEditor, openArchEditor, openGoldCircleEditor]);
 
   // ── Seed server file with any existing added IDs on mount ──
   useEffect(() => {
@@ -370,6 +517,38 @@ export default function MultiViewGalleryPage() {
 
     return list;
   }, [filter, search, addedIds]);
+
+  // The Scripture Circle, Scripture Arch and Scripture Gold Circle looks are always shown on All
+  // and Scripture, unless a search rules them out.
+  const showScriptureCircle =
+    (filter === "all" || filter === "scripture") &&
+    (!search.trim() || "scripture circle camera verse".includes(search.trim().toLowerCase()));
+  const showScriptureArch =
+    (filter === "all" || filter === "scripture") &&
+    (!search.trim() || "scripture arch camera verse".includes(search.trim().toLowerCase()));
+  const showScriptureGoldCircle =
+    (filter === "all" || filter === "scripture") &&
+    (!search.trim() || "scripture gold circle camera verse".includes(search.trim().toLowerCase()));
+
+  // Admin-uploaded custom Multi-View looks (see customLookCatalog.ts). Unlike the three Scripture
+  // looks above, there can be an arbitrary, growing number of these, so they're shown generically
+  // as a list rather than one card per named design. Each one is already a usable Dock entry the
+  // moment it's published — there is no separate "add to OBS" step here, so this card is purely
+  // informational (pick it up in the Dock's Multi-View tab, same note as a saved Scripture theme).
+  const [customLooks, setCustomLooks] = useState<CustomMultiViewLook[]>(() => listCustomMultiViewLooks());
+  useEffect(() => {
+    const refresh = () => setCustomLooks(listCustomMultiViewLooks());
+    refresh();
+    void refreshMultiviewLookCatalog().then(refresh);
+    window.addEventListener(MULTIVIEW_LOOKS_CATALOG_UPDATED_EVENT, refresh);
+    return () => window.removeEventListener(MULTIVIEW_LOOKS_CATALOG_UPDATED_EVENT, refresh);
+  }, []);
+  const visibleCustomLooks = useMemo(() => {
+    if (filter !== "all" && filter !== "scripture") return [];
+    const q = search.trim().toLowerCase();
+    if (!q) return customLooks;
+    return customLooks.filter((l) => [l.name, l.description].some((v) => (v || "").toLowerCase().includes(q)));
+  }, [customLooks, filter, search]);
 
   // ── Toast helper ──
   const showToast = useCallback((message: string, type: ToastType = "success") => {
@@ -444,6 +623,48 @@ export default function MultiViewGalleryPage() {
     }
   }, [previewLayout, handleAddToOBS]);
 
+  if (editingCircle) {
+    return (
+      <>
+        <ScriptureCircleEditor obsConnected={obsConnected} themeId={editingCircleThemeId} onBack={closeCircleEditor} onNotify={showToast} />
+        {toast && (
+          <div className={`mvg-toast mvg-toast--${toast.type}`}>
+            <Icon name={toast.type === "success" ? "check_circle" : "info"} size={18} />
+            <span>{toast.message}</span>
+          </div>
+        )}
+      </>
+    );
+  }
+
+  if (editingArch) {
+    return (
+      <>
+        <ScriptureArchEditor obsConnected={obsConnected} themeId={editingArchThemeId} onBack={closeArchEditor} onNotify={showToast} />
+        {toast && (
+          <div className={`mvg-toast mvg-toast--${toast.type}`}>
+            <Icon name={toast.type === "success" ? "check_circle" : "info"} size={18} />
+            <span>{toast.message}</span>
+          </div>
+        )}
+      </>
+    );
+  }
+
+  if (editingGoldCircle) {
+    return (
+      <>
+        <ScriptureGoldCircleEditor obsConnected={obsConnected} themeId={editingGoldCircleThemeId} onBack={closeGoldCircleEditor} onNotify={showToast} />
+        {toast && (
+          <div className={`mvg-toast mvg-toast--${toast.type}`}>
+            <Icon name={toast.type === "success" ? "check_circle" : "info"} size={18} />
+            <span>{toast.message}</span>
+          </div>
+        )}
+      </>
+    );
+  }
+
   return (
     <div className="app-page mvg-page">
       <div className="app-page__inner mvg-inner">
@@ -485,7 +706,7 @@ export default function MultiViewGalleryPage() {
 
         {/* Category filters */}
         <div className="mvg-filters">
-          {GALLERY_CATEGORIES.map((cat) => (
+          {FILTER_TABS.map((cat) => (
             <button
               key={cat.key}
               className={`mvg-filter ${filter === cat.key ? "mvg-filter--active" : ""}`}
@@ -496,14 +717,68 @@ export default function MultiViewGalleryPage() {
               {cat.key === "added" && addedCount > 0 && (
                 <span className="mvg-filter-count">{addedCount}</span>
               )}
+              {cat.key === "my" && myThemeEntries.length > 0 && (
+                <span className="mvg-filter-count">{myThemeEntries.length}</span>
+              )}
             </button>
           ))}
         </div>
 
         {/* Layout grid */}
-        {filtered.length > 0 ? (
+        {filtered.length > 0 || showScriptureCircle || showScriptureArch || showScriptureGoldCircle || visibleCustomLooks.length > 0 || (filter === "my" && myThemeEntries.length > 0) ? (
           <div className="mvg-grid">
-            {filtered.map((layout) => {
+            {showScriptureCircle && <ScriptureCircleGalleryCard onEdit={() => openCircleEditor(undefined)} />}
+            {showScriptureArch && <ScriptureArchGalleryCard onEdit={() => openArchEditor(undefined)} />}
+            {showScriptureGoldCircle && <ScriptureGoldCircleGalleryCard onEdit={() => openGoldCircleEditor(undefined)} />}
+            {visibleCustomLooks.map((look) => (
+              <div key={look.lookId} className="mvg-card">
+                <div className="mvg-card-preview">
+                  <span className="mvg-card-slots">Camera + Verse</span>
+                </div>
+                <div className="mvg-card-info">
+                  <h3 className="mvg-card-name">{look.name}</h3>
+                  <p className="mvg-card-desc">{look.description || "Custom Multi-View look."} Ready to use — pick it in the Dock's Multi-View tab and choose your camera scene there.</p>
+                  <div className="mvg-card-usecases">
+                    <span className="mvg-card-usecase">custom</span>
+                    <span className="mvg-card-usecase">camera</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {filter === "my" && myThemeEntries.map((entry) => {
+              const { theme } = entry;
+              const kindLabel = entry.kind === "circle" ? "Scripture Circle" : entry.kind === "arch" ? "Scripture Arch" : "Scripture Gold Circle";
+              return (
+                <div key={`${entry.kind}:${theme.id}`} className="mvg-card">
+                  <div className="mvg-card-preview">
+                    {entry.kind === "circle" && <ScriptureCirclePreview settings={entry.theme.settings} placeholder="Camera" />}
+                    {entry.kind === "arch" && <ScriptureArchPreview settings={entry.theme.settings} placeholder="Camera" />}
+                    {entry.kind === "gold-circle" && <ScriptureGoldCirclePreview settings={entry.theme.settings} placeholder="Camera" />}
+                    <span className="mvg-card-slots">Camera + Scripture</span>
+                  </div>
+                  <div className="mvg-card-info">
+                    <h3 className="mvg-card-name">{theme.name}</h3>
+                    <p className="mvg-card-desc">Saved {kindLabel} theme. Pick it up in the Dock's Multi-View tab to use it.</p>
+                    <div className="mvg-card-usecases">
+                      <span className="mvg-card-usecase">{kindLabel.toLowerCase()}</span>
+                      <span className="mvg-card-usecase">camera</span>
+                    </div>
+                  </div>
+                  <div className="mvg-card-actions">
+                    <button className="mvg-btn mvg-btn--sm mvg-btn--outline" onClick={() => handleDeleteTheme(entry)} title={`Delete ${theme.name}`}>
+                      <Icon name="delete" size={14} /> Delete
+                    </button>
+                    <button className="mvg-btn mvg-btn--sm mvg-btn--outline" onClick={() => handleRenameTheme(entry)} title={`Rename ${theme.name}`}>
+                      <Icon name="edit" size={14} /> Rename
+                    </button>
+                    <button className="mvg-btn mvg-btn--sm mvg-btn--primary" onClick={() => openEditorForEntry(entry)} title={`Edit ${theme.name}`}>
+                      <Icon name="tune" size={14} /> Edit
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+            {filter !== "my" && filtered.map((layout) => {
               const isAdded = addedIds.has(layout.id);
               return (
                 <div key={layout.id} className={`mvg-card${isAdded ? " mvg-card--added" : ""}`}>
@@ -560,12 +835,16 @@ export default function MultiViewGalleryPage() {
           <div className="mvg-empty">
             <Icon name="view_module" size={48} className="mvg-empty-icon" />
             <h3>
-              {filter === "added"
+              {filter === "my"
+                ? "No saved themes yet"
+                : filter === "added"
                 ? t("gallery.emptyAdded")
                 : t("gallery.emptyDefault")}
             </h3>
             <p>
-              {filter === "added"
+              {filter === "my"
+                ? "Edit a Scripture Circle, Scripture Arch or Scripture Gold Circle card on the All or Scripture tab and use \"Send to Dock\" to save one here."
+                : filter === "added"
                 ? t("gallery.emptyAddedDesc")
                 : t("gallery.emptyDefaultDesc")}
             </p>
@@ -598,6 +877,48 @@ export default function MultiViewGalleryPage() {
             currentPlan={upgradePrompt.currentPlan}
             message={upgradePrompt.message}
           />
+        )}
+
+        {deleteThemeTarget && (
+          <ModalDialog
+            tone="danger"
+            icon={<Trash2 size={26} />}
+            title="Delete this theme?"
+            onClose={() => setDeleteThemeTarget(null)}
+            hint="It will no longer be available in the Dock's Multi-View tab."
+            actions={[
+              { label: "Cancel", variant: "ghost", onClick: () => setDeleteThemeTarget(null) },
+              { label: "Delete", variant: "danger", onClick: confirmDeleteTheme },
+            ]}
+          >
+            Delete "{deleteThemeTarget.theme.name}"?
+          </ModalDialog>
+        )}
+
+        {renameThemeTarget && (
+          <ModalDialog
+            tone="brand"
+            icon={<Pencil size={26} />}
+            title="Rename theme"
+            onClose={() => setRenameThemeTarget(null)}
+            actions={[
+              { label: "Cancel", variant: "ghost", onClick: () => setRenameThemeTarget(null) },
+              { label: "Save", variant: "primary", autoFocus: true, onClick: confirmRenameTheme, disabled: !renameThemeDraft.trim() },
+            ]}
+            extra={
+              <input
+                type="text"
+                className="mvg-rename-input"
+                value={renameThemeDraft}
+                onChange={(e) => setRenameThemeDraft(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") confirmRenameTheme(); }}
+                autoFocus
+                placeholder="Theme name"
+              />
+            }
+          >
+            Pick a new name for this theme.
+          </ModalDialog>
         )}
 
         {/* Toast */}

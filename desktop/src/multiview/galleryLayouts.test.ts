@@ -4,14 +4,14 @@ import { TEMPLATE_LIBRARY } from "./templates";
 
 describe("gallery language", () => {
   it("describes source-neutral layouts instead of implying bundled cameras or logos", () => {
-    const layout = GALLERY_LAYOUTS.find((item) => item.id === "logo-tr");
+    const cameraLabels = GALLERY_LAYOUTS.flatMap((layout) =>
+      layout.slots.filter((slot) => slot.contentType === "camera").map((slot) => slot.label),
+    );
 
-    expect(layout?.name).toBe("Full Frame + Top-Right Overlay");
-    expect(layout?.description).toContain("Add your own");
-    expect(layout?.slots.map((slot) => slot.label)).toEqual([
-      "Main content",
-      "top right overlay",
-    ]);
+    expect(cameraLabels.length).toBeGreaterThan(0);
+    for (const label of cameraLabels) {
+      expect(label.toLowerCase()).not.toContain("camera");
+    }
   });
 
   it("uses layout-focused category labels", () => {
@@ -113,6 +113,22 @@ describe("removed templates exclusion", () => {
       "youth-game",
       "kids-puppet",
       "youth-service",
+      "pip",
+      "announcement",
+      "logo-tr",
+      "logo-tl",
+      "logo-br",
+      "logo-bl",
+      "logo-2-top",
+      "logo-2-bottom",
+      "logo-4-corners",
+      "communion",
+      "wedding",
+      "sermon-slides",
+      "worship-confidence",
+      "prayer-request",
+      "sermon-focus-pip",
+      "l-shaped",
     ];
 
     const templateIds = TEMPLATE_LIBRARY.map((template) => template.id);

@@ -40,6 +40,55 @@ import {
 } from "../dockUploadService";
 import { isInternalDockMediaItem } from "../internalMediaAssets";
 import { getRecommendedPollingInterval } from "../../services/performanceManager";
+import {
+  applyScriptureCircleLook,
+  getScriptureCircleTheme,
+  isScriptureCircleLayoutId,
+  listScriptureCircleThemes,
+  loadScriptureCircleThemesFromDockData,
+  parseScriptureCircleThemeId,
+  scriptureCircleLayoutId,
+  SCRIPTURE_CIRCLE_SCENE_NAME,
+  type ScriptureCircleTheme,
+} from "../../multiview/scriptureCircleLook";
+import {
+  applyScriptureArchLook,
+  getScriptureArchTheme,
+  isScriptureArchLayoutId,
+  listScriptureArchThemes,
+  loadScriptureArchThemesFromDockData,
+  parseScriptureArchThemeId,
+  scriptureArchLayoutId,
+  SCRIPTURE_ARCH_SCENE_NAME,
+  type ScriptureArchTheme,
+} from "../../multiview/scriptureArchLook";
+import {
+  applyScriptureGoldCircleLook,
+  getScriptureGoldCircleTheme,
+  isScriptureGoldCircleLayoutId,
+  listScriptureGoldCircleThemes,
+  loadScriptureGoldCircleThemesFromDockData,
+  parseScriptureGoldCircleThemeId,
+  scriptureGoldCircleLayoutId,
+  SCRIPTURE_GOLD_CIRCLE_SCENE_NAME,
+  type ScriptureGoldCircleTheme,
+} from "../../multiview/scriptureGoldCircleLook";
+import {
+  listCustomMultiViewLooks,
+  refreshMultiviewLookCatalog,
+  MULTIVIEW_LOOKS_CATALOG_UPDATED_EVENT,
+  type CustomMultiViewLook,
+} from "../../multiview/customLookCatalog";
+import {
+  applyCustomMultiViewLook,
+  customLookLayoutId,
+  customLookSceneName,
+  getCustomLookCameraScene,
+  isCustomLookLayoutId,
+  loadCustomLookCameraScenesFromDockData,
+  parseCustomLookLayoutId,
+  saveCustomLookCameraScene,
+} from "../../multiview/customLookLook";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -101,6 +150,18 @@ interface SavedMultiView {
   layoutId: string;
   assignments: Record<string, string>;
   slotModes: Record<string, "scene" | "source">;
+  /** The one OBS scene with the camera, for a Scripture Circle theme card (layoutId starts with
+   *  "scripture-circle:"). Overrides the theme's own saved camera scene for this card only, so the
+   *  same theme can drive different cameras on different cards. Unused by every other layout. */
+  scriptureCircleCameraSceneName?: string;
+  /** Same idea as scriptureCircleCameraSceneName, for a Scripture Arch theme card. */
+  scriptureArchCameraSceneName?: string;
+  /** Same idea as scriptureCircleCameraSceneName, for a Scripture Gold Circle theme card. */
+  scriptureGoldCircleCameraSceneName?: string;
+  /** Same idea as scriptureCircleCameraSceneName, for an admin-uploaded custom Multi-View look
+   *  card (layoutId starts with "multiview-look:"). Overrides the look's saved camera scene for
+   *  this card only. Unused by every other layout. */
+  customLookCameraSceneName?: string;
   slotFraming: Record<string, { displayMode: "fill" | "fit" | "custom"; zoom: number; focalX: number; focalY: number }>;
   /** Base64 data-URL thumbnails of assigned scenes */
   slotThumbnails: Record<string, string>;
@@ -738,8 +799,11 @@ async function captureMvSourceThumbnails(sourceNames: string[]): Promise<Map<str
   return captures;
 }
 
-function resolveLayout(layoutId: string): GalleryLayout | undefined {
-  return GALLERY_LAYOUTS.find(l => l.id === layoutId);
+/** Looks up a real GalleryLayout, or — for a Scripture Circle synthetic id — the lightweight
+ *  display-only stub carried in `extraLayouts` (the Dock's `addedLayouts`, which always includes
+ *  one stub per saved Scripture Circle theme). */
+function resolveLayout(layoutId: string, extraLayouts?: GalleryLayout[]): GalleryLayout | undefined {
+  return GALLERY_LAYOUTS.find(l => l.id === layoutId) ?? extraLayouts?.find(l => l.id === layoutId);
 }
 
 function cssColorToObsInt(cssColor: string): number {
@@ -3280,7 +3344,7 @@ function MVTemplateDropdown({
                     <LayoutMiniPreview layout={l} />
                   </span>
                   <span className="dock-mv-template-item__name">{l.name}</span>
-                  {onDeleteTemplate && (
+                  {onDeleteTemplate && !isScriptureCircleLayoutId(l.id) && !isScriptureArchLayoutId(l.id) && !isScriptureGoldCircleLayoutId(l.id) && !isCustomLookLayoutId(l.id) && (
                     <button
                       type="button"
                       className="dock-mv-template-item__delete-btn"
@@ -3329,6 +3393,10 @@ const MVCard = memo(function MVCard({
   onUpdateBackground,
   onAssign,
   onAssignSlotFraming,
+  onAssignScriptureCircleCamera,
+  onAssignScriptureArchCamera,
+  onAssignScriptureGoldCircleCamera,
+  onAssignCustomLookCamera,
   onClearSlot,
   onUpdateFrame,
   onUpdateFrameThickness,
@@ -3361,6 +3429,10 @@ const MVCard = memo(function MVCard({
   onUpdateBackground: (id: string, bg: MVBackground) => void;
   onAssign: (id: string, slotId: string, val: string, mode: "scene" | "source") => void;
   onAssignSlotFraming: (id: string, slotId: string, framing: { displayMode: "fill" | "fit" | "custom"; zoom: number; focalX: number; focalY: number }) => void;
+  onAssignScriptureCircleCamera: (id: string, sceneName: string) => void;
+  onAssignScriptureArchCamera: (id: string, sceneName: string) => void;
+  onAssignScriptureGoldCircleCamera: (id: string, sceneName: string) => void;
+  onAssignCustomLookCamera: (id: string, sceneName: string) => void;
   onClearSlot: (id: string, slotId: string) => void;
   onUpdateFrame: (id: string, frameId: string | null) => void;
   onUpdateFrameThickness: (id: string, thickness: number) => void;
@@ -3389,9 +3461,19 @@ const MVCard = memo(function MVCard({
   const [showSpacingModal, setShowSpacingModal] = useState(false);
   const [propertiesOpen, setPropertiesOpen] = useState(true);
   const frameSettingsRef = useRef<HTMLDivElement>(null);
-  const layout = resolveLayout(mv.layoutId);
+  const layout = resolveLayout(mv.layoutId, addedLayouts);
+  const isScriptureCircle = isScriptureCircleLayoutId(mv.layoutId);
+  const isScriptureArch = isScriptureArchLayoutId(mv.layoutId);
+  const isScriptureGoldCircle = isScriptureGoldCircleLayoutId(mv.layoutId);
+  const customLookId = parseCustomLookLayoutId(mv.layoutId);
+  const isCustomLook = !!customLookId;
+  const isSingleCameraLook = isScriptureCircle || isScriptureArch || isScriptureGoldCircle || isCustomLook;
   const assignedCount = Object.values(mv.assignments).filter(Boolean).length;
-  const allSlotsFilled = !!layout && assignedCount >= layout.slots.length;
+  const allSlotsFilled = !!layout && (isSingleCameraLook || assignedCount >= layout.slots.length);
+  const scriptureCircleScenes = obsScenes.filter((name) => name !== SCRIPTURE_CIRCLE_SCENE_NAME && !/^MV:/i.test(name));
+  const scriptureArchScenes = obsScenes.filter((name) => name !== SCRIPTURE_ARCH_SCENE_NAME && !/^MV:/i.test(name));
+  const scriptureGoldCircleScenes = obsScenes.filter((name) => name !== SCRIPTURE_GOLD_CIRCLE_SCENE_NAME && !/^MV:/i.test(name));
+  const customLookScenes = obsScenes.filter((name) => (!customLookId || name !== customLookSceneName(customLookId)) && !/^MV:/i.test(name));
   const isPushing = pushingId === mv.id;
   const isClearing = clearingId === mv.id;
 
@@ -3563,7 +3645,11 @@ const MVCard = memo(function MVCard({
         />
       )}
 
-      {/* Studio Properties (Frame, Background, Spacing) */}
+      {/* Studio Properties (Frame, Background, Spacing) — a complete-look template (Scripture
+          Circle/Arch/Gold Circle) is a single fixed OBS scene, not a slot grid, so none of the
+          generic frame/background/spacing styling applies to it; only the single camera-scene
+          picker above is relevant. */}
+      {!isSingleCameraLook && (
       <div className="dock-mv-properties-group">
         <button
           type="button"
@@ -3696,6 +3782,7 @@ const MVCard = memo(function MVCard({
           </div>
         )}
       </div>
+      )}
 
       <SpacingModal
         open={showSpacingModal}
@@ -3708,7 +3795,87 @@ const MVCard = memo(function MVCard({
         onClose={() => setShowSpacingModal(false)}
       />
 
-      {layout && (<><div className="dock-mv-assign-section">
+      {layout && isScriptureCircle && (
+        <div className="dock-mv-assign-section">
+          <div className="dock-mv-assign-header">
+            <Icon name="videocam" size={13} />
+            <span>{t('multiview.sceneAssignments')}</span>
+          </div>
+          <div className="dock-mv-property">
+            <span className="dock-mv-property__label">Camera scene</span>
+            <select
+              className="dock-mv-property__select dock-mv-property__select--visible"
+              value={mv.scriptureCircleCameraSceneName ?? ""}
+              onChange={(e) => onAssignScriptureCircleCamera(mv.id, e.target.value)}
+            >
+              <option value="">Use the theme's saved camera scene</option>
+              {scriptureCircleScenes.map((name) => <option key={name} value={name}>{name}</option>)}
+            </select>
+          </div>
+        </div>
+      )}
+
+      {layout && isScriptureArch && (
+        <div className="dock-mv-assign-section">
+          <div className="dock-mv-assign-header">
+            <Icon name="videocam" size={13} />
+            <span>{t('multiview.sceneAssignments')}</span>
+          </div>
+          <div className="dock-mv-property">
+            <span className="dock-mv-property__label">Camera scene</span>
+            <select
+              className="dock-mv-property__select dock-mv-property__select--visible"
+              value={mv.scriptureArchCameraSceneName ?? ""}
+              onChange={(e) => onAssignScriptureArchCamera(mv.id, e.target.value)}
+            >
+              <option value="">Use the theme's saved camera scene</option>
+              {scriptureArchScenes.map((name) => <option key={name} value={name}>{name}</option>)}
+            </select>
+          </div>
+        </div>
+      )}
+
+      {layout && isScriptureGoldCircle && (
+        <div className="dock-mv-assign-section">
+          <div className="dock-mv-assign-header">
+            <Icon name="videocam" size={13} />
+            <span>{t('multiview.sceneAssignments')}</span>
+          </div>
+          <div className="dock-mv-property">
+            <span className="dock-mv-property__label">Camera scene</span>
+            <select
+              className="dock-mv-property__select dock-mv-property__select--visible"
+              value={mv.scriptureGoldCircleCameraSceneName ?? ""}
+              onChange={(e) => onAssignScriptureGoldCircleCamera(mv.id, e.target.value)}
+            >
+              <option value="">Use the theme's saved camera scene</option>
+              {scriptureGoldCircleScenes.map((name) => <option key={name} value={name}>{name}</option>)}
+            </select>
+          </div>
+        </div>
+      )}
+
+      {layout && isCustomLook && (
+        <div className="dock-mv-assign-section">
+          <div className="dock-mv-assign-header">
+            <Icon name="videocam" size={13} />
+            <span>{t('multiview.sceneAssignments')}</span>
+          </div>
+          <div className="dock-mv-property">
+            <span className="dock-mv-property__label">Camera scene</span>
+            <select
+              className="dock-mv-property__select dock-mv-property__select--visible"
+              value={mv.customLookCameraSceneName ?? ""}
+              onChange={(e) => onAssignCustomLookCamera(mv.id, e.target.value)}
+            >
+              <option value="">Choose a camera scene…</option>
+              {customLookScenes.map((name) => <option key={name} value={name}>{name}</option>)}
+            </select>
+          </div>
+        </div>
+      )}
+
+      {layout && !isSingleCameraLook && (<><div className="dock-mv-assign-section">
         <div className="dock-mv-assign-header">
           <Icon name="videocam" size={13} />
           <span>{t('multiview.sceneAssignments')}</span>
@@ -3895,13 +4062,202 @@ function DockMultiviewTab({ isActive = true }: { isActive?: boolean }) {
     [...new Set(savedList.map(m => m.layoutId).filter(Boolean))].sort().join("|")
   ), [savedList]);
 
+  // Scripture Circle themes are saved from the gallery's editor, which can be a different window
+  // entirely — and when the Dock is opened as an OBS browser dock rather than a Tauri window, it's
+  // a completely separate browser process that never sees this window's localStorage at all.
+  // So, like addedLayoutIds above: start from this window's own local copy, then reconcile against
+  // the durable dock-data file (load/saveScriptureCircleThemesFromDockData) on mount, whenever this
+  // tab becomes active, and on a 30s poll while visible — local storage/focus events are a
+  // same-process bonus, not the real sync path.
+  const [scriptureCircleThemes, setScriptureCircleThemes] = useState<ScriptureCircleTheme[]>(() => listScriptureCircleThemes());
+
+  const refreshScriptureCircleThemes = useCallback(async () => {
+    const remote = await loadScriptureCircleThemesFromDockData();
+    if (remote.length > 0) {
+      setScriptureCircleThemes(remote);
+    } else {
+      // Nothing written to dock data yet (e.g. first run before any theme was ever saved) —
+      // fall back to this window's own copy rather than showing nothing.
+      setScriptureCircleThemes(listScriptureCircleThemes());
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isActive) return;
+    void refreshScriptureCircleThemes();
+    const interval = setInterval(() => {
+      if (document.visibilityState === "hidden") return;
+      void refreshScriptureCircleThemes();
+    }, 30000);
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key && event.key !== "mce-dock-scripture-circle-themes") return;
+      void refreshScriptureCircleThemes();
+    };
+    const handleFocus = () => void refreshScriptureCircleThemes();
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener("focus", handleFocus);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [isActive, refreshScriptureCircleThemes]);
+
+  // Scripture Circle themes are lightweight display-only stubs, not real GalleryLayouts — they
+  // never decompose into a grid of slots, so handlePush/resolveLayout branch on their id prefix
+  // instead of treating `slots` as real rectangles. They're always available in the picker; unlike
+  // the generic gallery layouts, there is no separate "add this layout" step for them.
+  const scriptureCircleStubLayouts = useMemo<GalleryLayout[]>(() => scriptureCircleThemes.map((theme) => ({
+    id: scriptureCircleLayoutId(theme.id),
+    name: theme.name,
+    description: "Camera in a circle with the verse you click in the Bible tab beside it.",
+    category: "custom",
+    slots: [],
+    useCases: [],
+    scenePrefix: SCRIPTURE_CIRCLE_SCENE_NAME,
+  })), [scriptureCircleThemes]);
+
+  // Scripture Arch themes — same cross-process dock-data sync as Scripture Circle, its own channel.
+  const [scriptureArchThemes, setScriptureArchThemes] = useState<ScriptureArchTheme[]>(() => listScriptureArchThemes());
+
+  const refreshScriptureArchThemes = useCallback(async () => {
+    const remote = await loadScriptureArchThemesFromDockData();
+    if (remote.length > 0) {
+      setScriptureArchThemes(remote);
+    } else {
+      setScriptureArchThemes(listScriptureArchThemes());
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isActive) return;
+    void refreshScriptureArchThemes();
+    const interval = setInterval(() => {
+      if (document.visibilityState === "hidden") return;
+      void refreshScriptureArchThemes();
+    }, 30000);
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key && event.key !== "mce-dock-scripture-arch-themes") return;
+      void refreshScriptureArchThemes();
+    };
+    const handleFocus = () => void refreshScriptureArchThemes();
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener("focus", handleFocus);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [isActive, refreshScriptureArchThemes]);
+
+  const scriptureArchStubLayouts = useMemo<GalleryLayout[]>(() => scriptureArchThemes.map((theme) => ({
+    id: scriptureArchLayoutId(theme.id),
+    name: theme.name,
+    description: "Camera in an arch window with the verse you click in the Bible tab beside it.",
+    category: "custom",
+    slots: [],
+    useCases: [],
+    scenePrefix: SCRIPTURE_ARCH_SCENE_NAME,
+  })), [scriptureArchThemes]);
+
+  // Scripture Gold Circle themes — same cross-process dock-data sync, its own channel.
+  const [scriptureGoldCircleThemes, setScriptureGoldCircleThemes] = useState<ScriptureGoldCircleTheme[]>(() => listScriptureGoldCircleThemes());
+
+  const refreshScriptureGoldCircleThemes = useCallback(async () => {
+    const remote = await loadScriptureGoldCircleThemesFromDockData();
+    if (remote.length > 0) {
+      setScriptureGoldCircleThemes(remote);
+    } else {
+      setScriptureGoldCircleThemes(listScriptureGoldCircleThemes());
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isActive) return;
+    void refreshScriptureGoldCircleThemes();
+    const interval = setInterval(() => {
+      if (document.visibilityState === "hidden") return;
+      void refreshScriptureGoldCircleThemes();
+    }, 30000);
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key && event.key !== "mce-dock-scripture-gold-circle-themes") return;
+      void refreshScriptureGoldCircleThemes();
+    };
+    const handleFocus = () => void refreshScriptureGoldCircleThemes();
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener("focus", handleFocus);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [isActive, refreshScriptureGoldCircleThemes]);
+
+  const scriptureGoldCircleStubLayouts = useMemo<GalleryLayout[]>(() => scriptureGoldCircleThemes.map((theme) => ({
+    id: scriptureGoldCircleLayoutId(theme.id),
+    name: theme.name,
+    description: "Camera in a gold-ringed circle with the verse you click in the Bible tab beside it.",
+    category: "custom",
+    slots: [],
+    useCases: [],
+    scenePrefix: SCRIPTURE_GOLD_CIRCLE_SCENE_NAME,
+  })), [scriptureGoldCircleThemes]);
+
+  // Admin-uploaded custom Multi-View looks (see customLookCatalog.ts) — unlike the three Scripture
+  // looks above, there can be an arbitrary, growing number of these, so they're iterated over
+  // generically instead of being named one by one. Each fetched look becomes its own stub layout;
+  // there is no separate "saved theme" step (one look = one directly usable Dock entry — see the
+  // judgment call in the report), so there's no cross-process themes-list sync to do here, only a
+  // catalog refresh.
+  const [customLooks, setCustomLooks] = useState<CustomMultiViewLook[]>(() => listCustomMultiViewLooks());
+  // Per-look camera scene, read from the durable dock-data file (see the comment on
+  // customLookLook.ts's camera-scene helpers) for the same cross-process reason the Scripture
+  // themes lists above need it: a Dock running as a separate OBS browser-dock process never sees
+  // another window's localStorage.
+  const [customLookCameraScenes, setCustomLookCameraScenes] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!isActive) return;
+    const refresh = () => setCustomLooks(listCustomMultiViewLooks());
+    refresh();
+    void refreshMultiviewLookCatalog().then(refresh);
+    void loadCustomLookCameraScenesFromDockData().then(setCustomLookCameraScenes);
+    const interval = setInterval(() => {
+      if (document.visibilityState === "hidden") return;
+      refresh();
+    }, 30000);
+    window.addEventListener(MULTIVIEW_LOOKS_CATALOG_UPDATED_EVENT, refresh);
+    window.addEventListener("focus", refresh);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener(MULTIVIEW_LOOKS_CATALOG_UPDATED_EVENT, refresh);
+      window.removeEventListener("focus", refresh);
+    };
+  }, [isActive]);
+
+  const customLookStubLayouts = useMemo<GalleryLayout[]>(() => customLooks.map((look) => ({
+    id: customLookLayoutId(look.lookId),
+    name: look.name,
+    description: look.description || "Custom Multi-View look.",
+    category: "custom",
+    slots: [],
+    useCases: [],
+    scenePrefix: customLookSceneName(look.lookId),
+  })), [customLooks]);
+
   const addedLayouts = useMemo(() => {
     const visibleIds = new Set([
       ...addedLayoutIds,
       ...usedLayoutIds.split("|").filter(Boolean),
     ]);
-    return GALLERY_LAYOUTS.filter(l => visibleIds.has(l.id));
-  }, [addedLayoutIds, usedLayoutIds]);
+    return [
+      ...scriptureCircleStubLayouts,
+      ...scriptureArchStubLayouts,
+      ...scriptureGoldCircleStubLayouts,
+      ...customLookStubLayouts,
+      ...GALLERY_LAYOUTS.filter(l => visibleIds.has(l.id)),
+    ];
+  }, [addedLayoutIds, usedLayoutIds, scriptureCircleStubLayouts, scriptureArchStubLayouts, scriptureGoldCircleStubLayouts, customLookStubLayouts]);
 
   // ── Load saved list without overwriting it during a remount ──
   useEffect(() => {
@@ -4203,7 +4559,7 @@ function DockMultiviewTab({ isActive = true }: { isActive?: boolean }) {
   }, [commitSavedList]);
 
   const handleUpdateLayout = useCallback((id: string, layoutId: string) => {
-    const selectedLayout = resolveLayout(layoutId);
+    const selectedLayout = resolveLayout(layoutId, addedLayouts);
     const next = savedListRef.current.map(m => m.id === id ? {
       ...m,
       layoutId,
@@ -4211,11 +4567,53 @@ function DockMultiviewTab({ isActive = true }: { isActive?: boolean }) {
       slotModes: {},
       slotFraming: {},
       slotThumbnails: {},
+      scriptureCircleCameraSceneName: undefined,
+      scriptureArchCameraSceneName: undefined,
+      scriptureGoldCircleCameraSceneName: undefined,
+      customLookCameraSceneName: undefined,
       layoutFrameId: selectedLayout?.defaultFrameId ?? null,
       slotFrames: { ...(selectedLayout?.defaultSlotFrames ?? {}) },
       updatedAt: new Date().toISOString(),
     } : m);
     commitSavedList(next);
+  }, [commitSavedList, addedLayouts]);
+
+  const handleAssignScriptureCircleCamera = useCallback((id: string, sceneName: string) => {
+    const next = savedListRef.current.map(m => m.id === id ? {
+      ...m,
+      scriptureCircleCameraSceneName: sceneName || undefined,
+      updatedAt: new Date().toISOString(),
+    } : m);
+    commitSavedList(next);
+  }, [commitSavedList]);
+
+  const handleAssignScriptureArchCamera = useCallback((id: string, sceneName: string) => {
+    const next = savedListRef.current.map(m => m.id === id ? {
+      ...m,
+      scriptureArchCameraSceneName: sceneName || undefined,
+      updatedAt: new Date().toISOString(),
+    } : m);
+    commitSavedList(next);
+  }, [commitSavedList]);
+
+  const handleAssignScriptureGoldCircleCamera = useCallback((id: string, sceneName: string) => {
+    const next = savedListRef.current.map(m => m.id === id ? {
+      ...m,
+      scriptureGoldCircleCameraSceneName: sceneName || undefined,
+      updatedAt: new Date().toISOString(),
+    } : m);
+    commitSavedList(next);
+  }, [commitSavedList]);
+
+  const handleAssignCustomLookCamera = useCallback((id: string, sceneName: string) => {
+    const next = savedListRef.current.map(m => m.id === id ? {
+      ...m,
+      customLookCameraSceneName: sceneName || undefined,
+      updatedAt: new Date().toISOString(),
+    } : m);
+    commitSavedList(next);
+    const lookId = parseCustomLookLayoutId(next.find(m => m.id === id)?.layoutId);
+    if (lookId) saveCustomLookCameraScene(lookId, sceneName);
   }, [commitSavedList]);
 
   const handleAssign = useCallback((id: string, slotId: string, val: string, mode: "scene" | "source") => {
@@ -4391,11 +4789,14 @@ function DockMultiviewTab({ isActive = true }: { isActive?: boolean }) {
       const merged = mergeAddedLayoutIds(localIds, remoteIds);
       setAddedLayoutIds(merged);
       saveLocalAddedLayoutIds(merged);
+      await refreshScriptureCircleThemes();
+      await refreshScriptureArchThemes();
+      await refreshScriptureGoldCircleThemes();
       void refreshObsScenes({ forceThumbnails: true });
     } finally {
       setTimeout(() => setIsReloadingTemplates(false), 400);
     }
-  }, [refreshObsScenes]);
+  }, [refreshObsScenes, refreshScriptureCircleThemes, refreshScriptureArchThemes, refreshScriptureGoldCircleThemes]);
 
   const handleDeleteTemplate = useCallback((layoutId: string) => {
     const currentLocal = loadLocalAddedLayoutIds();
@@ -4439,7 +4840,109 @@ function DockMultiviewTab({ isActive = true }: { isActive?: boolean }) {
     await ensureObsConnected();
     if (!dockObsClient.isConnected) return;
 
-    const layout = resolveLayout(mv.layoutId);
+    // Scripture Circle is a single complete OBS look, not a grid of slots — build it directly and
+    // skip the generic slot-wiping/transform pipeline below entirely.
+    const scriptureThemeId = parseScriptureCircleThemeId(mv.layoutId);
+    if (scriptureThemeId) {
+      // getScriptureCircleTheme() only reads this window's own localStorage, which is empty when
+      // the Dock runs as a separate process (an OBS browser dock or a second Tauri window) — the
+      // same cross-process gap documented above `scriptureCircleThemes`. That state is already kept
+      // in sync via the durable dock-data file, so look there first.
+      const theme = scriptureCircleThemes.find((entry) => entry.id === scriptureThemeId) ?? getScriptureCircleTheme(scriptureThemeId);
+      if (!theme) { showFeedback("error", t('multiview.layoutNotFound')); return; }
+      setPushingId(mv.id);
+      try {
+        const settings = {
+          ...theme.settings,
+          cameraSceneName: mv.scriptureCircleCameraSceneName || theme.settings.cameraSceneName,
+        };
+        const { sceneName } = await applyScriptureCircleLook(dockObsClient, settings);
+        try { await dockObsClient.call("SetCurrentPreviewScene", { sceneName }); } catch { /* non-critical */ }
+        showFeedback("success", `"${sceneName}" previewed in OBS`);
+        refreshObsScenes({ forceThumbnails: true });
+      } catch (err) {
+        showFeedback("error", err instanceof Error ? err.message : t('multiview.previewFailed', 'Preview failed'));
+      } finally {
+        if (mountedRef.current) setPushingId(null);
+      }
+      return;
+    }
+
+    // Admin-uploaded custom Multi-View look — also a single complete OBS look, generic/data-driven
+    // (see customLookLook.ts): there is one function for every uploaded look, parameterized by the
+    // fetched package's own html + cameraSlot, rather than one hardcoded module per design.
+    const customLookId = parseCustomLookLayoutId(mv.layoutId);
+    if (customLookId) {
+      const look = customLooks.find((entry) => entry.lookId === customLookId);
+      if (!look || !look.package) { showFeedback("error", t('multiview.layoutNotFound')); return; }
+      const cameraSceneName = mv.customLookCameraSceneName || customLookCameraScenes[customLookId] || getCustomLookCameraScene(customLookId);
+      if (!cameraSceneName) { showFeedback("error", "Choose which OBS scene has your camera first."); return; }
+      setPushingId(mv.id);
+      try {
+        const { sceneName } = await applyCustomMultiViewLook(dockObsClient, {
+          lookId: customLookId,
+          html: look.package.html,
+          cameraSlot: look.package.cameraSlot,
+          cameraSceneName,
+        });
+        try { await dockObsClient.call("SetCurrentPreviewScene", { sceneName }); } catch { /* non-critical */ }
+        showFeedback("success", `"${sceneName}" previewed in OBS`);
+        refreshObsScenes({ forceThumbnails: true });
+      } catch (err) {
+        showFeedback("error", err instanceof Error ? err.message : t('multiview.previewFailed', 'Preview failed'));
+      } finally {
+        if (mountedRef.current) setPushingId(null);
+      }
+      return;
+    }
+
+    // Scripture Arch — same single-look pipeline as Scripture Circle above.
+    const archThemeId = parseScriptureArchThemeId(mv.layoutId);
+    if (archThemeId) {
+      const theme = scriptureArchThemes.find((entry) => entry.id === archThemeId) ?? getScriptureArchTheme(archThemeId);
+      if (!theme) { showFeedback("error", t('multiview.layoutNotFound')); return; }
+      setPushingId(mv.id);
+      try {
+        const settings = {
+          ...theme.settings,
+          cameraSceneName: mv.scriptureArchCameraSceneName || theme.settings.cameraSceneName,
+        };
+        const { sceneName } = await applyScriptureArchLook(dockObsClient, settings);
+        try { await dockObsClient.call("SetCurrentPreviewScene", { sceneName }); } catch { /* non-critical */ }
+        showFeedback("success", `"${sceneName}" previewed in OBS`);
+        refreshObsScenes({ forceThumbnails: true });
+      } catch (err) {
+        showFeedback("error", err instanceof Error ? err.message : t('multiview.previewFailed', 'Preview failed'));
+      } finally {
+        if (mountedRef.current) setPushingId(null);
+      }
+      return;
+    }
+
+    // Scripture Gold Circle — same single-look pipeline as Scripture Circle above.
+    const goldCircleThemeId = parseScriptureGoldCircleThemeId(mv.layoutId);
+    if (goldCircleThemeId) {
+      const theme = scriptureGoldCircleThemes.find((entry) => entry.id === goldCircleThemeId) ?? getScriptureGoldCircleTheme(goldCircleThemeId);
+      if (!theme) { showFeedback("error", t('multiview.layoutNotFound')); return; }
+      setPushingId(mv.id);
+      try {
+        const settings = {
+          ...theme.settings,
+          cameraSceneName: mv.scriptureGoldCircleCameraSceneName || theme.settings.cameraSceneName,
+        };
+        const { sceneName } = await applyScriptureGoldCircleLook(dockObsClient, settings);
+        try { await dockObsClient.call("SetCurrentPreviewScene", { sceneName }); } catch { /* non-critical */ }
+        showFeedback("success", `"${sceneName}" previewed in OBS`);
+        refreshObsScenes({ forceThumbnails: true });
+      } catch (err) {
+        showFeedback("error", err instanceof Error ? err.message : t('multiview.previewFailed', 'Preview failed'));
+      } finally {
+        if (mountedRef.current) setPushingId(null);
+      }
+      return;
+    }
+
+    const layout = resolveLayout(mv.layoutId, addedLayouts);
     if (!layout) { showFeedback("error", t('multiview.layoutNotFound')); return; }
 
     const hasAny = Object.values(mv.assignments).some(v => v);
@@ -4714,7 +5217,7 @@ function DockMultiviewTab({ isActive = true }: { isActive?: boolean }) {
     } finally {
       if (mountedRef.current) setPushingId(null);
     }
-  }, [ensureScene, refreshObsScenes, showFeedback, t]);
+  }, [ensureScene, refreshObsScenes, showFeedback, t, addedLayouts, scriptureCircleThemes, scriptureArchThemes, scriptureGoldCircleThemes, customLooks, customLookCameraScenes]);
 
   const handleClear = useCallback(async (mv: SavedMultiView) => {
     await ensureObsConnected();
@@ -4813,6 +5316,10 @@ function DockMultiviewTab({ isActive = true }: { isActive?: boolean }) {
             onUpdateBackground={handleUpdateBackground}
             onAssign={handleAssign}
             onAssignSlotFraming={handleAssignSlotFraming}
+            onAssignScriptureCircleCamera={handleAssignScriptureCircleCamera}
+            onAssignScriptureArchCamera={handleAssignScriptureArchCamera}
+            onAssignScriptureGoldCircleCamera={handleAssignScriptureGoldCircleCamera}
+            onAssignCustomLookCamera={handleAssignCustomLookCamera}
             onClearSlot={handleRemoveSlot}
             onUpdateFrame={handleUpdateFrame}
             onUpdateFrameThickness={handleUpdateFrameThickness}

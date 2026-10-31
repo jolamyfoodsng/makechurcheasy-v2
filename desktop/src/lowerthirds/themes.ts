@@ -102,11 +102,17 @@ export type ThemeWithPack = ThemeLike & {
 };
 // []
 
+/** Shared CSS for the "quote card" (.ylt/.y-quote) family — the sunrise-orange original plus the
+ *  Quotes-category variants below. Identical layout/animation machinery; only the inline CSS
+ *  variables on each theme's root div (--bg1/--bg2/--accent/...) differ. */
+const QUOTE_CARD_CSS = "\n* { box-sizing: border-box; margin: 0; padding: 0; }\nhtml, body { width: 100%; height: 100%; overflow: hidden; background: transparent; }\nbody { font-family: \"Outfit\", sans-serif; }\n\n.ylt {\n  position: fixed;\n  z-index: 50;\n  pointer-events: none;\n  color: var(--fg, #ffffff);\n  --bg1: #0f172a;\n  --bg2: #111827;\n  --accent: #38bdf8;\n  --muted: rgba(255,255,255,.75);\n  --border: rgba(255,255,255,.22);\n  --glow: rgba(56,189,248,.24);\n}\n\n.y-pos-bl { left: 34px; bottom: 30px; }\n.y-pos-br { right: 34px; bottom: 30px; }\n.y-pos-bc { left: 50%; bottom: 30px; transform: translateX(-50%); }\n.y-pos-tl { left: 34px; top: 30px; }\n.y-pos-tr { right: 34px; top: 30px; }\n.y-pos-tc { left: 50%; top: 30px; transform: translateX(-50%); }\n\n.y-shell {\n  position: relative;\n  overflow: hidden;\n  border: 1px solid var(--border);\n  background: linear-gradient(135deg, var(--bg1), var(--bg2));\n  box-shadow:\n    0 14px 44px rgba(0,0,0,.42),\n    0 0 0 1px rgba(255,255,255,.04) inset,\n    0 0 24px var(--glow);\n}\n\n.y-shell::before {\n  content: \"\";\n  position: absolute;\n  inset: 0;\n  background:\n    radial-gradient(420px 180px at 0% 100%, rgba(255,255,255,.1), transparent 70%),\n    linear-gradient(95deg, transparent 0 32%, rgba(255,255,255,.08) 48%, transparent 66%);\n  mix-blend-mode: screen;\n  pointer-events: none;\n}\n\n.y-shell::after {\n  content: \"\";\n  position: absolute;\n  left: 0;\n  right: 0;\n  top: 0;\n  height: 3px;\n  background: linear-gradient(90deg, transparent, var(--accent), transparent);\n  opacity: .92;\n}\n\n.y-shell,\n.y-enter-1,\n.y-enter-2,\n.y-enter-3 {\n  opacity: 0;\n}\n\n/* Fallback visibility when animation vars are missing/unresolved in host renderer */\n.ylt:not([data-state=\"in\"]):not([data-state=\"out\"]) .y-shell,\n.ylt:not([data-state=\"in\"]):not([data-state=\"out\"]) .y-enter-1,\n.ylt:not([data-state=\"in\"]):not([data-state=\"out\"]) .y-enter-2,\n.ylt:not([data-state=\"in\"]):not([data-state=\"out\"]) .y-enter-3,\n.ylt:not([data-mode=\"stagger\"]):not([data-mode=\"slow\"]):not([data-mode=\"together\"]) .y-shell,\n.ylt:not([data-mode=\"stagger\"]):not([data-mode=\"slow\"]):not([data-mode=\"together\"]) .y-enter-1,\n.ylt:not([data-mode=\"stagger\"]):not([data-mode=\"slow\"]):not([data-mode=\"together\"]) .y-enter-2,\n.ylt:not([data-mode=\"stagger\"]):not([data-mode=\"slow\"]):not([data-mode=\"together\"]) .y-enter-3 {\n  opacity: 1;\n}\n\n.y-kicker {\n  font-size: 12px;\n  font-weight: 700;\n  letter-spacing: .14em;\n  text-transform: uppercase;\n  color: var(--accent);\n}\n\n.y-line1 {\n  font-size: clamp(27px, 2.15vw, 50px);\n  line-height: 1.04;\n  font-weight: 800;\n  letter-spacing: .005em;\n}\n\n.y-line2 {\n  margin-top: 7px;\n  font-size: clamp(17px, 1.3vw, 30px);\n  line-height: 1.18;\n  font-weight: 500;\n  color: var(--muted);\n}\n\n.y-meta {\n  margin-top: 10px;\n  font-size: clamp(13px, .95vw, 21px);\n  font-weight: 600;\n  letter-spacing: .08em;\n  text-transform: uppercase;\n  color: var(--muted);\n}\n\n.y-speaker {\n  min-width: 760px;\n  max-width: min(1500px, calc(100vw - 76px));\n  border-radius: 16px;\n  padding: 16px 20px;\n  display: flex;\n  align-items: center;\n  gap: 16px;\n}\n\n.y-logo {\n  width: 128px;\n  min-width: 128px;\n  height: 78px;\n  border-radius: 12px;\n  background: rgba(255,255,255,.07);\n  border: 1px solid rgba(255,255,255,.2);\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n\n.y-logo img {\n  max-width: 100%;\n  max-height: 100%;\n  object-fit: contain;\n}\n\n.y-vline {\n  width: 5px;\n  min-width: 5px;\n  height: 80px;\n  border-radius: 3px;\n  background: var(--accent);\n}\n\n.y-speaker-text { min-width: 0; display: flex; flex-direction: column; }\n.y-speaker-name { font-size: clamp(29px, 2.45vw, 56px); font-weight: 800; text-transform: uppercase; line-height: 1; letter-spacing: .007em; }\n.y-speaker-role { margin-top: 8px; font-size: clamp(18px, 1.5vw, 34px); font-weight: 500; color: var(--muted); line-height: 1.15; }\n\n.y-quote {\n  min-width: 720px;\n  max-width: min(1450px, calc(100vw - 80px));\n  border-radius: 16px;\n  padding: 16px 20px 18px;\n}\n\n.y-quote-main {\n  margin-top: 8px;\n  font-size: clamp(26px, 2.05vw, 46px);\n  line-height: 1.2;\n  font-weight: 700;\n  font-family: \"Sora\", sans-serif;\n}\n\n.lt-em {\n  font-weight: 900;\n}\n\n.y-quote-ref {\n  margin-top: 10px;\n  text-align: right;\n  font-size: clamp(14px, 1vw, 22px);\n  font-weight: 600;\n  letter-spacing: .08em;\n  text-transform: uppercase;\n  color: var(--muted);\n}\n\n.y-ann {\n  min-width: 650px;\n  max-width: min(1280px, calc(100vw - 80px));\n  border-radius: 16px;\n  padding: 14px 16px;\n  display: flex;\n  align-items: center;\n  gap: 14px;\n}\n\n.y-tag {\n  padding: 8px 12px;\n  border-radius: 10px;\n  background: var(--accent);\n  color: #fff;\n  font-size: 12px;\n  letter-spacing: .12em;\n  text-transform: uppercase;\n  font-weight: 800;\n  white-space: nowrap;\n}\n\n.y-ann-copy { min-width: 0; display: flex; flex-direction: column; }\n\n.y-keyword {\n  min-width: 620px;\n  max-width: min(1220px, calc(100vw - 80px));\n  border-radius: 16px;\n  padding: 12px 15px;\n  display: flex;\n  align-items: center;\n  gap: 14px;\n}\n\n.y-key-main {\n  font-size: clamp(30px, 2.5vw, 60px);\n  line-height: 1;\n  font-weight: 800;\n  text-transform: uppercase;\n  letter-spacing: .015em;\n}\n\n.y-key-sub {\n  font-size: clamp(15px, 1.05vw, 23px);\n  font-weight: 600;\n  color: var(--muted);\n}\n\n.y-scripture {\n  min-width: 720px;\n  max-width: min(1460px, calc(100vw - 80px));\n  border-radius: 16px;\n  padding: 16px 20px 18px;\n}\n\n.y-scripture-main {\n  margin-top: 7px;\n  font-size: clamp(25px, 2vw, 44px);\n  line-height: 1.24;\n  font-weight: 600;\n}\n\n.y-scripture-ref {\n  margin-top: 10px;\n  text-align: right;\n  font-size: clamp(14px, 1vw, 22px);\n  font-weight: 700;\n  letter-spacing: .08em;\n  text-transform: uppercase;\n  color: var(--accent);\n}\n\n.y-event {\n  min-width: 660px;\n  max-width: min(1200px, calc(100vw - 80px));\n  border-radius: 16px;\n  padding: 12px 14px;\n  display: flex;\n  align-items: stretch;\n  gap: 12px;\n}\n\n.y-date {\n  min-width: 90px;\n  border-radius: 12px;\n  background: var(--accent);\n  color: #fff;\n  display: flex;\n  flex-direction: column;\n  justify-content: center;\n  align-items: center;\n  padding: 8px;\n}\n\n.y-date .m { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; font-weight: 700; }\n.y-date .d { font-size: 34px; font-weight: 800; line-height: 1; }\n\n.y-event-copy { min-width: 0; display: flex; flex-direction: column; justify-content: center; }\n\n.y-social {\n  min-width: 560px;\n  max-width: min(980px, calc(100vw - 80px));\n  border-radius: 999px;\n  padding: 10px 14px;\n  display: flex;\n  align-items: center;\n  gap: 10px;\n}\n\n.y-platform {\n  padding: 7px 10px;\n  border-radius: 999px;\n  background: rgba(255,255,255,.16);\n  font-size: 12px;\n  letter-spacing: .09em;\n  text-transform: uppercase;\n  font-weight: 700;\n}\n\n.y-handle {\n  font-size: clamp(20px, 1.5vw, 32px);\n  font-weight: 700;\n}\n\n.y-give {\n  min-width: 580px;\n  max-width: min(980px, calc(100vw - 80px));\n  border-radius: 16px;\n  padding: 14px 16px;\n}\n\n.y-lyrics {\n  min-width: 620px;\n  max-width: min(1260px, calc(100vw - 80px));\n  border-radius: 16px;\n  padding: 13px 16px;\n}\n\n.y-lyric-1 {\n  font-size: clamp(24px, 1.9vw, 42px);\n  line-height: 1.08;\n  font-weight: 700;\n}\n\n.y-lyric-2 {\n  margin-top: 6px;\n  font-size: clamp(22px, 1.75vw, 38px);\n  line-height: 1.08;\n  font-weight: 800;\n  color: var(--accent);\n}\n\n.y-pill {\n  display: inline-flex;\n  align-items: center;\n  gap: 11px;\n  padding: 10px 15px;\n  border-radius: 999px;\n  border: 1px solid var(--border);\n  background: linear-gradient(135deg, var(--bg1), var(--bg2));\n  box-shadow: 0 10px 28px rgba(0,0,0,.34), 0 0 14px var(--glow);\n}\n\n.y-dot {\n  width: 9px;\n  height: 9px;\n  border-radius: 999px;\n  background: var(--accent);\n  box-shadow: 0 0 8px var(--accent);\n}\n\n.y-pill-label { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; color: var(--accent); }\n.y-pill-time { font-size: 24px; font-weight: 800; letter-spacing: .08em; font-variant-numeric: tabular-nums; }\n.y-pill-context { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; color: var(--muted); }\n\n@keyframes yBgIn {\n  from { opacity: 0; transform: translateY(18px) scale(.96); filter: blur(2px); }\n  to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }\n}\n@keyframes yBgOut {\n  from { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }\n  to { opacity: 0; transform: translateY(14px) scale(.96); filter: blur(2px); }\n}\n@keyframes yTextInUp {\n  from { opacity: 0; transform: translateY(14px); filter: blur(1px); }\n  to { opacity: 1; transform: translateY(0); filter: blur(0); }\n}\n@keyframes yTextInFade {\n  from { opacity: 0; transform: translateY(8px); }\n  to { opacity: 1; transform: translateY(0); }\n}\n@keyframes yTextOutUp {\n  from { opacity: 1; transform: translateY(0); }\n  to { opacity: 0; transform: translateY(-11px); }\n}\n@keyframes yTextOutDown {\n  from { opacity: 1; transform: translateY(0); }\n  to { opacity: 0; transform: translateY(10px); }\n}\n\n/* IN: stagger (background -> first text -> second text/meta) */\n.ylt[data-state=\"in\"][data-mode=\"stagger\"] .y-shell { animation: yBgIn .46s cubic-bezier(0.16,1,0.3,1) both; }\n.ylt[data-state=\"in\"][data-mode=\"stagger\"] .y-enter-1 { animation: yTextInUp .35s cubic-bezier(0.16,1,0.3,1) .16s both; }\n.ylt[data-state=\"in\"][data-mode=\"stagger\"] .y-enter-2 { animation: yTextInUp .35s cubic-bezier(0.16,1,0.3,1) .28s both; }\n.ylt[data-state=\"in\"][data-mode=\"stagger\"] .y-enter-3 { animation: yTextInFade .32s cubic-bezier(0.16,1,0.3,1) .39s both; }\n\n/* OUT: first text -> second text/meta -> background */\n.ylt[data-state=\"out\"][data-mode=\"stagger\"] .y-enter-1 { animation: yTextOutUp .26s cubic-bezier(.4,0,1,1) both; }\n.ylt[data-state=\"out\"][data-mode=\"stagger\"] .y-enter-2 { animation: yTextOutDown .24s cubic-bezier(.4,0,1,1) .08s both; }\n.ylt[data-state=\"out\"][data-mode=\"stagger\"] .y-enter-3 { animation: yTextOutDown .22s cubic-bezier(.4,0,1,1) .15s both; }\n.ylt[data-state=\"out\"][data-mode=\"stagger\"] .y-shell { animation: yBgOut .34s cubic-bezier(.4,0,1,1) .24s both; }\n\n/* IN: together-slow */\n.ylt[data-state=\"in\"][data-mode=\"slow\"] .y-shell { animation: yBgIn .8s cubic-bezier(0.16,1,0.3,1) both; }\n.ylt[data-state=\"in\"][data-mode=\"slow\"] .y-enter-1 { animation: yTextInUp .64s cubic-bezier(0.16,1,0.3,1) .18s both; }\n.ylt[data-state=\"in\"][data-mode=\"slow\"] .y-enter-2 { animation: yTextInUp .66s cubic-bezier(0.16,1,0.3,1) .28s both; }\n.ylt[data-state=\"in\"][data-mode=\"slow\"] .y-enter-3 { animation: yTextInFade .64s cubic-bezier(0.16,1,0.3,1) .36s both; }\n\n/* OUT: slow */\n.ylt[data-state=\"out\"][data-mode=\"slow\"] .y-enter-1 { animation: yTextOutUp .34s cubic-bezier(.4,0,1,1) both; }\n.ylt[data-state=\"out\"][data-mode=\"slow\"] .y-enter-2 { animation: yTextOutDown .34s cubic-bezier(.4,0,1,1) .1s both; }\n.ylt[data-state=\"out\"][data-mode=\"slow\"] .y-enter-3 { animation: yTextOutDown .31s cubic-bezier(.4,0,1,1) .2s both; }\n.ylt[data-state=\"out\"][data-mode=\"slow\"] .y-shell { animation: yBgOut .45s cubic-bezier(.4,0,1,1) .34s both; }\n\n/* IN/OUT: together */\n.ylt[data-state=\"in\"][data-mode=\"together\"] .y-shell { animation: yBgIn .55s cubic-bezier(0.16,1,0.3,1) both; }\n.ylt[data-state=\"in\"][data-mode=\"together\"] .y-enter-1 { animation: yTextInUp .48s cubic-bezier(0.16,1,0.3,1) .12s both; }\n.ylt[data-state=\"in\"][data-mode=\"together\"] .y-enter-2 { animation: yTextInFade .48s cubic-bezier(0.16,1,0.3,1) .12s both; }\n.ylt[data-state=\"in\"][data-mode=\"together\"] .y-enter-3 { animation: yTextInFade .48s cubic-bezier(0.16,1,0.3,1) .12s both; }\n\n.ylt[data-state=\"out\"][data-mode=\"together\"] .y-enter-1,\n.ylt[data-state=\"out\"][data-mode=\"together\"] .y-enter-2,\n.ylt[data-state=\"out\"][data-mode=\"together\"] .y-enter-3 {\n  animation: yTextOutUp .3s cubic-bezier(.4,0,1,1) both;\n}\n.ylt[data-state=\"out\"][data-mode=\"together\"] .y-shell { animation: yBgOut .36s cubic-bezier(.4,0,1,1) .14s both; }\n\n@media (max-width: 1180px) {\n  .y-pos-bl, .y-pos-br, .y-pos-bc, .y-pos-tl, .y-pos-tr, .y-pos-tc { left: 18px; right: 18px; transform: none; }\n  .y-pos-br, .y-pos-tr { left: auto; }\n  .y-pos-bc, .y-pos-tc { left: 18px; right: 18px; }\n  .y-speaker, .y-quote, .y-ann, .y-keyword, .y-scripture, .y-event, .y-social, .y-give, .y-lyrics { min-width: 0; max-width: calc(100vw - 36px); }\n  .y-speaker { padding: 12px 14px; gap: 11px; }\n  .y-logo { width: 92px; min-width: 92px; height: 58px; }\n  .y-vline { height: 58px; }\n}\n";
+
 export const MERGED_ALL_THEMES: ThemeLike[] = [{
   "id": "lt-232-youth-quote-pulse-sunrise-orange",
   "name": "Quote Pulse — Sunrise Orange",
   "description": "Statement quote card for sermon clips and social-friendly moments.",
   "category": "general",
+  "graphicCategory": "quotes",
   "icon": "format_quote",
   "accentColor": "#fb923c",
   "tags": [
@@ -194,7 +200,163 @@ export const MERGED_ALL_THEMES: ThemeLike[] = [{
     "duration": 650,
     "easing": "cubic-bezier(0.16, 1, 0.3, 1)"
   },
-  "css": "\n* { box-sizing: border-box; margin: 0; padding: 0; }\nhtml, body { width: 100%; height: 100%; overflow: hidden; background: transparent; }\nbody { font-family: \"Outfit\", sans-serif; }\n\n.ylt {\n  position: fixed;\n  z-index: 50;\n  pointer-events: none;\n  color: var(--fg, #ffffff);\n  --bg1: #0f172a;\n  --bg2: #111827;\n  --accent: #38bdf8;\n  --muted: rgba(255,255,255,.75);\n  --border: rgba(255,255,255,.22);\n  --glow: rgba(56,189,248,.24);\n}\n\n.y-pos-bl { left: 34px; bottom: 30px; }\n.y-pos-br { right: 34px; bottom: 30px; }\n.y-pos-bc { left: 50%; bottom: 30px; transform: translateX(-50%); }\n.y-pos-tl { left: 34px; top: 30px; }\n.y-pos-tr { right: 34px; top: 30px; }\n.y-pos-tc { left: 50%; top: 30px; transform: translateX(-50%); }\n\n.y-shell {\n  position: relative;\n  overflow: hidden;\n  border: 1px solid var(--border);\n  background: linear-gradient(135deg, var(--bg1), var(--bg2));\n  box-shadow:\n    0 14px 44px rgba(0,0,0,.42),\n    0 0 0 1px rgba(255,255,255,.04) inset,\n    0 0 24px var(--glow);\n}\n\n.y-shell::before {\n  content: \"\";\n  position: absolute;\n  inset: 0;\n  background:\n    radial-gradient(420px 180px at 0% 100%, rgba(255,255,255,.1), transparent 70%),\n    linear-gradient(95deg, transparent 0 32%, rgba(255,255,255,.08) 48%, transparent 66%);\n  mix-blend-mode: screen;\n  pointer-events: none;\n}\n\n.y-shell::after {\n  content: \"\";\n  position: absolute;\n  left: 0;\n  right: 0;\n  top: 0;\n  height: 3px;\n  background: linear-gradient(90deg, transparent, var(--accent), transparent);\n  opacity: .92;\n}\n\n.y-shell,\n.y-enter-1,\n.y-enter-2,\n.y-enter-3 {\n  opacity: 0;\n}\n\n/* Fallback visibility when animation vars are missing/unresolved in host renderer */\n.ylt:not([data-state=\"in\"]):not([data-state=\"out\"]) .y-shell,\n.ylt:not([data-state=\"in\"]):not([data-state=\"out\"]) .y-enter-1,\n.ylt:not([data-state=\"in\"]):not([data-state=\"out\"]) .y-enter-2,\n.ylt:not([data-state=\"in\"]):not([data-state=\"out\"]) .y-enter-3,\n.ylt:not([data-mode=\"stagger\"]):not([data-mode=\"slow\"]):not([data-mode=\"together\"]) .y-shell,\n.ylt:not([data-mode=\"stagger\"]):not([data-mode=\"slow\"]):not([data-mode=\"together\"]) .y-enter-1,\n.ylt:not([data-mode=\"stagger\"]):not([data-mode=\"slow\"]):not([data-mode=\"together\"]) .y-enter-2,\n.ylt:not([data-mode=\"stagger\"]):not([data-mode=\"slow\"]):not([data-mode=\"together\"]) .y-enter-3 {\n  opacity: 1;\n}\n\n.y-kicker {\n  font-size: 12px;\n  font-weight: 700;\n  letter-spacing: .14em;\n  text-transform: uppercase;\n  color: var(--accent);\n}\n\n.y-line1 {\n  font-size: clamp(27px, 2.15vw, 50px);\n  line-height: 1.04;\n  font-weight: 800;\n  letter-spacing: .005em;\n}\n\n.y-line2 {\n  margin-top: 7px;\n  font-size: clamp(17px, 1.3vw, 30px);\n  line-height: 1.18;\n  font-weight: 500;\n  color: var(--muted);\n}\n\n.y-meta {\n  margin-top: 10px;\n  font-size: clamp(13px, .95vw, 21px);\n  font-weight: 600;\n  letter-spacing: .08em;\n  text-transform: uppercase;\n  color: var(--muted);\n}\n\n.y-speaker {\n  min-width: 760px;\n  max-width: min(1500px, calc(100vw - 76px));\n  border-radius: 16px;\n  padding: 16px 20px;\n  display: flex;\n  align-items: center;\n  gap: 16px;\n}\n\n.y-logo {\n  width: 128px;\n  min-width: 128px;\n  height: 78px;\n  border-radius: 12px;\n  background: rgba(255,255,255,.07);\n  border: 1px solid rgba(255,255,255,.2);\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n\n.y-logo img {\n  max-width: 100%;\n  max-height: 100%;\n  object-fit: contain;\n}\n\n.y-vline {\n  width: 5px;\n  min-width: 5px;\n  height: 80px;\n  border-radius: 3px;\n  background: var(--accent);\n}\n\n.y-speaker-text { min-width: 0; display: flex; flex-direction: column; }\n.y-speaker-name { font-size: clamp(29px, 2.45vw, 56px); font-weight: 800; text-transform: uppercase; line-height: 1; letter-spacing: .007em; }\n.y-speaker-role { margin-top: 8px; font-size: clamp(18px, 1.5vw, 34px); font-weight: 500; color: var(--muted); line-height: 1.15; }\n\n.y-quote {\n  min-width: 720px;\n  max-width: min(1450px, calc(100vw - 80px));\n  border-radius: 16px;\n  padding: 16px 20px 18px;\n}\n\n.y-quote-main {\n  margin-top: 8px;\n  font-size: clamp(26px, 2.05vw, 46px);\n  line-height: 1.2;\n  font-weight: 700;\n  font-family: \"Sora\", sans-serif;\n}\n\n.y-quote-ref {\n  margin-top: 10px;\n  text-align: right;\n  font-size: clamp(14px, 1vw, 22px);\n  font-weight: 600;\n  letter-spacing: .08em;\n  text-transform: uppercase;\n  color: var(--muted);\n}\n\n.y-ann {\n  min-width: 650px;\n  max-width: min(1280px, calc(100vw - 80px));\n  border-radius: 16px;\n  padding: 14px 16px;\n  display: flex;\n  align-items: center;\n  gap: 14px;\n}\n\n.y-tag {\n  padding: 8px 12px;\n  border-radius: 10px;\n  background: var(--accent);\n  color: #fff;\n  font-size: 12px;\n  letter-spacing: .12em;\n  text-transform: uppercase;\n  font-weight: 800;\n  white-space: nowrap;\n}\n\n.y-ann-copy { min-width: 0; display: flex; flex-direction: column; }\n\n.y-keyword {\n  min-width: 620px;\n  max-width: min(1220px, calc(100vw - 80px));\n  border-radius: 16px;\n  padding: 12px 15px;\n  display: flex;\n  align-items: center;\n  gap: 14px;\n}\n\n.y-key-main {\n  font-size: clamp(30px, 2.5vw, 60px);\n  line-height: 1;\n  font-weight: 800;\n  text-transform: uppercase;\n  letter-spacing: .015em;\n}\n\n.y-key-sub {\n  font-size: clamp(15px, 1.05vw, 23px);\n  font-weight: 600;\n  color: var(--muted);\n}\n\n.y-scripture {\n  min-width: 720px;\n  max-width: min(1460px, calc(100vw - 80px));\n  border-radius: 16px;\n  padding: 16px 20px 18px;\n}\n\n.y-scripture-main {\n  margin-top: 7px;\n  font-size: clamp(25px, 2vw, 44px);\n  line-height: 1.24;\n  font-weight: 600;\n}\n\n.y-scripture-ref {\n  margin-top: 10px;\n  text-align: right;\n  font-size: clamp(14px, 1vw, 22px);\n  font-weight: 700;\n  letter-spacing: .08em;\n  text-transform: uppercase;\n  color: var(--accent);\n}\n\n.y-event {\n  min-width: 660px;\n  max-width: min(1200px, calc(100vw - 80px));\n  border-radius: 16px;\n  padding: 12px 14px;\n  display: flex;\n  align-items: stretch;\n  gap: 12px;\n}\n\n.y-date {\n  min-width: 90px;\n  border-radius: 12px;\n  background: var(--accent);\n  color: #fff;\n  display: flex;\n  flex-direction: column;\n  justify-content: center;\n  align-items: center;\n  padding: 8px;\n}\n\n.y-date .m { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; font-weight: 700; }\n.y-date .d { font-size: 34px; font-weight: 800; line-height: 1; }\n\n.y-event-copy { min-width: 0; display: flex; flex-direction: column; justify-content: center; }\n\n.y-social {\n  min-width: 560px;\n  max-width: min(980px, calc(100vw - 80px));\n  border-radius: 999px;\n  padding: 10px 14px;\n  display: flex;\n  align-items: center;\n  gap: 10px;\n}\n\n.y-platform {\n  padding: 7px 10px;\n  border-radius: 999px;\n  background: rgba(255,255,255,.16);\n  font-size: 12px;\n  letter-spacing: .09em;\n  text-transform: uppercase;\n  font-weight: 700;\n}\n\n.y-handle {\n  font-size: clamp(20px, 1.5vw, 32px);\n  font-weight: 700;\n}\n\n.y-give {\n  min-width: 580px;\n  max-width: min(980px, calc(100vw - 80px));\n  border-radius: 16px;\n  padding: 14px 16px;\n}\n\n.y-lyrics {\n  min-width: 620px;\n  max-width: min(1260px, calc(100vw - 80px));\n  border-radius: 16px;\n  padding: 13px 16px;\n}\n\n.y-lyric-1 {\n  font-size: clamp(24px, 1.9vw, 42px);\n  line-height: 1.08;\n  font-weight: 700;\n}\n\n.y-lyric-2 {\n  margin-top: 6px;\n  font-size: clamp(22px, 1.75vw, 38px);\n  line-height: 1.08;\n  font-weight: 800;\n  color: var(--accent);\n}\n\n.y-pill {\n  display: inline-flex;\n  align-items: center;\n  gap: 11px;\n  padding: 10px 15px;\n  border-radius: 999px;\n  border: 1px solid var(--border);\n  background: linear-gradient(135deg, var(--bg1), var(--bg2));\n  box-shadow: 0 10px 28px rgba(0,0,0,.34), 0 0 14px var(--glow);\n}\n\n.y-dot {\n  width: 9px;\n  height: 9px;\n  border-radius: 999px;\n  background: var(--accent);\n  box-shadow: 0 0 8px var(--accent);\n}\n\n.y-pill-label { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; color: var(--accent); }\n.y-pill-time { font-size: 24px; font-weight: 800; letter-spacing: .08em; font-variant-numeric: tabular-nums; }\n.y-pill-context { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; color: var(--muted); }\n\n@keyframes yBgIn {\n  from { opacity: 0; transform: translateY(18px) scale(.96); filter: blur(2px); }\n  to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }\n}\n@keyframes yBgOut {\n  from { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }\n  to { opacity: 0; transform: translateY(14px) scale(.96); filter: blur(2px); }\n}\n@keyframes yTextInUp {\n  from { opacity: 0; transform: translateY(14px); filter: blur(1px); }\n  to { opacity: 1; transform: translateY(0); filter: blur(0); }\n}\n@keyframes yTextInFade {\n  from { opacity: 0; transform: translateY(8px); }\n  to { opacity: 1; transform: translateY(0); }\n}\n@keyframes yTextOutUp {\n  from { opacity: 1; transform: translateY(0); }\n  to { opacity: 0; transform: translateY(-11px); }\n}\n@keyframes yTextOutDown {\n  from { opacity: 1; transform: translateY(0); }\n  to { opacity: 0; transform: translateY(10px); }\n}\n\n/* IN: stagger (background -> first text -> second text/meta) */\n.ylt[data-state=\"in\"][data-mode=\"stagger\"] .y-shell { animation: yBgIn .46s cubic-bezier(0.16,1,0.3,1) both; }\n.ylt[data-state=\"in\"][data-mode=\"stagger\"] .y-enter-1 { animation: yTextInUp .35s cubic-bezier(0.16,1,0.3,1) .16s both; }\n.ylt[data-state=\"in\"][data-mode=\"stagger\"] .y-enter-2 { animation: yTextInUp .35s cubic-bezier(0.16,1,0.3,1) .28s both; }\n.ylt[data-state=\"in\"][data-mode=\"stagger\"] .y-enter-3 { animation: yTextInFade .32s cubic-bezier(0.16,1,0.3,1) .39s both; }\n\n/* OUT: first text -> second text/meta -> background */\n.ylt[data-state=\"out\"][data-mode=\"stagger\"] .y-enter-1 { animation: yTextOutUp .26s cubic-bezier(.4,0,1,1) both; }\n.ylt[data-state=\"out\"][data-mode=\"stagger\"] .y-enter-2 { animation: yTextOutDown .24s cubic-bezier(.4,0,1,1) .08s both; }\n.ylt[data-state=\"out\"][data-mode=\"stagger\"] .y-enter-3 { animation: yTextOutDown .22s cubic-bezier(.4,0,1,1) .15s both; }\n.ylt[data-state=\"out\"][data-mode=\"stagger\"] .y-shell { animation: yBgOut .34s cubic-bezier(.4,0,1,1) .24s both; }\n\n/* IN: together-slow */\n.ylt[data-state=\"in\"][data-mode=\"slow\"] .y-shell { animation: yBgIn .8s cubic-bezier(0.16,1,0.3,1) both; }\n.ylt[data-state=\"in\"][data-mode=\"slow\"] .y-enter-1 { animation: yTextInUp .64s cubic-bezier(0.16,1,0.3,1) .18s both; }\n.ylt[data-state=\"in\"][data-mode=\"slow\"] .y-enter-2 { animation: yTextInUp .66s cubic-bezier(0.16,1,0.3,1) .28s both; }\n.ylt[data-state=\"in\"][data-mode=\"slow\"] .y-enter-3 { animation: yTextInFade .64s cubic-bezier(0.16,1,0.3,1) .36s both; }\n\n/* OUT: slow */\n.ylt[data-state=\"out\"][data-mode=\"slow\"] .y-enter-1 { animation: yTextOutUp .34s cubic-bezier(.4,0,1,1) both; }\n.ylt[data-state=\"out\"][data-mode=\"slow\"] .y-enter-2 { animation: yTextOutDown .34s cubic-bezier(.4,0,1,1) .1s both; }\n.ylt[data-state=\"out\"][data-mode=\"slow\"] .y-enter-3 { animation: yTextOutDown .31s cubic-bezier(.4,0,1,1) .2s both; }\n.ylt[data-state=\"out\"][data-mode=\"slow\"] .y-shell { animation: yBgOut .45s cubic-bezier(.4,0,1,1) .34s both; }\n\n/* IN/OUT: together */\n.ylt[data-state=\"in\"][data-mode=\"together\"] .y-shell { animation: yBgIn .55s cubic-bezier(0.16,1,0.3,1) both; }\n.ylt[data-state=\"in\"][data-mode=\"together\"] .y-enter-1 { animation: yTextInUp .48s cubic-bezier(0.16,1,0.3,1) .12s both; }\n.ylt[data-state=\"in\"][data-mode=\"together\"] .y-enter-2 { animation: yTextInFade .48s cubic-bezier(0.16,1,0.3,1) .12s both; }\n.ylt[data-state=\"in\"][data-mode=\"together\"] .y-enter-3 { animation: yTextInFade .48s cubic-bezier(0.16,1,0.3,1) .12s both; }\n\n.ylt[data-state=\"out\"][data-mode=\"together\"] .y-enter-1,\n.ylt[data-state=\"out\"][data-mode=\"together\"] .y-enter-2,\n.ylt[data-state=\"out\"][data-mode=\"together\"] .y-enter-3 {\n  animation: yTextOutUp .3s cubic-bezier(.4,0,1,1) both;\n}\n.ylt[data-state=\"out\"][data-mode=\"together\"] .y-shell { animation: yBgOut .36s cubic-bezier(.4,0,1,1) .14s both; }\n\n@media (max-width: 1180px) {\n  .y-pos-bl, .y-pos-br, .y-pos-bc, .y-pos-tl, .y-pos-tr, .y-pos-tc { left: 18px; right: 18px; transform: none; }\n  .y-pos-br, .y-pos-tr { left: auto; }\n  .y-pos-bc, .y-pos-tc { left: 18px; right: 18px; }\n  .y-speaker, .y-quote, .y-ann, .y-keyword, .y-scripture, .y-event, .y-social, .y-give, .y-lyrics { min-width: 0; max-width: calc(100vw - 36px); }\n  .y-speaker { padding: 12px 14px; gap: 11px; }\n  .y-logo { width: 92px; min-width: 92px; height: 58px; }\n  .y-vline { height: 58px; }\n}\n"
+  "css": QUOTE_CARD_CSS
+},
+{
+  "id": "lt-233-quote-card-midnight-teal",
+  "name": "Quote Card — Midnight Teal",
+  "description": "A speaker quote with a name and title beneath it, for sermon highlights and social clips.",
+  "category": "general",
+  "graphicCategory": "quotes",
+  "icon": "format_quote",
+  "accentColor": "#2dd4bf",
+  "tags": [
+    "quote",
+    "sermon",
+    "moment",
+    "animated",
+    "in-out",
+    "midnight-teal"
+  ],
+  "variables": [
+    {
+      "key": "label",
+      "label": "Label",
+      "type": "text",
+      "defaultValue": "Today's Word",
+      "placeholder": "e.g. Today's Word",
+      "group": "Header"
+    },
+    {
+      "key": "quote",
+      "label": "Quote",
+      "type": "text",
+      "defaultValue": "Faith is not the absence of fear; it is the courage to move forward anyway.",
+      "placeholder": "Enter quote text — use *word* or *[#hex]word* to highlight",
+      "required": true,
+      "group": "Content"
+    },
+    {
+      "key": "speaker",
+      "label": "Speaker",
+      "type": "text",
+      "defaultValue": "Pastor John Doe",
+      "placeholder": "e.g. Pastor John Doe",
+      "group": "Content"
+    },
+    {
+      "key": "state",
+      "label": "Animation State",
+      "type": "select",
+      "defaultValue": "in",
+      "options": [
+        { "label": "Animate In", "value": "in" },
+        { "label": "Animate Out", "value": "out" }
+      ],
+      "group": "Animation"
+    },
+    {
+      "key": "animMode",
+      "label": "Animation Mode",
+      "type": "select",
+      "defaultValue": "slow",
+      "options": [
+        { "label": "Staggered", "value": "stagger" },
+        { "label": "Together Slow", "value": "slow" },
+        { "label": "Together", "value": "together" }
+      ],
+      "group": "Animation"
+    }
+  ],
+  "html": "<div class=\"ylt y-pos-bc\" data-state=\"{{state}}\" data-mode=\"{{animMode}}\" style=\"--bg1:#06211f;--bg2:#0b2e2a;--fg:#f0fdfa;--accent:#2dd4bf;--muted:rgba(224,250,245,.8);--border:rgba(45,212,191,.32);--glow:rgba(45,212,191,.22);\">\n  <div class=\"y-shell y-quote\">\n    <span class=\"y-kicker y-enter-3\">{{label}}</span>\n    <p class=\"y-quote-main y-enter-1\">\"{{quote}}\"</p>\n    <p class=\"y-quote-ref y-enter-2\">{{speaker}}</p>\n  </div>\n</div>",
+  "usesTailwind": false,
+  "fontImports": [
+    "/fonts/google/google-fonts.css"
+  ],
+  "animation": {
+    "name": "fadeInUp",
+    "duration": 650,
+    "easing": "cubic-bezier(0.16, 1, 0.3, 1)"
+  },
+  "css": QUOTE_CARD_CSS
+},
+{
+  "id": "lt-234-quote-card-royal-plum",
+  "name": "Quote Card — Royal Plum",
+  "description": "A statement quote with a name and title beneath it, for sermon highlights and social clips.",
+  "category": "general",
+  "graphicCategory": "quotes",
+  "icon": "format_quote",
+  "accentColor": "#c084fc",
+  "tags": [
+    "quote",
+    "sermon",
+    "moment",
+    "animated",
+    "in-out",
+    "royal-plum"
+  ],
+  "variables": [
+    {
+      "key": "label",
+      "label": "Label",
+      "type": "text",
+      "defaultValue": "Key Quote",
+      "placeholder": "e.g. Key Quote",
+      "group": "Header"
+    },
+    {
+      "key": "quote",
+      "label": "Quote",
+      "type": "text",
+      "defaultValue": "Grace will always find you exactly where you are, and never leave you where it found you.",
+      "placeholder": "Enter quote text — use *word* or *[#hex]word* to highlight",
+      "required": true,
+      "group": "Content"
+    },
+    {
+      "key": "speaker",
+      "label": "Speaker",
+      "type": "text",
+      "defaultValue": "Pastor Jane Smith",
+      "placeholder": "e.g. Pastor Jane Smith",
+      "group": "Content"
+    },
+    {
+      "key": "state",
+      "label": "Animation State",
+      "type": "select",
+      "defaultValue": "in",
+      "options": [
+        { "label": "Animate In", "value": "in" },
+        { "label": "Animate Out", "value": "out" }
+      ],
+      "group": "Animation"
+    },
+    {
+      "key": "animMode",
+      "label": "Animation Mode",
+      "type": "select",
+      "defaultValue": "slow",
+      "options": [
+        { "label": "Staggered", "value": "stagger" },
+        { "label": "Together Slow", "value": "slow" },
+        { "label": "Together", "value": "together" }
+      ],
+      "group": "Animation"
+    }
+  ],
+  "html": "<div class=\"ylt y-pos-bc\" data-state=\"{{state}}\" data-mode=\"{{animMode}}\" style=\"--bg1:#1c0f2b;--bg2:#2a1640;--fg:#faf5ff;--accent:#c084fc;--muted:rgba(243,232,255,.8);--border:rgba(192,132,252,.32);--glow:rgba(192,132,252,.24);\">\n  <div class=\"y-shell y-quote\">\n    <span class=\"y-kicker y-enter-3\">{{label}}</span>\n    <p class=\"y-quote-main y-enter-1\">\"{{quote}}\"</p>\n    <p class=\"y-quote-ref y-enter-2\">{{speaker}}</p>\n  </div>\n</div>",
+  "usesTailwind": false,
+  "fontImports": [
+    "/fonts/google/google-fonts.css"
+  ],
+  "animation": {
+    "name": "fadeInUp",
+    "duration": 650,
+    "easing": "cubic-bezier(0.16, 1, 0.3, 1)"
+  },
+  "css": QUOTE_CARD_CSS
 },
 {
   "id": "lt-135-modern-prayer-request",

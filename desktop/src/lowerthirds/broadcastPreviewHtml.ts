@@ -146,7 +146,7 @@ ${kineticFontLinks}
 <script src="/kinetic/kinetic-lower-thirds.js?v=6"></script>
 <script src="/kinetic/subscribe-lower-thirds.js?v=1"></script>
 <script src="/kinetic/church-lower-thirds.js?v=4"></script>
-<script src="/kinetic/sunday-lower-thirds.js?v=2"></script>
+<script src="/kinetic/sunday-lower-thirds.js?v=3"></script>
 <script src="/kinetic/stream-lower-thirds.js?v=2"></script>
 <script src="/kinetic/mce-graphic-packages.js?v=4"></script>
 </head>

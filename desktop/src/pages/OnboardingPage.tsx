@@ -45,6 +45,7 @@ import {
   setPreferredWorkspace,
   type PreferredWorkspace,
 } from "../services/workspacePreference";
+import { openVmixDockWindow } from "../services/vmixDockWindow";
 import "./OnboardingPage.css";
 
 /* ── Constants ── */
@@ -357,6 +358,21 @@ export default function OnboardingPage() {
 
     if (hasFinishedRef.current) return;
     hasFinishedRef.current = true;
+    if (choice === "vmix") {
+      // The Dock window walks through the rest (vMix's Web Controller, then
+      // "Set up vMix"), so setup ends here.
+      const alreadyReported = readLocalValue("mce-onboarding-completed-reported") === "true";
+      if (!alreadyReported) {
+        writeLocalValue("mce-onboarding-completed-reported", "true");
+        fireMilestone("desktopOnboardingCompletedAt");
+        track("onboarding_completed", { workspace: "vmix" });
+        trackProductEvent("onboarding_completed", { workspace: "vmix" });
+      }
+      completeOnboarding();
+      navigate("/", { replace: true });
+      void openVmixDockWindow().catch((error) => console.warn("[Onboarding] Could not open the vMix Dock:", error));
+      return;
+    }
     markStudioWelcomePending();
     const alreadyReported = readLocalValue("mce-onboarding-completed-reported") === "true";
     if (!alreadyReported) {
@@ -510,14 +526,15 @@ function StepChooseWorkspace({ onChoose }: { onChoose: (workspace: PreferredWork
             Set up OBS <ArrowRight size={16} />
           </button>
         </article>
-        <article className="ob-workspace-option ob-workspace-option--disabled" aria-disabled="true">
+        <article className="ob-workspace-option">
           <div className="ob-workspace-option__top">
             <span className="ob-workspace-option__icon"><Tv size={22} /></span>
-            <span className="ob-workspace-option__badge ob-workspace-option__badge--soon">Coming soon</span>
           </div>
           <h2>vMix</h2>
-          <p>Professional video production integration.</p>
-          <button type="button" className="ob-btn ob-btn--secondary ob-workspace-option__action" disabled>Coming soon</button>
+          <p>Show verses, lyrics and lower thirds over your vMix cameras from the Dock.</p>
+          <button type="button" className="ob-btn ob-btn--secondary ob-workspace-option__action" onClick={() => onChoose("vmix")}>
+            Set up vMix <ArrowRight size={16} />
+          </button>
         </article>
       </div>
     </section>

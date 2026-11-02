@@ -24,6 +24,7 @@ import {
   type DockPresentationOutputTarget,
 } from "./dockPresentationTarget";
 import {
+  DOCK_OUTPUT_SOFTWARE_STORAGE_KEY,
   readDockOutputSoftware,
   writeDockOutputSoftware,
   type DockOutputSoftware,
@@ -328,6 +329,20 @@ function DockPageContent({
   // Output software (OBS / vMix). A parent view that asks for a specific
   // target (e.g. the Studio) always wins over this Dock-level choice.
   const [outputSoftware, setOutputSoftware] = useState<DockOutputSoftware>(() => readDockOutputSoftware());
+  // Follow the OBS/vMix choice made elsewhere in the app (the setup page, the home page) while
+  // the Dock stays open: the vMix Dock window is hidden, not closed, so it isn't reloaded.
+  useEffect(() => {
+    const sync = () => setOutputSoftware(readDockOutputSoftware());
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === DOCK_OUTPUT_SOFTWARE_STORAGE_KEY) sync();
+    };
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("focus", sync);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("focus", sync);
+    };
+  }, []);
   const presentationOutputTarget = resolveDockPresentationOutputTarget(
     requestedPresentationOutputTarget ?? (outputSoftware === "vmix" ? "vmix" : undefined),
     dockPlan,
@@ -1467,9 +1482,8 @@ function DockPageContent({
                   </div>
                 </div>
 
-                {/* Output software (OBS / vMix) */}
-                {/* Hidden from users: the switch only appears once vMix was opened with ?output=vmix. */}
-                {!requestedPresentationOutputTarget && outputSoftware === "vmix" && String(dockPlan || "").toLowerCase() !== "free" && (
+                {/* Output software (OBS / vMix). Free plans publish through the presentation link. */}
+                {!requestedPresentationOutputTarget && String(dockPlan || "").toLowerCase() !== "free" && (
                   <div className="dock-sidebar__subpanel" data-testid="dock-output-software">
                     <div className="dock-sidebar__section-label">{t('page.outputSoftware', 'Output software')}</div>
                     <div className="dock-appearance-mode" role="group" aria-label={t('page.outputSoftware', 'Output software')}>

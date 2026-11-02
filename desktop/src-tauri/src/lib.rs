@@ -37,6 +37,7 @@ mod studio_camera;
 mod studio_ndi;
 mod studio_ndi_out;
 mod verse_ai_ndi;
+mod vmix;
 #[cfg(not(target_os = "macos"))]
 use local_llm_stub as local_llm;
 
@@ -6312,6 +6313,12 @@ fn start_overlay_server(resource_dir: std::path::PathBuf) -> u16 {
                 continue;
             }
 
+            // vMix HTTP API relay for the Dock (vMix sends no CORS headers).
+            if clean == "api/vmix" && request.method() == &tiny_http::Method::Get {
+                vmix::relay_overlay_request(request);
+                continue;
+            }
+
             // LocalSend-style discovery endpoint. It intentionally exposes
             // only this app's LAN transfer identity; uploads still require
             // the per-device transfer token returned here.
@@ -10417,6 +10424,13 @@ pub fn run() {
         })
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                // Closing the vMix Dock window only hides it, so "Open Dock"
+                // brings it back at once instead of loading the Dock again.
+                if window.label() == vmix::VMIX_DOCK_WINDOW_LABEL {
+                    api.prevent_close();
+                    let _ = window.hide();
+                    return;
+                }
                 if window.label() == "main" {
                     if UPDATE_CLOSE_GUARD.load(std::sync::atomic::Ordering::SeqCst) {
                         api.prevent_close();
@@ -10456,6 +10470,11 @@ pub fn run() {
             save_bg_image,
             save_upload_file,
             save_upload_file_raw,
+            vmix::vmix_request,
+            vmix::open_vmix_dock_window,
+            vmix::write_vmix_title_file,
+            vmix::write_vmix_title_image,
+            vmix::vmix_builtin_title_path,
             prepare_studio_video_for_program,
             delete_upload_file,
             media_refs::register_media_references,

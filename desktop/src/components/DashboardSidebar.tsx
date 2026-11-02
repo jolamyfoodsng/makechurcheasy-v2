@@ -33,6 +33,7 @@ import {
   FileText,
   Radio,
   MonitorPlay,
+  Cast,
   Layers, Lock, Star } from "./icons/NativeIcons";
 import type { ConnectionStatus } from "../services/obsService";
 
@@ -229,6 +230,7 @@ export default function DashboardSidebar({
         <p className="sidebar-label">{t("sidebar.navigation")}</p>
         <div className="sidebar-nav-list">
           {navItem("/", LayoutDashboard, t("sidebar.dashboard"))}
+          {navItem("/setup", Cast, t("sidebar.setup", { defaultValue: "OBS & vMix setup" }))}
 
           {/* Transcripts & Verse AI collapsible parent item */}
           <div

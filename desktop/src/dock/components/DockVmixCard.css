@@ -57,6 +57,15 @@
   color: var(--dock-text);
   border-color: var(--dock-accent);
 }
+.dock-vmix-bar__icon-btn:focus-visible {
+  outline: 2px solid var(--dock-accent);
+  outline-offset: 1px;
+}
+.dock-vmix-bar__icon-btn.is-active {
+  color: var(--dock-accent);
+  border-color: var(--dock-accent-soft-border);
+  background: var(--dock-accent-soft);
+}
 
 .dock-vmix-dot {
   width: 9px;
@@ -92,6 +101,18 @@
   gap: 3px;
   font-size: 11px;
   color: var(--dock-text-dim);
+}
+.dock-vmix-settings__wide {
+  grid-column: 1 / -1;
+}
+.dock-vmix-settings .dock-vmix-toggle {
+  flex-direction: row;
+  font-size: 12px;
+  color: var(--dock-text);
+}
+.dock-vmix-settings .dock-vmix-toggle input {
+  height: auto;
+  padding: 0;
 }
 .dock-vmix-settings input,
 .dock-vmix-settings select {
@@ -170,8 +191,168 @@
   padding: 2px 7px;
   border: 1px solid var(--dock-border);
   border-radius: 4px;
-  background: rgba(0, 0, 0, 0.25);
+  background: var(--dock-input-bg);
   font-family: var(--dock-font-mono);
   font-size: 11px;
   user-select: all;
+}
+
+.dock-vmix-linkrow__name {
+  flex-shrink: 0;
+  font-size: 11px;
+}
+
+/* Overlay buttons in the bar: one per MCE input, green while it is on its overlay. */
+.dock-vmix-layer-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 8px;
+  border: 1px solid var(--dock-border);
+  border-radius: 4px;
+  background: var(--dock-surface-alt);
+  color: var(--dock-text-dim);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  transition: border-color 150ms ease, color 150ms ease, background-color 150ms ease;
+}
+.dock-vmix-layer-btn:hover:not(:disabled) {
+  color: var(--dock-text);
+  border-color: var(--dock-accent);
+}
+.dock-vmix-layer-btn:focus-visible {
+  outline: 2px solid var(--dock-accent);
+  outline-offset: 1px;
+}
+.dock-vmix-layer-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.dock-vmix-layer-btn__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--dock-text-disabled);
+}
+.dock-vmix-layer-btn__ov {
+  color: var(--dock-text-muted);
+  font-size: 10px;
+}
+.dock-vmix-layer-btn.is-live {
+  color: var(--dock-text);
+  border-color: var(--dock-green-soft-border);
+  background: var(--dock-green-soft);
+}
+.dock-vmix-layer-btn.is-live .dock-vmix-layer-btn__dot {
+  background: var(--dock-green);
+}
+
+.dock-vmix-inputs {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.dock-vmix-inputs li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--dock-text-dim);
+}
+.dock-vmix-inputs li.is-found {
+  color: var(--dock-text);
+}
+.dock-vmix-inputs li.is-found svg {
+  color: var(--dock-green);
+}
+.dock-vmix-inputs__meta {
+  margin-left: auto;
+  color: var(--dock-text-muted);
+  font-size: 11px;
+}
+
+.dock-vmix-manual {
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--dock-border);
+}
+
+.dock-vmix-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+.dock-vmix-row-actions .dock-btn,
+.dock-vmix-confirm .dock-btn {
+  flex: 0 0 auto;
+  width: auto;
+}
+
+.dock-vmix-confirm {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  color: var(--dock-text);
+}
+
+.dock-vmix-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.dock-vmix-toggle input {
+  margin: 0;
+  accent-color: var(--dock-accent);
+}
+
+/* Which vMix title shows what (titles mode) */
+.dock-vmix-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+.dock-vmix-titles__row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dock-vmix-titles__job,
+.dock-vmix-titles__fields label {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--dock-text-dim);
+}
+.dock-vmix-titles__fields {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 12px;
+  border-left: 2px solid var(--dock-border);
+}
+.dock-vmix-titles select {
+  min-width: 0;
+  height: 26px;
+  padding: 0 6px;
+  border: 1px solid var(--dock-input-border);
+  border-radius: 4px;
+  background: var(--dock-input-bg);
+  color: var(--dock-text);
+  font: inherit;
+  font-size: 12px;
+}
+.dock-vmix-titles select:focus-visible {
+  outline: 2px solid var(--dock-accent);
+  outline-offset: 1px;
 }

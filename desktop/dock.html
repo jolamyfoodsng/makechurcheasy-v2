@@ -149,6 +149,12 @@
       display: flex;
     }
 
+    /* Start the Dock below the banner so nothing at the top (e.g. the vMix card) hides under it. */
+    html[data-mce-env="test"] #dock-root {
+      height: calc(100% - 29px);
+      margin-top: 29px;
+    }
+
     .dock-test-env-banner__badge {
       display: inline-flex;
       align-items: center;

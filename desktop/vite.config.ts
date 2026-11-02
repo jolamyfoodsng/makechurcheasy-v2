@@ -269,6 +269,37 @@ function standaloneHtmlGuardPlugin(): Plugin {
   };
 }
 
+/**
+ * Dev server stand-in for the overlay server's `/api/vmix` relay (src-tauri/src/vmix.rs),
+ * so the Dock can drive vMix when opened from Vite in a browser. vMix refuses
+ * requests made by web pages, so the page cannot ask it directly.
+ */
+function vmixRelayPlugin(): Plugin {
+  return {
+    name: "vmix-relay",
+    configureServer(server) {
+      server.middlewares.use("/api/vmix", async (req, res) => {
+        res.setHeader("Content-Type", "application/json");
+        const params = new URL(req.url ?? "", "http://localhost").searchParams;
+        const host = params.get("host") ?? "";
+        const port = Number(params.get("port"));
+        const query = params.get("q") ?? "";
+        if (!/^[A-Za-z0-9._-]+$/.test(host) || !port || !(query === "" || query.startsWith("/?"))) {
+          res.end(JSON.stringify({ error: "unreachable: invalid vMix request" }));
+          return;
+        }
+        try {
+          const reply = await fetch(`http://${host}:${port}/api${query}`, { signal: AbortSignal.timeout(2500) });
+          res.end(JSON.stringify({ status: reply.status, body: await reply.text() }));
+        } catch (error) {
+          const timedOut = error instanceof Error && error.name === "TimeoutError";
+          res.end(JSON.stringify({ error: `${timedOut ? "timeout" : "unreachable"}: ${String(error)}` }));
+        }
+      });
+    },
+  };
+}
+
 function authSessionPlugin(): Plugin {
   return {
     name: "auth-session",
@@ -444,7 +475,7 @@ function capitalize(s: string): string {
 
 // https://vite.dev/config/
 export default defineConfig(async ({ mode }) => ({
-  plugins: [standaloneHtmlGuardPlugin(), overlayHtmlRestartPlugin(), react(), authSessionPlugin(), entitlementServerPlugin()],
+  plugins: [standaloneHtmlGuardPlugin(), overlayHtmlRestartPlugin(), react(), authSessionPlugin(), vmixRelayPlugin(), entitlementServerPlugin()],
 
   resolve: {
     alias: {

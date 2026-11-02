@@ -14,6 +14,7 @@ import { obsService, type ConnectionStatus } from "../services/obsService";
 import { useDockBaseUrl } from "../services/overlayUrl";
 import { VmixClient, loadVmixSettings } from "../services/vmixClient";
 import { isVmixDockPinned, openVmixDockWindow, setVmixDockPinned } from "../services/vmixDockWindow";
+import { buildMceVmixInputUrl, resolveVmixPresentationLink } from "../services/vmixSetup";
 import { getPreferredWorkspace, setPreferredWorkspace } from "../services/workspacePreference";
 import "./ProductionSetupPage.css";
 
@@ -44,7 +45,86 @@ function Step({ n, done, title, children }: { n: number; done?: boolean; title: 
   );
 }
 
-function VmixSetup({ isFreePlan }: { isFreePlan: boolean }) {
+/**
+ * vMix on the free plan: MakeChurchEazy creates and changes nothing in vMix
+ * (as with OBS scenes). The church adds the presentation link to vMix itself.
+ */
+function VmixFreeSetup() {
+  const [link, setLink] = useState("");
+  const [copied, copy] = useCopy();
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    const settings = loadVmixSettings();
+    void resolveVmixPresentationLink(settings)
+      .then((resolved) => { if (!cancelled && resolved) setLink(buildMceVmixInputUrl(resolved)); })
+      .catch(() => undefined);
+    return () => { cancelled = true; };
+  }, []);
+
+  const openDock = useCallback(() => {
+    setError("");
+    setPreferredWorkspace("vmix");
+    openVmixDockWindow().catch((err) => setError(err instanceof Error ? err.message : String(err)));
+  }, []);
+
+  return (
+    <section className="app-surface setup-panel" aria-labelledby="setup-vmix-title">
+      <div className="app-surface__header">
+        <div>
+          <h2 id="setup-vmix-title" className="app-surface__title">Set up vMix</h2>
+          <p className="setup-panel__lead">
+            On the free plan you add the presentation link to vMix yourself. MakeChurchEazy doesn&apos;t create or
+            change anything in vMix.
+          </p>
+        </div>
+      </div>
+      <div className="app-surface__body">
+        <div className="app-banner app-banner--warning setup-panel__banner">
+          <div className="app-banner__content">
+            <AlertCircle size={16} />
+            <span>
+              Setting up vMix in one click, with vMix titles that update instantly, is part of the paid plans.
+            </span>
+          </div>
+        </div>
+        <ol className="setup-steps">
+          <Step n={1} title="Copy your presentation link">
+            <p>Everything you show from the Dock appears on this page.</p>
+            <div className="setup-link">
+              <input readOnly value={link || "Getting the link…"} aria-label="Presentation link" />
+              <button type="button" className="app-btn" onClick={() => copy("vmix-link", link)} disabled={!link}>
+                {copied === "vmix-link" ? <Check size={14} /> : <Copy size={14} />}
+                {copied === "vmix-link" ? "Copied" : "Copy"}
+              </button>
+            </div>
+          </Step>
+          <Step n={2} title="Add it to vMix">
+            <p>
+              In vMix choose <strong>Add Input → Web Browser</strong>, paste the link and click OK. Then put that input
+              on an overlay, for example Overlay 1.
+            </p>
+          </Step>
+          <Step n={3} title="Open the Dock">
+            <p>The Dock opens in its own window. Put it beside vMix.</p>
+            <div className="setup-actions">
+              <button type="button" className="app-btn app-btn--primary" onClick={openDock}>
+                <Tv size={16} /> Open Dock
+              </button>
+            </div>
+            {error && <p className="obs-error" role="alert">{error}</p>}
+          </Step>
+          <Step n={4} title="Present from the Dock">
+            <p>Click a verse, song or note and it shows on the presentation link in vMix.</p>
+          </Step>
+        </ol>
+      </div>
+    </section>
+  );
+}
+
+function VmixSetup() {
   const [vmixVersion, setVmixVersion] = useState<string | null>(null);
   const [pinned, setPinned] = useState(() => isVmixDockPinned());
   const [error, setError] = useState("");
@@ -88,16 +168,6 @@ function VmixSetup({ isFreePlan }: { isFreePlan: boolean }) {
         </div>
       </div>
       <div className="app-surface__body">
-        {isFreePlan && (
-          <div className="app-banner app-banner--warning setup-panel__banner">
-            <div className="app-banner__content">
-              <AlertCircle size={16} />
-              <span>
-                Controlling vMix is part of the paid plans. On the free plan the Dock shows content through the presentation link instead.
-              </span>
-            </div>
-          </div>
-        )}
         <ol className="setup-steps">
           <Step n={1} done={Boolean(vmixVersion)} title="Turn on vMix's Web Controller">
             <p>In vMix, open <strong>Settings → Web Controller</strong>, tick <strong>Enable</strong> and keep the port at {settings.port}.</p>
@@ -263,7 +333,7 @@ export default function ProductionSetupPage() {
           ))}
         </div>
 
-        {software === "vmix" ? <VmixSetup isFreePlan={isFreePlan} /> : <ObsSetup />}
+        {software === "vmix" ? (isFreePlan ? <VmixFreeSetup /> : <VmixSetup />) : <ObsSetup />}
       </div>
     </div>
   );

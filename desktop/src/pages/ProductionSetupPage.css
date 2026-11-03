@@ -1,0 +1,204 @@
+/* ── OBS & vMix setup page ── */
+.setup-page {
+  max-width: 1200px;
+}
+
+/* Software choice: two options, the chosen one outlined in the accent. */
+.setup-choice {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.setup-choice__option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text-primary);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--transition), background-color var(--transition);
+}
+
+.setup-choice__option:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-hover);
+}
+
+.setup-choice__option:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.setup-choice__option--active,
+.setup-choice__option--active:hover {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.setup-choice__title {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.setup-choice__desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.setup-panel__lead {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.setup-panel__banner {
+  margin-bottom: 16px;
+}
+
+/* Numbered steps: one card each, two side by side (step 1 left, step 2 right). */
+.setup-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.setup-step {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  min-width: 0;
+}
+
+.setup-step--done {
+  border-color: color-mix(in srgb, var(--success) 45%, var(--border));
+}
+
+.setup-step__mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.setup-step--done .setup-step__mark {
+  border-color: var(--success);
+  background: var(--success);
+  color: #ffffff;
+}
+
+.setup-step__body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.setup-step__title {
+  margin: 2px 0 4px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.setup-step__body p {
+  margin: 0 0 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.setup-step__body strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.setup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.setup-actions .app-btn:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.setup-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.setup-check input {
+  margin: 0;
+  accent-color: var(--primary);
+}
+
+.setup-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.setup-status__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-disabled);
+}
+
+.setup-status--ok {
+  color: var(--text-primary);
+}
+
+.setup-status--ok .setup-status__dot {
+  background: var(--success);
+}
+
+.setup-link {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.setup-link input {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 12px;
+}
+
+.setup-note {
+  font-size: 12px !important;
+  color: var(--text-muted) !important;
+}
+
+@media (max-width: 760px) {
+  .setup-choice,
+  .setup-steps {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,4 +1,4 @@
-export type PreferredWorkspace = "studio" | "obs";
+export type PreferredWorkspace = "studio" | "obs" | "vmix";
 
 export const PREFERRED_WORKSPACE_KEY = "mce-preferred-workspace-v1";
 export const ONBOARDING_COMPLETED_KEY = "mce-onboarding-completed-v1";
@@ -31,7 +31,7 @@ function removeValue(key: string): void {
 
 export function getPreferredWorkspace(): PreferredWorkspace | null {
   const value = readValue(PREFERRED_WORKSPACE_KEY);
-  if (value === "studio" || value === "obs") return value;
+  if (value === "studio" || value === "obs" || value === "vmix") return value;
   // Existing installs completed the original OBS onboarding before this preference existed.
   return readValue(LEGACY_ONBOARDING_COMPLETED_KEY) === "true" ? "obs" : null;
 }

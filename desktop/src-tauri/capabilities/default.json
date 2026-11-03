@@ -4,7 +4,8 @@
   "description": "Capability for the main window",
   "windows": [
     "main",
-    "makechurcheasy-pet"
+    "makechurcheasy-pet",
+    "mce-vmix-dock"
   ],
   "permissions": [
     "core:default",

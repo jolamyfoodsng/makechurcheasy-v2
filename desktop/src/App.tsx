@@ -19,7 +19,8 @@ import { SettingsOverlayContext } from "./components/SettingsModalSlot";
 import { Routes, Route, Navigate, useParams, useNavigate, useLocation, type Location } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { OBSConnectGate } from "./components/OBSConnectGate";
-import { isOnboardingCompleted } from "./services/workspacePreference";
+import { getPreferredWorkspace, isOnboardingCompleted } from "./services/workspacePreference";
+import { DOCK_OUTPUT_SOFTWARE_STORAGE_KEY } from "./dock/dockOutputSoftware";
 import AuthGate from "./components/AuthGate";
 import LicenseGuard from "./components/LicenseGuard";
 import FeatureGuard from "./components/FeatureGuard";
@@ -136,6 +137,7 @@ const DevModalsGalleryPage = import.meta.env.DEV
   ? safeLazy(() => import("./pages/DevModalsGalleryPage"))
   : null;
 const ResourcesPage = safeLazy(() => import("./pages/ResourcesPage"));
+const ProductionSetupPage = safeLazy(() => import("./pages/ProductionSetupPage"));
 const ProductionHomePage = safeLazy(() => import("./pages/ProductionHomePage"));
 const MultiViewGalleryPage = safeLazy(() => import("./pages/MultiViewGalleryPage"));
 const CountdownsPage = safeLazy(() => import("./pages/CountdownsPage"));
@@ -1307,6 +1309,30 @@ function App() {
     });
   }, []);
 
+  // ── vMix: keep vMix in step with what the app shows (main window only) ──
+  // Free plans never control vMix (as with OBS scenes): they use the presentation link instead.
+  const vmixUserRef = useRef(user);
+  vmixUserRef.current = user;
+  useEffect(() => {
+    let stop: (() => void) | null = null;
+    let cancelled = false;
+    const isVmixChosen = () => {
+      if (getEffectivePlan(vmixUserRef.current) === "free") return false;
+      try {
+        return getPreferredWorkspace() === "vmix" || localStorage.getItem(DOCK_OUTPUT_SOFTWARE_STORAGE_KEY) === "vmix";
+      } catch {
+        return false;
+      }
+    };
+    void import("./services/vmixOutputEngine").then(({ startVmixOutputEngine }) => {
+      if (!cancelled) stop = startVmixOutputEngine(isVmixChosen);
+    });
+    return () => {
+      cancelled = true;
+      stop?.();
+    };
+  }, []);
+
   // ── Re-verify license when user logs in (BUG 2) ──
   const prevUserRef = useRef(user);
   useEffect(() => {
@@ -1630,6 +1656,7 @@ function App() {
                                       <Route path="live" element={<Navigate to="/" replace />} />
                                       <Route path="service" element={<Navigate to="/" replace />} />
                                       <Route path="resources" element={<ResourcesPage />} />
+                                      <Route path="setup" element={<ProductionSetupPage />} />
                                       <Route path="service-planner" element={<ServicePlannerPage />} />
 
                                       <Route path="songs" element={<Navigate to="/resources?tab=worship" replace />} />

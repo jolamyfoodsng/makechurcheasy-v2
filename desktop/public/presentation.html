@@ -543,6 +543,11 @@ video { outline: none; }
       const isPreviewFrame = initialParams.get("preview") === "1";
       const PREVIEW_MAX_FONT_SIZE = 75;
       const PREVIEW_DEFAULT_FONT_SIZE = 50;
+      // vMix's Web Browser input: `transparent=1` keeps the page see-through when
+      // empty, and `outDelay` keeps cleared content up while vMix transitions the overlay out.
+      const transparentWhenEmpty = initialParams.get("transparent") === "1";
+      const outDelayMs = Math.max(0, Math.min(5000, Number(initialParams.get("outDelay")) || 0));
+      const emptyBackground = transparentWhenEmpty ? "transparent" : "#000";
 
 
 
@@ -597,8 +602,9 @@ video { outline: none; }
           stage.innerHTML = "";
         }
         if (body) {
-          body.style.background = "#000";
+          body.style.background = emptyBackground;
         }
+        if (transparentWhenEmpty) return;
         invalidState.classList.remove("hidden");
         waitingState.classList.add("hidden");
       }
@@ -610,9 +616,10 @@ video { outline: none; }
           stage.innerHTML = "";
         }
         if (body) {
-          body.style.background = "#000";
+          body.style.background = emptyBackground;
         }
         invalidState.classList.add("hidden");
+        if (transparentWhenEmpty) return;
         waitingState.classList.remove("hidden");
       }
 
@@ -625,7 +632,7 @@ video { outline: none; }
         invalidState.classList.add("hidden");
         waitingState.classList.add("hidden");
         if (body) {
-          body.style.background = "#000";
+          body.style.background = emptyBackground;
         }
       }
 
@@ -1130,7 +1137,40 @@ video { outline: none; }
         }
       }
 
+      function hasVisibleContent(state) {
+        return Boolean(state && (state.fullscreen || state.lowerThird || hasGraphic(state)));
+      }
+
+      var pendingClearTimer = null;
+      var pendingClearState = undefined;
+
       function applyRemoteState(nextState) {
+        if (pendingClearTimer !== null) {
+          // The poll repeats the snapshot we are already waiting to clear to.
+          if (
+            nextState &&
+            pendingClearState &&
+            Number(nextState.updatedAt) === Number(pendingClearState.updatedAt)
+          ) {
+            return;
+          }
+          window.clearTimeout(pendingClearTimer);
+          pendingClearTimer = null;
+          pendingClearState = undefined;
+        }
+        if (outDelayMs > 0 && nextState && hasVisibleContent(lastResolvedState) && !hasVisibleContent(nextState)) {
+          pendingClearState = nextState;
+          pendingClearTimer = window.setTimeout(function () {
+            pendingClearTimer = null;
+            pendingClearState = undefined;
+            renderRemoteState(nextState);
+          }, outDelayMs);
+          return;
+        }
+        renderRemoteState(nextState);
+      }
+
+      function renderRemoteState(nextState) {
         // A healthy WebSocket delivers updates immediately. The no-store poll
         // below is a recovery path for browser sources that keep a half-open
         // socket after a network interruption, so ignore snapshots we've

@@ -27,6 +27,8 @@ import { getOverlayBaseUrlSync, useDockBaseUrl, useLanDockBaseUrl } from "../ser
 import { confirmStopVoiceBibleForPresentation } from "../services/voiceBiblePresentationGuard";
 import { getAllSongs } from "../worship/worshipDb";
 import { OnboardingResumeBanner } from "./OnboardingPage";
+import { openVmixDockWindow } from "../services/vmixDockWindow";
+import { getPreferredWorkspace } from "../services/workspacePreference";
 import MovePluginInstallModal from "../components/MovePluginInstallModal";
 import {
   ensureMoveTransition,
@@ -108,6 +110,40 @@ function DashboardGreeting({
         </button>
       </div>
     </header>
+  );
+}
+
+// ── 2b. vMix Panel (churches that chose vMix) ─────────────────────────────
+
+function DashboardVmixPanel() {
+  const [error, setError] = useState("");
+  const openDock = useCallback(() => {
+    setError("");
+    openVmixDockWindow().catch((err) => {
+      setError(err instanceof Error ? err.message : String(err));
+    });
+  }, []);
+
+  return (
+    <div className="status-panel">
+      <div className="status-panel__top">
+        <div className="status-panel__items">
+          <div className="status-item">
+            <Monitor className="status-icon" />
+            <div>
+              <p className="status-title">vMix</p>
+              <p className="status-desc">
+                Open the Dock beside vMix. It adds MakeChurchEazy&apos;s inputs to vMix and shows verses, lyrics and lower thirds over your cameras.
+              </p>
+            </div>
+          </div>
+        </div>
+        <button type="button" className="app-btn app-btn--primary" onClick={openDock}>
+          <MonitorSmartphone size={16} /> Open Dock
+        </button>
+      </div>
+      {error && <p className="obs-error" role="alert">{error}</p>}
+    </div>
   );
 }
 
@@ -779,11 +815,15 @@ export default function ProductionHomePage() {
         onHowItWorks={() => setShowHowItWorksModal(true)}
       />
 
-      <DashboardObsDockStatus
-        obsStatus={obsStatus}
-        dockAvailable={dockAvailable}
-        onConnectObs={handleConnectObs}
-      />
+      {getPreferredWorkspace() === "vmix" ? (
+        <DashboardVmixPanel />
+      ) : (
+        <DashboardObsDockStatus
+          obsStatus={obsStatus}
+          dockAvailable={dockAvailable}
+          onConnectObs={handleConnectObs}
+        />
+      )}
 
       <FeatureGrid
         voiceBibleStatus={voiceBible.status}

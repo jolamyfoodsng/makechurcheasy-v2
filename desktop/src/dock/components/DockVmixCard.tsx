@@ -4,16 +4,31 @@ import { copyTextToClipboard } from "../bibleClipboard";
 import { getPresentationSettings } from "../../services/presentationSettings";
 import {
   MCE_VMIX_INPUT_NAME,
+  MCE_VMIX_ALL_LAYERS,
   VMIX_OVERLAY_CHANNELS,
+  VMIX_TITLE_JOBS,
   VmixClient,
   VmixError,
-  describeVmixSetup,
+  activeVmixLayer,
+  describeVmixLayers,
+  findSlotInput,
   loadVmixSettings,
   saveVmixSettings,
   type VmixOverlayChannel,
   type VmixSettings,
   type VmixStatus,
 } from "../../services/vmixClient";
+import {
+  buildMceVmixInputUrl,
+  removeMceVmixInputs,
+  resolveVmixPresentationLink,
+  setupMceVmixInput,
+  vmixAutoOverlayHint,
+  vmixInputsHint,
+} from "../../services/vmixSetup";
+import { requestVmixResync } from "../../services/vmixOutputEngine";
+import DockVmixTitles from "./DockVmixTitles";
+import { isVmixDockPinned, isVmixDockWindow, setVmixDockPinned } from "../../services/vmixDockWindow";
 import "./DockVmixCard.css";
 
 const POLL_MS = 2000;
@@ -27,7 +42,7 @@ function errorHint(error: VmixError, settings: VmixSettings): string {
   switch (error.code) {
     case "timeout":
     case "unreachable":
-      return `Can't reach vMix at ${settings.host}:${settings.port}. In vMix open Settings → Web Controller, tick "Enable Web Controller" and check the port. If vMix runs on another PC, enter that PC's IP address.`;
+      return `Can't reach vMix at ${settings.host}:${settings.port}. In vMix open Settings → Web Controller, tick "Enable" and check the port. If vMix runs on another PC, enter that PC's IP address in settings.`;
     case "http":
       return `vMix answered with an error (${error.message}). Check the host and port.`;
     case "not_vmix":
@@ -35,6 +50,11 @@ function errorHint(error: VmixError, settings: VmixSettings): string {
   }
 }
 
+/**
+ * The Dock's vMix card: connects to vMix and sets up its one input,
+ * "MCE Presentation". The app's main window drives vMix (vmixOutputEngine);
+ * this card only sets it up and shows whether it is on air.
+ */
 export default function DockVmixCard() {
   const [settings, setSettings] = useState<VmixSettings>(() => loadVmixSettings());
   const [showSettings, setShowSettings] = useState(false);
@@ -43,32 +63,35 @@ export default function DockVmixCard() {
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
-  // null = automatic: the setup steps are open until the Web Browser input
-  // exists, then fold away so the card stays a one-line bar.
+  const [needsManual, setNeedsManual] = useState(false);
+  const [confirmRemove, setConfirmRemove] = useState(false);
+  // null = automatic: the setup steps are open until the input exists, then
+  // fold away so the card stays a one-line bar.
   const [guideOpen, setGuideOpen] = useState<boolean | null>(null);
   const copiedTimer = useRef<number | null>(null);
+  // Only the app's own Dock window can stay on top of vMix.
+  const [inDockWindow] = useState(() => isVmixDockWindow());
+  const [pinned, setPinned] = useState(() => isVmixDockPinned());
 
   const client = useMemo(() => new VmixClient(settings), [settings]);
 
-  useEffect(() => {
-    let cancelled = false;
-    const poll = async () => {
-      try {
-        const status = await client.getStatus();
-        if (!cancelled) setConnection({ state: "connected", status });
-      } catch (err) {
-        if (cancelled) return;
-        const error = err instanceof VmixError ? err : new VmixError("unreachable", String(err));
-        setConnection({ state: "error", error });
-      }
-    };
-    void poll();
-    const timer = window.setInterval(() => void poll(), POLL_MS);
-    return () => {
-      cancelled = true;
-      window.clearInterval(timer);
-    };
+  const refreshStatus = useCallback(async () => {
+    try {
+      const status = await client.getStatus();
+      setConnection({ state: "connected", status });
+    } catch (err) {
+      const error = err instanceof VmixError ? err : new VmixError("unreachable", String(err));
+      setConnection({ state: "error", error });
+    }
   }, [client]);
+
+  useEffect(() => {
+    void refreshStatus();
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") void refreshStatus();
+    }, POLL_MS);
+    return () => window.clearInterval(timer);
+  }, [refreshStatus]);
 
   useEffect(() => {
     const refresh = () => setPresentationLink(getPresentationSettings().presentationLink);
@@ -80,14 +103,73 @@ export default function DockVmixCard() {
     };
   }, []);
 
+  const connected = connection.state === "connected" ? connection.status : null;
+  const layers = connected ? describeVmixLayers(connected, settings) : null;
+  const mce = layers ? layers[activeVmixLayer(settings)] : null;
+  const titlesMode = settings.outputMode === "titles";
+  // In titles mode each job needs its title: MCE's own, or the church's pick.
+  const titleInputs = connected && layers
+    ? VMIX_TITLE_JOBS.map((job) =>
+      settings.titles[job].kind === "mce" ? layers.title.input : findSlotInput(connected, settings.titles[job]))
+    : [];
+  const ready = titlesMode ? titleInputs.length > 0 && titleInputs.every(Boolean) : Boolean(mce?.input);
+  const heldBy = connected?.overlays.find((overlay) => overlay.number === settings.overlay)?.inputNumber ?? null;
+  const onAir = titlesMode
+    ? heldBy !== null && titleInputs.some((input) => input?.number === heldBy)
+    : Boolean(mce?.onOverlay);
+  const anyMceInput = Boolean(layers && MCE_VMIX_ALL_LAYERS.some((layer) => layers[layer].input));
+
   const updateSettings = useCallback((patch: Partial<VmixSettings>) => {
     setSettings((current) => saveVmixSettings({ ...current, ...patch }));
-    setConnection({ state: "connecting" });
+    if ("host" in patch || "port" in patch) setConnection({ state: "connecting" });
+    requestVmixResync();
   }, []);
 
+  const run = useCallback(async (action: () => Promise<void>) => {
+    setBusy(true);
+    setActionError(null);
+    try {
+      await action();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : String(err));
+    } finally {
+      await refreshStatus();
+      setBusy(false);
+    }
+  }, [refreshStatus]);
+
+  const handleSetup = useCallback(() => {
+    void run(async () => {
+      const result = await setupMceVmixInput(client, await resolveVmixPresentationLink(settings), settings);
+      setNeedsManual(result.outcome === "manual");
+      requestVmixResync();
+    });
+  }, [client, run, settings]);
+
+  const handleRemove = useCallback(() => {
+    setConfirmRemove(false);
+    void run(async () => {
+      await removeMceVmixInputs(client, settings);
+      setNeedsManual(false);
+    });
+  }, [client, run, settings]);
+
+  const toggleOnAir = useCallback(() => {
+    if (onAir) {
+      void run(() => client.overlayOut(settings.overlay));
+      return;
+    }
+    // Titles go on air when something is shown from the Dock; only the browser input can go in empty.
+    if (titlesMode || !mce?.input) return;
+    const input = mce.input;
+    void run(() => client.overlayIn(settings.overlay, input.key || input.number));
+  }, [client, mce, run]);
+
+  const manualLink = presentationLink ? buildMceVmixInputUrl(presentationLink) : "";
+
   const handleCopy = useCallback(async () => {
-    const link = getPresentationSettings().presentationLink || presentationLink;
-    const ok = await copyTextToClipboard(link);
+    if (!manualLink) return;
+    const ok = await copyTextToClipboard(manualLink);
     setCopied(ok);
     if (copiedTimer.current !== null) window.clearTimeout(copiedTimer.current);
     if (ok) {
@@ -96,41 +178,18 @@ export default function DockVmixCard() {
         copiedTimer.current = null;
       }, 1800);
     }
-  }, [presentationLink]);
+  }, [manualLink]);
 
-  const connected = connection.state === "connected" ? connection.status : null;
-  const setup = connected ? describeVmixSetup(connected, settings) : null;
-
-  const run = useCallback(async (action: () => Promise<void>) => {
-    setBusy(true);
-    setActionError(null);
-    try {
-      await action();
-      setConnection({ state: "connected", status: await client.getStatus() });
-    } catch (err) {
+  const togglePinned = useCallback(() => {
+    const next = !pinned;
+    setPinned(next);
+    void setVmixDockPinned(next).catch((err) => {
+      setPinned(!next);
       setActionError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setBusy(false);
-    }
-  }, [client]);
-
-  const toggleOutput = useCallback(() => {
-    if (!setup?.mceInput) return;
-    const input = setup.mceInput;
-    void run(async () => {
-      if (setup.onOutput) await client.overlayOut(settings.overlayChannel);
-      else await client.overlayIn(settings.overlayChannel, input.number);
     });
-  }, [client, run, setup, settings.overlayChannel]);
+  }, [pinned]);
 
-  const refreshBrowserSource = useCallback(() => {
-    if (!setup?.mceInput) return;
-    const input = setup.mceInput;
-    void run(() => client.navigateBrowser(input.number, presentationLink));
-  }, [client, presentationLink, run, setup]);
-
-  const stepsVisible = guideOpen ?? !setup?.mceInput;
-
+  const stepsVisible = guideOpen ?? !ready;
   const dotClass =
     connection.state === "connected" ? "ok" : connection.state === "connecting" ? "wait" : "bad";
 
@@ -149,16 +208,48 @@ export default function DockVmixCard() {
         </span>
 
         <div className="dock-vmix-bar__actions">
-          {setup?.mceInput && (
+          {ready && (
             <button
               type="button"
-              className={`dock-btn dock-btn--sm ${setup.onOutput ? "dock-btn--danger" : "dock-btn--primary"}`}
-              onClick={toggleOutput}
-              disabled={busy}
-              data-testid="dock-vmix-toggle-output"
+              className={`dock-vmix-layer-btn ${onAir ? "is-live" : ""}`}
+              onClick={toggleOnAir}
+              disabled={busy || (!onAir && titlesMode)}
+              aria-pressed={onAir}
+              title={onAir
+                ? `On Overlay ${settings.overlay}. Click to take it out.`
+                : titlesMode
+                  ? "Comes on air when you show something from the Dock."
+                  : `Put ${MCE_VMIX_INPUT_NAME} on Overlay ${settings.overlay}.`}
+              data-testid="dock-vmix-on-air"
             >
-              <Icon name={setup.onOutput ? "visibility_off" : "visibility"} size={13} />
-              <span>{setup.onOutput ? `Hide (Overlay ${settings.overlayChannel})` : `Show on output (Overlay ${settings.overlayChannel})`}</span>
+              <span className="dock-vmix-layer-btn__dot" aria-hidden="true" />
+              <span>{onAir ? "On air" : "Off air"}</span>
+              <span className="dock-vmix-layer-btn__ov">OV{settings.overlay}</span>
+            </button>
+          )}
+          {connected && !ready && !stepsVisible && (
+            <button
+              type="button"
+              className="dock-btn dock-btn--primary dock-btn--sm"
+              onClick={handleSetup}
+              disabled={busy}
+              data-testid="dock-vmix-setup"
+            >
+              <Icon name="auto_fix_high" size={13} />
+              <span>{busy ? "Setting up…" : "Set up vMix"}</span>
+            </button>
+          )}
+          {inDockWindow && (
+            <button
+              type="button"
+              className={`dock-vmix-bar__icon-btn ${pinned ? "is-active" : ""}`}
+              onClick={togglePinned}
+              aria-pressed={pinned}
+              title={pinned ? "Pinned on top of vMix. Click to unpin." : "Keep the Dock on top of vMix"}
+              aria-label={pinned ? "Unpin the Dock" : "Pin the Dock on top"}
+              data-testid="dock-vmix-pin"
+            >
+              <Icon name={pinned ? "push_pin" : "pin_off"} size={14} />
             </button>
           )}
           <button
@@ -209,90 +300,143 @@ export default function DockVmixCard() {
             />
           </label>
           <label>
-            <span>Input name</span>
-            <input
-              value={settings.inputName}
-              onChange={(e) => updateSettings({ inputName: e.target.value })}
-              placeholder={MCE_VMIX_INPUT_NAME}
-              spellCheck={false}
-            />
-          </label>
-          <label>
             <span>Overlay</span>
             <select
-              value={settings.overlayChannel}
-              onChange={(e) => updateSettings({ overlayChannel: Number(e.target.value) as VmixOverlayChannel })}
+              value={settings.overlay}
+              onChange={(e) => updateSettings({ overlay: Number(e.target.value) as VmixOverlayChannel })}
             >
               {VMIX_OVERLAY_CHANNELS.map((n) => (
                 <option key={n} value={n}>Overlay {n}</option>
               ))}
             </select>
           </label>
+          <label className="dock-vmix-settings__wide">
+            <span>Output (then press Set up vMix)</span>
+            <select
+              value={settings.outputMode}
+              onChange={(e) => updateSettings({ outputMode: e.target.value === "browser" ? "browser" : "titles" })}
+              data-testid="dock-vmix-output-mode"
+            >
+              <option value="titles">vMix title (fast, light on the computer)</option>
+              <option value="browser">Full themes (Web Browser input, uses more CPU)</option>
+            </select>
+          </label>
+          <p className="dock-vmix-settings__wide dock-vmix-step__hint">
+            Prefer NDI? Turn on “Connect with NDI” in the Studio, then in vMix add the NDI source
+            “MakeChurchEazy – Lower Third” and put it on an overlay.
+          </p>
         </div>
       )}
 
       {stepsVisible && (
-      <ol className="dock-vmix-steps" data-testid="dock-vmix-steps">
-        <li className={`dock-vmix-step ${connected ? "is-done" : ""}`}>
-          <span className="dock-vmix-step__mark">{connected ? <Icon name="check" size={12} /> : "1"}</span>
-          <div className="dock-vmix-step__body">
-            <div className="dock-vmix-step__title">vMix is reachable</div>
-            {!connected && (
-              <div className="dock-vmix-step__hint">Start vMix and enable Settings → Web Controller.</div>
-            )}
-          </div>
-        </li>
+        <ol className="dock-vmix-steps" data-testid="dock-vmix-steps">
+          <li className={`dock-vmix-step ${connected ? "is-done" : ""}`}>
+            <span className="dock-vmix-step__mark">{connected ? <Icon name="check" size={12} /> : "1"}</span>
+            <div className="dock-vmix-step__body">
+              <div className="dock-vmix-step__title">vMix is reachable</div>
+              {!connected && (
+                <div className="dock-vmix-step__hint">
+                  Start vMix, open Settings → Web Controller and tick Enable (port {settings.port}).
+                </div>
+              )}
+            </div>
+          </li>
 
-        <li className={`dock-vmix-step ${setup?.mceInput ? "is-done" : ""}`}>
-          <span className="dock-vmix-step__mark">{setup?.mceInput ? <Icon name="check" size={12} /> : "2"}</span>
-          <div className="dock-vmix-step__body">
-            <div className="dock-vmix-step__title">
-              Web Browser input “{settings.inputName || MCE_VMIX_INPUT_NAME}”
+          <li className={`dock-vmix-step ${ready ? "is-done" : ""}`}>
+            <span className="dock-vmix-step__mark">{ready ? <Icon name="check" size={12} /> : "2"}</span>
+            <div className="dock-vmix-step__body">
+              <div className="dock-vmix-step__title">{titlesMode ? "Titles in vMix" : `“${MCE_VMIX_INPUT_NAME}” in vMix`}</div>
+              <div className="dock-vmix-step__hint">{vmixInputsHint(settings, ready)}</div>
+              {!titlesMode && mce?.input && (
+                <div className="dock-vmix-step__hint">Input {mce.input.number} · Overlay {mce.channel}</div>
+              )}
+              {titlesMode && connected && (
+                <DockVmixTitles
+                  settings={settings}
+                  status={connected}
+                  client={client}
+                  busy={busy}
+                  onChange={(titles) => updateSettings({ titles })}
+                  onError={setActionError}
+                />
+              )}
+              {needsManual && !ready && settings.outputMode === "browser" && (
+                <div className="dock-vmix-manual" role="status">
+                  <div className="dock-vmix-step__hint">
+                    This vMix version won&apos;t add Web Browser inputs from outside. Add it once by hand: in vMix choose
+                    Add Input → Web Browser, paste the link, then name the input “{MCE_VMIX_INPUT_NAME}”.
+                  </div>
+                  <div className="dock-vmix-linkrow">
+                    <code title={manualLink}>{manualLink || "…"}</code>
+                    <button
+                      type="button"
+                      className="dock-btn dock-btn--primary dock-btn--sm"
+                      onClick={() => void handleCopy()}
+                      disabled={!manualLink}
+                    >
+                      <Icon name={copied ? "check" : "content_copy"} size={13} />
+                      <span>{copied ? "Copied" : "Copy"}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+              {connected && (
+                <div className="dock-vmix-row-actions">
+                  <button
+                    type="button"
+                    className="dock-btn dock-btn--primary dock-btn--sm"
+                    onClick={handleSetup}
+                    disabled={busy}
+                  >
+                    <Icon name={ready ? "refresh" : "auto_fix_high"} size={13} />
+                    <span>{ready ? "Refresh" : "Set up vMix"}</span>
+                  </button>
+                  {anyMceInput && (
+                    confirmRemove ? (
+                      <span className="dock-vmix-confirm">
+                        <span>Remove “{MCE_VMIX_INPUT_NAME}” from vMix?</span>
+                        <button type="button" className="dock-btn dock-btn--danger dock-btn--sm" onClick={handleRemove} disabled={busy}>
+                          Remove
+                        </button>
+                        <button type="button" className="dock-btn dock-btn--ghost dock-btn--sm" onClick={() => setConfirmRemove(false)}>
+                          Cancel
+                        </button>
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        className="dock-btn dock-btn--ghost dock-btn--sm"
+                        onClick={() => setConfirmRemove(true)}
+                        disabled={busy}
+                      >
+                        <Icon name="delete" size={13} />
+                        <span>Remove from vMix</span>
+                      </button>
+                    )
+                  )}
+                </div>
+              )}
             </div>
-            {setup?.mceInput ? (
-              <div className="dock-vmix-step__hint">
-                Found as input {setup.mceInput.number}.
-                <button type="button" className="dock-vmix-link" onClick={refreshBrowserSource} disabled={busy}>
-                  Reload the link in vMix
-                </button>
-              </div>
-            ) : (
-              <div className="dock-vmix-step__hint">
-                {setup?.wrongType
-                  ? `An input named “${settings.inputName}” exists but isn't a Web Browser input. Remove it and add a Web Browser input.`
-                  : "In vMix: Add Input → Web Browser → paste the link below → name it exactly as above. (vMix can't create Browser inputs from outside, so this is a one-time step.)"}
-              </div>
-            )}
-            <div className="dock-vmix-linkrow">
-              <code title={presentationLink}>{presentationLink}</code>
-              <button
-                type="button"
-                className="dock-btn dock-btn--primary dock-btn--sm"
-                onClick={() => void handleCopy()}
-                disabled={!presentationLink}
-                data-testid="dock-vmix-copy-link"
-              >
-                <Icon name={copied ? "check" : "content_copy"} size={13} />
-                <span>{copied ? "Copied" : "Copy"}</span>
-              </button>
-            </div>
-          </div>
-        </li>
+          </li>
 
-        <li className={`dock-vmix-step ${setup?.onOutput ? "is-done" : ""}`}>
-          <span className="dock-vmix-step__mark">{setup?.onOutput ? <Icon name="check" size={12} /> : "3"}</span>
-          <div className="dock-vmix-step__body">
-            <div className="dock-vmix-step__title">Shown on the vMix output</div>
-            <div className="dock-vmix-step__hint">
-              {setup?.onOutput
-                ? `Live on Overlay ${settings.overlayChannel}. Content you send from the Dock appears now.`
-                : setup?.overlayBusyWith
-                  ? `Overlay ${settings.overlayChannel} is in use by “${setup.overlayBusyWith.title}”. Pick another overlay in settings, or it will be replaced.`
-                  : `Use “Show on output” to put it on Overlay ${settings.overlayChannel} (transparent, over your camera/program).`}
+          <li className={`dock-vmix-step ${settings.autoOverlay && ready ? "is-done" : ""}`}>
+            <span className="dock-vmix-step__mark">
+              {settings.autoOverlay && ready ? <Icon name="check" size={12} /> : "3"}
+            </span>
+            <div className="dock-vmix-step__body">
+              <label className="dock-vmix-toggle">
+                <input
+                  type="checkbox"
+                  checked={settings.autoOverlay}
+                  onChange={(e) => updateSettings({ autoOverlay: e.target.checked })}
+                  data-testid="dock-vmix-auto-overlay"
+                />
+                <span className="dock-vmix-step__title">Show and hide automatically</span>
+              </label>
+              <div className="dock-vmix-step__hint">{vmixAutoOverlayHint(settings)}</div>
             </div>
-          </div>
-        </li>
-      </ol>
+          </li>
+        </ol>
       )}
     </section>
   );

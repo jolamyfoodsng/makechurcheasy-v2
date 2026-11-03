@@ -825,26 +825,50 @@ export async function syncCustomThemesToDock(themes?: BibleTheme[]): Promise<voi
 
 let installedTranslationsSyncPromise: Promise<void> | null = null;
 
+/** The Dock page (`/dock`), also when the app opens it in its own window for vMix. */
+function isDockPage(): boolean {
+  const path = window.location.pathname.replace(/\/+$/, "");
+  return path === "/dock" || path === "/dock.html";
+}
+
+/** The Dock's copy of this Bible is already this version, so its multi-megabyte file needn't be rewritten. */
+function dockCopyIsCurrent(entry: InstalledBible, dockMetadata: InstalledBibleMetadata[]): boolean {
+  const meta = toInstalledBibleMetadata(entry);
+  return dockMetadata.some((existing) =>
+    getTranslationKey(existing.abbr) === meta.abbr
+    && existing.downloadedAt === meta.downloadedAt
+    && existing.filesize === meta.filesize
+  );
+}
+
 export async function syncInstalledTranslationsToDock(): Promise<void> {
   if (typeof window === "undefined" || !("__TAURI_INTERNALS__" in window)) return;
+  // The app window keeps the Dock's copies up to date. The Dock reading every
+  // Bible and writing it back made the vMix Dock window slow to open.
+  if (isDockPage()) return;
   if (installedTranslationsSyncPromise) return installedTranslationsSyncPromise;
 
   const syncPromise = (async () => {
     try {
       const { invoke } = await import("@tauri-apps/api/core");
-      const installed = await getInstalledTranslationsWithData();
-
-      await invoke("save_dock_data", {
-        name: "dock-bible-translations",
-        data: JSON.stringify(installed.map(toInstalledBibleMetadata)),
-      });
+      const [installed, dockMetadata] = await Promise.all([
+        getInstalledTranslationsWithData(),
+        readInstalledTranslationMetadataFromDockData(),
+      ]);
 
       for (const entry of installed) {
+        if (dockCopyIsCurrent(entry, dockMetadata)) continue;
         await invoke("save_dock_data", {
           name: `dock-bible-translation-${entry.abbr.toLowerCase()}`,
           data: JSON.stringify(entry.data),
         });
       }
+
+      // The list goes last, so it never names a Bible whose file isn't written yet.
+      await invoke("save_dock_data", {
+        name: "dock-bible-translations",
+        data: JSON.stringify(installed.map(toInstalledBibleMetadata)),
+      });
     } catch (err) {
       console.warn("[bibleDb] Failed to sync installed translations to dock:", err);
     }

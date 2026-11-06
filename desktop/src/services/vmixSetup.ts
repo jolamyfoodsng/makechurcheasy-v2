@@ -5,7 +5,10 @@
  *   - vMix titles mode: MCE's vMix title (see vmixTitles.ts), alongside any of
  *     the church's own vMix titles picked for scripture, songs or names;
  *   - Full themes mode: a Web Browser input showing the local presentation
- *     page (`/p/<session>`). `transparent=1` keeps the page see-through when it
+ *     page (`/p/<session>`).
+ * In vMix titles mode, broadcast graphics (which a vMix title can't draw) go
+ * to a second Web Browser input, "MCE Graphics": the same page with
+ * `layer=graphics`, so it shows the graphic and nothing else, on its own overlay. `transparent=1` keeps the page see-through when it
  *     is empty, and `outDelay` keeps the last content on screen while vMix's
  *     overlay transition plays out.
  *
@@ -31,7 +34,7 @@ import {
 } from "./vmixTitles";
 import {
   MCE_VMIX_ALL_LAYERS,
-  MCE_VMIX_INPUT_NAME,
+  MCE_VMIX_INPUT_NAMES,
   VMIX_TITLE_JOBS,
   VmixClient,
   activeVmixLayer,
@@ -39,8 +42,10 @@ import {
   findMceInput,
   findSlotInput,
   isTitleLayer,
+  overlayForLayer,
   usesMceTitle,
   vmixInputTypeForLayer,
+  vmixLayersForMode,
   type MceVmixLayer,
   type VmixChurchTitleSlot,
   type VmixInput,
@@ -74,17 +79,23 @@ export async function resolveVmixPresentationLink(settings: VmixSettings): Promi
   return presentationLink;
 }
 
-export function buildMceVmixInputUrl(presentationLink: string): string {
+export function buildMceVmixInputUrl(presentationLink: string, layer: MceVmixLayer = "presentation"): string {
   const url = new URL(presentationLink);
+  // "MCE Graphics" shows the broadcast graphic only; the title shows the rest.
+  if (layer === "graphics") url.searchParams.set("layer", "graphics");
   url.searchParams.set("transparent", "1");
   url.searchParams.set("outDelay", String(VMIX_OUT_DELAY_MS));
   return url.toString();
 }
 
+export type VmixSetupOutcome = "created" | "updated" | "manual";
+
 export interface VmixSetupResult {
   /** "created": MCE added the input now. "updated": it was already there. "manual": vMix wouldn't add it. */
-  outcome: "created" | "updated" | "manual";
+  outcome: VmixSetupOutcome;
   layer: MceVmixLayer;
+  /** Titles mode: the same for "MCE Graphics", the input that shows broadcast graphics. */
+  graphics?: VmixSetupOutcome;
 }
 
 function sleep(ms: number): Promise<void> {
@@ -108,9 +119,10 @@ async function waitForNewInput(
 }
 
 /**
- * Make sure "MCE Presentation" exists in vMix for the chosen output mode. An
- * existing one is reused (never duplicated); one left from the other mode is
- * removed. If vMix will not add the input, the result says "manual".
+ * Make sure MCE's inputs exist in vMix for the chosen output mode: "MCE
+ * Presentation" (its title, or the Full themes Web Browser input) and, in titles
+ * mode, "MCE Graphics". An existing one is reused (never duplicated); ones left
+ * from the other mode are removed. If vMix will not add an input, its result says "manual".
  */
 export async function setupMceVmixInput(
   client: VmixClient,
@@ -124,22 +136,38 @@ export async function setupMceVmixInput(
   } = {},
 ): Promise<VmixSetupResult> {
   const layer = activeVmixLayer(settings);
+  const wanted = vmixLayersForMode(settings);
   await removeMceVmixInputs(client, settings, {
-    layers: MCE_VMIX_ALL_LAYERS.filter((other) => other !== layer),
+    layers: MCE_VMIX_ALL_LAYERS.filter((other) => !wanted.includes(other)),
     removeWaitMs: options.removeWaitMs,
   });
 
-  // Every job uses one of the church's own titles: nothing of MCE's to add.
-  if (isTitleLayer(layer) && !usesMceTitle(settings)) return { outcome: "updated", layer };
+  const result: VmixSetupResult = { outcome: "updated", layer };
+  for (const each of wanted) {
+    const outcome = await ensureMceVmixInput(client, presentationLink, each, options);
+    // Every job may use one of the church's own titles: then the title has nothing of MCE's to add.
+    if (each === layer) result.outcome = outcome;
+    if (each === "graphics") result.graphics = outcome;
+  }
+  return result;
+}
 
+/** Add one of MCE's inputs, or point the existing one at the current link. */
+export async function ensureMceVmixInput(
+  client: VmixClient,
+  presentationLink: string,
+  layer: MceVmixLayer,
+  options: { newInputWaitMs?: number; titleFiles?: () => Promise<MceTitleFiles> } = {},
+): Promise<VmixSetupOutcome> {
   const type = vmixInputTypeForLayer(layer);
+  const name = MCE_VMIX_INPUT_NAMES[layer];
   const status = await client.getStatus();
-  const existing = findMceInput(status, MCE_VMIX_INPUT_NAME, type);
+  const existing = findMceInput(status, name, type);
   if (existing) {
     if (!isTitleLayer(layer)) {
-      await client.navigateBrowser(existing.key || existing.number, buildMceVmixInputUrl(presentationLink));
+      await client.navigateBrowser(existing.key || existing.number, buildMceVmixInputUrl(presentationLink, layer));
     }
-    return { outcome: "updated", layer };
+    return "updated";
   }
 
   const knownKeys = new Set(status.inputs.map((input) => input.key));
@@ -149,15 +177,15 @@ export async function setupMceVmixInput(
       const files = await (options.titleFiles ?? ensureMceTitleFiles)();
       await client.addTitleInput(files.titlePath);
     } else {
-      await client.addBrowserInput(buildMceVmixInputUrl(presentationLink));
+      await client.addBrowserInput(buildMceVmixInputUrl(presentationLink, layer));
     }
     addedKey = await waitForNewInput(client, knownKeys, type, options.newInputWaitMs ?? NEW_INPUT_WAIT_MS);
   } catch {
     addedKey = null;
   }
-  if (!addedKey) return { outcome: "manual", layer };
-  await client.setInputName(addedKey, MCE_VMIX_INPUT_NAME);
-  return { outcome: "created", layer };
+  if (!addedKey) return "manual";
+  await client.setInputName(addedKey, name);
+  return "created";
 }
 
 /**
@@ -216,10 +244,10 @@ export function planVmixOverlayActions(
   next: string | null,
   status: VmixStatus,
   settings: VmixSettings,
-  options: { force?: boolean } = {},
+  options: { force?: boolean; layer?: MceVmixLayer } = {},
 ): VmixOverlayAction[] {
   if (previous !== undefined && previous === next && !options.force) return [];
-  const state = describeVmixLayer(status, settings, "presentation");
+  const state = describeVmixLayer(status, settings, options.layer ?? "presentation");
   if (!state.input) return [];
   if (next && !state.onOverlay) return [{ kind: "in", input: state.input.key || state.input.number }];
   if (!next && state.onOverlay) return [{ kind: "out" }];
@@ -230,11 +258,18 @@ export async function applyVmixOverlayActions(
   client: VmixClient,
   settings: VmixSettings,
   actions: VmixOverlayAction[],
+  layer: MceVmixLayer = "presentation",
 ): Promise<void> {
+  const channel = overlayForLayer(settings, layer);
   for (const action of actions) {
-    if (action.kind === "in") await client.overlayIn(settings.overlay, action.input);
-    else await client.overlayOut(settings.overlay);
+    if (action.kind === "in") await client.overlayIn(channel, action.input);
+    else await client.overlayOut(channel);
   }
+}
+
+/** Titles mode: null when no broadcast graphic is sent, otherwise a key that changes with each one. */
+export function graphicContentKey(state: PresentationRemoteState | null): string | null {
+  return state?.graphic?.url ? `${state.graphic.version}|${state.graphic.url}` : null;
 }
 
 // ── vMix titles mode ────────────────────────────────────────────────────────
@@ -378,6 +413,13 @@ export function slotForChurchTitle(input: VmixInput): VmixChurchTitleSlot {
 }
 
 // ── Words shown in the vMix setup UI ────────────────────────────────────────
+
+/** Titles mode: where broadcast graphics appear, for the setup step. */
+export function vmixGraphicsHint(settings: VmixSettings, added: boolean): string {
+  return added
+    ? `Broadcast graphics play on “${MCE_VMIX_INPUT_NAMES.graphics}”, Overlay ${settings.graphicsOverlay}.`
+    : `Set up vMix also adds “${MCE_VMIX_INPUT_NAMES.graphics}”, a Web Browser input for broadcast graphics on Overlay ${settings.graphicsOverlay}.`;
+}
 
 /** What MCE uses in vMix, for the setup step. */
 export function vmixInputsHint(settings: VmixSettings, ready: boolean): string {

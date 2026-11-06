@@ -547,6 +547,9 @@ video { outline: none; }
       // empty, and `outDelay` keeps cleared content up while vMix transitions the overlay out.
       const transparentWhenEmpty = initialParams.get("transparent") === "1";
       const outDelayMs = Math.max(0, Math.min(5000, Number(initialParams.get("outDelay")) || 0));
+      // vMix titles mode's "MCE Graphics" input: `layer=graphics` shows the
+      // broadcast graphic only (vMix's own title shows the verses and songs).
+      const graphicsOnly = initialParams.get("layer") === "graphics";
       const emptyBackground = transparentWhenEmpty ? "transparent" : "#000";
 
 
@@ -1145,6 +1148,9 @@ video { outline: none; }
       var pendingClearState = undefined;
 
       function applyRemoteState(nextState) {
+        if (graphicsOnly && nextState) {
+          nextState = Object.assign({}, nextState, { fullscreen: null, lowerThird: null });
+        }
         if (pendingClearTimer !== null) {
           // The poll repeats the snapshot we are already waiting to clear to.
           if (

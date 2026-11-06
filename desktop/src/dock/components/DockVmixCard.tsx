@@ -3,6 +3,7 @@ import Icon from "../DockIcon";
 import { copyTextToClipboard } from "../bibleClipboard";
 import { getPresentationSettings } from "../../services/presentationSettings";
 import {
+  MCE_VMIX_GRAPHICS_INPUT_NAME,
   MCE_VMIX_INPUT_NAME,
   MCE_VMIX_ALL_LAYERS,
   VMIX_OVERLAY_CHANNELS,
@@ -24,6 +25,7 @@ import {
   resolveVmixPresentationLink,
   setupMceVmixInput,
   vmixAutoOverlayHint,
+  vmixGraphicsHint,
   vmixInputsHint,
 } from "../../services/vmixSetup";
 import { requestVmixResync } from "../../services/vmixOutputEngine";
@@ -64,6 +66,8 @@ export default function DockVmixCard() {
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [needsManual, setNeedsManual] = useState(false);
+  const [needsGraphicsManual, setNeedsGraphicsManual] = useState(false);
+  const [copiedGraphics, setCopiedGraphics] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState(false);
   // null = automatic: the setup steps are open until the input exists, then
   // fold away so the card stays a one-line bar.
@@ -142,6 +146,7 @@ export default function DockVmixCard() {
     void run(async () => {
       const result = await setupMceVmixInput(client, await resolveVmixPresentationLink(settings), settings);
       setNeedsManual(result.outcome === "manual");
+      setNeedsGraphicsManual(result.graphics === "manual");
       requestVmixResync();
     });
   }, [client, run, settings]);
@@ -151,6 +156,7 @@ export default function DockVmixCard() {
     void run(async () => {
       await removeMceVmixInputs(client, settings);
       setNeedsManual(false);
+      setNeedsGraphicsManual(false);
     });
   }, [client, run, settings]);
 
@@ -166,6 +172,15 @@ export default function DockVmixCard() {
   }, [client, mce, run]);
 
   const manualLink = presentationLink ? buildMceVmixInputUrl(presentationLink) : "";
+  const graphicsLink = presentationLink ? buildMceVmixInputUrl(presentationLink, "graphics") : "";
+  const graphicsInput = layers?.graphics.input ?? null;
+
+  const handleCopyGraphics = useCallback(async () => {
+    if (!graphicsLink) return;
+    const ok = await copyTextToClipboard(graphicsLink);
+    setCopiedGraphics(ok);
+    if (ok) window.setTimeout(() => setCopiedGraphics(false), 1800);
+  }, [graphicsLink]);
 
   const handleCopy = useCallback(async () => {
     if (!manualLink) return;
@@ -310,6 +325,20 @@ export default function DockVmixCard() {
               ))}
             </select>
           </label>
+          {titlesMode && (
+            <label>
+              <span>Graphics overlay</span>
+              <select
+                value={settings.graphicsOverlay}
+                onChange={(e) => updateSettings({ graphicsOverlay: Number(e.target.value) as VmixOverlayChannel })}
+                data-testid="dock-vmix-graphics-overlay"
+              >
+                {VMIX_OVERLAY_CHANNELS.filter((n) => n !== settings.overlay).map((n) => (
+                  <option key={n} value={n}>Overlay {n}</option>
+                ))}
+              </select>
+            </label>
+          )}
           <label className="dock-vmix-settings__wide">
             <span>Output (then press Set up vMix)</span>
             <select
@@ -360,6 +389,32 @@ export default function DockVmixCard() {
                   onError={setActionError}
                 />
               )}
+              {titlesMode && connected && (
+                <div className="dock-vmix-step__hint" data-testid="dock-vmix-graphics-hint">
+                  {vmixGraphicsHint(settings, Boolean(graphicsInput))}
+                </div>
+              )}
+              {titlesMode && needsGraphicsManual && !graphicsInput && (
+                <div className="dock-vmix-manual" role="status">
+                  <div className="dock-vmix-step__hint">
+                    This vMix version won&apos;t add Web Browser inputs from outside. For broadcast graphics, add one by
+                    hand: in vMix choose Add Input → Web Browser, paste the link, then name the input
+                    “{MCE_VMIX_GRAPHICS_INPUT_NAME}”.
+                  </div>
+                  <div className="dock-vmix-linkrow">
+                    <code title={graphicsLink}>{graphicsLink || "…"}</code>
+                    <button
+                      type="button"
+                      className="dock-btn dock-btn--primary dock-btn--sm"
+                      onClick={() => void handleCopyGraphics()}
+                      disabled={!graphicsLink}
+                    >
+                      <Icon name={copiedGraphics ? "check" : "content_copy"} size={13} />
+                      <span>{copiedGraphics ? "Copied" : "Copy"}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
               {needsManual && !ready && settings.outputMode === "browser" && (
                 <div className="dock-vmix-manual" role="status">
                   <div className="dock-vmix-step__hint">
@@ -394,7 +449,7 @@ export default function DockVmixCard() {
                   {anyMceInput && (
                     confirmRemove ? (
                       <span className="dock-vmix-confirm">
-                        <span>Remove “{MCE_VMIX_INPUT_NAME}” from vMix?</span>
+                        <span>Remove MakeChurchEazy&apos;s inputs from vMix?</span>
                         <button type="button" className="dock-btn dock-btn--danger dock-btn--sm" onClick={handleRemove} disabled={busy}>
                           Remove
                         </button>

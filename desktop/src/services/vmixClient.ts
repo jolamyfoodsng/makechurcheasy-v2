@@ -59,13 +59,17 @@ export type VmixChurchTitleSlot = Extract<VmixTitleSlot, { kind: "vmix" }>;
  * MCE's own inputs: its title ("title", a GT title) and, for Full themes, its
  * Web Browser input ("presentation"). Both are called "MCE Presentation"; the
  * input type tells them apart, so neither clashes with the church's titles.
+ * In titles mode a second Web Browser input, "MCE Graphics" ("graphics"), shows
+ * only the broadcast graphics sent from the Dock, on its own overlay channel.
  */
-export type MceVmixLayer = "title" | "presentation";
-export const MCE_VMIX_ALL_LAYERS: readonly MceVmixLayer[] = ["title", "presentation"];
+export type MceVmixLayer = "title" | "presentation" | "graphics";
+export const MCE_VMIX_ALL_LAYERS: readonly MceVmixLayer[] = ["title", "presentation", "graphics"];
 export const MCE_VMIX_INPUT_NAME = "MCE Presentation";
+export const MCE_VMIX_GRAPHICS_INPUT_NAME = "MCE Graphics";
 export const MCE_VMIX_INPUT_NAMES: Record<MceVmixLayer, string> = {
   title: MCE_VMIX_INPUT_NAME,
   presentation: MCE_VMIX_INPUT_NAME,
+  graphics: MCE_VMIX_GRAPHICS_INPUT_NAME,
 };
 
 export function isTitleLayer(layer: MceVmixLayer): layer is "title" {
@@ -86,6 +90,8 @@ export interface VmixSettings {
   outputMode: VmixOutputMode;
   /** The overlay channel MCE uses in vMix. */
   overlay: VmixOverlayChannel;
+  /** Titles mode: the overlay channel for broadcast graphics ("MCE Graphics"). Never the same as `overlay`. */
+  graphicsOverlay: VmixOverlayChannel;
   /** Bring the overlay in when something is shown and take it out when cleared. */
   autoOverlay: boolean;
   /** The title for each job (titles mode). MCE's own title unless the church picks one of theirs. */
@@ -97,6 +103,7 @@ export const DEFAULT_VMIX_SETTINGS: VmixSettings = {
   port: VMIX_DEFAULT_PORT,
   outputMode: "titles",
   overlay: 1,
+  graphicsOverlay: 2,
   autoOverlay: true,
   titles: { scripture: { kind: "mce" }, songs: { kind: "mce" }, names: { kind: "mce" } },
 };
@@ -126,12 +133,18 @@ export function normalizeVmixSettings(
   const host = String(raw?.host ?? "").trim().replace(/^https?:\/\//i, "").replace(/[/:].*$/, "");
   const port = Math.round(Number(raw?.port));
   const titles = (raw?.titles ?? {}) as Partial<Record<VmixTitleJob, unknown>>;
+  // Earlier versions saved the channel as `fullscreenOverlay` or `overlayChannel`.
+  const overlay = normalizeChannel(raw?.overlay ?? raw?.fullscreenOverlay ?? raw?.overlayChannel, DEFAULT_VMIX_SETTINGS.overlay);
+  const graphicsOverlay = normalizeChannel(raw?.graphicsOverlay, DEFAULT_VMIX_SETTINGS.graphicsOverlay);
   return {
     host: host || DEFAULT_VMIX_SETTINGS.host,
     port: Number.isFinite(port) && port >= 1 && port <= 65535 ? port : DEFAULT_VMIX_SETTINGS.port,
     outputMode: raw?.outputMode === "browser" ? "browser" : "titles",
-    // Earlier versions saved the channel as `fullscreenOverlay` or `overlayChannel`.
-    overlay: normalizeChannel(raw?.overlay ?? raw?.fullscreenOverlay ?? raw?.overlayChannel, DEFAULT_VMIX_SETTINGS.overlay),
+    overlay,
+    // Graphics share no channel with the title, so taking one out never takes the other with it.
+    graphicsOverlay: graphicsOverlay !== overlay
+      ? graphicsOverlay
+      : VMIX_OVERLAY_CHANNELS.find((channel) => channel !== overlay) ?? DEFAULT_VMIX_SETTINGS.graphicsOverlay,
     autoOverlay: raw?.autoOverlay !== false,
     titles: {
       scripture: normalizeSlot(titles.scripture),
@@ -141,8 +154,18 @@ export function normalizeVmixSettings(
   };
 }
 
-export function overlayForLayer(settings: VmixSettings, _layer: MceVmixLayer): VmixOverlayChannel {
-  return settings.overlay;
+export function overlayForLayer(settings: VmixSettings, layer: MceVmixLayer): VmixOverlayChannel {
+  return layer === "graphics" ? settings.graphicsOverlay : settings.overlay;
+}
+
+/**
+ * MCE's inputs for the chosen output mode: titles mode uses MCE's title (when a
+ * job uses it) and "MCE Graphics"; Full themes shows everything, graphics
+ * included, in its one Web Browser input.
+ */
+export function vmixLayersForMode(settings: VmixSettings): MceVmixLayer[] {
+  if (settings.outputMode !== "titles") return ["presentation"];
+  return usesMceTitle(settings) ? ["title", "graphics"] : ["graphics"];
 }
 
 /** MCE's input for the chosen output mode. */

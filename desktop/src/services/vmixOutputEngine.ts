@@ -6,7 +6,9 @@
  * the Dock window publishes (same app, so a local BroadcastChannel; nothing is
  * polled) and, for each change:
  *   - vMix titles mode: sets the title's text (and its look when switching
- *     between full screen and lower third), then brings it in;
+ *     between full screen and lower third), then brings it in; a broadcast
+ *     graphic brings "MCE Graphics" in on its own overlay (adding the input
+ *     first if setup didn't);
  *   - Full themes mode: brings the Web Browser input's overlay in or out
  *     (the page itself already shows the new content).
  * vMix's state is read only when there is something to do.
@@ -18,13 +20,16 @@ import {
   subscribeLocalPresentationState,
   type PresentationRemoteState,
 } from "./presentationState";
-import { VmixClient, loadVmixSettings, type VmixSettings } from "./vmixClient";
+import { VmixClient, describeVmixLayer, loadVmixSettings, type VmixSettings, type VmixStatus } from "./vmixClient";
 import {
   applyVmixOverlayActions,
   applyVmixTitleActions,
+  ensureMceVmixInput,
+  graphicContentKey,
   planVmixOverlayActions,
   planVmixTitleActions,
   presentationContentKey,
+  resolveVmixPresentationLink,
 } from "./vmixSetup";
 import { ensureMceTitleFiles, titleContentFromState, type MceTitleContent, type MceTitleKind } from "./vmixTitles";
 
@@ -54,11 +59,27 @@ export function startVmixOutputEngine(isEnabled: () => boolean): () => void {
   // What is already on screen counts as sent: only new content moves vMix.
   let appliedTitle: MceTitleContent | null | undefined = titleContentFromState(latest);
   let appliedKey: string | null | undefined = presentationContentKey(latest);
+  let appliedGraphic: string | null | undefined = graphicContentKey(latest);
   // Unknown until MCE sets it, so the first title shown also sets the look.
   let titleLayout: MceTitleKind | null = null;
   let appliedSettings = "";
   let queue: Promise<void> = Promise.resolve();
   let warned = false;
+
+  // Titles mode: a vMix title can't draw a broadcast graphic, so "MCE Graphics" plays it on its own overlay.
+  const showGraphic = async (client: VmixClient, settings: VmixSettings, status: VmixStatus, force: boolean) => {
+    const next = graphicContentKey(latest);
+    if (!force && next === appliedGraphic) return;
+    let current = status;
+    if (next && !describeVmixLayer(status, settings, "graphics").input) {
+      // Set up before graphics went to vMix: add the input now.
+      await ensureMceVmixInput(client, await resolveVmixPresentationLink(settings), "graphics");
+      current = await client.getStatus();
+    }
+    const actions = planVmixOverlayActions(appliedGraphic, next, current, settings, { force, layer: "graphics" });
+    appliedGraphic = next;
+    await applyVmixOverlayActions(client, settings, actions, "graphics");
+  };
 
   const run = (force: boolean) => {
     queue = queue
@@ -82,15 +103,19 @@ export function startVmixOutputEngine(isEnabled: () => boolean): () => void {
             currentLayout: titleLayout,
           });
           appliedTitle = next;
-          if (actions.length === 0) return;
-          const needsImages = actions.some((action) => action.kind === "layout");
-          const images = needsImages ? (await ensureMceTitleFiles()).images : null;
-          await applyVmixTitleActions(client, settings, actions, images);
-          if (needsImages && next) titleLayout = next.kind;
+          if (actions.length > 0) {
+            const needsImages = actions.some((action) => action.kind === "layout");
+            const images = needsImages ? (await ensureMceTitleFiles()).images : null;
+            await applyVmixTitleActions(client, settings, actions, images);
+            if (needsImages && next) titleLayout = next.kind;
+          }
+          await showGraphic(client, settings, status, resend);
         } else {
           const next = presentationContentKey(latest);
           const actions = planVmixOverlayActions(appliedKey, next, status, settings, { force: resend });
           appliedKey = next;
+          // The Full themes page shows graphics itself.
+          appliedGraphic = graphicContentKey(latest);
           await applyVmixOverlayActions(client, settings, actions);
         }
         warned = false;

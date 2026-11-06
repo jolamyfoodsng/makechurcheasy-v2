@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_VMIX_SETTINGS, VmixClient, type VmixStatus } from "./vmixClient";
+import { DEFAULT_VMIX_SETTINGS, VmixClient, normalizeVmixSettings, type VmixStatus } from "./vmixClient";
 import {
   applyVmixTitleActions,
   buildMceVmixInputUrl,
+  graphicContentKey,
   planVmixOverlayActions,
   planVmixTitleActions,
   presentationContentKey,
@@ -109,8 +110,37 @@ describe("setting up vMix", () => {
   it("adds one vMix title called MCE Presentation by default", async () => {
     const vmix = fakeVmix({ browserAddInput: false });
     const result = await setupMceVmixInput(vmix.client, LINK, titles, { newInputWaitMs: 1000, titleFiles: async () => FILES });
-    expect(result).toEqual({ outcome: "created", layer: "title" });
+    // This vMix refuses Web Browser inputs, so "MCE Graphics" needs the manual step.
+    expect(result).toEqual({ outcome: "created", layer: "title", graphics: "manual" });
     expect(vmix.inputs.map((i) => `${i.type}:${i.title}`)).toEqual(["Capture:Camera 1", "GT:MCE Presentation"]);
+  });
+
+  it("adds MCE Graphics beside the title, a page that shows broadcast graphics only", async () => {
+    const vmix = fakeVmix({ browserAddInput: true });
+    const result = await setupMceVmixInput(vmix.client, LINK, titles, { newInputWaitMs: 1000, titleFiles: async () => FILES });
+    expect(result).toEqual({ outcome: "created", layer: "title", graphics: "created" });
+    expect(vmix.inputs.map((i) => `${i.type}:${i.title}`)).toEqual([
+      "Capture:Camera 1",
+      "GT:MCE Presentation",
+      "Browser:MCE Graphics",
+    ]);
+    const added = vmix.calls.find((c) => c.fn === "AddInput" && c.value.startsWith("Browser|"));
+    expect(new URL(added!.value.slice(8)).searchParams.get("layer")).toBe("graphics");
+  });
+
+  it("adds MCE Graphics even when every job uses the church's own titles", async () => {
+    const vmix = fakeVmix({ browserAddInput: true });
+    const ownOnly = { ...titles, titles: { scripture: { kind: "vmix" as const, key: "k", title: "Mine", referenceField: "", textField: "" }, songs: { kind: "vmix" as const, key: "k", title: "Mine", referenceField: "", textField: "" }, names: { kind: "vmix" as const, key: "k", title: "Mine", referenceField: "", textField: "" } } };
+    const result = await setupMceVmixInput(vmix.client, LINK, ownOnly, { newInputWaitMs: 1000 });
+    expect(result).toEqual({ outcome: "updated", layer: "title", graphics: "created" });
+    expect(vmix.inputs.map((i) => i.title)).toEqual(["Camera 1", "MCE Graphics"]);
+  });
+
+  it("removes MCE Graphics when switching to Full themes, which shows graphics itself", async () => {
+    const vmix = fakeVmix({ browserAddInput: true });
+    await setupMceVmixInput(vmix.client, LINK, titles, { newInputWaitMs: 1000, titleFiles: async () => FILES });
+    await setupMceVmixInput(vmix.client, LINK, browser, { newInputWaitMs: 1000, removeWaitMs: 200 });
+    expect(vmix.inputs.map((i) => `${i.type}:${i.title}`)).toEqual(["Capture:Camera 1", "Browser:MCE Presentation"]);
   });
 
   it("adds one Web Browser input called MCE Presentation for Full themes", async () => {
@@ -145,7 +175,7 @@ describe("setting up vMix", () => {
     const vmix = fakeVmix({ browserAddInput: true });
     await setupMceVmixInput(vmix.client, LINK, titles, { newInputWaitMs: 1000, titleFiles: async () => FILES });
     await vmix.client.overlayIn(1, "guid-1");
-    expect(await removeMceVmixInputs(vmix.client, titles)).toBe(1);
+    expect(await removeMceVmixInputs(vmix.client, titles)).toBe(2);
     expect(vmix.inputs.map((i) => i.title)).toEqual(["Camera 1"]);
     expect(vmix.calls.map((c) => c.fn)).toContain("OverlayInput1Off");
   });
@@ -275,7 +305,7 @@ describe("vMix titles: the church's own titles, side by side with MakeChurchEazy
     const ownOnly = { ...titles, titles: { scripture: slotForChurchTitle(scriptureTitle), songs: slotForChurchTitle(songsTitle), names: slotForChurchTitle(nameTitle) } };
     const result = await setupMceVmixInput(vmix.client, LINK, ownOnly, { titleFiles: async () => FILES });
     expect(result.outcome).toBe("updated");
-    expect(vmix.calls.map((c) => c.fn)).not.toContain("AddInput");
+    expect(vmix.calls.filter((c) => c.fn === "AddInput" && c.value.startsWith("Title|"))).toEqual([]);
   });
 
   it("adds vMix's own built-in title for a job", async () => {
@@ -310,5 +340,38 @@ describe("Full themes: the overlay follows the content", () => {
 
   it("never takes another input off the overlay", () => {
     expect(planVmixOverlayActions(shown, null, status("Browser", 1), browser)).toEqual([]);
+  });
+});
+
+describe("vMix titles: broadcast graphics on MCE Graphics", () => {
+  function withGraphics(overlay2: number | null = null): VmixStatus {
+    const base = status("GT");
+    return {
+      ...base,
+      inputs: [...base.inputs, { key: "gfx", number: 3, type: "Browser", title: "MCE Graphics", state: "Running", fields: [] }],
+      overlays: [{ number: 1, inputNumber: null }, { number: 2, inputNumber: overlay2 }],
+    };
+  }
+  const graphic = graphicContentKey(state({ graphic: { url: "http://127.0.0.1:45678/lower-third-overlay.html#data=a", version: 5 } }));
+  const graphics = { layer: "graphics" as const };
+
+  it("only has a key while a graphic is sent, and a new one for each send", () => {
+    expect(graphicContentKey(state({ fullscreen: verse }))).toBeNull();
+    expect(graphic).not.toBe(graphicContentKey(state({ graphic: { url: "http://127.0.0.1:45678/lower-third-overlay.html#data=a", version: 6 } })));
+  });
+
+  it("brings MCE Graphics in on its own overlay and out when the graphic is cleared", () => {
+    expect(planVmixOverlayActions(null, graphic, withGraphics(), titles, graphics)).toEqual([{ kind: "in", input: "gfx" }]);
+    expect(planVmixOverlayActions(graphic, null, withGraphics(3), titles, graphics)).toEqual([{ kind: "out" }]);
+  });
+
+  it("never takes the title or another input off the graphics overlay", () => {
+    expect(planVmixOverlayActions(graphic, null, withGraphics(2), titles, graphics)).toEqual([]);
+  });
+
+  it("keeps the graphics overlay apart from the title's overlay", () => {
+    expect(normalizeVmixSettings({ overlay: 2, graphicsOverlay: 2 }).graphicsOverlay).toBe(1);
+    expect(normalizeVmixSettings({ overlay: 1 }).graphicsOverlay).toBe(2);
+    expect(normalizeVmixSettings({ overlay: 1, graphicsOverlay: 4 }).graphicsOverlay).toBe(4);
   });
 });

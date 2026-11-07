@@ -48,7 +48,11 @@ const versionFiles = [
   "desktop/src-tauri/tauri.conf.json",
   "desktop/beta-landing/index.html",
 ];
-const releaseMetadataFiles = [".github/workflows/release.yml", "desktop/scripts/release.cjs"];
+const releaseMetadataFiles = [
+  ".github/workflows/release.yml",
+  "desktop/release.md",
+  "desktop/scripts/release.cjs",
+];
 const releaseFiles = [...versionFiles, ...releaseMetadataFiles];
 const dirty = execFileSync("git", ["-C", repoRoot, "status", "--porcelain"], { encoding: "utf8" })
   .split(/\r?\n/)

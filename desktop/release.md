@@ -1,13 +1,10 @@
-# MakeChurchEazy Release Highlights (v4.3.14)
+# MakeChurchEazy Release Highlights (v4.3.18)
 
-## Studio and Bible presentation
-- Improved Bible search, verse layout controls, and output options.
-- Refined Studio graphics, ticker themes, and saved presentation workflows.
+## vMix integration
+- Added vMix output support and setup guidance for church broadcast teams.
+- Added support for showing broadcast graphics through vMix title mode.
+- Improved Dock performance and presentation workflow.
 
-## Admin and subscriptions
-- Added usage insights and contact management for administrators.
-- Improved subscription changes, billing details, and plan selection.
-
-## Onboarding and product information
-- Updated onboarding, tutorials, and public product pages.
-- Added further reliability and usability improvements across the app.
+## Reliability and access
+- Corrected plan entitlement handling for vMix output.
+- Improved reliability across presentation and broadcast workflows.

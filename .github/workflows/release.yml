@@ -36,8 +36,8 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Release version (e.g. v0.2.0)"
-        required: false
+        description: "Existing release tag to build (e.g. v4.3.18)"
+        required: true
       platform:
         description: "Release platform target"
         required: false
@@ -52,7 +52,7 @@ permissions:
 
 concurrency:
   group: release
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -180,8 +180,8 @@ jobs:
             TAG="${{ github.event.inputs.version }}"
             TAG="${TAG#v}"
           else
-            echo "No version found, skipping"
-            exit 0
+            echo "::error::A release tag or workflow_dispatch version is required."
+            exit 1
           fi
           echo "Setting version to $TAG"
           node -e "
@@ -256,8 +256,8 @@ jobs:
           projectPath: desktop
           tauriScript: npx tauri
           args: --target x86_64-pc-windows-msvc
-          tagName: ${{ github.ref_type == 'tag' && github.ref_name || github.event.inputs.version || format('v{0}', 'latest') }}
-          releaseName: "MakeChurchEazy ${{ github.ref_type == 'tag' && github.ref_name || github.event.inputs.version || 'latest' }}"
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || github.event.inputs.version }}
+          releaseName: "MakeChurchEazy ${{ github.ref_type == 'tag' && github.ref_name || github.event.inputs.version }}"
           releaseBody: ${{ steps.release_notes.outputs.body }}
           releaseDraft: false
           prerelease: false
@@ -285,7 +285,7 @@ jobs:
   publish-other:
     name: Build + Release (${{ matrix.label }})
     needs: publish-windows
-    if: ${{ always() && needs.publish-windows.result != 'cancelled' && (github.event_name != 'workflow_dispatch' || github.event.inputs.platform != 'windows-only') }}
+    if: ${{ needs.publish-windows.result == 'success' && (github.event_name != 'workflow_dispatch' || github.event.inputs.platform != 'windows-only') }}
     strategy:
       fail-fast: false
       # tauri-action updates the shared release/latest.json asset.
@@ -392,8 +392,8 @@ jobs:
             TAG="${{ github.event.inputs.version }}"
             TAG="${TAG#v}"
           else
-            echo "No version found, skipping"
-            exit 0
+            echo "::error::A release tag or workflow_dispatch version is required."
+            exit 1
           fi
           echo "Setting version to $TAG"
           node -e "
@@ -521,8 +521,8 @@ jobs:
           projectPath: desktop
           tauriScript: npx tauri
           args: --target ${{ matrix.target }}
-          tagName: ${{ github.ref_type == 'tag' && github.ref_name || github.event.inputs.version || format('v{0}', 'latest') }}
-          releaseName: "MakeChurchEazy ${{ github.ref_type == 'tag' && github.ref_name || github.event.inputs.version || 'latest' }}"
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || github.event.inputs.version }}
+          releaseName: "MakeChurchEazy ${{ github.ref_type == 'tag' && github.ref_name || github.event.inputs.version }}"
           releaseBody: |
             ## MakeChurchEazy
 

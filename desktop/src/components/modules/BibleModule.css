@@ -78,7 +78,7 @@
 }
 
 .bm-btn:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--surface-hover);
   border-color: var(--border);
 }
 
@@ -116,7 +116,7 @@
 
 .bm-btn-ghost:hover {
   color: var(--text);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-hover);
 }
 
 .bm-btn-icon {
@@ -135,7 +135,7 @@
 }
 
 .bm-btn-icon:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--surface-hover);
   color: var(--text);
 }
 
@@ -594,7 +594,7 @@
 }
 
 .bm-verse-item:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--surface-hover);
 }
 
 .bm-verse-item.active {
@@ -886,7 +886,7 @@
 }
 
 .bm-modal-close:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--surface-hover);
   color: var(--text);
 }
 
@@ -959,7 +959,7 @@
   justify-content: space-between;
   padding: 8px 10px;
   border-radius: var(--radius);
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--surface-raised);
   border: 1px solid var(--border);
 }
 

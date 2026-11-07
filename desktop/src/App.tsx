@@ -22,6 +22,7 @@ import { OBSConnectGate } from "./components/OBSConnectGate";
 import { getPreferredWorkspace, isOnboardingCompleted } from "./services/workspacePreference";
 import { DOCK_OUTPUT_SOFTWARE_STORAGE_KEY } from "./dock/dockOutputSoftware";
 import AuthGate from "./components/AuthGate";
+import PreAppSupport from "./components/PreAppSupport";
 import LicenseGuard from "./components/LicenseGuard";
 import FeatureGuard from "./components/FeatureGuard";
 import { useAuth } from "./contexts/AuthContext";
@@ -69,7 +70,7 @@ import { getUserScopedKey } from "./services/userScopedStorage";
 import { obsService } from "./services/obsService";
 import { appStatusManager } from "./services/appStatusManager";
 import { serviceStore as svcStore } from "./services/serviceStore";
-import { archiveSong, getAllSongs, getSong, saveSong, syncSongsToDock } from "./worship/worshipDb";
+import { archiveSong, getAllSongs, getSong, saveSong, syncSongsToDock, WORSHIP_SONGS_UPDATED_EVENT } from "./worship/worshipDb";
 import { generateSlides } from "./worship/slideEngine";
 import { DEFAULT_WORSHIP_LINES_PER_SLIDE } from "./worship/slideLayout";
 import { checkEntitlementSync } from "./services/entitlementClient";
@@ -90,6 +91,7 @@ import {
 import type { ServicePlan } from "./service-planner/types";
 import { buildDockProductionSettingsPayload, syncProductionSettingsToDock } from "./services/productionSettings";
 import {
+  loadWorshipDockSongArchiveRequest,
   loadWorshipDockSongSaveCommand,
   saveWorshipDockSongSaveResult,
   type WorshipDockSongSavePayload,
@@ -197,6 +199,25 @@ function AppRouteFallback() {
 }
 
 
+
+/**
+ * Archive songs removed in a Dock, then send every Dock the new list.
+ * Always refreshes this window's song views: a Dock window that shares the app's storage may
+ * have archived the song itself, and then archiveSong has nothing left to announce here.
+ */
+async function archiveSongsFromDock(ids: string[], songLimit: number): Promise<void> {
+  const unique = [...new Set(ids.map((id) => id?.trim()).filter(Boolean))];
+  if (unique.length === 0) return;
+  for (const id of unique) await archiveSong(id);
+  await syncSongsToDock();
+  window.dispatchEvent(new CustomEvent(WORSHIP_SONGS_UPDATED_EVENT));
+  const songs = await getAllSongs();
+  dockBridge.sendState({
+    type: "state:songs-data",
+    payload: (songLimit > 0 && songLimit < 9999) ? songs.slice(0, songLimit) : songs,
+    timestamp: Date.now(),
+  });
+}
 
 async function saveWorshipSongFromDockPayload(payload: WorshipDockSongSavePayload): Promise<{
   song: Song;
@@ -984,16 +1005,8 @@ function App() {
         try {
           const songId = (cmd.payload as { id?: string } | undefined)?.id?.trim();
           if (!songId) throw new Error("Missing song id.");
-          await archiveSong(songId);
-          await syncSongsToDock();
-          const songs = await getAllSongs();
           const { limit: songLimit } = checkEntitlementSync("songs", getEffectivePlan(userRef.current));
-          const limitedSongs = (songLimit > 0 && songLimit < 9999) ? songs.slice(0, songLimit) : songs;
-          dockBridge.sendState({
-            type: "state:songs-data",
-            payload: limitedSongs,
-            timestamp: Date.now(),
-          });
+          await archiveSongsFromDock([songId], songLimit);
         } catch (err) {
           console.warn("[App] Failed to remove dock Worship song:", err);
         }
@@ -1111,9 +1124,32 @@ function App() {
         worshipSaveFallbackInFlight = false;
       }
     };
+    // Songs removed in a Dock whose live messages don't reach this window (e.g. inside OBS).
+    let lastWorshipArchiveRequestAt = 0;
+    let worshipArchiveInFlight = false;
+    const pollWorshipArchiveRequests = async () => {
+      if (worshipArchiveInFlight) return;
+      worshipArchiveInFlight = true;
+      try {
+        const request = await loadWorshipDockSongArchiveRequest().catch(() => null);
+        if (!request || request.timestamp <= lastWorshipArchiveRequestAt) return;
+        lastWorshipArchiveRequestAt = request.timestamp;
+        const active = new Set((await getAllSongs()).map((song) => song.id));
+        const toArchive = request.ids.filter((id) => active.has(id));
+        if (toArchive.length === 0) return;
+        const { limit: songLimit } = checkEntitlementSync("songs", getEffectivePlan(userRef.current));
+        await archiveSongsFromDock(toArchive, songLimit);
+      } catch (err) {
+        console.warn("[App] Failed to remove dock Worship songs:", err);
+      } finally {
+        worshipArchiveInFlight = false;
+      }
+    };
+
     void pollWorshipSaveFallback();
+    void pollWorshipArchiveRequests();
     const worshipSaveFallbackTimer = window.setInterval(
-      () => void pollWorshipSaveFallback(),
+      () => { void pollWorshipSaveFallback(); void pollWorshipArchiveRequests(); },
       getRecommendedPollingInterval(WORSHIP_DOCK_SAVE_POLL_INTERVAL_MS),
     );
 
@@ -1647,7 +1683,7 @@ function App() {
                                   <SettingsOverlayRoutes>
                                     {/* Onboarding — standalone layout, no sidebar */}
                                     {!mceOnboardingDone && (
-                                      <Route path="onboarding" element={<OnboardingPage />} />
+                                      <Route path="onboarding" element={<><OnboardingPage /><PreAppSupport /></>} />
                                     )}
                                     <Route element={mceOnboardingDone ? <AppShell /> : <Navigate to="/onboarding" replace />}>
                                       {/* The dashboard, always (also for churches that chose Studio during setup). */}

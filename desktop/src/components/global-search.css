@@ -37,7 +37,7 @@
   flex-direction: column;
   background: var(--surface-dark);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg, 6px);
+  border-radius: var(--radius-lg);
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--border-subtle);
   overflow: hidden;
   animation: gsSlideIn 0.18s ease-out;
@@ -262,15 +262,15 @@
 }
 
 .gs-result-icon--bible {
-  color: #66bb6a;
+  color: var(--success);
 }
 
 .gs-result-icon--worship {
-  color: #42a5f5;
+  color: var(--accent-blue);
 }
 
 .gs-result-icon--speaker {
-  color: #ff9800;
+  color: var(--warning);
 }
 
 /* ── Result body ── */

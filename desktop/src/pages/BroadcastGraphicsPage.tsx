@@ -12,6 +12,7 @@
 import GivingBankFields, { hasGivingBankFields, isGivingBankFieldKey } from "../dock/components/GivingBankFields";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { looksLikeLongTextField } from "../lowerthirds/graphicPackages";
+import { graphicAddedAt, isNewGraphic, splitNewGraphics } from "../lowerthirds/graphicCategory";
 import { createPortal } from "react-dom";
 import {
   MonitorPlay,
@@ -35,6 +36,7 @@ import {
   LayoutGrid,
   ArrowRight,
   Radio,
+  Info,
 } from "../components/icons/NativeIcons";
 import "./BroadcastGraphicsPage.css";
 import { useAuth } from "../contexts/AuthContext";
@@ -42,6 +44,7 @@ import { getEffectivePlan } from "../services/licenseService";
 import { checkEntitlementSync } from "../services/entitlementClient";
 import { openDashboardSubscriptionPlans } from "../services/subscriptionNavigation";
 import PlanLimitModal from "../components/PlanLimitModal";
+import ModalDialog from "../components/ModalDialog";
 import { trackGraphicUsage } from "../services/tracking";
 
 import { KINETIC_LOWER_THIRD_THEMES } from "../lowerthirds/kineticThemes";
@@ -370,6 +373,8 @@ export default function BroadcastGraphicsPage() {
   // Modal states
   const [showHowModal, setShowHowModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  // Saved graphic waiting for the person to confirm deletion (native confirm() isn't available in the app).
+  const [deleteGraphicTarget, setDeleteGraphicTarget] = useState<{ id: string; name: string } | null>(null);
   const [previewGraphic, setPreviewGraphic] = useState<{
     theme: BroadcastTheme;
     customVars?: Record<string, string>;
@@ -650,18 +655,27 @@ export default function BroadcastGraphicsPage() {
         const nameMatch = t.name.toLowerCase().includes(q);
         const descMatch = t.description?.toLowerCase().includes(q) ?? false;
         const tagMatch = t.tags?.some((tag) => tag.toLowerCase().includes(q)) ?? false;
-        return nameMatch || descMatch || tagMatch;
+        const newMatch = "new".startsWith(q) && isNewGraphic(t);
+        return nameMatch || descMatch || tagMatch || newMatch;
       });
     }
 
-    list.sort((a, b) => {
-      if (sortBy === "name-asc") return a.name.localeCompare(b.name);
-      if (sortBy === "name-desc") return b.name.localeCompare(a.name);
-      return 0; // Default order
-    });
-
-    if (sortBy === "mixed" && selectedCategory === "all" && !searchQuery.trim()) {
-      list = mixAcrossCategories(list, getTemplateCategory, mixSeed);
+    if (sortBy === "name-asc" || sortBy === "name-desc") {
+      list.sort((a, b) => (sortBy === "name-asc" ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)));
+    } else if (sortBy === "newest" || sortBy === "oldest") {
+      // Graphics with a date (the newest additions) by date; the rest keep the library order.
+      const dated = list.map((t, i) => ({ t, i, at: graphicAddedAt(t) }));
+      dated.sort((a, b) => (b.at - a.at) || (a.i - b.i));
+      list = dated.map((d) => d.t);
+      if (sortBy === "oldest") list.reverse();
+    } else {
+      // Mixed (default): graphics added recently come first, in "All" and in every category,
+      // then the rest of the library. In "All" each group is mixed across categories.
+      const { fresh, rest } = splitNewGraphics(list, (t) => t);
+      list =
+        selectedCategory === "all" && !searchQuery.trim()
+          ? [...mixAcrossCategories(fresh, getTemplateCategory, mixSeed), ...mixAcrossCategories(rest, getTemplateCategory, mixSeed)]
+          : [...fresh, ...rest];
     }
 
     // Plan-locked graphics go to the end (stable), so the open ones are the first in the grid.
@@ -779,14 +793,18 @@ export default function BroadcastGraphicsPage() {
   const handleDeleteSaved = useCallback(
     (graphicId: string) => {
       const item = savedGraphics.find((g) => g.id === graphicId);
-      if (window.confirm(`Are you sure you want to delete "${item?.name || "this graphic"}"?`)) {
-        deleteBroadcastGraphic(graphicId);
-        reloadData();
-        showToast("Graphic deleted");
-      }
+      setDeleteGraphicTarget({ id: graphicId, name: item?.name || "this graphic" });
     },
-    [reloadData, savedGraphics, showToast],
+    [savedGraphics],
   );
+
+  const confirmDeleteSaved = useCallback(() => {
+    if (!deleteGraphicTarget) return;
+    deleteBroadcastGraphic(deleteGraphicTarget.id);
+    setDeleteGraphicTarget(null);
+    reloadData();
+    showToast("Graphic deleted");
+  }, [deleteGraphicTarget, reloadData, showToast]);
 
   const handleToggleTickerObs = useCallback(
     (tickerId: string) => {
@@ -1123,6 +1141,20 @@ export default function BroadcastGraphicsPage() {
           </section>
           </ScreenModal>
         )}
+        {deleteGraphicTarget && (
+          <ModalDialog
+            tone="danger"
+            icon={<Trash2 size={26} />}
+            title="Delete this graphic?"
+            onClose={() => setDeleteGraphicTarget(null)}
+            actions={[
+              { label: "Cancel", onClick: () => setDeleteGraphicTarget(null), variant: "ghost", autoFocus: true },
+              { label: "Delete graphic", onClick: confirmDeleteSaved, variant: "danger" },
+            ]}
+          >
+            Are you sure you want to delete &ldquo;{deleteGraphicTarget.name}&rdquo;?
+          </ModalDialog>
+        )}
         {upgradePrompt && (
           <PlanLimitModal
             open
@@ -1143,7 +1175,7 @@ export default function BroadcastGraphicsPage() {
         <header className="bg-header">
           <div className="bg-header__info">
             <h1 className="bg-header__title">
-              <MonitorPlay size={28} color="#818cf8" />
+              <MonitorPlay size={28} color="var(--accent-blue)" />
               Broadcast Graphics
             </h1>
             <p className="bg-header__description">
@@ -1440,6 +1472,7 @@ export default function BroadcastGraphicsPage() {
                               {template.name}
                             </h4>
                             <div className="bg-card__meta-tags">
+                              {isNewGraphic(template) && <span className="bg-card__tag bg-card__tag--new">New</span>}
                               <span className="bg-card__tag bg-card__tag--category">{cat}</span>
                               <span className="bg-card__tag">Lower Third</span>
                             </div>
@@ -2187,9 +2220,9 @@ export default function BroadcastGraphicsPage() {
                                       fontSize: 12,
                                       fontWeight: 600,
                                       cursor: "pointer",
-                                      border: `1px solid ${on ? "#6366f1" : "rgba(148,163,184,0.35)"}`,
-                                      background: on ? "rgba(99,102,241,0.22)" : "transparent",
-                                      color: on ? "#e0e7ff" : "var(--text-secondary)",
+                                      border: `1px solid ${on ? "var(--primary)" : "var(--border)"}`,
+                                      background: on ? "var(--primary-soft)" : "transparent",
+                                      color: on ? "var(--text-primary)" : "var(--text-secondary)",
                                     }}
                                   >
                                     {on ? `${picked.indexOf(o.value) + 1}. ` : ""}
@@ -2212,7 +2245,7 @@ export default function BroadcastGraphicsPage() {
                                   width: 96,
                                   height: 48,
                                   borderRadius: 6,
-                                  border: "1px solid rgba(148,163,184,0.35)",
+                                  border: "1px solid var(--border)",
                                   display: "grid",
                                   placeItems: "center",
                                   overflow: "hidden",
@@ -2461,6 +2494,22 @@ export default function BroadcastGraphicsPage() {
                       <span>Animate Out</span>
                     </button>
                   </div>
+
+                  {/* How to show this graphic live once it is in OBS. */}
+                  <div className="app-banner bg-obs-howto" role="note">
+                    <div className="app-banner__content">
+                      <Info size={16} />
+                      <div className="bg-obs-howto__text">
+                        <strong className="bg-obs-howto__title">How to use it in OBS</strong>
+                        <ol className="bg-obs-howto__steps">
+                          <li>Click <strong>Save &amp; Add to OBS</strong> below.</li>
+                          <li>In OBS, open the <strong>Make Church Eazy</strong> Dock and go to the <strong>Ministry</strong> tab, then <strong>Lower Thirds</strong>.</li>
+                          <li>Find <strong>{editorState.name.trim() || editorState.template.name}</strong> in the list (type its name to search). If it isn't there yet, right-click the Dock and choose <strong>Refresh</strong>.</li>
+                          <li>Select it, then click <strong>Send</strong> to show it live. Click <strong>Blank</strong> to take it off, or let it leave by itself after its hold time.</li>
+                        </ol>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -2586,15 +2635,15 @@ export default function BroadcastGraphicsPage() {
               gap: 8,
               padding: "10px 16px",
               borderRadius: 8,
-              background: "#151f32",
-              border: toast.type === "success" ? "1px solid #22c55e" : "1px solid #ef4444",
+              background: "var(--surface)",
+              border: toast.type === "success" ? "1px solid var(--success)" : "1px solid var(--error)",
               color: "var(--text-primary)",
               fontSize: 13,
               fontWeight: 500,
               boxShadow: "0 4px 20px rgba(0,0,0,0.45)",
             }}
           >
-            <Check size={16} color={toast.type === "success" ? "#22c55e" : "#ef4444"} />
+            <Check size={16} color={toast.type === "success" ? "var(--success)" : "var(--error)"} />
             <span>{toast.message}</span>
           </div>
         )}

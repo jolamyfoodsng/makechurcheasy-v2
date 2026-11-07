@@ -18,7 +18,7 @@ import { Bookmark, Eye, Loader2, MoreHorizontal, Pause, Pencil, Play, Repeat, Ro
 import type { LowerThirdTheme, LTVariable } from "../../lowerthirds/types";
 import { buildThemePreviewHtml, obsPreviewSandbox, type BroadcastTheme } from "../../lowerthirds/broadcastPreviewHtml";
 import { KINETIC_LOWER_THIRD_THEMES } from "../../lowerthirds/kineticThemes";
-import { GRAPHIC_CATEGORY_TABS, graphicCategoryOf } from "../../lowerthirds/graphicCategory";
+import { GRAPHIC_CATEGORY_TABS, graphicCategoryOf, splitNewGraphics } from "../../lowerthirds/graphicCategory";
 import {
   BROADCAST_GRAPHICS_CATALOG_UPDATED_EVENT,
   getGraphicAvailability,
@@ -111,7 +111,12 @@ function loadEntries(): Entry[] {
   } catch {
     // The catalog has not loaded.
   }
-  const themes = [...map.values()].filter((t) => !HIDDEN_THEME_IDS.has(t.id) && getGraphicAvailability(t.id).visible);
+  // Graphics added recently are listed first, in "All" and in each category.
+  const { fresh, rest } = splitNewGraphics(
+    [...map.values()].filter((t) => !HIDDEN_THEME_IDS.has(t.id) && getGraphicAvailability(t.id).visible),
+    (t) => t,
+  );
+  const themes = [...fresh, ...rest];
   const entries: Entry[] = themes.map((theme) => ({ key: theme.id, name: theme.name, theme, category: graphicCategoryOf(theme), preset: {} }));
   try {
     for (const saved of loadSavedBroadcastGraphics()) {

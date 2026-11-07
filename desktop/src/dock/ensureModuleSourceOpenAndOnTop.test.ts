@@ -4,6 +4,11 @@ import { dockObsClient } from "./dockObsClient";
 describe("ensureModuleSourceOpenAndOnTop", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    // Worship and Notes share one source, so a previous test's "already on top" memory
+    // would make the fast path skip the OBS calls these tests look for.
+    const client = dockObsClient as any;
+    client._lastActivePresentationSource = null;
+    client._lastVerifiedStackedBySceneSource = {};
   });
 
   it("checks if Bible source is open and on top, enabling it and stacking above other layers", async () => {

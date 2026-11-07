@@ -28,6 +28,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import "./TranscriptLibraryPage.css";
+import ModalDialog from "../components/ModalDialog";
 
 import {
   deleteTranscript,
@@ -516,18 +517,18 @@ export default function TranscriptLibraryPage({
 
         {/* ── Delete Confirmation ── */}
         {deletingId && (
-          <div className="tl-confirm-overlay" onClick={cancelDelete}>
-            <div className="tl-confirm-dialog" onClick={(e) => e.stopPropagation()}>
-              <div className="tl-confirm-title">{t("transcript.deleteConfirm.title")}</div>
-              <div className="tl-confirm-message">
-                {t("transcript.deleteConfirm.message")}
-              </div>
-              <div className="tl-confirm-actions">
-                <button type="button" className="tl-btn-cancel" onClick={cancelDelete} title={t("transcript.tooltip.cancelDelete")}>{t("common.cancel")}</button>
-                <button type="button" className="tl-btn-danger" onClick={confirmDelete} title={t("transcript.tooltip.confirmDelete")}>{t("transcript.delete")}</button>
-              </div>
-            </div>
-          </div>
+          <ModalDialog
+            tone="danger"
+            icon={<Trash2 size={26} />}
+            title={t("transcript.deleteConfirm.title")}
+            onClose={cancelDelete}
+            actions={[
+              { label: t("common.cancel"), onClick: cancelDelete, variant: "ghost", autoFocus: true, title: t("transcript.tooltip.cancelDelete") },
+              { label: t("transcript.delete"), onClick: () => void confirmDelete(), variant: "danger", title: t("transcript.tooltip.confirmDelete") },
+            ]}
+          >
+            {t("transcript.deleteConfirm.message")}
+          </ModalDialog>
         )}
 
       </div>

@@ -36,7 +36,7 @@ function PendingBadge({ count }: { count: number }) {
         alignItems: "center",
         gap: 3,
         fontSize: 10,
-        color: "var(--text-muted, #94a3b8)",
+        color: "var(--text-muted)",
         marginLeft: 4,
       }}
       title={`${count} transaction(s) pending sync`}

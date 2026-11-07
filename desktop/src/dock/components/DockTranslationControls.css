@@ -104,7 +104,7 @@
   padding: 10px;
   border: 1px solid var(--dock-border-active, var(--dock-border));
   border-radius: var(--radius, 4px);
-  background: var(--dock-surface, #111827);
+  background: var(--dock-surface, var(--surface));
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.32);
 }
 
@@ -210,7 +210,7 @@
   padding: 6px;
   border: 1px solid var(--dock-border-active, var(--dock-border));
   border-radius: 5px;
-  background: var(--dock-surface, #111827);
+  background: var(--dock-surface, var(--surface));
   box-shadow: 0 12px 26px rgba(0, 0, 0, 0.4);
 }
 

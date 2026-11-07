@@ -111,7 +111,7 @@ function ThemeCard({
         ...(isSelected ? CARD_SELECTED : {}),
       }}
       onMouseEnter={(e) => {
-        if (!isSelected) e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)";
+        if (!isSelected) e.currentTarget.style.borderColor = "var(--border-strong)";
       }}
       onMouseLeave={(e) => {
         if (!isSelected) e.currentTarget.style.borderColor = "transparent";

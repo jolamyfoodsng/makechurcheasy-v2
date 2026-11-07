@@ -141,3 +141,43 @@ export async function loadWorshipDockSongSaveResult(
     return null;
   }
 }
+
+// ── Song removal from the Dock ─────────────────────────────────────────────
+// A Dock in OBS has its own storage and its live messages may not reach the app, so a removal
+// is also written to a file the app checks. The file holds every removal the app has not
+// confirmed yet; archiving is idempotent, so reading the same list twice is harmless.
+
+export const WORSHIP_DOCK_SONG_ARCHIVE_NAME = "dock-worship-song-archive";
+
+export interface WorshipDockSongArchiveRequest {
+  timestamp: number;
+  ids: string[];
+}
+
+export async function postWorshipDockSongArchiveRequest(
+  ids: string[],
+  baseUrl = window.location.origin,
+): Promise<void> {
+  const request: WorshipDockSongArchiveRequest = { timestamp: Date.now(), ids };
+  for (let attempt = 0; attempt <= SAVE_RETRY_DELAYS_MS.length; attempt += 1) {
+    try {
+      const response = await fetch(`${baseUrl}/api/save-dock-data`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: WORSHIP_DOCK_SONG_ARCHIVE_NAME, data: JSON.stringify(request) }),
+      });
+      if (response.ok || !shouldRetrySaveStatus(response.status)) return;
+    } catch {
+      // Overlay server still starting: retry below.
+    }
+    if (attempt < SAVE_RETRY_DELAYS_MS.length) await wait(SAVE_RETRY_DELAYS_MS[attempt]);
+  }
+}
+
+export async function loadWorshipDockSongArchiveRequest(): Promise<WorshipDockSongArchiveRequest | null> {
+  const { invoke } = await import("@tauri-apps/api/core");
+  const raw = await invoke<string>("load_dock_data", { name: WORSHIP_DOCK_SONG_ARCHIVE_NAME });
+  if (!raw.trim()) return null;
+  const parsed = parseJson<WorshipDockSongArchiveRequest>(raw);
+  return parsed && Array.isArray(parsed.ids) ? parsed : null;
+}

@@ -85,7 +85,7 @@ export default function CreditsGuard({ children }: CreditsGuardProps) {
     return (
       <div style={styles.root}>
         <div style={styles.card}>
-          <div style={{ ...styles.iconWrap, background: "rgba(239, 68, 68, 0.12)", color: "#ef4444" }}>
+          <div style={{ ...styles.iconWrap, background: "rgba(239, 68, 68, 0.12)", color: "var(--error)" }}>
             <LogOut size={28} />
           </div>
           <h2 style={styles.title}>Session Expired</h2>
@@ -135,8 +135,8 @@ export default function CreditsGuard({ children }: CreditsGuardProps) {
               style={{
                 ...styles.cta,
                 background: "transparent",
-                border: "1px solid var(--border, rgba(255,255,255,0.15))",
-                color: "var(--text-muted, #94a3b8)",
+                border: "1px solid var(--border)",
+                color: "var(--text-muted)",
                 cursor: "pointer",
               }}
               onClick={() => logout()}
@@ -188,7 +188,7 @@ const styles: Record<string, React.CSSProperties> = {
     height: "100%",
     minHeight: 450,
     padding: 32,
-    background: "var(--bg, transparent)",
+    background: "var(--bg)",
   },
   card: {
     display: "flex",
@@ -199,9 +199,9 @@ const styles: Record<string, React.CSSProperties> = {
     width: "100%",
     textAlign: "center",
     padding: "32px 24px",
-    background: "var(--surface, rgba(255, 255, 255, 0.03))",
-    border: "1px solid var(--border, rgba(255, 255, 255, 0.08))",
-    borderRadius: "var(--radius, 6px)",
+    background: "var(--surface)",
+    border: "1px solid var(--border)",
+    borderRadius: "var(--radius)",
     boxShadow: "0 4px 16px rgba(0, 0, 0, 0.08)",
   },
   iconWrap: {
@@ -209,7 +209,7 @@ const styles: Record<string, React.CSSProperties> = {
     height: 56,
     borderRadius: "50%",
     background: "rgba(239, 68, 68, 0.12)",
-    color: "var(--error, #ef4444)",
+    color: "var(--error)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -218,14 +218,14 @@ const styles: Record<string, React.CSSProperties> = {
   title: {
     fontSize: 18,
     fontWeight: 700,
-    color: "var(--text, #e2e8f0)",
+    color: "var(--text)",
     margin: 0,
-    fontFamily: "var(--font-heading, inherit)",
+    fontFamily: "var(--font-heading)",
   },
   desc: {
     fontSize: 13,
     lineHeight: 1.6,
-    color: "var(--text-muted, #94a3b8)",
+    color: "var(--text-muted)",
     margin: 0,
   },
   cta: {
@@ -234,8 +234,8 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 6,
     marginTop: 8,
     padding: "9px 20px",
-    borderRadius: "var(--radius, 4px)",
-    background: "var(--primary, #4f46e5)",
+    borderRadius: "var(--radius)",
+    background: "var(--primary)",
     border: "none",
     color: "#fff",
     fontSize: 13,

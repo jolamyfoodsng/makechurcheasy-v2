@@ -4,6 +4,7 @@ import { calculateTopupPricing } from "@/lib/transcriptionCredits";
 import { getSubscription } from "@/lib/db";
 import { createFlutterwavePayment, isFlutterwaveConfigured } from "@/lib/flutterwave";
 import clientPromise from "@/lib/mongodb";
+import { reportPaymentToTelegram } from "@/lib/paymentTelegramNotifications";
 import * as crypto from "node:crypto";
 
 const CORS_HEADERS: Record<string, string> = {
@@ -65,29 +66,53 @@ export async function POST(req: NextRequest) {
         createdAt: new Date().toISOString(),
       });
 
-      const payment = await createFlutterwavePayment({
-        amount: selectedPack.price,
-        currency: selectedPack.currency,
-        txRef: reference,
-        email,
-        name: String((authUser.mongoUser as any)?.name || "").trim() || undefined,
-        redirectUrl: callbackUrl,
-        description: `MakeChurchEazy ${selectedPack.hours}h (${selectedPack.credits} credits) Top-up`,
-        metadata: {
-          type: "transcription_topup",
-          userId,
-          packId: selectedPack.id,
-          hours: selectedPack.hours,
-          credits: selectedPack.credits,
-          seconds: selectedPack.seconds,
-          price: selectedPack.price,
+      let paymentUrl = "";
+      try {
+        const payment = await createFlutterwavePayment({
+          amount: selectedPack.price,
           currency: selectedPack.currency,
-        },
-      });
+          txRef: reference,
+          email,
+          name: String((authUser.mongoUser as any)?.name || "").trim() || undefined,
+          redirectUrl: callbackUrl,
+          description: `MakeChurchEazy ${selectedPack.hours}h (${selectedPack.credits} credits) Top-up`,
+          metadata: {
+            type: "transcription_topup",
+            userId,
+            packId: selectedPack.id,
+            hours: selectedPack.hours,
+            credits: selectedPack.credits,
+            seconds: selectedPack.seconds,
+            price: selectedPack.price,
+            currency: selectedPack.currency,
+          },
+        });
 
-      const paymentUrl = String(payment.data?.link || "").trim();
-      if (!paymentUrl) {
-        throw new Error("Flutterwave did not return a payment link");
+        paymentUrl = String(payment.data?.link || "").trim();
+        if (!paymentUrl) {
+          throw new Error("Flutterwave did not return a payment link");
+        }
+      } catch (error) {
+        const failureReason = error instanceof Error ? error.message : "Flutterwave payment creation failed";
+        await db.collection("transcription_topup_intents").updateOne(
+          { reference },
+          { $set: { status: "FAILED", failureReason, updatedAt: new Date().toISOString() } },
+        );
+        reportPaymentToTelegram({
+          outcome: "failed",
+          provider: "flutterwave",
+          reference,
+          userId,
+          name: authUser.mongoUser.name,
+          email,
+          purchase: "credits",
+          credits: selectedPack.credits,
+          amount: selectedPack.price,
+          currency: selectedPack.currency,
+          failureReason,
+          source: "Top-up checkout start",
+        });
+        throw error;
       }
 
       return NextResponse.json(

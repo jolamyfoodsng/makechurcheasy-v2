@@ -19,8 +19,8 @@ describe("DockPresentationLink Card and Modal", () => {
   it("DockPresentationLinkModal clearly explains free plan downgrade and provides bold link", () => {
     const content = fs.readFileSync(modalPath, "utf-8");
     expect(content).toContain("DockPresentationLinkModal");
-    expect(content).toContain("dock-presentation-modal");
-    expect(content).toContain("dock-presentation-modal__link-code");
+    expect(content).toContain("<ModalDialog");
+    expect(content).toContain("<ModalCodeRow");
     expect(content).toContain("dock.freePlanNoticeDesc");
     expect(content).not.toContain("Explore Multi-Scene Plans");
     expect(content).not.toContain("3-Step Setup");
@@ -30,6 +30,5 @@ describe("DockPresentationLink Card and Modal", () => {
     const css = fs.readFileSync(cssPath, "utf-8");
     expect(css).toContain("font-weight: 700");
     expect(css).toContain(".dock-presentation-link-bar");
-    expect(css).toContain(".dock-presentation-modal");
   });
 });

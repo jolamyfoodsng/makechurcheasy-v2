@@ -71,9 +71,9 @@
   padding: 10px 32px 10px 36px;
   background: var(--surface-raised);
   border: 1px solid var(--border);
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   font-size: 14.5px;
-  color: #ffffff;
+  color: var(--text-primary);
   transition: border-color 0.15s;
 }
 
@@ -126,7 +126,7 @@
   justify-content: center;
   gap: 8px;
   padding: 10px 18px;
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   font-weight: 600;
   font-size: 14.5px;
   transition: all 0.15s ease;
@@ -140,7 +140,7 @@
 .tl-scroll-content .tl-btn-primary {
   background: var(--primary) !important;
   color: #FFFFFF !important;
-  border: 1px solid #4f46e5;
+  border: 1px solid var(--primary);
   box-shadow: none;
 }
 
@@ -148,7 +148,7 @@
 .tl-scroll-content .tl-btn-primary:hover {
   background: var(--primary-hover) !important;
   color: #FFFFFF !important;
-  border-color: #6366f1;
+  border-color: var(--primary-hover);
   box-shadow: none;
   transform: none;
 }
@@ -176,9 +176,9 @@
 
 .tl-btn-outline:hover,
 .tl-scroll-content .tl-btn-outline:hover {
-  background: #334155;
-  border-color: rgba(255, 255, 255, 0.2);
-  color: #ffffff;
+  background: var(--surface-hover);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
 }
 
 /* ── Stats Grid ── */
@@ -191,7 +191,7 @@
 .tl-stat-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   padding: 20px;
   display: flex;
   align-items: center;
@@ -223,7 +223,7 @@
 .tl-stat-value {
   font-size: 1.35rem;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-primary);
   line-height: 1.2;
 }
 
@@ -240,7 +240,7 @@
 .tl-table-section {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   overflow: hidden;
 }
 
@@ -262,11 +262,11 @@
   gap: 6px;
   padding: 6px 12px;
   border: 1px solid var(--border);
-  background: var(--surface-raised, rgba(255, 255, 255, 0.04));
-  border-radius: var(--radius, 4px);
+  background: var(--surface-raised);
+  border-radius: var(--radius);
   font-size: 0.75rem;
   font-weight: 500;
-  color: var(--text-secondary, #cbd5e1);
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.15s ease;
   outline: none;
@@ -274,7 +274,7 @@
 
 .tl-filter-btn:hover {
   color: var(--text-primary);
-  border-color: rgba(255, 255, 255, 0.25);
+  border-color: var(--border-strong);
   background: var(--surface-hover);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
 }
@@ -283,7 +283,7 @@
   margin-left: auto;
   display: flex;
   border: 1px solid var(--border);
-  background: var(--surface-dark, #0f172a);
+  background: var(--surface-dark);
   border-radius: 6px;
   overflow: hidden;
 }
@@ -338,7 +338,7 @@
 }
 
 .tl-th-date:hover {
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .tl-th-actions {
@@ -366,7 +366,7 @@
 }
 
 .tl-table-row:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--surface-hover);
 }
 
 /* ── Table Cells ── */
@@ -381,7 +381,7 @@
   width: 38px;
   height: 38px;
   border-radius: 6px;
-  background: rgba(37, 99, 235, 0.16);
+  background: var(--primary-soft);
   color: var(--accent-blue);
   display: flex;
   align-items: center;
@@ -414,12 +414,12 @@
 
 .tl-cell-date {
   font-size: 14px;
-  color: #d4d4d8;
+  color: var(--text-secondary);
 }
 
 .tl-cell-duration {
   font-size: 14px;
-  color: #d4d4d8;
+  color: var(--text-secondary);
 }
 
 .tl-cell-scriptures {
@@ -431,7 +431,7 @@
 .tl-matches-count {
   font-size: 15px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .tl-matches-label {
@@ -451,7 +451,7 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #10b981;
+  background: var(--success);
   flex-shrink: 0;
 }
 
@@ -475,8 +475,8 @@
   margin: 0;
   border-radius: 6px;
   border: 1px solid var(--border);
-  background: var(--surface-raised, rgba(255, 255, 255, 0.05));
-  color: var(--text-secondary, #cbd5e1);
+  background: var(--surface-raised);
+  color: var(--text-secondary);
   cursor: pointer;
   outline: none;
   transition: all 0.15s ease;
@@ -485,7 +485,7 @@
 .tl-action-icon:hover:not(:disabled) {
   color: var(--text-primary);
   background: var(--surface-hover);
-  border-color: rgba(255, 255, 255, 0.25);
+  border-color: var(--border-strong);
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
@@ -504,9 +504,9 @@
 }
 
 .tl-action-icon--locked:hover {
-  border-color: rgba(245, 158, 11, 0.5);
-  color: var(--warning, #f59e0b);
-  background: rgba(245, 158, 11, 0.08);
+  border-color: var(--warning);
+  color: var(--warning);
+  background: var(--warning-bg);
 }
 
 .tl-action-locked-badge-wrap {
@@ -520,8 +520,8 @@
   position: absolute;
   bottom: -4px;
   right: -5px;
-  background: var(--surface-dark, #1e293b);
-  color: var(--warning, #f59e0b);
+  background: var(--surface-dark);
+  color: var(--warning);
   border-radius: 50%;
   padding: 1px;
 }
@@ -562,7 +562,7 @@
   margin-top: 4px;
   background: var(--surface-dark);
   border: 1px solid var(--border);
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   padding: 4px;
   min-width: 140px;
   z-index: 50;
@@ -577,7 +577,7 @@
   gap: 8px;
   width: 100%;
   padding: 8px 12px;
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   border: none;
   background: transparent;
   font-size: 0.8125rem;
@@ -588,8 +588,8 @@
 }
 
 .tl-dropdown-item:hover {
-  background: rgba(239, 68, 68, 0.12);
-  color: var(--error, #ef4444);
+  background: var(--error-bg);
+  color: var(--error);
 }
 
 /* ── Table Footer / Pagination ── */
@@ -624,7 +624,7 @@
   min-width: 30px;
   height: 30px;
   padding: 0 6px;
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   border: 1px solid transparent;
   background: transparent;
   font-size: 0.8125rem;
@@ -652,77 +652,6 @@
   cursor: not-allowed;
 }
 
-/* ── Delete Confirmation Overlay ── */
-.tl-confirm-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-}
-
-.tl-confirm-dialog {
-  background: var(--surface-dark);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg, 6px);
-  padding: 24px;
-  width: 380px;
-  max-width: 90vw;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
-}
-
-.tl-confirm-title {
-  font-size: 0.9375rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 8px;
-}
-
-.tl-confirm-message {
-  font-size: 0.8125rem;
-  color: var(--text-muted);
-  line-height: 1.5;
-  margin-bottom: 20px;
-}
-
-.tl-confirm-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
-.tl-btn-cancel {
-  padding: 8px 14px;
-  border-radius: var(--radius, 4px);
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--text-muted);
-  border: 1px solid var(--border);
-  transition: 0.15s;
-}
-
-.tl-btn-cancel:hover {
-  background: var(--surface-hover);
-  color: var(--text-primary);
-}
-
-.tl-btn-danger {
-  padding: 8px 14px;
-  border-radius: var(--radius, 4px);
-  font-size: 0.8125rem;
-  font-weight: 500;
-  background: var(--error);
-  color: #fff;
-  transition: 0.15s;
-}
-
-.tl-btn-danger:hover {
-  background: var(--error-hover);
-}
-
 /* ── Empty State ── */
 .tl-empty-state {
   display: flex;
@@ -744,7 +673,7 @@
   position: relative;
   background: var(--surface-dark);
   border: 1px solid var(--border);
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   padding: 24px 28px;
   display: flex;
   align-items: center;
@@ -807,11 +736,11 @@
 }
 
 .tl-stat--blue .tl-accent-bar {
-  background: #3b82f6;
+  background: var(--accent-blue);
 }
 
 .tl-stat--blue .tl-stat-icon {
-  color: #3b82f6;
+  color: var(--accent-blue);
 }
 
 .tl-stat--green .tl-accent-bar {
@@ -880,12 +809,12 @@
 
 .tl-btn-ghost {
   background: transparent;
-  color: var(--text-secondary, var(--text-muted));
+  color: var(--text-secondary);
   border: 1px solid var(--border);
 }
 
 .tl-btn-ghost:hover {
-  background: var(--surface-hover, rgba(255, 255, 255, 0.05));
+  background: var(--surface-hover);
   color: var(--text-primary);
 }
 

@@ -5,6 +5,7 @@
  */
 import { useEffect, type ReactNode } from "react";
 import { X } from "./icons/NativeIcons";
+import "./ModalDialog.css"; // --mce-modal-backdrop / --mce-modal-shadow
 
 interface Props {
   onClose: () => void;

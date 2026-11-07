@@ -594,9 +594,9 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: rgba(var(--primary-rgb, 99, 102, 241), 0.08);
-  border: 1px solid rgba(var(--primary-rgb, 99, 102, 241), 0.18);
-  color: var(--text-secondary, #6b7280);
+  background: rgba(var(--primary-rgb), 0.08);
+  border: 1px solid rgba(var(--primary-rgb), 0.18);
+  color: var(--text-secondary);
   font-size: 10px;
   font-weight: 600;
   min-height: 30px;
@@ -884,7 +884,7 @@
 
 /* Card */
 .lib-media-card {
-  background: #0d1527;
+  background: var(--surface);
   border-radius: var(--radius, 4px);
   border: 1px solid var(--border);
   overflow: visible;
@@ -901,7 +901,7 @@
 }
 
 .lib-media-card:hover {
-  border-color: rgba(99, 102, 241, 0.4);
+  border-color: var(--border-strong);
 }
 
 .lib-media-card--focused {
@@ -915,7 +915,7 @@
 /* Thumbnail area */
 .lib-media-thumb {
   aspect-ratio: 16 / 9;
-  background: #080d1a;
+  background: var(--surface-raised);
   position: relative;
   overflow: hidden;
   border-radius: 10px 10px 0 0;
@@ -941,8 +941,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #080d1a;
-  color: #334155;
+  background: var(--surface-raised);
+  color: var(--text-disabled);
 }
 
 .lib-media-thumb--video-placeholder svg,
@@ -1006,7 +1006,7 @@
   gap: 8px;
   min-height: 30px;
   padding: 0 8px;
-  color: var(--text-secondary, #6b7280);
+  color: var(--text-secondary);
   font-size: 12px;
   white-space: nowrap;
   cursor: pointer;
@@ -1071,9 +1071,9 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  background: #090f1d;
+  background: var(--surface);
   border-radius: 0 0 10px 10px;
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  border-top: 1px solid var(--border-subtle);
 }
 
 .lib-media-card-info,
@@ -1122,8 +1122,8 @@
 }
 
 .lib-media-card-view-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  background: var(--surface-hover);
+  color: var(--text-primary);
 }
 
 .lib-media-card-menu-btn {
@@ -1140,8 +1140,8 @@
 }
 
 .lib-media-card-menu-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  background: var(--surface-hover);
+  color: var(--text-primary);
 }
 
 /* Rename inline input */
@@ -1340,12 +1340,12 @@
 .lib-song-row--gated {
   opacity: 0.55;
   cursor: pointer;
-  border: 1px dashed rgba(var(--primary-rgb, 124, 131, 255), 0.2);
+  border: 1px dashed rgba(var(--primary-rgb), 0.2);
 }
 
 .lib-song-row--gated:hover {
   opacity: 0.75;
-  border-color: rgba(var(--primary-rgb, 124, 131, 255), 0.4);
+  border-color: rgba(var(--primary-rgb), 0.4);
 }
 
 .lib-song-gated-badge {
@@ -1354,8 +1354,8 @@
   gap: 5px;
   padding: 5px 10px;
   border-radius: 4px;
-  background: rgba(var(--primary-rgb, 124, 131, 255), 0.1);
-  color: var(--primary, #7c83ff);
+  background: rgba(var(--primary-rgb), 0.1);
+  color: var(--primary);
   font-size: 11.5px;
   font-weight: 600;
   white-space: nowrap;
@@ -2674,7 +2674,7 @@
 }
 
 .lib-media-search-box:focus-within {
-  border-color: rgba(99, 102, 241, 0.5);
+  border-color: var(--primary);
 }
 
 .lib-media-search-icon {
@@ -2747,7 +2747,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: #22c55e;
+  background: var(--primary);
   color: #fff;
   border: none;
   border-radius: var(--radius, 4px);
@@ -2761,7 +2761,7 @@
 }
 
 .lib-media-add-action-btn:hover {
-  background: #16a34a;
+  background: var(--primary-hover);
 }
 
 .lib-media-add-action-btn:active {
@@ -2771,8 +2771,8 @@
 /* ── Share Callout Banner ────────────────────────────────────────── */
 .lib-media-share-callout {
   margin: 0 24px 20px;
-  background: #0d1527;
-  border: 1px solid rgba(59, 130, 246, 0.22);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
   border-radius: var(--radius, 4px);
   padding: 16px 20px;
   display: flex;
@@ -2816,7 +2816,7 @@
 }
 
 .lib-media-share-callout__btn {
-  background: #131d33;
+  background: var(--surface);
   color: var(--text-primary);
   border: 1px solid var(--border);
   border-radius: var(--radius, 4px);
@@ -2830,8 +2830,8 @@
 
 .lib-media-share-callout__btn:hover {
   background: var(--surface-raised);
-  border-color: rgba(255, 255, 255, 0.3);
-  color: #fff;
+  border-color: var(--border-strong);
+  color: var(--text-primary);
 }
 
 /* ── Share Container & Back Topbar ───────────────────────────────── */
@@ -2845,7 +2845,7 @@
 .lib-media-share-topbar {
   padding: 12px 24px;
   border-bottom: 1px solid var(--border);
-  background: var(--surface-raised, #0f172a);
+  background: var(--surface-raised);
 }
 
 .lib-media-back-btn {
@@ -2864,8 +2864,8 @@
 }
 
 .lib-media-back-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  background: var(--surface-hover);
+  color: var(--text-primary);
 }
 
 .lib-media-view-switcher {
@@ -3240,7 +3240,7 @@
   height: 8px;
   flex: 0 0 8px;
   border-radius: 50%;
-  background: #22c55e;
+  background: var(--success);
   box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.12);
 }
 
@@ -3266,13 +3266,13 @@
 .lib-media-receiver__status--success {
   border-color: rgba(34, 197, 94, 0.28);
   background: rgba(34, 197, 94, 0.08);
-  color: #86efac;
+  color: var(--success);
 }
 
 .lib-media-receiver__status--error {
   border-color: rgba(239, 68, 68, 0.3);
   background: rgba(239, 68, 68, 0.08);
-  color: #fca5a5;
+  color: var(--error);
 }
 
 .lib-media-receiver__list {
@@ -3509,7 +3509,7 @@
   padding: 18px 24px;
   border: 1px solid rgba(var(--primary-rgb), 0.42);
   border-radius: var(--radius, 4px);
-  background: rgba(24, 29, 41, 0.94);
+  background: var(--surface);
   color: var(--text-primary);
   box-shadow: 0 18px 36px rgba(0, 0, 0, 0.34);
 }
@@ -3536,7 +3536,7 @@
   min-height: 180px;
   border: 2px dashed var(--border);
   border-radius: var(--radius, 4px);
-  background: rgba(255, 255, 255, 0.015);
+  background: var(--surface-raised);
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -4087,7 +4087,6 @@ html.mv-theme-light .lib-media-shell--dragging::after {
 
 :root.light .lib-media-drop-overlay__card,
 html.mv-theme-light .lib-media-drop-overlay__card {
-  background: rgba(255, 255, 255, 0.94);
   box-shadow: 0 18px 36px rgba(0, 0, 0, 0.15);
 }
 
@@ -4382,7 +4381,6 @@ html.mv-theme-light .lib-media-shell--dragging::after {
 
 :root.light .lib-media-drop-overlay__card,
 html.mv-theme-light .lib-media-drop-overlay__card {
-  background: rgba(255, 255, 255, 0.94);
   box-shadow: 0 18px 36px rgba(0, 0, 0, 0.15);
 }
 
@@ -4393,7 +4391,7 @@ html.mv-theme-light .lib-media-drop-overlay__card {
   padding: 0 8px;
   border: 1px solid var(--border);
   border-radius: 4px;
-  background: var(--surface-raised, var(--bg-dark, #0d1117));
+  background: var(--surface-raised);
   color: var(--text-primary);
   font-size: 11px;
   font-weight: 600;
@@ -4427,7 +4425,7 @@ html.mv-theme-light .lib-media-drop-overlay__card {
 
 .lib-song-lang-badge--english {
   border: 1px solid rgba(34, 197, 94, 0.3);
-  color: #86efac;
+  color: var(--success);
   background: rgba(34, 197, 94, 0.08);
 }
 
@@ -4445,7 +4443,7 @@ html.mv-theme-light .lib-media-drop-overlay__card {
   gap: 12px;
   padding: 14px 16px;
   margin: 4px 0;
-  border: 1px dashed rgba(var(--primary-rgb, 124, 131, 255), 0.25);
+  border: 1px dashed rgba(var(--primary-rgb), 0.25);
   border-radius: var(--radius, 4px);
   background: var(--surface);
   grid-column: 1 / -1;
@@ -4460,8 +4458,8 @@ html.mv-theme-light .lib-media-drop-overlay__card {
   width: 34px;
   height: 34px;
   border-radius: 4px;
-  background: rgba(var(--primary-rgb, 124, 131, 255), 0.1);
-  color: var(--primary, #7c83ff);
+  background: rgba(var(--primary-rgb), 0.1);
+  color: var(--primary);
 }
 
 .pcg-lock-body {
@@ -4472,12 +4470,12 @@ html.mv-theme-light .lib-media-drop-overlay__card {
 .pcg-lock-count {
   font-size: 13px;
   font-weight: 600;
-  color: var(--text-primary, #e8e8e8);
+  color: var(--text-primary);
 }
 
 .pcg-lock-hint {
   font-size: 11.5px;
-  color: var(--text-secondary, #999);
+  color: var(--text-secondary);
   margin: 1px 0 0;
 }
 
@@ -4488,7 +4486,7 @@ html.mv-theme-light .lib-media-drop-overlay__card {
   gap: 5px;
   padding: 6px 12px;
   border-radius: 4px;
-  background: var(--primary, #7c83ff);
+  background: var(--primary);
   color: #fff;
   font-size: 11.5px;
   font-weight: 600;
@@ -4511,16 +4509,16 @@ html.mv-theme-light .lib-media-drop-overlay__card {
   gap: 10px;
   padding: 10px 14px;
   margin: 4px 0;
-  border: 1px solid rgba(var(--primary-rgb, 124, 131, 255), 0.15);
+  border: 1px solid rgba(var(--primary-rgb), 0.15);
   border-radius: var(--radius, 4px);
-  background: rgba(var(--primary-rgb, 124, 131, 255), 0.04);
+  background: rgba(var(--primary-rgb), 0.04);
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
 }
 
 .lib-upgrade-banner:hover {
-  border-color: rgba(var(--primary-rgb, 124, 131, 255), 0.3);
-  background: rgba(var(--primary-rgb, 124, 131, 255), 0.07);
+  border-color: rgba(var(--primary-rgb), 0.3);
+  background: rgba(var(--primary-rgb), 0.07);
 }
 
 .lib-upgrade-banner-icon {
@@ -4531,8 +4529,8 @@ html.mv-theme-light .lib-media-drop-overlay__card {
   width: 28px;
   height: 28px;
   border-radius: 6px;
-  background: rgba(var(--primary-rgb, 124, 131, 255), 0.1);
-  color: var(--primary, #7c83ff);
+  background: rgba(var(--primary-rgb), 0.1);
+  color: var(--primary);
 }
 
 .lib-upgrade-banner-body {
@@ -4545,12 +4543,12 @@ html.mv-theme-light .lib-media-drop-overlay__card {
 .lib-upgrade-banner-title {
   font-size: 12px;
   font-weight: 600;
-  color: var(--text-primary, #e8e8e8);
+  color: var(--text-primary);
 }
 
 .lib-upgrade-banner-hint {
   font-size: 10.5px;
-  color: var(--text-secondary, #999);
+  color: var(--text-secondary);
   line-height: 1.3;
 }
 
@@ -4561,7 +4559,7 @@ html.mv-theme-light .lib-media-drop-overlay__card {
   gap: 4px;
   padding: 5px 10px;
   border-radius: 4px;
-  background: var(--primary, #7c83ff);
+  background: var(--primary);
   color: #fff;
   font-size: 11px;
   font-weight: 600;
@@ -4664,7 +4662,7 @@ html.mv-theme-light .lib-media-drop-overlay__card {
 }
 
 .worship-search-clear:hover {
-  color: #f3f4f6;
+  color: var(--text-primary);
 }
 
 .worship-toolbar-actions {
@@ -4749,7 +4747,7 @@ html.mv-theme-light .lib-media-drop-overlay__card {
 }
 
 .worship-more-tools-btn:hover {
-  color: #f3f4f6;
+  color: var(--text-primary);
 }
 
 /* Shown on "More tools" right after a song is archived, until the menu is opened. */
@@ -4796,8 +4794,8 @@ html.mv-theme-light .lib-media-drop-overlay__card {
 }
 
 .worship-dropdown-item:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
+  background: var(--surface-hover);
+  color: var(--text-primary);
 }
 
 .worship-dropdown-badge {
@@ -4806,7 +4804,7 @@ html.mv-theme-light .lib-media-drop-overlay__card {
   font-weight: 600;
   padding: 1px 6px;
   border-radius: 999px;
-  background: rgba(99, 102, 241, 0.2);
+  background: var(--primary-soft);
   color: var(--accent-blue);
 }
 

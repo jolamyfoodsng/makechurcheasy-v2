@@ -282,7 +282,7 @@ export default function LoginPage() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "rgba(0,0,0,0.9)",
+          background: "var(--bg)",
           zIndex: 9999,
         }}>
           <div style={{
@@ -333,9 +333,9 @@ export default function LoginPage() {
                 style={{
                   padding: "8px 12px",
                   borderRadius: "4px",
-                  background: "rgba(239, 68, 68, 0.1)",
+                  background: "var(--error-bg)",
                   fontSize: "12px",
-                  color: "#ef4444",
+                  color: "var(--error)",
                 }}
               >
                 {error}
@@ -374,9 +374,9 @@ export default function LoginPage() {
                 margin: "4px 0",
               }}
             >
-              <div style={{ flex: 1, height: "1px", background: "rgba(255, 255, 255, 0.12)" }} />
+              <div style={{ flex: 1, height: "1px", background: "var(--border)" }} />
               <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>or</span>
-              <div style={{ flex: 1, height: "1px", background: "rgba(255, 255, 255, 0.12)" }} />
+              <div style={{ flex: 1, height: "1px", background: "var(--border)" }} />
             </div>
 
             <button
@@ -417,9 +417,9 @@ export default function LoginPage() {
                 margin: "4px 0",
               }}
             >
-              <div style={{ flex: 1, height: "1px", background: "rgba(255, 255, 255, 0.12)" }} />
+              <div style={{ flex: 1, height: "1px", background: "var(--border)" }} />
               <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>or</span>
-              <div style={{ flex: 1, height: "1px", background: "rgba(255, 255, 255, 0.12)" }} />
+              <div style={{ flex: 1, height: "1px", background: "var(--border)" }} />
             </div>
 
             <button
@@ -465,9 +465,9 @@ export default function LoginPage() {
                 style={{
                   padding: "8px 12px",
                   borderRadius: "4px",
-                  background: "rgba(239, 68, 68, 0.1)",
+                  background: "var(--error-bg)",
                   fontSize: "12px",
-                  color: "#ef4444",
+                  color: "var(--error)",
                   marginBottom: "12px",
                 }}
               >
@@ -557,7 +557,7 @@ export default function LoginPage() {
                         flex: 1,
                         height: "36px",
                         borderRadius: "var(--radius)",
-                        border: "1px solid #4F46E5",
+                        border: "1px solid var(--primary)",
                         background: "var(--primary)",
                         fontSize: "12px",
                         fontWeight: 600,
@@ -631,7 +631,7 @@ export default function LoginPage() {
                 width: "100%",
                 height: "38px",
                 borderRadius: "4px",
-                border: "1px solid #2a2a3a",
+                border: "1px solid var(--border)",
                 background: "transparent",
                 fontSize: "13px",
                 fontWeight: 500,
@@ -661,9 +661,9 @@ export default function LoginPage() {
                 style={{
                   padding: "8px 12px",
                   borderRadius: "4px",
-                  background: "rgba(239, 68, 68, 0.1)",
+                  background: "var(--error-bg)",
                   fontSize: "12px",
-                  color: "#ef4444",
+                  color: "var(--error)",
                   marginBottom: "12px",
                 }}
               >
@@ -711,7 +711,7 @@ export default function LoginPage() {
                 width: "100%",
                 height: "42px",
                 borderRadius: "4px",
-                border: "1px solid #2a2a3a",
+                border: "1px solid var(--border)",
                 background: redeeming ? "var(--surface-raised)" : "var(--input-bg)",
                 padding: "0 14px",
                 fontSize: "18px",
@@ -737,7 +737,7 @@ export default function LoginPage() {
                   flex: 1,
                   height: "38px",
                   borderRadius: "4px",
-                  border: "1px solid #2a2a3a",
+                  border: "1px solid var(--border)",
                   background: "transparent",
                   fontSize: "13px",
                   fontWeight: 500,
@@ -755,7 +755,7 @@ export default function LoginPage() {
                   height: "38px",
                   borderRadius: "var(--radius)",
                   border: "none",
-                  background: redeeming ? "#3a3a5a" : "var(--primary)",
+                  background: redeeming ? "var(--text-disabled)" : "var(--primary)",
                   fontSize: "13px",
                   fontWeight: 600,
                   color: "#fff",
@@ -786,9 +786,9 @@ export default function LoginPage() {
                 style={{
                   padding: "8px 12px",
                   borderRadius: "4px",
-                  background: "rgba(239, 68, 68, 0.1)",
+                  background: "var(--error-bg)",
                   fontSize: "12px",
-                  color: "#ef4444",
+                  color: "var(--error)",
                   marginBottom: "12px",
                 }}
               >
@@ -858,8 +858,8 @@ export default function LoginPage() {
                   alignItems: "center",
                   justifyContent: "center",
                   borderRadius: "var(--radius)",
-                  background: "#16161f",
-                  border: "1px solid #2a2a3a",
+                  background: "var(--surface-raised)",
+                  border: "1px solid var(--border)",
                   marginBottom: "16px",
                 }}
               >
@@ -1010,7 +1010,7 @@ export default function LoginPage() {
                   width: "48px",
                   height: "48px",
                   borderRadius: "50%",
-                  background: "rgba(239, 68, 68, 0.1)",
+                  background: "var(--error-bg)",
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",

@@ -219,7 +219,7 @@ describe("DockLmTab settings helpers", () => {
 
   it("keeps compact LM side tabs recognizable as buttons", () => {
     expect(dockLmTabSource).toContain('className={`lm-tab${isCompactHeight ? " lm-tab--compact" : ""}`}');
-    expect(dockLmTabSource).toContain('border: "1px solid var(--dock-border, rgba(255,255,255,0.1))"');
+    expect(dockLmTabSource).toContain('border: "1px solid var(--dock-border, var(--border))"');
     expect(dockLmTabSource).toContain('borderRadius: 0');
     expect(dockLmTabSource).toContain('minHeight: 48');
     expect(dockLmTabSource).toContain(".lm-tab--compact:hover");

@@ -36,14 +36,14 @@ export default function CountdownStylePicker({ onPick, onClose }: Props) {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        style={{ width: "min(1180px, 100%)", maxHeight: "100%", display: "flex", flexDirection: "column", background: "#12151f", border: "1px solid var(--border)", borderRadius: 14, boxShadow: "0 30px 80px rgba(0,0,0,0.6)" }}
+        style={{ width: "min(1180px, 100%)", maxHeight: "100%", display: "flex", flexDirection: "column", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, boxShadow: "0 30px 80px rgba(0,0,0,0.6)" }}
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid var(--border)" }}>
           <div>
-            <div style={{ fontSize: 17, fontWeight: 750, color: "#fff" }}>Choose a style</div>
+            <div style={{ fontSize: 17, fontWeight: 750, color: "var(--text-primary)" }}>Choose a style</div>
             <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 2 }}>Every style is fully editable — move, resize, recolour and animate each part, then add it to OBS.</div>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close" style={{ background: "transparent", border: "none", color: "#d4d4d8", cursor: "pointer", padding: 6 }}>
+          <button type="button" onClick={onClose} aria-label="Close" style={{ background: "transparent", border: "none", color: "var(--text-secondary)", cursor: "pointer", padding: 6 }}>
             <X size={18} />
           </button>
         </div>
@@ -53,9 +53,9 @@ export default function CountdownStylePicker({ onPick, onClose }: Props) {
               key={preset.id}
               type="button"
               onClick={() => onPick(preset.id)}
-              style={{ textAlign: "left", background: "var(--surface-raised)", border: "1px solid var(--border)", borderRadius: 12, padding: 10, cursor: "pointer", color: "#fff" }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--primary, #3b82f6)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; }}
+              style={{ textAlign: "left", background: "var(--surface-raised)", border: "1px solid var(--border)", borderRadius: 12, padding: 10, cursor: "pointer", color: "var(--text-primary)" }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--primary)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; }}
             >
               <Thumb preset={preset} />
               <div style={{ fontSize: 14, fontWeight: 700, marginTop: 10 }}>{preset.name}</div>
@@ -65,7 +65,7 @@ export default function CountdownStylePicker({ onPick, onClose }: Props) {
           <button
             type="button"
             onClick={() => onPick("classic")}
-            style={{ textAlign: "left", background: "var(--surface-raised)", border: "1px dashed rgba(255,255,255,0.2)", borderRadius: 12, padding: 10, cursor: "pointer", color: "#fff", display: "flex", flexDirection: "column", justifyContent: "center" }}
+            style={{ textAlign: "left", background: "var(--surface-raised)", border: "1px dashed var(--border-strong)", borderRadius: 12, padding: 10, cursor: "pointer", color: "var(--text-primary)", display: "flex", flexDirection: "column", justifyContent: "center" }}
           >
             <div style={{ fontSize: 14, fontWeight: 700 }}>Classic countdown</div>
             <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4, lineHeight: 1.4 }}>Simple ring and timer text with a picture or video background.</div>

@@ -21,6 +21,31 @@ export const GRAPHIC_CATEGORY_TABS: { key: string; label: string }[] = [
   { key: "others", label: "Others" },
 ];
 
+/** How long a graphic counts as new: listed first in the library and marked "New". */
+export const NEW_GRAPHIC_DAYS = 45;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** When the graphic joined the library (ms), or 0 when it doesn't say. */
+export function graphicAddedAt(theme: object): number {
+  const raw = (theme as { addedAt?: unknown }).addedAt;
+  const ms = typeof raw === "string" ? Date.parse(raw) : NaN;
+  return Number.isFinite(ms) ? ms : 0;
+}
+
+export function isNewGraphic(theme: object, now = Date.now()): boolean {
+  const added = graphicAddedAt(theme);
+  return added > 0 && now - added < NEW_GRAPHIC_DAYS * DAY_MS;
+}
+
+/** Splits a list into the new graphics (newest first) and the rest (order kept). */
+export function splitNewGraphics<T>(items: T[], themeOf: (item: T) => object, now = Date.now()): { fresh: T[]; rest: T[] } {
+  const fresh: T[] = [];
+  const rest: T[] = [];
+  for (const item of items) (isNewGraphic(themeOf(item), now) ? fresh : rest).push(item);
+  fresh.sort((a, b) => graphicAddedAt(themeOf(b)) - graphicAddedAt(themeOf(a)));
+  return { fresh, rest };
+}
+
 const KEYS = new Set(GRAPHIC_CATEGORY_TABS.map((c) => c.key).filter((k) => k !== "all" && k !== "mine"));
 
 export function graphicCategoryOf(theme: Pick<LowerThirdTheme, "id" | "name" | "category" | "tags"> & { graphicCategory?: string }): string {

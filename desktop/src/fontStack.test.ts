@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { existsSync, readFileSync } from "node:fs";
 
 const appCss = readFileSync(new URL("./App.css", import.meta.url), "utf8");
+const nativeThemeCss = readFileSync(new URL("./native-theme.css", import.meta.url), "utf8");
 const fontsCss = readFileSync(new URL("./fonts.css", import.meta.url), "utf8");
 const dockCss = readFileSync(new URL("./dock/dock.css", import.meta.url), "utf8");
 const dockMain = readFileSync(new URL("./dock/dock-main.tsx", import.meta.url), "utf8");
@@ -16,9 +17,9 @@ describe("African-language font stack", () => {
   });
 
   it("keeps the normal app font separate from the Dock font", () => {
-    expect(appCss).toContain('--font-african-latin: "Questrial", "Charis SIL", "Noto Sans"');
+    expect(nativeThemeCss).toContain('--font-african-latin: "Questrial", "Charis SIL", "Noto Sans"');
     expect(appCss).toContain(':where(input, textarea, select, button, [contenteditable="true"])');
-    expect(dockCss).toContain('--dock-font-african-latin: "CMG Sans", "Questrial", "Charis SIL", "Noto Sans"');
+    expect(dockCss).toContain('--dock-font-african-latin: "Questrial", "Charis SIL", "Noto Sans"');
     expect(dockCss).toContain('.dock-root :where(input, textarea, select, button, [contenteditable="true"])');
   });
 

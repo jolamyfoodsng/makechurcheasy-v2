@@ -1185,7 +1185,7 @@ export default function SpeechToScripturePage() {
             maxWidth: "calc(100vw - 32px)",
             border: "1px solid var(--border)",
             borderRadius: 14,
-            background: "rgba(12, 14, 18, 0.96)",
+            background: "var(--surface)",
             boxShadow: "0 18px 60px rgba(0, 0, 0, 0.35)",
             color: "var(--text)",
             padding: 14,
@@ -1217,7 +1217,7 @@ export default function SpeechToScripturePage() {
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-            <div style={{ padding: 10, borderRadius: 12, background: "rgba(255,255,255,0.04)" }}>
+            <div style={{ padding: 10, borderRadius: 12, background: "var(--surface-raised)" }}>
               <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginBottom: 4 }}>RAM Usage</div>
               <div style={{ fontSize: "1.05rem", fontWeight: 700 }}>
                 {performanceMonitor.memorySupported ? `${perf.heapUsedMB} MB` : "Unsupported"}
@@ -1227,7 +1227,7 @@ export default function SpeechToScripturePage() {
               </div>
             </div>
 
-            <div style={{ padding: 10, borderRadius: 12, background: "rgba(255,255,255,0.04)" }}>
+            <div style={{ padding: 10, borderRadius: 12, background: "var(--surface-raised)" }}>
               <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginBottom: 4 }}>CPU / Render</div>
               <div style={{ fontSize: "1.05rem", fontWeight: 700 }}>{perf.fps} FPS</div>
               <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
@@ -1235,7 +1235,7 @@ export default function SpeechToScripturePage() {
               </div>
             </div>
 
-            <div style={{ padding: 10, borderRadius: 12, background: "rgba(255,255,255,0.04)" }}>
+            <div style={{ padding: 10, borderRadius: 12, background: "var(--surface-raised)" }}>
               <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginBottom: 4 }}>Open Socket Count</div>
               <div style={{ fontSize: "1.05rem", fontWeight: 700 }}>{websocketCount}</div>
               <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
@@ -1243,7 +1243,7 @@ export default function SpeechToScripturePage() {
               </div>
             </div>
 
-            <div style={{ padding: 10, borderRadius: 12, background: "rgba(255,255,255,0.04)" }}>
+            <div style={{ padding: 10, borderRadius: 12, background: "var(--surface-raised)" }}>
               <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginBottom: 4 }}>Audio Context Count</div>
               <div style={{ fontSize: "1.05rem", fontWeight: 700 }}>0</div>
               <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
@@ -1251,7 +1251,7 @@ export default function SpeechToScripturePage() {
               </div>
             </div>
 
-            <div style={{ padding: 10, borderRadius: 12, background: "rgba(255,255,255,0.04)" }}>
+            <div style={{ padding: 10, borderRadius: 12, background: "var(--surface-raised)" }}>
               <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginBottom: 4 }}>Recognition Sessions</div>
               <div style={{ fontSize: "1.05rem", fontWeight: 700 }}>{snapshot.status !== "idle" ? 1 : 0}</div>
               <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
@@ -1259,7 +1259,7 @@ export default function SpeechToScripturePage() {
               </div>
             </div>
 
-            <div style={{ padding: 10, borderRadius: 12, background: "rgba(255,255,255,0.04)" }}>
+            <div style={{ padding: 10, borderRadius: 12, background: "var(--surface-raised)" }}>
               <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginBottom: 4 }}>Active Timers</div>
               <div style={{ fontSize: "1.05rem", fontWeight: 700 }}>{diagnostics.activeTimers}</div>
               <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
@@ -2036,7 +2036,7 @@ export default function SpeechToScripturePage() {
                 right: 14,
                 background: "transparent",
                 border: "none",
-                color: "var(--text-muted, #94a3b8)",
+                color: "var(--text-muted)",
                 cursor: "pointer",
                 padding: 6,
                 borderRadius: "50%",

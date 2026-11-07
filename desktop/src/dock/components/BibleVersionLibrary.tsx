@@ -17,6 +17,7 @@ import {
   downloadBibleInDock,
   type CatalogBibleItem,
 } from "../dockBibleCatalog";
+import { fitPopover } from "../useKeepInViewport";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -322,7 +323,7 @@ export default function BibleVersionLibrary({
 
       {/* Panel */}
       {isOpen && (
-        <div className="bible-version-library__panel">
+        <div ref={(el) => fitPopover(el)} className="bible-version-library__panel">
           {/* Search */}
           <div className="bible-version-library__search">
             <Icon name="search" size={14} className="bible-version-library__search-icon" />

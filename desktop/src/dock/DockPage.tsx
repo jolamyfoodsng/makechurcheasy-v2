@@ -45,6 +45,7 @@ import {
 import type { ServicePlannerSnapshot } from "../service-planner/types";
 import { installDockTextShortcuts } from "./dockTextShortcuts";
 import { useDockAutoFit } from "./dockAutoFit";
+import { DockWideLayoutContext, useMeasureDockWideLayout } from "./useDockWideLayout";
 import { loadDockFavoriteBibleThemes } from "./dockThemeData";
 import { announceDockThemesRefreshed } from "./dockThemeRefresh";
 import { useKeyboardShortcuts, type ShortcutDefinition, type ShortcutCategory, formatShortcut } from "./useKeyboardShortcuts";
@@ -108,7 +109,8 @@ import "./dock.css";
 import "./dock-theme.css";
 import "../accessibility.css";
 import DockScheduleDrawer from "./components/DockScheduleDrawer";
-import { Globe } from "../components/icons/NativeIcons";
+import { Globe, Layers, Trash2 } from "../components/icons/NativeIcons";
+import ModalDialog, { ModalPanel } from "../components/ModalDialog";
 import Icon from "./DockIcon";
 import {
   normalizeDockSearchPlacement,
@@ -416,6 +418,8 @@ function DockPageContent({
   const [dockFontScale, setDockFontScale] = useState<number>(() => loadDockFontScale());
   // Automatic fit for small screens / narrow panels; multiplied with the chosen font size below.
   const dockAutoFit = useDockAutoFit();
+  const dockContentMainRef = useRef<HTMLDivElement>(null);
+  const dockWideLayout = useMeasureDockWideLayout(dockContentMainRef);
   const typographyHydrationGenerationRef = useRef(0);
   const [upgradeModalMsg, setUpgradeModalMsg] = useState("");
   const [showPresentationLinkModal, setShowPresentationLinkModal] = useState(false);
@@ -1951,68 +1955,55 @@ function DockPageContent({
 
         {/* ── Clear All MCE Scenes Confirmation ── */}
         {!presentationLinkMode && showClearScenesConfirm && (
-          <div className="dock-dialog-backdrop" onClick={() => { if (!clearScenesLoading) setShowClearScenesConfirm(false); }}>
-            <div className="dock-dialog dock-dialog--compact" onClick={(e) => e.stopPropagation()}>
-              <div className="dock-dialog__header">
-                <div>
-                  <div className="dock-dialog__eyebrow" style={{ color: "var(--dock-red, #EF4444)" }}>{t('page.dangerZone')}</div>
-                  <h2 className="dock-dialog__title">{t('page.clearAllScenesConfirm')}</h2>
-                </div>
-                <button
-                  type="button"
-                  className="dock-dialog__close"
-                  onClick={() => { if (!clearScenesLoading) setShowClearScenesConfirm(false); }}
-                  aria-label={t('common.close')}
-                  title={t('common.close')}>
-                  <Icon name="close" size={14} />
-                </button>
-              </div>
-              <div className="dock-dialog__body">
-                <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5 }}>
-                  {t('dock.clearAllScenesWarning')}
-                </p>
-                <ul style={{ margin: "8px 0", paddingLeft: 20, fontSize: 12, lineHeight: 1.6, color: "var(--dock-text-secondary, #94A3B8)" }}>
+          <ModalDialog
+            tone="danger"
+            icon={<Trash2 size={26} />}
+            eyebrow={t('page.dangerZone')}
+            title={t('page.clearAllScenesConfirm')}
+            extra={
+              <ModalPanel>
+                <ul>
                   <li>{t('page.mceScenes')}</li>
                   <li>{t('page.mcePreService')}</li>
                   <li>{t('page.mvLayouts')}</li>
                   <li>{t('page.mceSources')}</li>
                 </ul>
-                <p style={{ margin: 0, fontSize: 11, color: "var(--dock-text-dim, #64748B)", lineHeight: 1.4 }}>
-                  {t('dock.clearAllScenesOwnScenes')}
-                </p>
-              </div>
-              <div className="dock-dialog__actions">
-                <button
-                  type="button"
-                  className="dock-btn dock-btn--sm"
-                  disabled={clearScenesLoading}
-                  onClick={() => setShowClearScenesConfirm(false)}
-                  title={t('page.clearAllScenesCancel')}>
-                  {t('page.clearAllScenesCancel')}
-                </button>
-                <button
-                  type="button"
-                  className="dock-btn dock-btn--sm dock-btn--danger"
-                  disabled={clearScenesLoading}
-                  onClick={async () => {
-                    if (!obsConnected) return;
-                    setClearScenesLoading(true);
-                    try {
-                      const result = await dockObsClient.clearAllMCEScenes();
-                      console.log(`[DockOBS] Cleared ${result.deletedScenes} scenes, cleaned ${result.cleanedSources} sources`);
-                    } catch (err) {
-                      console.error("[DockOBS] Failed to clear MCE scenes:", err);
-                    } finally {
-                      setClearScenesLoading(false);
-                      setShowClearScenesConfirm(false);
-                    }
-                  }}
-                  title={t('common.loading')}>
-                  {clearScenesLoading ? t('common.loading') : t('page.clearAllScenesContinue')}
-                </button>
-              </div>
-            </div>
-          </div>
+              </ModalPanel>
+            }
+            hint={t('dock.clearAllScenesOwnScenes')}
+            actions={[
+              {
+                label: t('page.clearAllScenesCancel'),
+                variant: "ghost",
+                disabled: clearScenesLoading,
+                title: t('page.clearAllScenesCancel'),
+                onClick: () => setShowClearScenesConfirm(false),
+              },
+              {
+                label: clearScenesLoading ? t('common.loading') : t('page.clearAllScenesContinue'),
+                variant: "danger",
+                disabled: clearScenesLoading,
+                title: t('common.loading'),
+                onClick: async () => {
+                  if (!obsConnected) return;
+                  setClearScenesLoading(true);
+                  try {
+                    const result = await dockObsClient.clearAllMCEScenes();
+                    console.log(`[DockOBS] Cleared ${result.deletedScenes} scenes, cleaned ${result.cleanedSources} sources`);
+                  } catch (err) {
+                    console.error("[DockOBS] Failed to clear MCE scenes:", err);
+                  } finally {
+                    setClearScenesLoading(false);
+                    setShowClearScenesConfirm(false);
+                  }
+                },
+              },
+            ]}
+            onClose={clearScenesLoading ? undefined : () => setShowClearScenesConfirm(false)}
+            zIndex={10002}
+          >
+            <p>{t('dock.clearAllScenesWarning')}</p>
+          </ModalDialog>
         )}
 
         {!presentationLinkMode && showReconnectModal && (
@@ -2113,7 +2104,8 @@ function DockPageContent({
                 ))}
               </nav>
             )}
-            <div className="dock-content-main">
+            <div className="dock-content-main" ref={dockContentMainRef} data-dock-wide={dockWideLayout || undefined}>
+              <DockWideLayoutContext.Provider value={dockWideLayout}>
               <div className="dock-content-panels">
                 <Suspense fallback={<LoadingScreen variant="dock" label={t('common.loading', 'Loading…')} className="dock-tab-loading" />}>
               {mountedDockTabs.has("planner") && (
@@ -2219,6 +2211,7 @@ function DockPageContent({
               )}
               </Suspense>
               </div>
+              </DockWideLayoutContext.Provider>
 
               {/* ═══ HORIZONTAL TAB NAVIGATION (bottom of main dock, hidden when vertical) ═══ */}
               {!verticalTabs && (
@@ -2396,75 +2389,56 @@ function DockPageContent({
 
       {/* ── Language change confirmation modal ── */}
       {showLanguageModal && pendingLanguage && (
-        <div className="dock-modal-overlay" onClick={() => { setShowLanguageModal(false); setPendingLanguage(null); }}>
-          <div className="dock-language-modal" role="dialog" aria-modal="true" aria-labelledby="dock-language-title" onClick={(e) => e.stopPropagation()}>
-            <div className="dock-language-modal__icon-badge">
-              <Globe size={24} />
-            </div>
-            <h3 id="dock-language-title" className="dock-language-modal__title">
-              {t('dock.changeLanguage') || 'Change Language'}
-            </h3>
-            <p className="dock-language-modal__desc">
-              {t('dock.changeLanguageConfirm', { language: pendingLanguage }) || `Change interface language to ${pendingLanguage}?`}
-            </p>
-            <div className="dock-language-modal__actions">
-              <button
-                type="button"
-                className="dock-language-modal__btn dock-language-modal__btn--cancel"
-                onClick={() => { setShowLanguageModal(false); setPendingLanguage(null); }}
-              >
-                {t('common.cancel') || 'Cancel'}
-              </button>
-              <button
-                type="button"
-                className="dock-language-modal__btn dock-language-modal__btn--confirm"
-                onClick={() => {
-                  const lang = pendingLanguage!;
-                  const langToCode: Record<string, string> = {
-                    English: "en", French: "fr", Spanish: "es", Portuguese: "pt",
-                    Yoruba: "yo", Igbo: "ig", Hausa: "ha", Ghanaian: "gh",
-                  };
-                  const code = langToCode[lang] || "en";
-                  writeNativeDockSetting("mce_interface_language", lang);
-                  i18n.changeLanguage(code);
-                  dockBridge.sendLanguageChanged(code);
-                  setInterfaceLanguage(lang);
-                  setShowLanguageModal(false);
-                  setPendingLanguage(null);
-                }}
-              >
-                {t('dock.changeLanguage') || 'Change Language'}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ModalDialog
+          tone="brand"
+          icon={<Globe size={26} />}
+          title={t('dock.changeLanguage') || 'Change Language'}
+          actions={[
+            {
+              label: t('common.cancel') || 'Cancel',
+              variant: "ghost",
+              onClick: () => { setShowLanguageModal(false); setPendingLanguage(null); },
+            },
+            {
+              label: t('dock.changeLanguage') || 'Change Language',
+              variant: "primary",
+              autoFocus: true,
+              onClick: () => {
+                const lang = pendingLanguage!;
+                const langToCode: Record<string, string> = {
+                  English: "en", French: "fr", Spanish: "es", Portuguese: "pt",
+                  Yoruba: "yo", Igbo: "ig", Hausa: "ha", Ghanaian: "gh",
+                };
+                const code = langToCode[lang] || "en";
+                writeNativeDockSetting("mce_interface_language", lang);
+                i18n.changeLanguage(code);
+                dockBridge.sendLanguageChanged(code);
+                setInterfaceLanguage(lang);
+                setShowLanguageModal(false);
+                setPendingLanguage(null);
+              },
+            },
+          ]}
+          onClose={() => { setShowLanguageModal(false); setPendingLanguage(null); }}
+          zIndex={10002}
+        >
+          <p>{t('dock.changeLanguageConfirm', { language: pendingLanguage }) || `Change interface language to ${pendingLanguage}?`}</p>
+        </ModalDialog>
       )}
       {askProgramBackground && (
-        <div className="dock-dialog-backdrop" role="presentation">
-          <div className="dock-dialog dock-dialog--compact" role="dialog" aria-modal="true" aria-labelledby="dock-program-bg-title">
-            <div className="dock-dialog__header">
-              <div>
-                <div className="dock-dialog__eyebrow">{t('page.sceneRouting', 'Scene Routing')}</div>
-                <h2 id="dock-program-bg-title" className="dock-dialog__title">
-                  {t('page.programBackgroundAskTitle', 'Turn on Program background?')}
-                </h2>
-              </div>
-            </div>
-            <div className="dock-dialog__body">
-              <p style={{ margin: 0, color: "var(--dock-text-secondary)", lineHeight: 1.5 }}>
-                {t('page.programBackgroundAskDesc', 'Shows your Program scene (cameras) behind verses and lyrics. You can change this later.')}
-              </p>
-            </div>
-            <div className="dock-dialog__footer">
-              <button type="button" className="dock-btn dock-btn--ghost" onClick={() => answerProgramBackground(true)}>
-                {t('page.programBackgroundAskOn', 'Turn on')}
-              </button>
-              <button type="button" className="dock-btn dock-btn--primary" onClick={() => answerProgramBackground(false)}>
-                {t('page.programBackgroundAskOff', 'Keep off')}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ModalDialog
+          tone="brand"
+          icon={<Layers size={26} />}
+          eyebrow={t('page.sceneRouting', 'Scene Routing')}
+          title={t('page.programBackgroundAskTitle', 'Turn on Program background?')}
+          actions={[
+            { label: t('page.programBackgroundAskOn', 'Turn on'), variant: "ghost", onClick: () => answerProgramBackground(true) },
+            { label: t('page.programBackgroundAskOff', 'Keep off'), variant: "primary", autoFocus: true, onClick: () => answerProgramBackground(false) },
+          ]}
+          zIndex={10002}
+        >
+          <p>{t('page.programBackgroundAskDesc', 'Shows your Program scene (cameras) behind verses and lyrics. You can change this later.')}</p>
+        </ModalDialog>
       )}
     </div>
     </DockOutputTargetContext.Provider>

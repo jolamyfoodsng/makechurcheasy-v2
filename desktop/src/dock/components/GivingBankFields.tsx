@@ -6,7 +6,7 @@
  * name is hidden by the graphic, so "how many" simply fills or empties the names.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { fetchBankLogoFile, searchBanks, type BankSuggestion } from "../../lowerthirds/bankCatalog";
+import { resolveBankLogo, searchBanks, type BankSuggestion } from "../../lowerthirds/bankCatalog";
 import { resolveOverlayAssetUrl } from "../../lowerthirds/runtimeBranding";
 import { getSafeFileName, saveToDisk } from "../dockUploadService";
 
@@ -64,6 +64,17 @@ async function persistLogo(file: File): Promise<string> {
   return readAsDataUrl(file);
 }
 
+/** True when the picture at `url` shows in an <img> (used when the logo can't be downloaded and saved). */
+function canLoadImage(url: string, timeoutMs = 8000): Promise<boolean> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const timer = window.setTimeout(() => resolve(false), timeoutMs);
+    img.onload = () => { window.clearTimeout(timer); resolve(img.naturalWidth > 0); };
+    img.onerror = () => { window.clearTimeout(timer); resolve(false); };
+    img.src = url;
+  });
+}
+
 export default function GivingBankFields({ variant = "dock", values, defaults, onChange }: Props) {
   const inputClass = variant === "app" ? "bg-form-group__input" : "dock-lt-field-input";
   const selectClass = variant === "app" ? "bg-form-group__select" : "dock-lt-field-input";
@@ -110,7 +121,11 @@ export default function GivingBankFields({ variant = "dock", values, defaults, o
     setBusy((b) => ({ ...b, [slot]: true }));
     setNotice((n) => ({ ...n, [slot]: "" }));
     try {
-      onChange({ [`logo${slot}`]: await persistLogo(await fetchBankLogoFile(suggestion)) });
+      const logo = await resolveBankLogo(suggestion, persistLogo, { canLoad: canLoadImage });
+      onChange({ [`logo${slot}`]: logo.url });
+      if (!logo.savedLocally) {
+        setNotice((n) => ({ ...n, [slot]: "This logo loads from the internet. Upload it to use it offline." }));
+      }
     } catch {
       setNotice((n) => ({ ...n, [slot]: "Couldn't get that logo (are you online?). Upload one instead." }));
     } finally {
@@ -146,14 +161,14 @@ export default function GivingBankFields({ variant = "dock", values, defaults, o
         const logo = values[`logo${slot}`] ?? "";
         const suggestions = suggestionsFor(slot);
         return (
-          <div key={slot} style={{ border: "1px solid var(--dock-border, rgba(148,163,184,0.35))", borderRadius: 4, padding: 6, marginBottom: 6, background: "var(--dock-surface, rgba(255,255,255,0.03))" }}>
+          <div key={slot} style={{ border: "1px solid var(--dock-border, var(--border))", borderRadius: 4, padding: 6, marginBottom: 6, background: "var(--dock-surface, var(--surface))" }}>
             <div style={row}>
               <button
                 type="button"
                 title={logo ? "Change logo" : "Upload a logo"}
                 aria-label={`Bank ${slot} logo: upload`}
                 onClick={() => fileRefs.current[slot]?.click()}
-                style={{ flex: "none", width: 44, height: 44, padding: 2, borderRadius: 3, border: "1px dashed var(--dock-border, rgba(148,163,184,0.35))", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: busy[slot] ? 0.5 : 1 }}
+                style={{ flex: "none", width: 44, height: 44, padding: 2, borderRadius: 3, border: "1px dashed var(--dock-border, var(--border))", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: busy[slot] ? 0.5 : 1 }}
               >
                 {logo ? <img src={logo} alt="" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} /> : <span style={{ ...small, color: "#666", textAlign: "center", lineHeight: 1.1 }}>Logo</span>}
               </button>
@@ -186,7 +201,7 @@ export default function GivingBankFields({ variant = "dock", values, defaults, o
                   }}
                 />
                 {suggestions.length > 0 && (
-                  <ul role="listbox" style={{ position: "absolute", zIndex: 20, left: 0, right: 0, top: "100%", margin: "2px 0 0", padding: 2, listStyle: "none", background: "var(--dock-surface-overlay, var(--dock-surface, var(--surface-raised, #1f2430)))", border: "1px solid var(--dock-border, rgba(148,163,184,0.35))", borderRadius: 4, maxHeight: 190, overflowY: "auto" }}>
+                  <ul role="listbox" style={{ position: "absolute", zIndex: 20, left: 0, right: 0, top: "100%", margin: "2px 0 0", padding: 2, listStyle: "none", background: "var(--dock-surface-overlay, var(--dock-surface, var(--surface-raised, #1f2430)))", border: "1px solid var(--dock-border, var(--border))", borderRadius: 4, maxHeight: 190, overflowY: "auto" }}>
                     {suggestions.map((s) => (
                       <li key={s.id} role="option" aria-selected={false}>
                         <button

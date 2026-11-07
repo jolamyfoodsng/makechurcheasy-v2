@@ -50,14 +50,14 @@ export function ServiceGateModal({ open, onClose, onStartService, action }: Serv
             justifyContent: "center",
             flexShrink: 0,
           }}>
-            <Icon name="play_circle_outline" size={24} style={{ color: "#00E676" }} />
+            <Icon name="play_circle_outline" size={24} style={{ color: "var(--success)" }} />
           </div>
           <div style={{ flex: 1 }}>
             <h2 style={{
               margin: 0,
               fontSize: 16,
               fontWeight: 600,
-              color: "#fff",
+              color: "var(--text-primary)",
               lineHeight: 1.3,
             }}>
               Start a Service First
@@ -65,7 +65,7 @@ export function ServiceGateModal({ open, onClose, onStartService, action }: Serv
             <p style={{
               margin: "8px 0 0",
               fontSize: 13,
-              color: "rgba(255,255,255,0.5)",
+              color: "var(--text-muted)",
               lineHeight: 1.5,
             }}>
               {action
@@ -80,7 +80,7 @@ export function ServiceGateModal({ open, onClose, onStartService, action }: Serv
               background: "none",
               border: "none",
               cursor: "pointer",
-              color: "rgba(255,255,255,0.4)",
+              color: "var(--text-muted)",
               padding: 4,
               display: "flex",
             }}
@@ -104,7 +104,7 @@ export function ServiceGateModal({ open, onClose, onStartService, action }: Serv
               borderRadius: 6,
               border: "1px solid var(--border)",
               background: "transparent",
-              color: "rgba(255,255,255,0.7)",
+              color: "var(--text-secondary)",
               fontSize: 13,
               fontWeight: 500,
               cursor: "pointer",

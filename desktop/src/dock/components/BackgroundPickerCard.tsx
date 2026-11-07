@@ -46,6 +46,7 @@ import { BUILTIN_THEMES } from "../../bible/themes/builtinThemes";
 import { DOCK_THEMES_REFRESHED_EVENT, type DockThemesRefreshedDetail } from "../dockThemeRefresh";
 import type { ThemeLayout } from "../../themes/layout/types";
 import ThemeLayoutPreview from "../../themes/layout/ThemeLayoutPreview";
+import { fitPopover } from "../useKeepInViewport";
 
 /* ── Types ── */
 type BackgroundType = "off" | "theme" | "color" | "image" | "pattern" | "video";
@@ -3789,7 +3790,7 @@ function CompareLayoutPopover({
       </button>
       {open && typeof document !== "undefined" && createPortal(
         <div
-          ref={popoverRef}
+          ref={(el) => { popoverRef.current = el; fitPopover(el); }}
           id={id}
           className="dtb-compare-layout-popover"
           style={{ position: "fixed", top: pos.top, left: pos.left, width: pos.width, zIndex: 10000 }}
@@ -4369,7 +4370,7 @@ function InlineColorPicker({
       </button>
       {open && createPortal(
         <div
-          ref={popoverRef}
+          ref={(el) => { popoverRef.current = el; fitPopover(el); }}
           className="dtb-color-inline__popover"
           style={{ position: "fixed", top: pos.top, left: pos.left, zIndex: 10000 }}
           role="dialog"

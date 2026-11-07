@@ -95,7 +95,7 @@ function TranslationSlotButton({
              title="Confirm">
               <span className="translation-slot-popover-abbr">{t.abbr}</span>
               <span className="translation-slot-popover-name">{t.name}</span>
-              {t.abbr === abbr && <Icon name="check" size={14} style={{ color: "var(--b-green, #00E676)" }} />}
+              {t.abbr === abbr && <Icon name="check" size={14} style={{ color: "var(--b-green)" }} />}
             </button>
           ))}
           {onOpenLibrary && (

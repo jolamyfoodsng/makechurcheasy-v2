@@ -1,10 +1,14 @@
-# MakeChurchEazy Release Highlights (v4.3.18)
+# MakeChurchEazy Release Highlights (v4.3.19)
 
-## vMix integration
-- Added vMix output support and setup guidance for church broadcast teams.
-- Added support for showing broadcast graphics through vMix title mode.
-- Improved Dock performance and presentation workflow.
+## Billing and subscriptions
+- Improved payment initialization, retry, verification, and webhook handling across supported providers.
+- Aligned subscription status and plan limits across desktop and dashboard experiences.
 
-## Reliability and access
-- Corrected plan entitlement handling for vMix output.
-- Improved reliability across presentation and broadcast workflows.
+## Broadcast and presentation
+- Expanded built-in broadcast graphics, tickers, and lower-third options.
+- Refined Dock, vMix setup, OBS controls, multiview, Bible, worship, countdown, and rundown workflows.
+- Improved media, theme, and presentation editing controls.
+
+## Support and reliability
+- Updated licensing, plan-limit, support, and update-notification flows.
+- Improved accessibility and usability across key desktop screens.

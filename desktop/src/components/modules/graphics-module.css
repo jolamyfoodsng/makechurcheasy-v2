@@ -15,8 +15,8 @@
   display: flex;
   gap: 4px;
   padding: 6px 12px;
-  background: var(--b-bg, #121212);
-  border-bottom: 1px solid var(--b-border, #2C2C2C);
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 
@@ -28,7 +28,7 @@
   padding: 0 14px;
   font-size: 10px;
   font-weight: 500;
-  color: var(--tab-text-inactive, rgba(255, 255, 255, 0.45));
+  color: var(--tab-text-inactive);
   background: transparent;
   border: none;
   border-radius: 4px 8px 0 0;
@@ -40,12 +40,12 @@
 }
 
 .graphics-module-subtab:hover {
-  color: var(--tab-text-active, rgba(255, 255, 255, 0.7));
-  background: var(--tab-hover-bg, rgba(255, 255, 255, 0.04));
+  color: var(--tab-text-active);
+  background: var(--tab-hover-bg);
 }
 
 .graphics-module-subtab.is-active {
-  color: var(--tab-text-active, #fff);
+  color: var(--tab-text-active);
   background: transparent;
   font-weight: 700;
 }
@@ -64,7 +64,7 @@
 }
 
 .graphics-module-subtab.is-active::after {
-  background: var(--tab-indicator, var(--primary));
+  background: var(--tab-indicator);
   opacity: 1;
 }
 

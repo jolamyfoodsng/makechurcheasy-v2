@@ -920,7 +920,7 @@ export const BUNDLED_GRAPHIC_PACKAGES: GraphicPackage[] = [
         [
           ".al-icons .ic",
           "pop",
-          1.0,
+          1,
           {
             "d": 0.45,
             "s": 0.1
@@ -1892,7 +1892,7 @@ export const BUNDLED_GRAPHIC_PACKAGES: GraphicPackage[] = [
           "to": {
             "scaleX": 1
           },
-          "at": 1.0,
+          "at": 1,
           "d": 0.5,
           "e": "expo.out"
         },
@@ -3747,7 +3747,7 @@ export const BUNDLED_GRAPHIC_PACKAGES: GraphicPackage[] = [
   },
   {
     "format": "mce-graphic@1",
-    "version": 1,
+    "version": 2,
     "id": "giving-accounts-board",
     "name": "Giving Accounts Board",
     "category": "giving",
@@ -3944,7 +3944,7 @@ export const BUNDLED_GRAPHIC_PACKAGES: GraphicPackage[] = [
       }
     ],
     "html": "\n<div class=\"gb\">\n  <div class=\"gb-bg pkg-fullscreen\"><i class=\"gb-glow\"></i></div>\n  {{#logo}}<div class=\"gb-church\">{{image:logo}}</div>{{/logo}}\n  <div class=\"gb-plaque\"><i class=\"gb-shine\"></i><i class=\"gb-dot\"></i><span class=\"gb-title\">{{title|chars}}</span><i class=\"gb-dot\"></i></div>\n  <div class=\"gb-grid\">\n    {{#bank1}}<div class=\"gb-e\"><div class=\"gb-h\"><span class=\"gb-logo\">{{icon=bank}}{{image:logo1}}</span><span class=\"gb-name\">{{bank1}}</span></div><div class=\"gb-nr\"><div class=\"gb-num\">{{num1}}</div></div></div>{{/bank1}}\n    {{#bank2}}<div class=\"gb-e\"><div class=\"gb-h\"><span class=\"gb-logo\">{{icon=bank}}{{image:logo2}}</span><span class=\"gb-name\">{{bank2}}</span></div><div class=\"gb-nr\"><div class=\"gb-num\">{{num2}}</div></div></div>{{/bank2}}\n    {{#bank3}}<div class=\"gb-e\"><div class=\"gb-h\"><span class=\"gb-logo\">{{icon=bank}}{{image:logo3}}</span><span class=\"gb-name\">{{bank3}}</span></div><div class=\"gb-nr\"><div class=\"gb-num\">{{num3}}</div></div></div>{{/bank3}}\n    {{#bank4}}<div class=\"gb-e\"><div class=\"gb-h\"><span class=\"gb-logo\">{{icon=bank}}{{image:logo4}}</span><span class=\"gb-name\">{{bank4}}</span></div><div class=\"gb-nr\"><div class=\"gb-num\">{{num4}}</div></div></div>{{/bank4}}\n    {{#bank5}}<div class=\"gb-e\"><div class=\"gb-h\"><span class=\"gb-logo\">{{icon=bank}}{{image:logo5}}</span><span class=\"gb-name\">{{bank5}}</span></div><div class=\"gb-nr\"><div class=\"gb-num\">{{num5}}</div></div></div>{{/bank5}}\n    {{#bank6}}<div class=\"gb-e\"><div class=\"gb-h\"><span class=\"gb-logo\">{{icon=bank}}{{image:logo6}}</span><span class=\"gb-name\">{{bank6}}</span></div><div class=\"gb-nr\"><div class=\"gb-num\">{{num6}}</div></div></div>{{/bank6}}\n    <i class=\"gb-div\"></i>\n  </div>\n  {{#footer}}<div class=\"gb-foot\"><span>{{footer}}</span></div>{{/footer}}\n</div>",
-    "css": "\n.gb{position:relative;width:1920px;height:1080px;display:flex;flex-direction:column;align-items:center}\n.gb-bg{position:absolute;inset:0;overflow:hidden;background:radial-gradient(ellipse 70% 60% at 50% 18%,var(--bg-l) 0%,var(--bg) 45%,var(--bg-d) 100%)}\n.gb-glow{position:absolute;left:-20%;top:-30%;width:70%;height:90%;background:radial-gradient(closest-side,rgba(255,180,140,.16),rgba(255,180,140,0));transform:translateX(0)}\n.gb-church{position:absolute;left:56px;top:46px;width:200px;height:120px;display:flex;align-items:flex-start}\n.gb-church .pkg-img{max-height:120px;max-width:200px}\n.gb-plaque{position:relative;overflow:hidden;margin-top:58px;display:flex;align-items:center;gap:34px;padding:18px 54px 16px;background:linear-gradient(180deg,var(--plaque-l) 0%,var(--plaque) 45%,var(--plaque-d) 140%);clip-path:polygon(16px 0,calc(100% - 16px) 0,100% 16px,100% calc(100% - 16px),calc(100% - 16px) 100%,16px 100%,0 calc(100% - 16px),0 16px);box-shadow:0 10px 30px rgba(0,0,0,.35)}\n.gb-shine{position:absolute;top:0;bottom:0;left:0;width:14%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);transform:translateX(-150%)}\n.gb-dot{position:relative;display:block;width:14px;height:14px;border-radius:50%;background:var(--plaquet)}\n.gb-title{position:relative;font:700 92px/1 Tinos,'Times New Roman',serif;color:var(--plaquet);letter-spacing:.01em;text-transform:uppercase;white-space:nowrap}\n.gb-title .w,.gb-title .ch{display:inline-block}\n.gb-grid{position:relative;flex:1;width:1560px;display:grid;grid-template-columns:1fr 1fr;align-content:center;row-gap:46px;padding:20px 0 30px}\n.gb-div{position:absolute;left:50%;top:56px;bottom:62px;width:3px;margin-left:-1.5px;background:linear-gradient(180deg,rgba(255,255,255,0),rgba(255,255,255,.75) 12%,rgba(255,255,255,.75) 88%,rgba(255,255,255,0))}\n.gb-e{display:flex;flex-direction:column;align-items:center}\n.gb-e:only-of-type{grid-column:1/-1;align-self:center}\n.gb-e:only-of-type~.gb-div{display:none}\n.gb-h{display:flex;align-items:center;gap:20px}\n.gb-logo{position:relative;flex:none;width:76px;height:76px;border-radius:10px;overflow:hidden;background:var(--tile);color:var(--ic);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.3)}\n.gb-logo .ic{width:46px;height:46px}\n.gb-logo .pkg-img{position:absolute;inset:0;width:100%;height:100%;max-width:none;max-height:none;object-fit:cover;background:var(--tile)}\n.gb-name{font:700 50px/1 Montserrat,Arial,sans-serif;color:var(--t);text-transform:uppercase;white-space:nowrap}\n.gb-nr{overflow:hidden;margin-top:14px;padding:0 8px}\n.gb-num{font:900 92px/1.05 Montserrat,Arial,sans-serif;color:var(--nt);letter-spacing:.01em;white-space:nowrap;text-shadow:0 4px 14px rgba(0,0,0,.35)}\n.gb-foot{position:relative;width:1560px;padding:30px 40px 34px;background:var(--foot);border-radius:46px 46px 0 0;text-align:center;box-shadow:0 -8px 30px rgba(0,0,0,.25)}\n.gb-foot span{display:block;font:800 42px/1 Montserrat,Arial,sans-serif;color:var(--foott);text-transform:uppercase;white-space:nowrap}\n",
+    "css": "\n.gb{position:relative;width:1920px;height:1080px;display:flex;flex-direction:column;align-items:center}\n.gb-bg{position:absolute;inset:0;overflow:hidden;background:radial-gradient(ellipse 70% 60% at 50% 18%,var(--bg-l) 0%,var(--bg) 45%,var(--bg-d) 100%)}\n.gb-glow{position:absolute;left:-20%;top:-30%;width:70%;height:90%;background:radial-gradient(closest-side,rgba(255,180,140,.16),rgba(255,180,140,0));transform:translateX(0)}\n.gb-church{position:absolute;left:56px;top:46px;width:200px;height:120px;display:flex;align-items:flex-start}\n.gb-church .pkg-img{max-height:120px;max-width:200px}\n.gb-plaque{position:relative;overflow:hidden;margin-top:58px;display:flex;align-items:center;gap:34px;padding:18px 54px 16px;background:linear-gradient(180deg,var(--plaque-l) 0%,var(--plaque) 45%,var(--plaque-d) 140%);clip-path:polygon(16px 0,calc(100% - 16px) 0,100% 16px,100% calc(100% - 16px),calc(100% - 16px) 100%,16px 100%,0 calc(100% - 16px),0 16px);box-shadow:0 10px 30px rgba(0,0,0,.35)}\n.gb-shine{position:absolute;top:0;bottom:0;left:0;width:14%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);transform:translateX(-150%)}\n.gb-dot{position:relative;display:block;width:14px;height:14px;border-radius:50%;background:var(--plaquet)}\n.gb-title{position:relative;font:700 92px/1 Tinos,'Times New Roman',serif;color:var(--plaquet);letter-spacing:.01em;text-transform:uppercase;white-space:nowrap}\n.gb-title .w,.gb-title .ch{display:inline-block}\n.gb-grid{position:relative;flex:1;width:1560px;display:grid;grid-template-columns:1fr 1fr;align-content:center;row-gap:46px;padding:20px 0 30px}\n.gb-div{position:absolute;left:50%;top:56px;bottom:62px;width:3px;margin-left:-1.5px;background:linear-gradient(180deg,rgba(255,255,255,0),rgba(255,255,255,.75) 12%,rgba(255,255,255,.75) 88%,rgba(255,255,255,0))}\n.gb-e{display:flex;flex-direction:column;align-items:center}\n.gb-e:only-of-type{grid-column:1/-1;align-self:center}\n.gb-e:only-of-type~.gb-div{display:none}\n/* Two accounts: one row, so each gets a bigger logo and number. font-size needs !important: the package runtime makes font shorthands !important. */\n.gb-e:first-of-type:nth-last-of-type(2) .gb-logo,.gb-e:nth-of-type(2):last-of-type .gb-logo{width:132px;height:132px;border-radius:16px}\n.gb-e:first-of-type:nth-last-of-type(2) .gb-logo .ic,.gb-e:nth-of-type(2):last-of-type .gb-logo .ic{width:80px;height:80px}\n.gb-e:first-of-type:nth-last-of-type(2) .gb-name,.gb-e:nth-of-type(2):last-of-type .gb-name{font-size:58px !important}\n.gb-e:first-of-type:nth-last-of-type(2) .gb-num,.gb-e:nth-of-type(2):last-of-type .gb-num{font-size:104px !important}\n/* One account: about three times the logo and a much bigger number, filling the board. */\n.gb-e:only-of-type .gb-h{gap:40px}\n.gb-e:only-of-type .gb-logo{width:228px;height:228px;border-radius:28px;box-shadow:0 10px 30px rgba(0,0,0,.35)}\n.gb-e:only-of-type .gb-logo .ic{width:138px;height:138px}\n.gb-e:only-of-type .gb-name{font-size:84px !important}\n.gb-e:only-of-type .gb-nr{margin-top:30px}\n.gb-e:only-of-type .gb-num{font-size:168px !important}\n.gb-h{display:flex;align-items:center;gap:20px}\n.gb-logo{position:relative;flex:none;width:92px;height:92px;border-radius:10px;overflow:hidden;background:var(--tile);color:var(--ic);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.3)}\n.gb-logo .ic{width:56px;height:56px}\n.gb-logo .pkg-img{position:absolute;inset:0;width:100%;height:100%;max-width:none;max-height:none;object-fit:contain;padding:6%;box-sizing:border-box;background:var(--tile)}\n.gb-name{font:700 50px/1 Montserrat,Arial,sans-serif;color:var(--t);text-transform:uppercase;white-space:nowrap}\n.gb-nr{overflow:hidden;margin-top:14px;padding:0 8px}\n.gb-num{font:900 92px/1.05 Montserrat,Arial,sans-serif;color:var(--nt);letter-spacing:.01em;white-space:nowrap;text-shadow:0 4px 14px rgba(0,0,0,.35)}\n.gb-foot{position:relative;width:1560px;padding:30px 40px 34px;background:var(--foot);border-radius:46px 46px 0 0;text-align:center;box-shadow:0 -8px 30px rgba(0,0,0,.25)}\n.gb-foot span{display:block;font:800 42px/1 Montserrat,Arial,sans-serif;color:var(--foott);text-transform:uppercase;white-space:nowrap}\n",
     "animation": {
       "in": [
         [
@@ -4067,7 +4067,7 @@ export const BUNDLED_GRAPHIC_PACKAGES: GraphicPackage[] = [
           "to": {
             "yPercent": 0
           },
-          "at": 1.0,
+          "at": 1,
           "d": 0.6,
           "e": "expo.out"
         },
@@ -4275,51 +4275,69 @@ export const BUNDLED_GRAPHIC_PACKAGES: GraphicPackage[] = [
           ".qh-bar",
           "slideUp",
           0,
-          { "d": 0.4 }
+          {
+            "d": 0.4
+          }
         ],
         [
           ".qh-mk",
           "down",
           0.1,
-          { "d": 0.4 }
+          {
+            "d": 0.4
+          }
         ],
         [
           ".qh-t",
           "up",
           0.2,
-          { "d": 0.55 }
+          {
+            "d": 0.55
+          }
         ],
         [
           ".qh-sp",
           "up",
           0.4,
-          { "d": 0.45 }
+          {
+            "d": 0.45
+          }
         ]
       ],
       "out": [
         {
           "sel": ".qh-sp",
-          "to": { "y": -12, "opacity": 0 },
+          "to": {
+            "y": -12,
+            "opacity": 0
+          },
           "at": 0,
           "d": 0.25,
           "e": "power2.in"
         },
         {
           "sel": ".qh-t",
-          "to": { "y": -12, "opacity": 0 },
+          "to": {
+            "y": -12,
+            "opacity": 0
+          },
           "at": 0.08,
           "d": 0.28,
           "e": "power2.in"
         },
         {
           "sel": ".qh-mk",
-          "to": { "opacity": 0 },
+          "to": {
+            "opacity": 0
+          },
           "at": 0.2,
           "d": 0.25
         },
         {
           "sel": ".qh-bar",
-          "to": { "scaleY": 0 },
+          "to": {
+            "scaleY": 0
+          },
           "at": 0.3,
           "d": 0.3,
           "e": "power2.in"
@@ -5819,5 +5837,2956 @@ export const BUNDLED_GRAPHIC_PACKAGES: GraphicPackage[] = [
     },
     "css": ".s12{display:inline-flex;flex-direction:column;align-items:flex-start}\n.s12-row{display:inline-flex;align-items:flex-end}\n.s12-first{background:var(--plate);padding:8px 22px 8px 26px;overflow:hidden}\n.s12-first span{display:block;font:800 72px/1 Montserrat,\"MCE Archivo\",Arial,sans-serif;color:var(--t);white-space:nowrap}\n.s12-last{background:var(--plate2);padding:6px 20px 6px 18px;overflow:hidden;margin-bottom:6px}\n.s12-last span{display:block;font:700 42px/1 Montserrat,\"MCE Archivo\",Arial,sans-serif;color:var(--t2);white-space:nowrap}\n.s12-tag{background:var(--plate);padding:6px 24px 7px;margin-left:56px;overflow:hidden}\n.s12-tag span{display:block;font:600 26px/1 Montserrat,\"MCE Archivo\",Arial,sans-serif;color:var(--t);white-space:nowrap}",
     "html": "<div class=\"s12\"><div class=\"s12-row\"><div class=\"s12-first\"><span>{{firstName}}</span></div><div class=\"s12-last\"><span>{{lastName}}</span></div></div>{{#title}}<div class=\"s12-tag\"><span>{{title}}</span></div>{{/title}}</div>"
+  },
+  {
+    "format": "mce-graphic@1",
+    "id": "subscribe-click",
+    "version": 1,
+    "name": "Subscribe · Click Reminder",
+    "category": "subscribe",
+    "tags": [
+      "Subscribe",
+      "YouTube",
+      "Channel",
+      "Click"
+    ],
+    "addedAt": "2026-11-05",
+    "description": "A channel card rises in, a pointer clicks Subscribe and the button turns into Subscribed with a ringing bell, then the card drops away",
+    "color": "#0f0f0f",
+    "hold": 5,
+    "placement": {
+      "x": 120,
+      "y": 100,
+      "scale": 1
+    },
+    "fields": [
+      {
+        "key": "channel",
+        "label": "Channel name",
+        "type": "text",
+        "default": "Your Church Name"
+      },
+      {
+        "key": "subscribe",
+        "label": "Button text",
+        "type": "text",
+        "default": "Subscribe"
+      },
+      {
+        "key": "subscribed",
+        "label": "Button text after the click",
+        "type": "text",
+        "default": "Subscribed"
+      },
+      {
+        "key": "avatar",
+        "label": "Channel picture",
+        "type": "image",
+        "default": ""
+      },
+      {
+        "key": "card",
+        "label": "Card colour",
+        "type": "color",
+        "default": "#ffffff"
+      },
+      {
+        "key": "ink",
+        "label": "Text colour",
+        "type": "color",
+        "default": "#0f0f0f"
+      },
+      {
+        "key": "btn",
+        "label": "Button colour",
+        "type": "color",
+        "default": "#0f0f0f"
+      },
+      {
+        "key": "btnText",
+        "label": "Button text colour",
+        "type": "color",
+        "default": "#ffffff"
+      },
+      {
+        "key": "done",
+        "label": "Subscribed button colour",
+        "type": "color",
+        "default": "#ececec"
+      }
+    ],
+    "html": "<div class=\"ys\"><div class=\"ys-card\"><div class=\"ys-av\"><svg class=\"ys-person\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"9\" r=\"4.2\"/><path d=\"M3.5 22c.6-4.6 4.1-7.4 8.5-7.4s7.9 2.8 8.5 7.4z\"/></svg>{{image:avatar}}</div><div class=\"ys-txt\"><div class=\"ys-name\"><span>{{channel}}</span><svg class=\"ys-ok\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\" fill=\"currentColor\"/><path d=\"m7.5 12.3 3 3 6-6.2\" fill=\"none\" stroke=\"var(--card)\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></div><div class=\"ys-btn\"><span class=\"ys-sub\">{{subscribe}}</span><span class=\"ys-done\">{{icon=bell}}<span>{{subscribed}}</span><svg class=\"ys-chev\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m6 9 6 6 6-6\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></span><div class=\"ys-hand\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path fill=\"#ffffff\" stroke=\"#111111\" stroke-width=\"1.2\" stroke-linejoin=\"round\" d=\"M9 3.6a1.5 1.5 0 0 1 3 0V11h.4V9.6a1.5 1.5 0 0 1 3 0V11h.4v-.4a1.5 1.5 0 0 1 3 0V12h.2a1.4 1.4 0 0 1 2.8 0v4.4c0 3.6-2.9 6.5-6.5 6.5h-1.7a6 6 0 0 1-4.6-2.2l-4.4-5.4a1.5 1.5 0 0 1 2.2-2L9 15z\"/></svg></div></div></div></div></div>",
+    "css": ".ys{display:inline-block;padding:20px 30px 40px}\n.ys-card{position:relative;display:flex;align-items:center;gap:24px;background:var(--card);border-radius:70px;padding:18px 52px 18px 18px;box-shadow:0 12px 34px rgba(0,0,0,.28)}\n.ys-av{position:relative;flex:none;width:100px;height:100px;border-radius:50%;overflow:hidden;background:#d6d6d6}\n.ys-person{position:absolute;left:12%;top:12%;width:76%;height:76%;fill:#f4f4f4}\n.ys-av .pkg-img{position:absolute;inset:0;width:100%;height:100%;max-width:none;max-height:none;object-fit:cover}\n.ys-txt{display:flex;flex-direction:column;align-items:flex-start}\n.ys-name{display:flex;align-items:center;gap:9px;font:700 32px/1.1 Roboto,Arial,sans-serif;color:var(--ink);white-space:nowrap}\n.ys-ok{width:22px;height:22px;flex:none;color:var(--ink);opacity:.55}\n.ys-btn{position:relative;display:grid;margin-top:12px}\n.ys-btn>span{grid-area:1/1;display:inline-flex;align-items:center;justify-content:center;gap:10px;height:52px;padding:0 32px;border-radius:26px;font:500 24px/1 Roboto,Arial,sans-serif;white-space:nowrap}\n.ys-sub{background:var(--btn);color:var(--btnText)}\n.ys-done{background:var(--done);color:var(--ink);opacity:0}\n.ys-done .ic{width:26px;height:26px}\n.ys-chev{width:22px;height:22px}\n.ys-hand{position:absolute;left:52%;top:38%;width:58px;height:58px;opacity:0;filter:drop-shadow(0 3px 4px rgba(0,0,0,.35));z-index:2}\n.ys-hand svg{display:block;width:100%;height:100%}",
+    "animation": {
+      "in": [
+        {
+          "sel": ".ys-card",
+          "from": {
+            "y": 280,
+            "opacity": 0
+          },
+          "to": {
+            "y": 0,
+            "opacity": 1
+          },
+          "d": 0.75,
+          "e": "back.out(1.3)",
+          "at": 0
+        },
+        {
+          "sel": ".ys-hand",
+          "from": {
+            "x": 200,
+            "y": 170,
+            "opacity": 0
+          },
+          "to": {
+            "x": 0,
+            "y": 0,
+            "opacity": 1
+          },
+          "d": 0.8,
+          "e": "power2.inOut",
+          "at": 0.9
+        },
+        {
+          "sel": ".ys-hand",
+          "to": {
+            "scale": 0.8
+          },
+          "d": 0.12,
+          "e": "power1.in",
+          "at": 1.75
+        },
+        {
+          "sel": ".ys-hand",
+          "to": {
+            "scale": 1
+          },
+          "d": 0.2,
+          "e": "power1.out",
+          "at": 1.88
+        },
+        {
+          "sel": ".ys-sub",
+          "to": {
+            "opacity": 0
+          },
+          "d": 0.15,
+          "at": 1.86
+        },
+        {
+          "sel": ".ys-done",
+          "from": {
+            "opacity": 0,
+            "scale": 0.85
+          },
+          "to": {
+            "opacity": 1,
+            "scale": 1
+          },
+          "d": 0.35,
+          "e": "back.out(2)",
+          "at": 1.86
+        },
+        {
+          "sel": ".ys-done .ic",
+          "from": {
+            "rotation": -28,
+            "transformOrigin": "50% 15%"
+          },
+          "to": {
+            "rotation": 0
+          },
+          "d": 0.9,
+          "e": "elastic.out(1,0.3)",
+          "at": 2
+        },
+        {
+          "sel": ".ys-hand",
+          "to": {
+            "x": 110,
+            "y": 130,
+            "opacity": 0
+          },
+          "d": 0.6,
+          "e": "power2.in",
+          "at": 2.45
+        }
+      ],
+      "out": [
+        {
+          "sel": ".ys-card",
+          "to": {
+            "y": 280,
+            "opacity": 0
+          },
+          "d": 0.5,
+          "e": "power3.in",
+          "at": 0
+        }
+      ]
+    }
+  },
+  {
+    "format": "mce-graphic@1",
+    "id": "logo-block-intro",
+    "version": 1,
+    "name": "Logo Intro · Block Wipe",
+    "category": "branding",
+    "tags": [
+      "Logo",
+      "Intro",
+      "Full screen"
+    ],
+    "addedAt": "2026-11-05",
+    "description": "Full-screen logo sting: a colour panel wipes in with a stepped edge, the logo pops up with four light rays, then it all wipes away",
+    "color": "#4a5578",
+    "hold": 3,
+    "placement": {
+      "x": 0,
+      "y": 0,
+      "scale": 1
+    },
+    "fields": [
+      {
+        "key": "logo",
+        "label": "Logo",
+        "type": "image",
+        "default": ""
+      },
+      {
+        "key": "text",
+        "label": "Logo text (shown when no logo is picked; type | for a new line)",
+        "type": "text",
+        "default": "YOUR|LOGO|HERE"
+      },
+      {
+        "key": "panel",
+        "label": "Panel colour",
+        "type": "color",
+        "default": "#4a5578",
+        "shades": true
+      },
+      {
+        "key": "ink",
+        "label": "Text and ray colour",
+        "type": "color",
+        "default": "#ffffff"
+      }
+    ],
+    "html": "<div class=\"li pkg-fullscreen\"><div class=\"li-strips\"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class=\"li-mid\"><div class=\"li-rays\"><span class=\"li-ray li-r1\"><i></i></span><span class=\"li-ray li-r2\"><i></i></span><span class=\"li-ray li-r3\"><i></i></span><span class=\"li-ray li-r4\"><i></i></span></div><div class=\"li-logo\">{{image:logo|text}}</div></div></div>",
+    "css": ".li{position:relative;width:1920px;height:1080px;overflow:hidden}\n.li-strips{position:absolute;inset:0;display:flex}\n.li-strips i{display:block;flex:none;width:163px;margin-right:-3px;height:100%;background:radial-gradient(ellipse 60% 70% at 50% 50%,var(--panel-l) 0%,var(--panel) 55%,var(--panel-d) 120%);background-size:1920px 1080px}\n.li-strips i:nth-child(1){background-position:-0px 0}\n.li-strips i:nth-child(2){background-position:-160px 0}\n.li-strips i:nth-child(3){background-position:-320px 0}\n.li-strips i:nth-child(4){background-position:-480px 0}\n.li-strips i:nth-child(5){background-position:-640px 0}\n.li-strips i:nth-child(6){background-position:-800px 0}\n.li-strips i:nth-child(7){background-position:-960px 0}\n.li-strips i:nth-child(8){background-position:-1120px 0}\n.li-strips i:nth-child(9){background-position:-1280px 0}\n.li-strips i:nth-child(10){background-position:-1440px 0}\n.li-strips i:nth-child(11){background-position:-1600px 0}\n.li-strips i:nth-child(12){background-position:-1760px 0}\n.li-mid{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}\n.li-logo{position:relative;display:flex;align-items:center;justify-content:center}\n.li-logo .pkg-fallback{display:block;font:900 112px/1 Montserrat,\"MCE Archivo\",Arial,sans-serif;color:var(--ink);text-align:center;text-transform:uppercase;white-space:nowrap}\n.li-logo .pkg-img{max-width:640px;max-height:380px}\n.li-rays{position:absolute;left:50%;top:50%;width:0;height:0}\n.li-ray{position:absolute;left:0;top:-4px;width:270px;height:8px;transform-origin:0 50%}\n.li-r1{transform:rotate(-27deg) translateX(300px)}\n.li-r2{transform:rotate(27deg) translateX(300px)}\n.li-r3{transform:rotate(153deg) translateX(300px)}\n.li-r4{transform:rotate(207deg) translateX(300px)}\n.li-ray i{display:block;width:100%;height:100%;background:var(--ink);border-radius:4px}",
+    "animation": {
+      "in": [
+        {
+          "sel": ".li-strips i:nth-child(odd)",
+          "from": {
+            "scaleY": 0,
+            "transformOrigin": "50% 0%"
+          },
+          "to": {
+            "scaleY": 1
+          },
+          "d": 0.5,
+          "e": "power3.inOut",
+          "s": 0.02,
+          "at": 0
+        },
+        {
+          "sel": ".li-strips i:nth-child(even)",
+          "from": {
+            "scaleY": 0,
+            "transformOrigin": "50% 0%"
+          },
+          "to": {
+            "scaleY": 1
+          },
+          "d": 0.5,
+          "e": "power3.inOut",
+          "s": 0.02,
+          "at": 0.12
+        },
+        {
+          "sel": ".li-logo",
+          "from": {
+            "scale": 0.4,
+            "opacity": 0
+          },
+          "to": {
+            "scale": 1,
+            "opacity": 1
+          },
+          "d": 0.6,
+          "e": "back.out(1.8)",
+          "at": 0.3
+        },
+        {
+          "sel": ".li-ray i",
+          "from": {
+            "scaleX": 0,
+            "transformOrigin": "0% 50%"
+          },
+          "to": {
+            "scaleX": 1
+          },
+          "d": 0.6,
+          "e": "expo.out",
+          "s": 0,
+          "at": 0.42
+        }
+      ],
+      "out": [
+        {
+          "sel": ".li-ray i",
+          "to": {
+            "scaleX": 0,
+            "transformOrigin": "100% 50%"
+          },
+          "d": 0.35,
+          "e": "power2.in",
+          "s": 0,
+          "at": 0
+        },
+        {
+          "sel": ".li-logo",
+          "to": {
+            "scale": 0.6,
+            "opacity": 0
+          },
+          "d": 0.4,
+          "e": "power2.in",
+          "at": 0.1
+        },
+        {
+          "sel": ".li-strips i:nth-child(odd)",
+          "to": {
+            "scaleY": 0,
+            "transformOrigin": "50% 100%"
+          },
+          "d": 0.45,
+          "e": "power3.inOut",
+          "s": 0.02,
+          "at": 0.2
+        },
+        {
+          "sel": ".li-strips i:nth-child(even)",
+          "to": {
+            "scaleY": 0,
+            "transformOrigin": "50% 100%"
+          },
+          "d": 0.45,
+          "e": "power3.inOut",
+          "s": 0.02,
+          "at": 0.32
+        }
+      ]
+    }
+  },
+  {
+    "format": "mce-graphic@1",
+    "id": "logo-retro-screen",
+    "version": 1,
+    "name": "Logo Intro · Retro Screen",
+    "category": "branding",
+    "tags": [
+      "Logo",
+      "Intro",
+      "Retro",
+      "Full screen"
+    ],
+    "addedAt": "2026-11-05",
+    "description": "Full-screen logo sting like an old TV switching on: a bright line opens into a flash, the logo settles with scan lines and a soft flicker, then the screen switches off",
+    "color": "#0b0d12",
+    "hold": 3,
+    "placement": {
+      "x": 0,
+      "y": 0,
+      "scale": 1
+    },
+    "fields": [
+      {
+        "key": "logo",
+        "label": "Logo",
+        "type": "image",
+        "default": ""
+      },
+      {
+        "key": "text",
+        "label": "Logo text (shown when no logo is picked; type | for a new line)",
+        "type": "text",
+        "default": "YOUR|LOGO|HERE"
+      },
+      {
+        "key": "bg",
+        "label": "Background colour",
+        "type": "color",
+        "default": "#0b0d12",
+        "shades": true
+      },
+      {
+        "key": "ink",
+        "label": "Text colour",
+        "type": "color",
+        "default": "#f2f2f2"
+      },
+      {
+        "key": "glow",
+        "label": "Glow colour",
+        "type": "color",
+        "default": "#bcd6ff"
+      }
+    ],
+    "html": "<div class=\"rs pkg-fullscreen\"><div class=\"rs-bg\"></div><svg class=\"rs-svg\" viewBox=\"0 0 1920 1080\" aria-hidden=\"true\"><path d=\"M70 38 640 346\"/><path d=\"M1850 38 1280 346\"/><path d=\"M70 1042 640 734\"/><path d=\"M1850 1042 1280 734\"/></svg><div class=\"rs-mid\"><div class=\"rs-logo\">{{image:logo|text}}</div></div><div class=\"rs-flash\"></div><div class=\"rs-beam\"></div><div class=\"rs-scan\"></div><div class=\"rs-vig\"></div></div>",
+    "css": ".rs{position:relative;width:1920px;height:1080px;overflow:hidden}\n.rs-bg{position:absolute;inset:0;background:radial-gradient(ellipse 70% 65% at 50% 48%,var(--bg-l) 0%,var(--bg) 60%,var(--bg-d) 110%)}\n.rs-svg{position:absolute;inset:0;width:100%;height:100%}\n.rs-svg path{fill:none;stroke:var(--ink);stroke-width:5;stroke-linecap:round;opacity:.4}\n.rs-mid{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}\n.rs-logo{position:relative;display:flex;align-items:center;justify-content:center}\n.rs-logo .pkg-fallback{display:block;font:700 150px/.98 Roboto,Arial,sans-serif;color:var(--ink);text-align:center;text-transform:uppercase;white-space:nowrap;text-shadow:-4px 0 rgba(255,70,70,.45),4px 0 rgba(70,150,255,.45),0 0 28px var(--glow)}\n.rs-logo .pkg-img{max-width:760px;max-height:440px;filter:drop-shadow(0 0 26px var(--glow))}\n.rs-flash{position:absolute;left:50%;top:50%;width:1400px;height:900px;margin:-450px 0 0 -700px;background:radial-gradient(ellipse 50% 50% at 50% 50%,#ffffff 0%,var(--glow) 22%,rgba(0,0,0,0) 62%);opacity:0;mix-blend-mode:screen;pointer-events:none}\n.rs-beam{position:absolute;left:0;top:50%;width:100%;height:10px;margin-top:-5px;background:linear-gradient(90deg,rgba(0,0,0,0) 0%,var(--glow) 25%,#ffffff 50%,var(--glow) 75%,rgba(0,0,0,0) 100%);box-shadow:0 0 40px 10px var(--glow);opacity:0}\n.rs-scan{position:absolute;inset:0;background:repeating-linear-gradient(180deg,rgba(0,0,0,.34) 0 2px,rgba(0,0,0,0) 2px 6px);animation:mceRsRoll 6s linear infinite;pointer-events:none}\n.rs-vig{position:absolute;inset:0;background:radial-gradient(ellipse 75% 70% at 50% 50%,rgba(0,0,0,0) 55%,rgba(0,0,0,.65) 100%);pointer-events:none}\n@keyframes mceRsRoll{0%{background-position:0 0}100%{background-position:0 120px}}",
+    "animation": {
+      "in": [
+        [
+          ".rs-bg",
+          "fade",
+          0,
+          {
+            "d": 0.3
+          }
+        ],
+        {
+          "sel": ".rs-beam",
+          "from": {
+            "scaleX": 0,
+            "scaleY": 1,
+            "opacity": 1
+          },
+          "to": {
+            "scaleX": 1
+          },
+          "d": 0.32,
+          "e": "power3.out",
+          "at": 0.05
+        },
+        {
+          "sel": ".rs-beam",
+          "to": {
+            "scaleY": 40,
+            "opacity": 0
+          },
+          "d": 0.45,
+          "e": "power2.out",
+          "at": 0.37
+        },
+        {
+          "sel": ".rs-flash",
+          "from": {
+            "opacity": 0,
+            "scale": 0.3
+          },
+          "to": {
+            "opacity": 1,
+            "scale": 1.15
+          },
+          "d": 0.3,
+          "e": "power2.out",
+          "at": 0.32
+        },
+        {
+          "sel": ".rs-flash",
+          "to": {
+            "opacity": 0,
+            "scale": 1.5
+          },
+          "d": 1,
+          "e": "power2.out",
+          "at": 0.65
+        },
+        {
+          "sel": ".rs-logo",
+          "from": {
+            "scaleY": 0.02,
+            "scaleX": 1.25,
+            "opacity": 0,
+            "filter": "brightness(3) blur(8px)"
+          },
+          "to": {
+            "scaleY": 1,
+            "scaleX": 1,
+            "opacity": 1,
+            "filter": "brightness(1) blur(0px)"
+          },
+          "d": 0.7,
+          "e": "expo.out",
+          "at": 0.4
+        },
+        [
+          ".rs-svg path",
+          "draw",
+          0.75,
+          {
+            "d": 0.9
+          }
+        ]
+      ],
+      "out": [
+        {
+          "sel": ".rs-svg path",
+          "to": {
+            "opacity": 0
+          },
+          "d": 0.25,
+          "at": 0
+        },
+        {
+          "sel": ".rs-logo",
+          "to": {
+            "scaleY": 0.02,
+            "filter": "brightness(3) blur(2px)"
+          },
+          "d": 0.18,
+          "e": "power2.in",
+          "at": 0.05
+        },
+        {
+          "sel": ".rs-logo",
+          "to": {
+            "scaleX": 0,
+            "opacity": 0
+          },
+          "d": 0.16,
+          "e": "power2.in",
+          "at": 0.23
+        },
+        {
+          "sel": ".rs-beam",
+          "from": {
+            "scaleX": 1,
+            "scaleY": 1,
+            "opacity": 1
+          },
+          "to": {
+            "scaleX": 0
+          },
+          "d": 0.28,
+          "e": "power2.in",
+          "at": 0.23
+        },
+        {
+          "sel": ".rs-bg",
+          "to": {
+            "opacity": 0
+          },
+          "d": 0.3,
+          "at": 0.45
+        },
+        {
+          "sel": ".rs-scan, .rs-vig",
+          "to": {
+            "opacity": 0
+          },
+          "d": 0.3,
+          "at": 0.45
+        }
+      ],
+      "ambient": [
+        {
+          "sel": ".rs-logo",
+          "to": {
+            "opacity": 0.86
+          },
+          "d": 0.06,
+          "yoyo": true,
+          "repeat": -1,
+          "repeatDelay": 2.4,
+          "e": "none"
+        }
+      ]
+    }
+  },
+  {
+    "format": "mce-graphic@1",
+    "id": "social-handles-row",
+    "version": 1,
+    "name": "Social Handles Row",
+    "category": "social",
+    "tags": [
+      "Social",
+      "Handles",
+      "Follow"
+    ],
+    "addedAt": "2026-11-05",
+    "description": "Up to four social icons with your handles in one clean row along the bottom. Each one springs up in turn and drops away the same way",
+    "color": "#ffffff",
+    "hold": 10,
+    "placement": {
+      "x": 120,
+      "y": 70,
+      "scale": 1
+    },
+    "fields": [
+      {
+        "key": "brand1",
+        "label": "Platform 1",
+        "type": "select",
+        "default": "instagram",
+        "options": [
+          {
+            "value": "",
+            "label": "None"
+          },
+          {
+            "value": "facebook",
+            "label": "Facebook"
+          },
+          {
+            "value": "instagram",
+            "label": "Instagram"
+          },
+          {
+            "value": "youtube",
+            "label": "YouTube"
+          },
+          {
+            "value": "x",
+            "label": "X"
+          },
+          {
+            "value": "tiktok",
+            "label": "TikTok"
+          },
+          {
+            "value": "whatsapp",
+            "label": "WhatsApp"
+          },
+          {
+            "value": "telegram",
+            "label": "Telegram"
+          },
+          {
+            "value": "threads",
+            "label": "Threads"
+          },
+          {
+            "value": "twitch",
+            "label": "Twitch"
+          }
+        ]
+      },
+      {
+        "key": "handle1",
+        "label": "Handle 1",
+        "type": "text",
+        "default": "@yourchurch"
+      },
+      {
+        "key": "brand2",
+        "label": "Platform 2",
+        "type": "select",
+        "default": "tiktok",
+        "options": [
+          {
+            "value": "",
+            "label": "None"
+          },
+          {
+            "value": "facebook",
+            "label": "Facebook"
+          },
+          {
+            "value": "instagram",
+            "label": "Instagram"
+          },
+          {
+            "value": "youtube",
+            "label": "YouTube"
+          },
+          {
+            "value": "x",
+            "label": "X"
+          },
+          {
+            "value": "tiktok",
+            "label": "TikTok"
+          },
+          {
+            "value": "whatsapp",
+            "label": "WhatsApp"
+          },
+          {
+            "value": "telegram",
+            "label": "Telegram"
+          },
+          {
+            "value": "threads",
+            "label": "Threads"
+          },
+          {
+            "value": "twitch",
+            "label": "Twitch"
+          }
+        ]
+      },
+      {
+        "key": "handle2",
+        "label": "Handle 2",
+        "type": "text",
+        "default": "@yourchurch"
+      },
+      {
+        "key": "brand3",
+        "label": "Platform 3",
+        "type": "select",
+        "default": "x",
+        "options": [
+          {
+            "value": "",
+            "label": "None"
+          },
+          {
+            "value": "facebook",
+            "label": "Facebook"
+          },
+          {
+            "value": "instagram",
+            "label": "Instagram"
+          },
+          {
+            "value": "youtube",
+            "label": "YouTube"
+          },
+          {
+            "value": "x",
+            "label": "X"
+          },
+          {
+            "value": "tiktok",
+            "label": "TikTok"
+          },
+          {
+            "value": "whatsapp",
+            "label": "WhatsApp"
+          },
+          {
+            "value": "telegram",
+            "label": "Telegram"
+          },
+          {
+            "value": "threads",
+            "label": "Threads"
+          },
+          {
+            "value": "twitch",
+            "label": "Twitch"
+          }
+        ]
+      },
+      {
+        "key": "handle3",
+        "label": "Handle 3",
+        "type": "text",
+        "default": "@yourchurch"
+      },
+      {
+        "key": "brand4",
+        "label": "Platform 4",
+        "type": "select",
+        "default": "",
+        "options": [
+          {
+            "value": "",
+            "label": "None"
+          },
+          {
+            "value": "facebook",
+            "label": "Facebook"
+          },
+          {
+            "value": "instagram",
+            "label": "Instagram"
+          },
+          {
+            "value": "youtube",
+            "label": "YouTube"
+          },
+          {
+            "value": "x",
+            "label": "X"
+          },
+          {
+            "value": "tiktok",
+            "label": "TikTok"
+          },
+          {
+            "value": "whatsapp",
+            "label": "WhatsApp"
+          },
+          {
+            "value": "telegram",
+            "label": "Telegram"
+          },
+          {
+            "value": "threads",
+            "label": "Threads"
+          },
+          {
+            "value": "twitch",
+            "label": "Twitch"
+          }
+        ]
+      },
+      {
+        "key": "handle4",
+        "label": "Handle 4",
+        "type": "text",
+        "default": "@yourchurch"
+      },
+      {
+        "key": "ink",
+        "label": "Text and icon colour",
+        "type": "color",
+        "default": "#ffffff"
+      }
+    ],
+    "html": "<div class=\"sb\">{{#brand1}}<span class=\"sb-item\">{{brands:brand1}}<span class=\"sb-h\">{{handle1}}</span></span>{{/brand1}}{{#brand2}}<span class=\"sb-item\">{{brands:brand2}}<span class=\"sb-h\">{{handle2}}</span></span>{{/brand2}}{{#brand3}}<span class=\"sb-item\">{{brands:brand3}}<span class=\"sb-h\">{{handle3}}</span></span>{{/brand3}}{{#brand4}}<span class=\"sb-item\">{{brands:brand4}}<span class=\"sb-h\">{{handle4}}</span></span>{{/brand4}}</div>",
+    "css": ".sb{display:flex;align-items:center;gap:56px;padding:12px 4px}\n.sb-item{display:inline-flex;align-items:center;gap:14px;color:var(--ink);font:700 32px/1 Roboto,Arial,sans-serif;white-space:nowrap;text-shadow:0 2px 8px rgba(0,0,0,.45)}\n.sb-item .ic{width:36px;height:36px;color:var(--ink);filter:drop-shadow(0 2px 6px rgba(0,0,0,.45))}",
+    "animation": {
+      "in": [
+        {
+          "sel": ".sb-item",
+          "from": {
+            "y": 80,
+            "opacity": 0
+          },
+          "to": {
+            "y": 0,
+            "opacity": 1
+          },
+          "d": 0.55,
+          "e": "back.out(1.7)",
+          "s": 0.14,
+          "at": 0
+        }
+      ],
+      "out": [
+        {
+          "sel": ".sb-item",
+          "to": {
+            "y": 80,
+            "opacity": 0
+          },
+          "d": 0.4,
+          "e": "power2.in",
+          "s": 0.1,
+          "at": 0
+        }
+      ]
+    }
+  },
+  {
+    "format": "mce-graphic@1",
+    "id": "follow-photo-stack",
+    "version": 1,
+    "name": "Follow Us · Photo Stack",
+    "category": "social",
+    "tags": [
+      "Social",
+      "Follow",
+      "Photos",
+      "Instagram"
+    ],
+    "addedAt": "2026-11-05",
+    "description": "Three photo cards fly in and pile up with your handle underneath. While it's on screen the top cards keep fanning apart and back together",
+    "color": "#f2f2f2",
+    "hold": 8,
+    "placement": {
+      "x": 120,
+      "y": 80,
+      "scale": 1
+    },
+    "fields": [
+      {
+        "key": "handle",
+        "label": "Handle",
+        "type": "text",
+        "default": "@yourchurch"
+      },
+      {
+        "key": "brand",
+        "label": "Platform icon",
+        "type": "select",
+        "default": "instagram",
+        "options": [
+          {
+            "value": "",
+            "label": "None"
+          },
+          {
+            "value": "facebook",
+            "label": "Facebook"
+          },
+          {
+            "value": "instagram",
+            "label": "Instagram"
+          },
+          {
+            "value": "youtube",
+            "label": "YouTube"
+          },
+          {
+            "value": "x",
+            "label": "X"
+          },
+          {
+            "value": "tiktok",
+            "label": "TikTok"
+          },
+          {
+            "value": "whatsapp",
+            "label": "WhatsApp"
+          },
+          {
+            "value": "telegram",
+            "label": "Telegram"
+          },
+          {
+            "value": "threads",
+            "label": "Threads"
+          },
+          {
+            "value": "twitch",
+            "label": "Twitch"
+          }
+        ]
+      },
+      {
+        "key": "photo1",
+        "label": "Photo 1 (front)",
+        "type": "image",
+        "default": ""
+      },
+      {
+        "key": "photo2",
+        "label": "Photo 2",
+        "type": "image",
+        "default": ""
+      },
+      {
+        "key": "photo3",
+        "label": "Photo 3 (back)",
+        "type": "image",
+        "default": ""
+      },
+      {
+        "key": "placeholder",
+        "label": "Text on cards without a photo (type | for a new line)",
+        "type": "text",
+        "default": "YOUR|PHOTO|HERE"
+      },
+      {
+        "key": "card",
+        "label": "Card colour",
+        "type": "color",
+        "default": "#f2f2f2"
+      },
+      {
+        "key": "cardInk",
+        "label": "Card text colour",
+        "type": "color",
+        "default": "#111111"
+      },
+      {
+        "key": "ink",
+        "label": "Handle colour",
+        "type": "color",
+        "default": "#ffffff"
+      }
+    ],
+    "html": "<div class=\"fc\"><div class=\"fc-pile\"><div class=\"fc-card fc-c3\"><div class=\"fc-pic\">{{image:photo3|placeholder}}</div></div><div class=\"fc-card fc-c2\"><div class=\"fc-pic\">{{image:photo2|placeholder}}</div></div><div class=\"fc-card fc-c1\"><div class=\"fc-pic\">{{image:photo1|placeholder}}</div></div></div><div class=\"fc-handle\">{{brands:brand}}<span>{{handle}}</span></div></div>",
+    "css": ".fc{display:inline-flex;flex-direction:column;align-items:center;padding:30px 150px 0}\n.fc-pile{position:relative;width:250px;height:210px}\n.fc-card{position:absolute;left:0;top:0;width:250px;height:210px;padding:10px;background:var(--card);border-radius:14px;box-shadow:0 8px 22px rgba(0,0,0,.3)}\n.fc-c1{transform:rotate(-3deg)}.fc-c2{transform:rotate(5deg)}.fc-c3{transform:rotate(10deg)}\n.fc-pic{width:100%;height:100%;border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center}\n.fc-pic .pkg-img{width:100%;height:100%;max-width:none;max-height:none;object-fit:cover}\n.fc-pic .pkg-fallback{font:900 38px/.95 Roboto,Arial,sans-serif;color:var(--cardInk);text-align:center;text-transform:uppercase}\n.fc-handle{display:inline-flex;align-items:center;gap:10px;margin-top:22px;color:var(--ink);font:700 32px/1 Roboto,Arial,sans-serif;white-space:nowrap;text-shadow:0 2px 8px rgba(0,0,0,.45)}\n.fc-handle .ic{width:34px;height:34px;color:var(--ink)}",
+    "animation": {
+      "in": [
+        {
+          "sel": ".fc-c1",
+          "from": {
+            "x": 560,
+            "rotation": 28,
+            "opacity": 0
+          },
+          "to": {
+            "x": 0,
+            "rotation": -3,
+            "opacity": 1
+          },
+          "d": 0.65,
+          "e": "back.out(1.2)",
+          "at": 0
+        },
+        {
+          "sel": ".fc-c2",
+          "from": {
+            "x": 560,
+            "rotation": 34,
+            "opacity": 0
+          },
+          "to": {
+            "x": 0,
+            "rotation": 5,
+            "opacity": 1
+          },
+          "d": 0.65,
+          "e": "back.out(1.2)",
+          "at": 0.18
+        },
+        {
+          "sel": ".fc-c3",
+          "from": {
+            "x": 560,
+            "rotation": 40,
+            "opacity": 0
+          },
+          "to": {
+            "x": 0,
+            "rotation": 10,
+            "opacity": 1
+          },
+          "d": 0.65,
+          "e": "back.out(1.2)",
+          "at": 0.34
+        },
+        {
+          "sel": ".fc-handle",
+          "from": {
+            "y": 30,
+            "opacity": 0
+          },
+          "to": {
+            "y": 0,
+            "opacity": 1
+          },
+          "d": 0.5,
+          "e": "power3.out",
+          "at": 0.75
+        }
+      ],
+      "out": [
+        {
+          "sel": ".fc-handle",
+          "to": {
+            "y": 30,
+            "opacity": 0
+          },
+          "d": 0.3,
+          "e": "power2.in",
+          "at": 0
+        },
+        {
+          "sel": ".fc-card",
+          "to": {
+            "y": 320,
+            "rotation": 18,
+            "opacity": 0
+          },
+          "d": 0.5,
+          "e": "power2.in",
+          "s": 0.08,
+          "at": 0.1
+        }
+      ],
+      "ambient": [
+        {
+          "sel": ".fc-c1",
+          "to": {
+            "x": -135,
+            "rotation": -7
+          },
+          "d": 0.55,
+          "e": "power2.inOut",
+          "yoyo": true,
+          "repeat": -1,
+          "repeatDelay": 1.6
+        },
+        {
+          "sel": ".fc-c2",
+          "to": {
+            "x": 120,
+            "rotation": 4
+          },
+          "d": 0.55,
+          "e": "power2.inOut",
+          "yoyo": true,
+          "repeat": -1,
+          "repeatDelay": 1.6
+        }
+      ]
+    }
+  },
+  {
+    "format": "mce-graphic@1",
+    "id": "typewriter-title",
+    "version": 1,
+    "name": "Typewriter Title",
+    "category": "announcements",
+    "tags": [
+      "Title",
+      "Typewriter",
+      "Announcement"
+    ],
+    "addedAt": "2026-11-05",
+    "description": "A title types itself out letter by letter behind a blinking cursor, then deletes itself when you take it off",
+    "color": "#ffffff",
+    "hold": 6,
+    "placement": {
+      "x": 120,
+      "y": 120,
+      "scale": 1
+    },
+    "fields": [
+      {
+        "key": "text",
+        "label": "Title (press Enter or type | for a new line)",
+        "type": "text",
+        "default": "Your title goes here",
+        "multiline": true
+      },
+      {
+        "key": "size",
+        "label": "Text size",
+        "type": "select",
+        "default": "m",
+        "options": [
+          {
+            "value": "s",
+            "label": "Small"
+          },
+          {
+            "value": "m",
+            "label": "Medium"
+          },
+          {
+            "value": "l",
+            "label": "Large"
+          }
+        ]
+      },
+      {
+        "key": "ink",
+        "label": "Text colour",
+        "type": "color",
+        "default": "#ffffff"
+      },
+      {
+        "key": "cursor",
+        "label": "Cursor colour",
+        "type": "color",
+        "default": "#ffffff"
+      }
+    ],
+    "html": "<div class=\"tw tw-sz-{{size}}\"><span class=\"tw-text\">{{text|chars}}</span><span class=\"tw-cur\"></span></div>",
+    "css": ".tw{display:inline-block;font:700 56px/1.2 Roboto,Arial,sans-serif;color:var(--ink);text-shadow:0 2px 10px rgba(0,0,0,.45);white-space:nowrap;padding:8px 4px}\n.tw-sz-s{font-size:40px}.tw-sz-l{font-size:78px}\n.tw-text{font-size:0}\n.tw-text .w{font-size:var(--tw-fs,56px)}\n.tw-sz-s .tw-text .w{--tw-fs:40px}.tw-sz-l .tw-text .w{--tw-fs:78px}\n.tw-text br{font-size:var(--tw-fs,56px)}\n.tw-text .w + .w .ch:first-child{margin-left:.26em}\n.tw-cur{display:inline-block;width:.5em;height:1em;margin-left:.08em;vertical-align:-.12em;background:var(--cursor);animation:mceTwBlink 1s steps(1,end) infinite}\n@keyframes mceTwBlink{0%{opacity:1}50%{opacity:0}100%{opacity:1}}",
+    "animation": {
+      "in": [
+        {
+          "sel": ".tw-cur",
+          "from": {
+            "opacity": 0
+          },
+          "to": {
+            "opacity": 1
+          },
+          "d": 0.01,
+          "at": 0
+        },
+        {
+          "sel": ".tw-text .ch",
+          "from": {
+            "display": "none"
+          },
+          "to": {
+            "display": "inline"
+          },
+          "d": 0.01,
+          "e": "none",
+          "s": 0.075,
+          "sa": 2.4,
+          "at": 0.35
+        }
+      ],
+      "out": [
+        {
+          "sel": ".tw-text .ch",
+          "to": {
+            "display": "none"
+          },
+          "d": 0.01,
+          "e": "none",
+          "s": 0.035,
+          "sa": 1.1,
+          "fromEnd": true,
+          "at": 0
+        },
+        {
+          "sel": ".tw-cur",
+          "to": {
+            "opacity": 0
+          },
+          "d": 0.01,
+          "at": 1.25
+        }
+      ]
+    }
+  },
+  {
+    "format": "mce-graphic@1",
+    "id": "corner-logo-turn",
+    "version": 1,
+    "name": "Corner Logo · Turning Badge",
+    "category": "branding",
+    "tags": [
+      "Logo",
+      "Corner",
+      "Watermark",
+      "Rotate",
+      "Spin"
+    ],
+    "addedAt": "2026-11-05",
+    "description": "Your logo on a small card in a corner of the screen. It turns like a sign and rests between turns, keeps turning, rotates round, or stays still",
+    "color": "#1e3a8a",
+    "hold": 0,
+    "placement": {
+      "x": 0,
+      "y": 0,
+      "scale": 1
+    },
+    "fields": [
+      {
+        "key": "logo",
+        "label": "Logo",
+        "type": "image",
+        "default": ""
+      },
+      {
+        "key": "text",
+        "label": "Logo text (shown when no logo is picked; type | for a new line)",
+        "type": "text",
+        "default": "LOGO"
+      },
+      {
+        "key": "motion",
+        "label": "Motion",
+        "type": "select",
+        "default": "turn",
+        "options": [
+          {
+            "value": "turn",
+            "label": "Turn and rest (like a sign)"
+          },
+          {
+            "value": "spin",
+            "label": "Keep turning (3D)"
+          },
+          {
+            "value": "rotate",
+            "label": "Rotate round (flat)"
+          },
+          {
+            "value": "still",
+            "label": "Stay still"
+          }
+        ]
+      },
+      {
+        "key": "speed",
+        "label": "Turn speed",
+        "type": "select",
+        "default": "normal",
+        "options": [
+          {
+            "value": "slow",
+            "label": "Slow"
+          },
+          {
+            "value": "normal",
+            "label": "Normal"
+          },
+          {
+            "value": "fast",
+            "label": "Fast"
+          }
+        ]
+      },
+      {
+        "key": "corner",
+        "label": "Corner",
+        "type": "select",
+        "default": "tr",
+        "options": [
+          {
+            "value": "tr",
+            "label": "Top right"
+          },
+          {
+            "value": "tl",
+            "label": "Top left"
+          },
+          {
+            "value": "br",
+            "label": "Bottom right"
+          },
+          {
+            "value": "bl",
+            "label": "Bottom left"
+          }
+        ]
+      },
+      {
+        "key": "size",
+        "label": "Size",
+        "type": "select",
+        "default": "m",
+        "options": [
+          {
+            "value": "s",
+            "label": "Small"
+          },
+          {
+            "value": "m",
+            "label": "Medium"
+          },
+          {
+            "value": "l",
+            "label": "Large"
+          }
+        ]
+      },
+      {
+        "key": "shape",
+        "label": "Card",
+        "type": "select",
+        "default": "square",
+        "options": [
+          {
+            "value": "square",
+            "label": "Square card"
+          },
+          {
+            "value": "circle",
+            "label": "Round card"
+          },
+          {
+            "value": "none",
+            "label": "No card (logo only)"
+          }
+        ]
+      },
+      {
+        "key": "card",
+        "label": "Card colour",
+        "type": "color",
+        "default": "#ffffff"
+      },
+      {
+        "key": "ink",
+        "label": "Logo text colour",
+        "type": "color",
+        "default": "#1e3a8a"
+      }
+    ],
+    "html": "<div class=\"cl pkg-fullscreen cl-c-{{corner}} cl-s-{{size}} cl-m-{{motion}} cl-v-{{speed}} cl-sh-{{shape}}\"><div class=\"cl-pos\"><div class=\"cl-persp\"><div class=\"cl-card\"><div class=\"cl-face cl-front\"><div class=\"cl-in\">{{image:logo|text}}</div></div><div class=\"cl-face cl-back\"><div class=\"cl-in\">{{image:logo|text}}</div></div></div></div></div></div>",
+    "css": ".cl{position:relative;width:1920px;height:1080px;--sz:132px}\n.cl-s-s{--sz:96px}\n.cl-s-l{--sz:180px}\n.cl-pos{position:absolute}\n.cl-c-tr .cl-pos{top:44px;right:52px}\n.cl-c-tl .cl-pos{top:44px;left:52px}\n.cl-c-br .cl-pos{bottom:52px;right:52px}\n.cl-c-bl .cl-pos{bottom:52px;left:52px}\n.cl-persp{width:var(--sz);height:calc(var(--sz) * 1.08);perspective:700px}\n.cl-card{position:relative;width:100%;height:100%;transform-style:preserve-3d}\n.cl-face{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:var(--card);border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.28);backface-visibility:hidden;-webkit-backface-visibility:hidden}\n.cl-back{transform:rotateY(180deg)}\n.cl-sh-circle .cl-persp{height:var(--sz)}\n.cl-sh-circle .cl-face{border-radius:50%}\n.cl-sh-none .cl-face{background:transparent;box-shadow:none}\n.cl-in{width:84%;height:84%;display:flex;align-items:center;justify-content:center}\n.cl-sh-circle .cl-in{width:76%;height:76%}\n.cl-sh-none .cl-in{width:100%;height:100%}\n.cl-in .pkg-img{width:100%;height:100%;object-fit:contain}\n.cl-in .pkg-fallback{display:block;font:900 calc(var(--sz) * .22)/1 Montserrat,\"MCE Archivo\",Arial,sans-serif;color:var(--ink);text-align:center;text-transform:uppercase;white-space:nowrap}",
+    "animation": {
+      "in": [
+        {
+          "sel": ".cl-card",
+          "from": {
+            "rotationY": -100,
+            "scale": 0.6,
+            "opacity": 0
+          },
+          "to": {
+            "rotationY": 0,
+            "scale": 1,
+            "opacity": 1
+          },
+          "d": 0.85,
+          "e": "back.out(1.4)",
+          "at": 0
+        }
+      ],
+      "out": [
+        {
+          "sel": ".cl-card",
+          "to": {
+            "rotationY": 100,
+            "scale": 0.6,
+            "opacity": 0
+          },
+          "d": 0.45,
+          "e": "power2.in",
+          "at": 0
+        }
+      ],
+      "ambient": [
+        {
+          "sel": ".cl-m-turn.cl-v-slow .cl-card",
+          "to": {
+            "rotationY": 360
+          },
+          "d": 2.2,
+          "e": "power2.inOut",
+          "repeat": -1,
+          "repeatDelay": 3
+        },
+        {
+          "sel": ".cl-m-turn.cl-v-normal .cl-card",
+          "to": {
+            "rotationY": 360
+          },
+          "d": 1.6,
+          "e": "power2.inOut",
+          "repeat": -1,
+          "repeatDelay": 2
+        },
+        {
+          "sel": ".cl-m-turn.cl-v-fast .cl-card",
+          "to": {
+            "rotationY": 360
+          },
+          "d": 1.1,
+          "e": "power2.inOut",
+          "repeat": -1,
+          "repeatDelay": 1.2
+        },
+        {
+          "sel": ".cl-m-spin.cl-v-slow .cl-card",
+          "to": {
+            "rotationY": 360
+          },
+          "d": 6,
+          "e": "none",
+          "repeat": -1
+        },
+        {
+          "sel": ".cl-m-spin.cl-v-normal .cl-card",
+          "to": {
+            "rotationY": 360
+          },
+          "d": 4,
+          "e": "none",
+          "repeat": -1
+        },
+        {
+          "sel": ".cl-m-spin.cl-v-fast .cl-card",
+          "to": {
+            "rotationY": 360
+          },
+          "d": 2.4,
+          "e": "none",
+          "repeat": -1
+        },
+        {
+          "sel": ".cl-m-rotate.cl-v-slow .cl-card",
+          "to": {
+            "rotation": 360
+          },
+          "d": 12,
+          "e": "none",
+          "repeat": -1
+        },
+        {
+          "sel": ".cl-m-rotate.cl-v-normal .cl-card",
+          "to": {
+            "rotation": 360
+          },
+          "d": 8,
+          "e": "none",
+          "repeat": -1
+        },
+        {
+          "sel": ".cl-m-rotate.cl-v-fast .cl-card",
+          "to": {
+            "rotation": 360
+          },
+          "d": 4,
+          "e": "none",
+          "repeat": -1
+        }
+      ]
+    }
+  },
+  {
+    "format": "mce-graphic@1",
+    "id": "border-text-loop",
+    "version": 1,
+    "name": "Border Text Loop",
+    "category": "announcements",
+    "tags": [
+      "Starting soon",
+      "Welcome",
+      "Be right back",
+      "Full screen"
+    ],
+    "addedAt": "2026-11-05",
+    "description": "Your words run all the way round the edge of the screen in a loop, with a moving dashed frame inside. Good for Starting soon, Welcome or Be right back",
+    "color": "#ffffff",
+    "hold": 0,
+    "placement": {
+      "x": 0,
+      "y": 0,
+      "scale": 1
+    },
+    "fields": [
+      {
+        "key": "text",
+        "label": "Words",
+        "type": "text",
+        "default": "STARTING SOON!"
+      },
+      {
+        "key": "repeats",
+        "label": "How many times the words repeat",
+        "type": "select",
+        "default": "16",
+        "options": [
+          {
+            "value": "8",
+            "label": "8 times"
+          },
+          {
+            "value": "12",
+            "label": "12 times"
+          },
+          {
+            "value": "16",
+            "label": "16 times (fits about 15 letters)"
+          },
+          {
+            "value": "20",
+            "label": "20 times"
+          }
+        ]
+      },
+      {
+        "key": "speed",
+        "label": "Speed",
+        "type": "select",
+        "default": "30s",
+        "options": [
+          {
+            "value": "50s",
+            "label": "Slow"
+          },
+          {
+            "value": "30s",
+            "label": "Normal"
+          },
+          {
+            "value": "16s",
+            "label": "Fast"
+          }
+        ]
+      },
+      {
+        "key": "frame",
+        "label": "Inner frame",
+        "type": "select",
+        "default": "dashed",
+        "options": [
+          {
+            "value": "dashed",
+            "label": "Moving dashes"
+          },
+          {
+            "value": "solid",
+            "label": "Solid line"
+          },
+          {
+            "value": "none",
+            "label": "No frame"
+          }
+        ]
+      },
+      {
+        "key": "ink",
+        "label": "Colour",
+        "type": "color",
+        "default": "#ffffff"
+      }
+    ],
+    "html": "<div class=\"bl pkg-fullscreen bl-r{{repeats}} bl-f-{{frame}}\"><svg class=\"bl-svg\" viewBox=\"0 0 1920 1080\" width=\"1920\" height=\"1080\" aria-hidden=\"true\"><defs><path id=\"bl-path\" d=\"M110 66H1810A44 44 0 0 1 1854 110V970A44 44 0 0 1 1810 1014H110A44 44 0 0 1 66 970V110A44 44 0 0 1 110 66Z\"/></defs><path class=\"bl-frame\" d=\"M122 88H1798A34 34 0 0 1 1832 122V958A34 34 0 0 1 1798 992H122A34 34 0 0 1 88 958V122A34 34 0 0 1 122 88Z\"/><g class=\"bl-words\"><text class=\"bl-t bl-n8\"><textPath href=\"#bl-path\" startOffset=\"0\" textLength=\"5396.5\" lengthAdjust=\"spacing\">{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan><animate attributeName=\"startOffset\" from=\"0\" to=\"5396.5\" dur=\"{{speed}}\" repeatCount=\"indefinite\"/></textPath></text><text class=\"bl-t bl-n8\"><textPath href=\"#bl-path\" startOffset=\"-5396.5\" textLength=\"5396.5\" lengthAdjust=\"spacing\">{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan><animate attributeName=\"startOffset\" from=\"-5396.5\" to=\"0\" dur=\"{{speed}}\" repeatCount=\"indefinite\"/></textPath></text><text class=\"bl-t bl-n12\"><textPath href=\"#bl-path\" startOffset=\"0\" textLength=\"5396.5\" lengthAdjust=\"spacing\">{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan><animate attributeName=\"startOffset\" from=\"0\" to=\"5396.5\" dur=\"{{speed}}\" repeatCount=\"indefinite\"/></textPath></text><text class=\"bl-t bl-n12\"><textPath href=\"#bl-path\" startOffset=\"-5396.5\" textLength=\"5396.5\" lengthAdjust=\"spacing\">{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan><animate attributeName=\"startOffset\" from=\"-5396.5\" to=\"0\" dur=\"{{speed}}\" repeatCount=\"indefinite\"/></textPath></text><text class=\"bl-t bl-n16\"><textPath href=\"#bl-path\" startOffset=\"0\" textLength=\"5396.5\" lengthAdjust=\"spacing\">{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan><animate attributeName=\"startOffset\" from=\"0\" to=\"5396.5\" dur=\"{{speed}}\" repeatCount=\"indefinite\"/></textPath></text><text class=\"bl-t bl-n16\"><textPath href=\"#bl-path\" startOffset=\"-5396.5\" textLength=\"5396.5\" lengthAdjust=\"spacing\">{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan><animate attributeName=\"startOffset\" from=\"-5396.5\" to=\"0\" dur=\"{{speed}}\" repeatCount=\"indefinite\"/></textPath></text><text class=\"bl-t bl-n20\"><textPath href=\"#bl-path\" startOffset=\"0\" textLength=\"5396.5\" lengthAdjust=\"spacing\">{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan><animate attributeName=\"startOffset\" from=\"0\" to=\"5396.5\" dur=\"{{speed}}\" repeatCount=\"indefinite\"/></textPath></text><text class=\"bl-t bl-n20\"><textPath href=\"#bl-path\" startOffset=\"-5396.5\" textLength=\"5396.5\" lengthAdjust=\"spacing\">{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan>{{text}}<tspan class=\"bl-dot\"> • </tspan><animate attributeName=\"startOffset\" from=\"-5396.5\" to=\"0\" dur=\"{{speed}}\" repeatCount=\"indefinite\"/></textPath></text></g></svg></div>",
+    "css": ".bl{position:relative;width:1920px;height:1080px}\n.bl-svg{position:absolute;inset:0;overflow:visible}\n.bl-t{display:none;fill:var(--ink);font:700 34px Roboto,Arial,sans-serif;letter-spacing:.02em;text-transform:uppercase;white-space:pre}\n.bl-r8 .bl-n8{display:inline}\n.bl-r12 .bl-n12{display:inline}\n.bl-r16 .bl-n16{display:inline}\n.bl-r20 .bl-n20{display:inline}\n.bl-dot{font-weight:900}\n.bl-frame{fill:none;stroke:var(--ink);stroke-width:6;stroke-linecap:round}\n.bl-f-dashed .bl-frame{stroke-dasharray:420 120;animation:mceBlDash 12s linear infinite}\n.bl-f-none .bl-frame{display:none}\n@keyframes mceBlDash{to{stroke-dashoffset:-1080}}",
+    "animation": {
+      "in": [
+        {
+          "sel": ".bl-frame",
+          "from": {
+            "opacity": 0,
+            "scale": 1.03,
+            "transformOrigin": "50% 50%"
+          },
+          "to": {
+            "opacity": 1,
+            "scale": 1
+          },
+          "d": 0.7,
+          "e": "power3.out",
+          "at": 0
+        },
+        [
+          ".bl-words",
+          "fade",
+          0.15,
+          {
+            "d": 0.6
+          }
+        ]
+      ]
+    }
+  },
+  {
+    "format": "mce-graphic@1",
+    "id": "social-icon-rotator",
+    "version": 1,
+    "name": "Social Icon Rotator",
+    "category": "social",
+    "tags": [
+      "Social",
+      "Icons",
+      "Handles",
+      "Follow"
+    ],
+    "addedAt": "2026-11-05",
+    "description": "A neat row of social icons. One at a time, each icon opens to show its handle, then closes for the next, round and round",
+    "color": "#141414",
+    "hold": 0,
+    "placement": {
+      "x": 120,
+      "y": 90,
+      "scale": 1
+    },
+    "fields": [
+      {
+        "key": "count",
+        "label": "How many networks",
+        "type": "select",
+        "default": "5",
+        "options": [
+          {
+            "value": "3",
+            "label": "3"
+          },
+          {
+            "value": "4",
+            "label": "4"
+          },
+          {
+            "value": "5",
+            "label": "5"
+          },
+          {
+            "value": "6",
+            "label": "6"
+          }
+        ]
+      },
+      {
+        "key": "net1",
+        "label": "Network 1",
+        "type": "select",
+        "options": "brands",
+        "default": "instagram"
+      },
+      {
+        "key": "h1",
+        "label": "Handle 1",
+        "type": "text",
+        "default": "@yourchurch"
+      },
+      {
+        "key": "net2",
+        "label": "Network 2",
+        "type": "select",
+        "options": "brands",
+        "default": "tiktok"
+      },
+      {
+        "key": "h2",
+        "label": "Handle 2",
+        "type": "text",
+        "default": "@yourchurch"
+      },
+      {
+        "key": "net3",
+        "label": "Network 3",
+        "type": "select",
+        "options": "brands",
+        "default": "x"
+      },
+      {
+        "key": "h3",
+        "label": "Handle 3",
+        "type": "text",
+        "default": "@yourchurch"
+      },
+      {
+        "key": "net4",
+        "label": "Network 4",
+        "type": "select",
+        "options": "brands",
+        "default": "youtube"
+      },
+      {
+        "key": "h4",
+        "label": "Handle 4",
+        "type": "text",
+        "default": "@yourchurch"
+      },
+      {
+        "key": "net5",
+        "label": "Network 5",
+        "type": "select",
+        "options": "brands",
+        "default": "facebook"
+      },
+      {
+        "key": "h5",
+        "label": "Handle 5",
+        "type": "text",
+        "default": "@yourchurch"
+      },
+      {
+        "key": "net6",
+        "label": "Network 6",
+        "type": "select",
+        "options": "brands",
+        "default": "whatsapp"
+      },
+      {
+        "key": "h6",
+        "label": "Handle 6",
+        "type": "text",
+        "default": "+000 000 0000"
+      },
+      {
+        "key": "iconColor",
+        "label": "Icon colours",
+        "type": "select",
+        "default": "white",
+        "options": [
+          {
+            "value": "white",
+            "label": "Same as the text"
+          },
+          {
+            "value": "brand",
+            "label": "Each network's own colour"
+          }
+        ]
+      },
+      {
+        "key": "tile",
+        "label": "Tile colour",
+        "type": "color",
+        "default": "#141414"
+      },
+      {
+        "key": "ink",
+        "label": "Text colour",
+        "type": "color",
+        "default": "#ffffff"
+      }
+    ],
+    "html": "<div class=\"rt rt-n{{count}} rt-c-{{iconColor}}\"><div class=\"rt-tile\">{{brands:net1}}<span class=\"rt-h\"><span>{{h1}}</span></span></div><div class=\"rt-tile\">{{brands:net2}}<span class=\"rt-h\"><span>{{h2}}</span></span></div><div class=\"rt-tile\">{{brands:net3}}<span class=\"rt-h\"><span>{{h3}}</span></span></div><div class=\"rt-tile\">{{brands:net4}}<span class=\"rt-h\"><span>{{h4}}</span></span></div><div class=\"rt-tile\">{{brands:net5}}<span class=\"rt-h\"><span>{{h5}}</span></span></div><div class=\"rt-tile\">{{brands:net6}}<span class=\"rt-h\"><span>{{h6}}</span></span></div></div>",
+    "css": ".rt{display:inline-flex;align-items:center;gap:12px}\n.rt-tile{display:none;align-items:center;height:60px;padding:0 15px;border-radius:10px;background:var(--tile);color:var(--ink)}\n.rt-tile .ic{width:30px;height:30px}\n.rt-c-brand .rt-tile .bi{color:var(--bc)}\n.rt-h{display:block;overflow:hidden;max-width:0;opacity:0;white-space:nowrap;font:700 28px/1 Roboto,Arial,sans-serif;color:var(--ink)}\n.rt-h span{display:block;padding-right:4px}\n.rt-n3 .rt-tile:nth-child(-n+3){display:flex}\n.rt-n3 .rt-tile .rt-h{animation:mceRt3 8.4s ease-in-out infinite}\n.rt-n4 .rt-tile:nth-child(-n+4){display:flex}\n.rt-n4 .rt-tile .rt-h{animation:mceRt4 11.2s ease-in-out infinite}\n.rt-n5 .rt-tile:nth-child(-n+5){display:flex}\n.rt-n5 .rt-tile .rt-h{animation:mceRt5 14s ease-in-out infinite}\n.rt-n6 .rt-tile:nth-child(-n+6){display:flex}\n.rt-n6 .rt-tile .rt-h{animation:mceRt6 16.8s ease-in-out infinite}\n.rt-tile:nth-child(1) .rt-h{animation-delay:1s}\n.rt-tile:nth-child(2) .rt-h{animation-delay:3.8s}\n.rt-tile:nth-child(3) .rt-h{animation-delay:6.6s}\n.rt-tile:nth-child(4) .rt-h{animation-delay:9.4s}\n.rt-tile:nth-child(5) .rt-h{animation-delay:12.2s}\n.rt-tile:nth-child(6) .rt-h{animation-delay:15s}\n@keyframes mceRt3{0%{max-width:0;opacity:0;margin-left:0}5.36%{max-width:360px;opacity:1;margin-left:10px}27.98%{max-width:360px;opacity:1;margin-left:10px}33.33%{max-width:0;opacity:0;margin-left:0}100%{max-width:0;opacity:0;margin-left:0}}\n@keyframes mceRt4{0%{max-width:0;opacity:0;margin-left:0}4.02%{max-width:360px;opacity:1;margin-left:10px}20.98%{max-width:360px;opacity:1;margin-left:10px}25%{max-width:0;opacity:0;margin-left:0}100%{max-width:0;opacity:0;margin-left:0}}\n@keyframes mceRt5{0%{max-width:0;opacity:0;margin-left:0}3.21%{max-width:360px;opacity:1;margin-left:10px}16.79%{max-width:360px;opacity:1;margin-left:10px}20%{max-width:0;opacity:0;margin-left:0}100%{max-width:0;opacity:0;margin-left:0}}\n@keyframes mceRt6{0%{max-width:0;opacity:0;margin-left:0}2.68%{max-width:360px;opacity:1;margin-left:10px}13.99%{max-width:360px;opacity:1;margin-left:10px}16.67%{max-width:0;opacity:0;margin-left:0}100%{max-width:0;opacity:0;margin-left:0}}",
+    "animation": {
+      "in": [
+        [
+          ".rt-tile",
+          "pop",
+          0,
+          {
+            "d": 0.45,
+            "s": 0.08
+          }
+        ]
+      ]
+    }
+  },
+  {
+    "format": "mce-graphic@1",
+    "version": 1,
+    "category": "speaker",
+    "tags": [
+      "Speaker",
+      "Name",
+      "Title",
+      "Stripe"
+    ],
+    "addedAt": "2026-11-05",
+    "color": "#0b1cf5",
+    "hold": 8,
+    "placement": {
+      "x": 120,
+      "y": 100,
+      "scale": 1
+    },
+    "id": "speaker-stripe-white-plate",
+    "name": "Speaker · Stripe White Plate",
+    "description": "Name types onto a white plate that grows from a thin bar; underneath, a line splits into stripes, fills blue and the title types in",
+    "fields": [
+      {
+        "key": "name",
+        "label": "Name (type | for a second line)",
+        "type": "text",
+        "default": "Speaker Name"
+      },
+      {
+        "key": "title",
+        "label": "Title / role",
+        "type": "text",
+        "default": "Title, role or a short line about the speaker"
+      },
+      {
+        "key": "accent",
+        "label": "Box colour",
+        "type": "color",
+        "default": "#0b1cf5"
+      },
+      {
+        "key": "plate",
+        "label": "Name plate colour",
+        "type": "color",
+        "default": "#ffffff"
+      },
+      {
+        "key": "nameInk",
+        "label": "Name colour",
+        "type": "color",
+        "default": "#0a0a0a"
+      },
+      {
+        "key": "titleInk",
+        "label": "Title colour",
+        "type": "color",
+        "default": "#ffffff"
+      },
+      {
+        "key": "stripe",
+        "label": "Stripe colour",
+        "type": "color",
+        "default": "#ffffff"
+      }
+    ],
+    "html": "<div class=\"sa\"><div class=\"sa-name\"><i class=\"sa-plate\"></i><span class=\"sa-t\">{{name|chars}}</span></div>{{#title}}<div class=\"sa-sub\"><i class=\"bx\"><b class=\"bx-fill\"></b><b class=\"bx-s bx-s1\"></b><b class=\"bx-s bx-s2\"></b><b class=\"bx-line\"></b></i><span class=\"sa-st\">{{title|chars}}</span></div>{{/title}}</div>",
+    "css": ".sa{display:inline-flex;flex-direction:column;align-items:flex-start}\n.sa-name{position:relative;padding:6px 16px 3px;font:700 66px/1 Roboto,\"MCE Archivo\",Arial,sans-serif;color:var(--nameInk);text-transform:uppercase;letter-spacing:-.01em;white-space:nowrap}\n.sa-plate{position:absolute;inset:0;display:block;background:var(--plate)}\n.sa-t{position:relative}\n.sa-sub{position:relative;margin:10px 0 0 14px;padding:10px 18px;max-width:640px;font:700 19px/1.3 Roboto,\"MCE Archivo\",Arial,sans-serif;color:var(--titleInk);text-transform:uppercase;white-space:normal}\n.sa-st{position:relative}\n.bx{position:absolute;inset:0;display:block}\n.bx b{position:absolute;left:0;right:0;display:block}\n.bx-fill{top:0;bottom:0;background:var(--accent)}\n.bx-s{height:32%;background:var(--stripe)}\n.bx-s1{top:0}\n.bx-s2{bottom:0}\n.bx-line{top:50%;height:3px;margin-top:-1.5px;background:var(--stripe)}",
+    "animation": {
+      "in": [
+        {
+          "sel": ".sa-plate",
+          "from": {
+            "scaleX": 0.012,
+            "scaleY": 0,
+            "transformOrigin": "0% 50%"
+          },
+          "to": {
+            "scaleY": 1
+          },
+          "d": 0.24,
+          "e": "power2.out",
+          "at": 0
+        },
+        {
+          "sel": ".sa-plate",
+          "to": {
+            "scaleX": 1
+          },
+          "d": 0.5,
+          "e": "power3.inOut",
+          "at": 0.24
+        },
+        {
+          "sel": ".sa-t .ch",
+          "from": {
+            "opacity": 0
+          },
+          "to": {
+            "opacity": 1
+          },
+          "d": 0.01,
+          "s": 0.035,
+          "sa": 0.5,
+          "e": "none",
+          "at": 0.3
+        },
+        {
+          "sel": ".sa-sub .bx-line",
+          "from": {
+            "scaleX": 0,
+            "opacity": 1,
+            "transformOrigin": "0% 50%"
+          },
+          "to": {
+            "scaleX": 1
+          },
+          "d": 0.4,
+          "e": "power3.out",
+          "at": 0.35
+        },
+        {
+          "sel": ".sa-sub .bx-s",
+          "from": {
+            "scaleY": 0,
+            "transformOrigin": "50% 50%"
+          },
+          "to": {
+            "scaleY": 1
+          },
+          "d": 0.18,
+          "e": "power2.out",
+          "s": 0,
+          "at": 0.71
+        },
+        {
+          "sel": ".sa-sub .bx-fill",
+          "from": {
+            "scaleY": 0,
+            "transformOrigin": "50% 50%"
+          },
+          "to": {
+            "scaleY": 1
+          },
+          "d": 0.24,
+          "e": "power2.out",
+          "at": 0.79
+        },
+        {
+          "sel": ".sa-sub .bx-line",
+          "to": {
+            "opacity": 0
+          },
+          "d": 0.01,
+          "at": 0.79
+        },
+        {
+          "sel": ".sa-sub .bx-s",
+          "to": {
+            "scaleY": 0
+          },
+          "d": 0.2,
+          "e": "power2.in",
+          "s": 0,
+          "at": 0.99
+        },
+        {
+          "sel": ".sa-st .ch",
+          "from": {
+            "opacity": 0
+          },
+          "to": {
+            "opacity": 1
+          },
+          "d": 0.01,
+          "s": 0.035,
+          "sa": 0.7,
+          "e": "none",
+          "at": 1.05
+        }
+      ],
+      "out": [
+        {
+          "sel": ".sa-st .ch",
+          "to": {
+            "opacity": 0
+          },
+          "d": 0.01,
+          "s": 0.03,
+          "sa": 0.35,
+          "e": "none",
+          "fromEnd": true,
+          "at": 0
+        },
+        {
+          "sel": ".sa-sub .bx-s",
+          "to": {
+            "scaleY": 1
+          },
+          "d": 0.16,
+          "e": "power2.out",
+          "s": 0,
+          "at": 0.25
+        },
+        {
+          "sel": ".sa-sub .bx-fill",
+          "to": {
+            "scaleY": 0
+          },
+          "d": 0.2,
+          "e": "power2.in",
+          "at": 0.37
+        },
+        {
+          "sel": ".sa-sub .bx-line",
+          "to": {
+            "opacity": 1
+          },
+          "d": 0.01,
+          "at": 0.45
+        },
+        {
+          "sel": ".sa-sub .bx-s",
+          "to": {
+            "scaleY": 0
+          },
+          "d": 0.16,
+          "e": "power2.in",
+          "s": 0,
+          "at": 0.47
+        },
+        {
+          "sel": ".sa-sub .bx-line",
+          "to": {
+            "scaleX": 0,
+            "transformOrigin": "100% 50%"
+          },
+          "d": 0.35,
+          "e": "power3.in",
+          "at": 0.5900000000000001
+        },
+        {
+          "sel": ".sa-t .ch",
+          "to": {
+            "opacity": 0
+          },
+          "d": 0.01,
+          "s": 0.03,
+          "sa": 0.45,
+          "e": "none",
+          "fromEnd": true,
+          "at": 0.1
+        },
+        {
+          "sel": ".sa-plate",
+          "to": {
+            "scaleX": 0.012
+          },
+          "d": 0.45,
+          "e": "power3.inOut",
+          "at": 0.45
+        },
+        {
+          "sel": ".sa-plate",
+          "to": {
+            "scaleY": 0
+          },
+          "d": 0.2,
+          "e": "power2.in",
+          "at": 0.9
+        }
+      ]
+    }
+  },
+  {
+    "format": "mce-graphic@1",
+    "version": 1,
+    "category": "speaker",
+    "tags": [
+      "Speaker",
+      "Name",
+      "Title",
+      "Stripe"
+    ],
+    "addedAt": "2026-11-05",
+    "color": "#0b1cf5",
+    "hold": 8,
+    "placement": {
+      "x": 120,
+      "y": 100,
+      "scale": 1
+    },
+    "id": "speaker-stripe-underline-box",
+    "name": "Speaker · Stripe Underline Box",
+    "description": "White name types in; a line draws under it, splits into stripes, fills blue and the title types into the box",
+    "fields": [
+      {
+        "key": "name",
+        "label": "Name (type | for a second line)",
+        "type": "text",
+        "default": "Speaker Name"
+      },
+      {
+        "key": "title",
+        "label": "Title / role",
+        "type": "text",
+        "default": "Title or role goes here"
+      },
+      {
+        "key": "accent",
+        "label": "Box colour",
+        "type": "color",
+        "default": "#0b1cf5"
+      },
+      {
+        "key": "nameInk",
+        "label": "Name colour",
+        "type": "color",
+        "default": "#ffffff"
+      },
+      {
+        "key": "titleInk",
+        "label": "Title colour",
+        "type": "color",
+        "default": "#ffffff"
+      },
+      {
+        "key": "stripe",
+        "label": "Stripe colour",
+        "type": "color",
+        "default": "#ffffff"
+      }
+    ],
+    "html": "<div class=\"sb\"><div class=\"sb-name\">{{name|chars}}</div>{{#title}}<div class=\"sb-sub\"><i class=\"bx\"><b class=\"bx-fill\"></b><b class=\"bx-s bx-s1\"></b><b class=\"bx-s bx-s2\"></b><b class=\"bx-line\"></b></i><span class=\"sb-st\">{{title|chars}}</span></div>{{/title}}</div>",
+    "css": ".sb{display:inline-flex;flex-direction:column;align-items:flex-start}\n.sb-name{font:700 66px/.98 Roboto,\"MCE Archivo\",Arial,sans-serif;color:var(--nameInk);text-transform:uppercase;letter-spacing:-.01em;white-space:nowrap;text-shadow:0 2px 10px rgba(0,0,0,.35)}\n.sb-sub{position:relative;margin-top:10px;padding:9px 16px;max-width:640px;font:700 21px/1.3 Roboto,\"MCE Archivo\",Arial,sans-serif;color:var(--titleInk);text-transform:uppercase;white-space:normal}\n.sb-st{position:relative}\n.bx{position:absolute;inset:0;display:block}\n.bx b{position:absolute;left:0;right:0;display:block}\n.bx-fill{top:0;bottom:0;background:var(--accent)}\n.bx-s{height:32%;background:var(--stripe)}\n.bx-s1{top:0}\n.bx-s2{bottom:0}\n.bx-line{top:50%;height:3px;margin-top:-1.5px;background:var(--stripe)}",
+    "animation": {
+      "in": [
+        {
+          "sel": ".sb-name .ch",
+          "from": {
+            "opacity": 0
+          },
+          "to": {
+            "opacity": 1
+          },
+          "d": 0.01,
+          "s": 0.035,
+          "sa": 0.55,
+          "e": "none",
+          "at": 0
+        },
+        {
+          "sel": ".sb-sub .bx-line",
+          "from": {
+            "scaleX": 0,
+            "opacity": 1,
+            "transformOrigin": "0% 50%"
+          },
+          "to": {
+            "scaleX": 1
+          },
+          "d": 0.4,
+          "e": "power3.out",
+          "at": 0.3
+        },
+        {
+          "sel": ".sb-sub .bx-s",
+          "from": {
+            "scaleY": 0,
+            "transformOrigin": "50% 50%"
+          },
+          "to": {
+            "scaleY": 1
+          },
+          "d": 0.18,
+          "e": "power2.out",
+          "s": 0,
+          "at": 0.6599999999999999
+        },
+        {
+          "sel": ".sb-sub .bx-fill",
+          "from": {
+            "scaleY": 0,
+            "transformOrigin": "50% 50%"
+          },
+          "to": {
+            "scaleY": 1
+          },
+          "d": 0.24,
+          "e": "power2.out",
+          "at": 0.74
+        },
+        {
+          "sel": ".sb-sub .bx-line",
+          "to": {
+            "opacity": 0
+          },
+          "d": 0.01,
+          "at": 0.74
+        },
+        {
+          "sel": ".sb-sub .bx-s",
+          "to": {
+            "scaleY": 0
+          },
+          "d": 0.2,
+          "e": "power2.in",
+          "s": 0,
+          "at": 0.94
+        },
+        {
+          "sel": ".sb-st .ch",
+          "from": {
+            "opacity": 0
+          },
+          "to": {
+            "opacity": 1
+          },
+          "d": 0.01,
+          "s": 0.035,
+          "sa": 0.7,
+          "e": "none",
+          "at": 1
+        }
+      ],
+      "out": [
+        {
+          "sel": ".sb-st .ch",
+          "to": {
+            "opacity": 0
+          },
+          "d": 0.01,
+          "s": 0.03,
+          "sa": 0.35,
+          "e": "none",
+          "fromEnd": true,
+          "at": 0
+        },
+        {
+          "sel": ".sb-sub .bx-s",
+          "to": {
+            "scaleY": 1
+          },
+          "d": 0.16,
+          "e": "power2.out",
+          "s": 0,
+          "at": 0.25
+        },
+        {
+          "sel": ".sb-sub .bx-fill",
+          "to": {
+            "scaleY": 0
+          },
+          "d": 0.2,
+          "e": "power2.in",
+          "at": 0.37
+        },
+        {
+          "sel": ".sb-sub .bx-line",
+          "to": {
+            "opacity": 1
+          },
+          "d": 0.01,
+          "at": 0.45
+        },
+        {
+          "sel": ".sb-sub .bx-s",
+          "to": {
+            "scaleY": 0
+          },
+          "d": 0.16,
+          "e": "power2.in",
+          "s": 0,
+          "at": 0.47
+        },
+        {
+          "sel": ".sb-sub .bx-line",
+          "to": {
+            "scaleX": 0,
+            "transformOrigin": "100% 50%"
+          },
+          "d": 0.35,
+          "e": "power3.in",
+          "at": 0.5900000000000001
+        },
+        {
+          "sel": ".sb-name .ch",
+          "to": {
+            "opacity": 0
+          },
+          "d": 0.01,
+          "s": 0.03,
+          "sa": 0.5,
+          "e": "none",
+          "fromEnd": true,
+          "at": 0.35
+        }
+      ]
+    }
+  },
+  {
+    "format": "mce-graphic@1",
+    "version": 1,
+    "category": "speaker",
+    "tags": [
+      "Speaker",
+      "Name",
+      "Title",
+      "Stripe"
+    ],
+    "addedAt": "2026-11-05",
+    "color": "#0b1cf5",
+    "hold": 8,
+    "placement": {
+      "x": 120,
+      "y": 100,
+      "scale": 1
+    },
+    "id": "speaker-stripe-blue-plate",
+    "name": "Speaker · Stripe Blue Plate",
+    "description": "A thin bar widens into a plate with a white edge running ahead of the blue; the name types onto it and the title types in below",
+    "fields": [
+      {
+        "key": "name",
+        "label": "Name (type | for a second line)",
+        "type": "text",
+        "default": "Speaker Name"
+      },
+      {
+        "key": "title",
+        "label": "Title / role",
+        "type": "text",
+        "default": "Title or role goes here"
+      },
+      {
+        "key": "size",
+        "label": "Title size",
+        "type": "select",
+        "default": "m",
+        "options": [
+          {
+            "value": "s",
+            "label": "Small (two lines)"
+          },
+          {
+            "value": "m",
+            "label": "Medium"
+          }
+        ]
+      },
+      {
+        "key": "accent",
+        "label": "Box colour",
+        "type": "color",
+        "default": "#0b1cf5"
+      },
+      {
+        "key": "nameInk",
+        "label": "Name colour",
+        "type": "color",
+        "default": "#ffffff"
+      },
+      {
+        "key": "titleInk",
+        "label": "Title colour",
+        "type": "color",
+        "default": "#ffffff"
+      },
+      {
+        "key": "stripe",
+        "label": "Stripe colour",
+        "type": "color",
+        "default": "#ffffff"
+      }
+    ],
+    "html": "<div class=\"sc sc-z-{{size}}\"><div class=\"sc-name\"><i class=\"sc-edge\"></i><i class=\"sc-fill\"></i><span class=\"sc-t\">{{name|chars}}</span></div>{{#title}}<div class=\"sc-sub\">{{title|chars}}</div>{{/title}}</div>",
+    "css": ".sc{display:inline-flex;flex-direction:column;align-items:flex-start}\n.sc-name{position:relative;padding:6px 14px 3px;font:700 66px/1 Roboto,\"MCE Archivo\",Arial,sans-serif;color:var(--nameInk);text-transform:uppercase;letter-spacing:-.01em;white-space:nowrap}\n.sc-edge,.sc-fill{position:absolute;inset:0;display:block}\n.sc-edge{background:var(--stripe)}\n.sc-fill{background:var(--accent)}\n.sc-t{position:relative}\n.sc-sub{margin-top:10px;max-width:640px;font:700 24px/1.3 Roboto,\"MCE Archivo\",Arial,sans-serif;color:var(--titleInk);text-transform:uppercase;white-space:normal;text-shadow:0 2px 8px rgba(0,0,0,.4)}\n.sc-z-s .sc-sub{font-size:15px;max-width:520px}",
+    "animation": {
+      "in": [
+        {
+          "sel": ".sc-edge",
+          "from": {
+            "scaleX": 0.012,
+            "scaleY": 0,
+            "transformOrigin": "0% 50%"
+          },
+          "to": {
+            "scaleY": 1
+          },
+          "d": 0.24,
+          "e": "power2.out",
+          "at": 0
+        },
+        {
+          "sel": ".sc-edge",
+          "to": {
+            "scaleX": 1
+          },
+          "d": 0.5,
+          "e": "power3.inOut",
+          "at": 0.24
+        },
+        {
+          "sel": ".sc-fill",
+          "from": {
+            "scaleX": 0,
+            "transformOrigin": "0% 50%"
+          },
+          "to": {
+            "scaleX": 1
+          },
+          "d": 0.55,
+          "e": "power3.inOut",
+          "at": 0.32
+        },
+        {
+          "sel": ".sc-t .ch",
+          "from": {
+            "opacity": 0
+          },
+          "to": {
+            "opacity": 1
+          },
+          "d": 0.01,
+          "s": 0.035,
+          "sa": 0.5,
+          "e": "none",
+          "at": 0.32
+        },
+        {
+          "sel": ".sc-sub .ch",
+          "from": {
+            "opacity": 0
+          },
+          "to": {
+            "opacity": 1
+          },
+          "d": 0.01,
+          "s": 0.035,
+          "sa": 0.8,
+          "e": "none",
+          "at": 0.45
+        }
+      ],
+      "out": [
+        {
+          "sel": ".sc-sub .ch",
+          "to": {
+            "opacity": 0
+          },
+          "d": 0.01,
+          "s": 0.03,
+          "sa": 0.35,
+          "e": "none",
+          "fromEnd": true,
+          "at": 0
+        },
+        {
+          "sel": ".sc-t .ch",
+          "to": {
+            "opacity": 0
+          },
+          "d": 0.01,
+          "s": 0.03,
+          "sa": 0.45,
+          "e": "none",
+          "fromEnd": true,
+          "at": 0.05
+        },
+        {
+          "sel": ".sc-fill",
+          "to": {
+            "scaleX": 0
+          },
+          "d": 0.45,
+          "e": "power3.inOut",
+          "at": 0.12
+        },
+        {
+          "sel": ".sc-edge",
+          "to": {
+            "scaleX": 0.012
+          },
+          "d": 0.45,
+          "e": "power3.inOut",
+          "at": 0.28
+        },
+        {
+          "sel": ".sc-edge",
+          "to": {
+            "scaleY": 0
+          },
+          "d": 0.2,
+          "e": "power2.in",
+          "at": 0.73
+        }
+      ]
+    }
+  },
+  {
+    "format": "mce-graphic@1",
+    "version": 1,
+    "category": "speaker",
+    "tags": [
+      "Speaker",
+      "Name",
+      "Title",
+      "Stripe"
+    ],
+    "addedAt": "2026-11-05",
+    "color": "#0b1cf5",
+    "hold": 8,
+    "placement": {
+      "x": 120,
+      "y": 100,
+      "scale": 1
+    },
+    "id": "speaker-stripe-side-tag",
+    "name": "Speaker · Stripe Side Tag",
+    "description": "Name types in, then a line draws out to its left, splits into stripes and becomes a small blue tag with the role",
+    "fields": [
+      {
+        "key": "name",
+        "label": "Name (type | for a second line)",
+        "type": "text",
+        "default": "Speaker Name"
+      },
+      {
+        "key": "title",
+        "label": "Title / role",
+        "type": "text",
+        "default": "Role"
+      },
+      {
+        "key": "accent",
+        "label": "Box colour",
+        "type": "color",
+        "default": "#0b1cf5"
+      },
+      {
+        "key": "nameInk",
+        "label": "Name colour",
+        "type": "color",
+        "default": "#ffffff"
+      },
+      {
+        "key": "titleInk",
+        "label": "Tag text colour",
+        "type": "color",
+        "default": "#ffffff"
+      },
+      {
+        "key": "stripe",
+        "label": "Stripe colour",
+        "type": "color",
+        "default": "#ffffff"
+      }
+    ],
+    "html": "<div class=\"sd\">{{#title}}<div class=\"sd-tag\"><i class=\"bx\"><b class=\"bx-fill\"></b><b class=\"bx-s bx-s1\"></b><b class=\"bx-s bx-s2\"></b><b class=\"bx-line\"></b></i><span class=\"sd-st\">{{title|chars}}</span></div>{{/title}}<div class=\"sd-name\">{{name|chars}}</div></div>",
+    "css": ".sd{display:inline-flex;align-items:center;gap:10px}\n.sd-tag{position:relative;padding:8px 14px;font:700 20px/1 Roboto,\"MCE Archivo\",Arial,sans-serif;color:var(--titleInk);text-transform:uppercase;white-space:nowrap}\n.sd-st{position:relative}\n.sd-name{font:700 60px/1 Roboto,\"MCE Archivo\",Arial,sans-serif;color:var(--nameInk);text-transform:uppercase;letter-spacing:-.01em;white-space:nowrap;text-shadow:0 2px 10px rgba(0,0,0,.35)}\n.bx{position:absolute;inset:0;display:block}\n.bx b{position:absolute;left:0;right:0;display:block}\n.bx-fill{top:0;bottom:0;background:var(--accent)}\n.bx-s{height:32%;background:var(--stripe)}\n.bx-s1{top:0}\n.bx-s2{bottom:0}\n.bx-line{top:50%;height:3px;margin-top:-1.5px;background:var(--stripe)}",
+    "animation": {
+      "in": [
+        {
+          "sel": ".sd-name .ch",
+          "from": {
+            "opacity": 0
+          },
+          "to": {
+            "opacity": 1
+          },
+          "d": 0.01,
+          "s": 0.035,
+          "sa": 0.5,
+          "e": "none",
+          "at": 0
+        },
+        {
+          "sel": ".sd-tag .bx-line",
+          "from": {
+            "scaleX": 0,
+            "opacity": 1,
+            "transformOrigin": "100% 50%"
+          },
+          "to": {
+            "scaleX": 1
+          },
+          "d": 0.4,
+          "e": "power3.out",
+          "at": 0.45
+        },
+        {
+          "sel": ".sd-tag .bx-s",
+          "from": {
+            "scaleY": 0,
+            "transformOrigin": "50% 50%"
+          },
+          "to": {
+            "scaleY": 1
+          },
+          "d": 0.18,
+          "e": "power2.out",
+          "s": 0,
+          "at": 0.81
+        },
+        {
+          "sel": ".sd-tag .bx-fill",
+          "from": {
+            "scaleY": 0,
+            "transformOrigin": "50% 50%"
+          },
+          "to": {
+            "scaleY": 1
+          },
+          "d": 0.24,
+          "e": "power2.out",
+          "at": 0.89
+        },
+        {
+          "sel": ".sd-tag .bx-line",
+          "to": {
+            "opacity": 0
+          },
+          "d": 0.01,
+          "at": 0.89
+        },
+        {
+          "sel": ".sd-tag .bx-s",
+          "to": {
+            "scaleY": 0
+          },
+          "d": 0.2,
+          "e": "power2.in",
+          "s": 0,
+          "at": 1.09
+        },
+        {
+          "sel": ".sd-st .ch",
+          "from": {
+            "opacity": 0
+          },
+          "to": {
+            "opacity": 1
+          },
+          "d": 0.01,
+          "s": 0.035,
+          "sa": 0.45,
+          "e": "none",
+          "at": 1.15
+        }
+      ],
+      "out": [
+        {
+          "sel": ".sd-st .ch",
+          "to": {
+            "opacity": 0
+          },
+          "d": 0.01,
+          "s": 0.03,
+          "sa": 0.3,
+          "e": "none",
+          "fromEnd": true,
+          "at": 0
+        },
+        {
+          "sel": ".sd-tag .bx-s",
+          "to": {
+            "scaleY": 1
+          },
+          "d": 0.16,
+          "e": "power2.out",
+          "s": 0,
+          "at": 0.2
+        },
+        {
+          "sel": ".sd-tag .bx-fill",
+          "to": {
+            "scaleY": 0
+          },
+          "d": 0.2,
+          "e": "power2.in",
+          "at": 0.32
+        },
+        {
+          "sel": ".sd-tag .bx-line",
+          "to": {
+            "opacity": 1
+          },
+          "d": 0.01,
+          "at": 0.4
+        },
+        {
+          "sel": ".sd-tag .bx-s",
+          "to": {
+            "scaleY": 0
+          },
+          "d": 0.16,
+          "e": "power2.in",
+          "s": 0,
+          "at": 0.42000000000000004
+        },
+        {
+          "sel": ".sd-tag .bx-line",
+          "to": {
+            "scaleX": 0,
+            "transformOrigin": "0% 50%"
+          },
+          "d": 0.35,
+          "e": "power3.in",
+          "at": 0.54
+        },
+        {
+          "sel": ".sd-name .ch",
+          "to": {
+            "opacity": 0
+          },
+          "d": 0.01,
+          "s": 0.03,
+          "sa": 0.4,
+          "e": "none",
+          "fromEnd": true,
+          "at": 0.75
+        }
+      ]
+    }
+  },
+  {
+    "format": "mce-graphic@1",
+    "version": 1,
+    "category": "speaker",
+    "tags": [
+      "Speaker",
+      "Name",
+      "Title",
+      "Stripe"
+    ],
+    "addedAt": "2026-11-05",
+    "color": "#0b1cf5",
+    "hold": 8,
+    "placement": {
+      "x": 120,
+      "y": 100,
+      "scale": 1
+    },
+    "id": "speaker-stripe-split-name",
+    "name": "Speaker · Stripe Split Name",
+    "description": "A line splits into stripes and fills into a blue box for the first name; the last name and the title type in underneath",
+    "fields": [
+      {
+        "key": "first",
+        "label": "First name",
+        "type": "text",
+        "default": "Speaker"
+      },
+      {
+        "key": "last",
+        "label": "Last name",
+        "type": "text",
+        "default": "Name"
+      },
+      {
+        "key": "title",
+        "label": "Title / role",
+        "type": "text",
+        "default": "Title, role or a short line about the speaker"
+      },
+      {
+        "key": "accent",
+        "label": "Box colour",
+        "type": "color",
+        "default": "#0b1cf5"
+      },
+      {
+        "key": "nameInk",
+        "label": "Name colour",
+        "type": "color",
+        "default": "#ffffff"
+      },
+      {
+        "key": "titleInk",
+        "label": "Title colour",
+        "type": "color",
+        "default": "#ffffff"
+      },
+      {
+        "key": "stripe",
+        "label": "Stripe colour",
+        "type": "color",
+        "default": "#ffffff"
+      }
+    ],
+    "html": "<div class=\"se\"><div class=\"se-first\"><i class=\"bx\"><b class=\"bx-fill\"></b><b class=\"bx-s bx-s1\"></b><b class=\"bx-s bx-s2\"></b><b class=\"bx-line\"></b></i><span class=\"se-ft\">{{first|chars}}</span></div><div class=\"se-last\">{{last|chars}}</div>{{#title}}<div class=\"se-sub\">{{title|chars}}</div>{{/title}}</div>",
+    "css": ".se{display:inline-flex;flex-direction:column;align-items:flex-start}\n.se-first{position:relative;padding:5px 12px 2px;font:700 60px/1 Roboto,\"MCE Archivo\",Arial,sans-serif;color:var(--nameInk);text-transform:uppercase;letter-spacing:-.01em;white-space:nowrap}\n.se-ft{position:relative}\n.se-last{padding:2px 12px 0;font:700 60px/1 Roboto,\"MCE Archivo\",Arial,sans-serif;color:var(--nameInk);text-transform:uppercase;letter-spacing:-.01em;white-space:nowrap;text-shadow:0 2px 10px rgba(0,0,0,.35)}\n.se-sub{margin:14px 0 0 12px;max-width:560px;font:700 16px/1.3 Roboto,\"MCE Archivo\",Arial,sans-serif;color:var(--titleInk);text-transform:uppercase;white-space:normal;text-shadow:0 2px 8px rgba(0,0,0,.4)}\n.bx{position:absolute;inset:0;display:block}\n.bx b{position:absolute;left:0;right:0;display:block}\n.bx-fill{top:0;bottom:0;background:var(--accent)}\n.bx-s{height:32%;background:var(--stripe)}\n.bx-s1{top:0}\n.bx-s2{bottom:0}\n.bx-line{top:50%;height:3px;margin-top:-1.5px;background:var(--stripe)}",
+    "animation": {
+      "in": [
+        {
+          "sel": ".se-first .bx-line",
+          "from": {
+            "scaleX": 0,
+            "opacity": 1,
+            "transformOrigin": "0% 50%"
+          },
+          "to": {
+            "scaleX": 1
+          },
+          "d": 0.4,
+          "e": "power3.out",
+          "at": 0
+        },
+        {
+          "sel": ".se-first .bx-s",
+          "from": {
+            "scaleY": 0,
+            "transformOrigin": "50% 50%"
+          },
+          "to": {
+            "scaleY": 1
+          },
+          "d": 0.18,
+          "e": "power2.out",
+          "s": 0,
+          "at": 0.36
+        },
+        {
+          "sel": ".se-first .bx-fill",
+          "from": {
+            "scaleY": 0,
+            "transformOrigin": "50% 50%"
+          },
+          "to": {
+            "scaleY": 1
+          },
+          "d": 0.24,
+          "e": "power2.out",
+          "at": 0.44
+        },
+        {
+          "sel": ".se-first .bx-line",
+          "to": {
+            "opacity": 0
+          },
+          "d": 0.01,
+          "at": 0.44
+        },
+        {
+          "sel": ".se-first .bx-s",
+          "to": {
+            "scaleY": 0
+          },
+          "d": 0.2,
+          "e": "power2.in",
+          "s": 0,
+          "at": 0.64
+        },
+        {
+          "sel": ".se-ft .ch",
+          "from": {
+            "opacity": 0
+          },
+          "to": {
+            "opacity": 1
+          },
+          "d": 0.01,
+          "s": 0.035,
+          "sa": 0.4,
+          "e": "none",
+          "at": 0.7
+        },
+        {
+          "sel": ".se-last .ch",
+          "from": {
+            "opacity": 0
+          },
+          "to": {
+            "opacity": 1
+          },
+          "d": 0.01,
+          "s": 0.035,
+          "sa": 0.45,
+          "e": "none",
+          "at": 0.8
+        },
+        {
+          "sel": ".se-sub .ch",
+          "from": {
+            "opacity": 0
+          },
+          "to": {
+            "opacity": 1
+          },
+          "d": 0.01,
+          "s": 0.035,
+          "sa": 0.7,
+          "e": "none",
+          "at": 0.95
+        }
+      ],
+      "out": [
+        {
+          "sel": ".se-sub .ch",
+          "to": {
+            "opacity": 0
+          },
+          "d": 0.01,
+          "s": 0.03,
+          "sa": 0.3,
+          "e": "none",
+          "fromEnd": true,
+          "at": 0
+        },
+        {
+          "sel": ".se-last .ch",
+          "to": {
+            "opacity": 0
+          },
+          "d": 0.01,
+          "s": 0.03,
+          "sa": 0.35,
+          "e": "none",
+          "fromEnd": true,
+          "at": 0.1
+        },
+        {
+          "sel": ".se-ft .ch",
+          "to": {
+            "opacity": 0
+          },
+          "d": 0.01,
+          "s": 0.03,
+          "sa": 0.3,
+          "e": "none",
+          "fromEnd": true,
+          "at": 0.2
+        },
+        {
+          "sel": ".se-first .bx-s",
+          "to": {
+            "scaleY": 1
+          },
+          "d": 0.16,
+          "e": "power2.out",
+          "s": 0,
+          "at": 0.5
+        },
+        {
+          "sel": ".se-first .bx-fill",
+          "to": {
+            "scaleY": 0
+          },
+          "d": 0.2,
+          "e": "power2.in",
+          "at": 0.62
+        },
+        {
+          "sel": ".se-first .bx-line",
+          "to": {
+            "opacity": 1
+          },
+          "d": 0.01,
+          "at": 0.7
+        },
+        {
+          "sel": ".se-first .bx-s",
+          "to": {
+            "scaleY": 0
+          },
+          "d": 0.16,
+          "e": "power2.in",
+          "s": 0,
+          "at": 0.72
+        },
+        {
+          "sel": ".se-first .bx-line",
+          "to": {
+            "scaleX": 0,
+            "transformOrigin": "100% 50%"
+          },
+          "d": 0.35,
+          "e": "power3.in",
+          "at": 0.8400000000000001
+        }
+      ]
+    }
   }
 ];

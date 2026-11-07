@@ -85,7 +85,7 @@ export default function DockGraphicPreviewModal({ theme, values, onClose, onSend
           padding: 10,
           borderRadius: 8,
           border: "1px solid var(--dock-border)",
-          background: "var(--dock-surface, #161a22)",
+          background: "var(--dock-surface, var(--surface))",
           color: "var(--dock-text)",
           boxShadow: "0 20px 50px rgba(0,0,0,.5)",
         }}
@@ -130,7 +130,7 @@ export default function DockGraphicPreviewModal({ theme, values, onClose, onSend
                 ...btn,
                 padding: "3px 8px",
                 fontWeight: 500,
-                borderColor: backdrop === b.id ? "var(--dock-accent, #6366f1)" : "var(--dock-border)",
+                borderColor: backdrop === b.id ? "var(--dock-accent, var(--primary))" : "var(--dock-border)",
               }}
               onClick={() => setBackdrop(b.id)}
             >

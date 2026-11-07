@@ -155,7 +155,7 @@ export default function DockMotionControls({
           step={0.05}
           value={scale}
           onChange={(e) => onValueChange("kxScale", e.target.value)}
-          style={{ width: "100%", accentColor: "var(--dock-accent, #4ade80)" }}
+          style={{ width: "100%", accentColor: "var(--dock-accent, var(--primary))" }}
         />
       </div>
       {cycleInfo ? (

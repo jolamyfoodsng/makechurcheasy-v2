@@ -3,6 +3,7 @@ import { getAuthUserFromRequest } from "@/lib/auth";
 import { addPurchasedTranscriptionSeconds, getTranscriptionBalanceSummary } from "@/lib/transcriptionCredits";
 import { verifyFlutterwaveTransaction, isFlutterwaveConfigured } from "@/lib/flutterwave";
 import clientPromise from "@/lib/mongodb";
+import { reportPaymentToTelegram } from "@/lib/paymentTelegramNotifications";
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || "";
 const PAYSTACK_API = "https://api.paystack.co";
@@ -12,6 +13,26 @@ const CORS_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, X-Device-Id, X-Device-Secret, Authorization",
 };
+
+function reportTopup(input: {
+  outcome: "success" | "failed";
+  provider: "flutterwave" | "paystack";
+  reference: string;
+  userId: string;
+  email?: unknown;
+  name?: unknown;
+  seconds?: number;
+  amount?: number | null;
+  currency?: string | null;
+  failureReason?: unknown;
+}) {
+  reportPaymentToTelegram({
+    ...input,
+    purchase: "credits",
+    credits: input.seconds ? Math.round(input.seconds / 60) : null,
+    source: "Top-up verify",
+  });
+}
 
 export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
@@ -77,11 +98,37 @@ export async function POST(req: NextRequest) {
             { reference },
             { $set: { status: "SUCCESSFUL", providerTransactionId: txIdToVerify, updatedAt: new Date().toISOString() } }
           );
+          reportTopup({
+            outcome: "success",
+            provider: "flutterwave",
+            reference,
+            userId,
+            email: authUser.mongoUser.email,
+            name: authUser.mongoUser.name,
+            seconds,
+            amount: amountPaid,
+            currency,
+          });
 
           return NextResponse.json({
             success: true,
             balance,
           }, { headers: CORS_HEADERS });
+        }
+        const fwStatus = String(verified?.data?.status || "").toLowerCase();
+        if (["failed", "cancelled", "canceled"].includes(fwStatus)) {
+          reportTopup({
+            outcome: "failed",
+            provider: "flutterwave",
+            reference,
+            userId,
+            email: authUser.mongoUser.email,
+            name: authUser.mongoUser.name,
+            seconds: Number(intent?.seconds) || undefined,
+            amount: Number(intent?.price) || null,
+            currency: intent?.currency ? String(intent.currency) : null,
+            failureReason: `Flutterwave payment ${fwStatus}.`,
+          });
         }
       }
 
@@ -96,6 +143,17 @@ export async function POST(req: NextRequest) {
           reference,
           packId: intent.packId,
           description: `Verified top-up purchase (${reference}): ${seconds / 3600}h (${seconds / 60} credits)`,
+        });
+        reportTopup({
+          outcome: "success",
+          provider: "flutterwave",
+          reference,
+          userId,
+          email: authUser.mongoUser.email,
+          name: authUser.mongoUser.name,
+          seconds,
+          amount: Number(intent.price) || 0,
+          currency: String(intent.currency || "NGN"),
         });
 
         return NextResponse.json({
@@ -115,6 +173,22 @@ export async function POST(req: NextRequest) {
 
     const verifyData = (await verifyRes.json()) as any;
     if (!verifyData.status || verifyData.data?.status !== "success") {
+      const failedStatus = String(verifyData.data?.status || "").toLowerCase();
+      if (["failed", "abandoned", "reversed"].includes(failedStatus)) {
+        const failedMetadata = verifyData.data.metadata || {};
+        reportTopup({
+          outcome: "failed",
+          provider: "paystack",
+          reference,
+          userId,
+          email: authUser.mongoUser.email,
+          name: authUser.mongoUser.name,
+          seconds: Number(failedMetadata.seconds) || (Number(failedMetadata.hours) * 3600) || (Number(failedMetadata.credits) * 60) || undefined,
+          amount: (Number(verifyData.data.amount) || 0) / 100,
+          currency: verifyData.data.currency || null,
+          failureReason: verifyData.data.gateway_response || `Payment ${failedStatus}`,
+        });
+      }
       return NextResponse.json({
         success: false,
         error: verifyData.data?.gateway_response || "Payment not completed or failed",
@@ -139,6 +213,17 @@ export async function POST(req: NextRequest) {
       reference,
       packId: metadata.packId,
       description: `Verified top-up purchase (${reference}): ${seconds / 3600}h (${seconds / 60} credits)`,
+    });
+    reportTopup({
+      outcome: "success",
+      provider: "paystack",
+      reference,
+      userId,
+      email: authUser.mongoUser.email,
+      name: authUser.mongoUser.name,
+      seconds,
+      amount: amountPaid,
+      currency,
     });
 
     return NextResponse.json({

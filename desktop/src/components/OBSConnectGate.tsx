@@ -2,8 +2,17 @@ import { useState, useEffect, useRef } from "react";
 import { obsService, type ConnectionStatus } from "../services/obsService";
 import { loadData, updateData } from "../services/store";
 import { getDefaultOBSUrl } from "../services/desktopConfig";
-import Icon from "./Icon";
+import { Cast } from "./icons/NativeIcons";
+import ModalDialog, { ModalNotice, ModalPanel } from "./ModalDialog";
 import { shouldAutoConnectObs } from "../services/workspacePreference";
+
+const OBS_SETUP_STEPS = [
+  { title: "Open OBS Studio", detail: "Launch OBS on your computer" },
+  { title: "Go to Tools → Settings", detail: "Access OBS settings from the menu bar" },
+  { title: "Open WebSocket Server Settings", detail: 'Find "WebSocket Server Settings" in the left sidebar' },
+  { title: "Enable WebSocket server", detail: "Check the box and set a password (optional)" },
+  { title: "Click Apply → OK", detail: "Save your settings" },
+];
 
 interface Props {
   children: React.ReactNode;
@@ -82,8 +91,7 @@ export function OBSConnectGate({ children }: Props) {
     })();
   }, []);
 
-  const handleConnect = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleConnect = async () => {
     if (connecting) return;
 
     setConnecting(true);
@@ -107,113 +115,75 @@ export function OBSConnectGate({ children }: Props) {
     }
   };
 
+  const submitOnEnter = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      void handleConnect();
+    }
+  };
+
   // Always render children
   return (
     <>
       {children}
 
       {/* Connection Modal */}
-      {showConnectPanel && (
-        <div
-          className="obs-connect-backdrop"
-          onClick={() => setShowConnectPanel(false)}
-        >
-          <div
-            className="obs-connect-panel"
-            onClick={(event) => event.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-            aria-label="Connect to OBS"
-          >
-            <button
-              type="button"
-              className="obs-connect-panel__close"
-              onClick={() => setShowConnectPanel(false)}
-              aria-label="Close"
-             title="Close">
-              <Icon name="close" size={18} />
-            </button>
-
-            <div className="obs-connect-panel__header">
-              <div className="obs-connect-panel__icon">
-                <Icon name="cast" size={24} />
-              </div>
-              <h2 className="obs-connect-panel__title">Connect to OBS</h2>
-              <p className="obs-connect-panel__subtitle">
-                Enable WebSocket to control OBS remotely
-              </p>
-            </div>
-
-            <div className="obs-connect-panel__steps">
-              <h3 className="obs-connect-panel__steps-title">Setup Instructions</h3>
-              <ol className="obs-connect-panel__steps-list">
-                <li className="obs-connect-panel__step">
-                  <span className="obs-connect-panel__step-num">1</span>
-                  <div className="obs-connect-panel__step-content">
-                    <strong>Open OBS Studio</strong>
-                    <span className="obs-connect-panel__step-desc">Launch OBS on your computer</span>
-                  </div>
-                </li>
-                <li className="obs-connect-panel__step">
-                  <span className="obs-connect-panel__step-num">2</span>
-                  <div className="obs-connect-panel__step-content">
-                    <strong>Go to Tools → Settings</strong>
-                    <span className="obs-connect-panel__step-desc">Access OBS settings from the menu bar</span>
-                  </div>
-                </li>
-                <li className="obs-connect-panel__step">
-                  <span className="obs-connect-panel__step-num">3</span>
-                  <div className="obs-connect-panel__step-content">
-                    <strong>Open WebSocket Server Settings</strong>
-                    <span className="obs-connect-panel__step-desc">Find "WebSocket Server Settings" in the left sidebar</span>
-                  </div>
-                </li>
-                <li className="obs-connect-panel__step">
-                  <span className="obs-connect-panel__step-num">4</span>
-                  <div className="obs-connect-panel__step-content">
-                    <strong>Enable WebSocket server</strong>
-                    <span className="obs-connect-panel__step-desc">Check the box and set a password (optional)</span>
-                  </div>
-                </li>
-                <li className="obs-connect-panel__step">
-                  <span className="obs-connect-panel__step-num">5</span>
-                  <div className="obs-connect-panel__step-content">
-                    <strong>Click Apply → OK</strong>
-                    <span className="obs-connect-panel__step-desc">Save your settings</span>
-                  </div>
-                </li>
+      <ModalDialog
+        open={showConnectPanel}
+        tone="brand"
+        icon={<Cast size={26} />}
+        title="Connect to OBS"
+        onClose={() => setShowConnectPanel(false)}
+        width={480}
+        extra={
+          <>
+            <ModalPanel heading="Setup Instructions" maxHeight={200}>
+              <ol style={{ margin: 0, paddingLeft: 20 }}>
+                {OBS_SETUP_STEPS.map((step) => (
+                  <li key={step.title}>
+                    <strong>{step.title}</strong>: {step.detail}
+                  </li>
+                ))}
               </ol>
+            </ModalPanel>
+            <div className="obs-field">
+              <label htmlFor="obs-connect-url">Server URL</label>
+              <input
+                id="obs-connect-url"
+                type="text"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                onKeyDown={submitOnEnter}
+                placeholder="ws://localhost:4455"
+              />
             </div>
-
-            <div className="obs-connect-panel__divider" />
-
-            <form onSubmit={handleConnect} className="obs-connect-panel__form">
-              <div className="obs-field">
-                <label>Server URL</label>
-                <input
-                  type="text"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  placeholder="ws://localhost:4455"
-                />
-              </div>
-              <div className="obs-field">
-                <label>Password</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Optional"
-                />
-              </div>
-              {error && <div className="obs-error">{error}</div>}
-              <button type="submit" disabled={connecting} className="obs-connect-panel__connect-btn" title="Connect">
-                {connecting ? "Connecting..." : "Connect to OBS"}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
+            <div className="obs-field">
+              <label htmlFor="obs-connect-password">Password</label>
+              <input
+                id="obs-connect-password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={submitOnEnter}
+                placeholder="Optional"
+              />
+            </div>
+            {error && <ModalNotice tone="danger">{error}</ModalNotice>}
+          </>
+        }
+        actions={[
+          { label: "Cancel", variant: "ghost", onClick: () => setShowConnectPanel(false) },
+          {
+            label: connecting ? "Connecting..." : "Connect to OBS",
+            variant: "primary",
+            disabled: connecting,
+            title: "Connect",
+            onClick: () => void handleConnect(),
+          },
+        ]}
+      >
+        Enable WebSocket to control OBS remotely
+      </ModalDialog>
     </>
   );
 }

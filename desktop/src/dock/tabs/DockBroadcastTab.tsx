@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import Icon from "../DockIcon";
+import ModalDialog from "../../components/ModalDialog";
+import { Trash2 } from "../../components/icons/NativeIcons";
 import { dockObsClient } from "../dockObsClient";
 import { getDockPlan, showUpgradeModal } from "../dockEntitlement";
 import {
@@ -181,6 +183,9 @@ export default function DockBroadcastTab() {
   const [obsConnected, setObsConnected] = useState(dockObsClient.isConnected);
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamTimecode, setStreamTimecode] = useState("00:00:00");
+  // OBS can take a few seconds to start or stop; the button shows that and ignores repeat clicks.
+  const [streamBusy, setStreamBusy] = useState<"starting" | "stopping" | null>(null);
+  const streamBusyRef = useRef(false);
   const [statusMessage, setStatusMessage] = useState<{ text: string; type: "success" | "error" | "info" } | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncingChannelId, setSyncingChannelId] = useState<string | null>(null);
@@ -230,6 +235,11 @@ export default function DockBroadcastTab() {
   // The ⋮ menu on a channel, and the "Switch to …?" question when another profile is picked.
   const [menuChannelId, setMenuChannelId] = useState<string | null>(null);
   const [pendingSwitchId, setPendingSwitchId] = useState<string | null>(null);
+  const [pendingRemoval, setPendingRemoval] = useState<
+    | { kind: "person"; profile: BroadcastPersonProfile }
+    | { kind: "channel"; personId: string; channel: BroadcastChannel }
+    | null
+  >(null);
   const [rememberSwitch, setRememberSwitch] = useState(false);
 
   useEffect(() => {
@@ -307,7 +317,8 @@ export default function DockBroadcastTab() {
 
         if (mounted) {
           setIsStreaming(active);
-          setStreamTimecode(status?.outputTimecode || "00:00:00");
+          // OBS reports hh:mm:ss.mmm; the milliseconds only add noise.
+          setStreamTimecode((status?.outputTimecode || "00:00:00").replace(/\.\d+$/, ""));
 
           // Keep dock in sync if settings were updated in the main app
           const curStore = loadBroadcastStore();
@@ -443,7 +454,7 @@ export default function DockBroadcastTab() {
   }, [activeProfile, showToast, store]);
 
   // Toggle Stream in OBS
-  const handleToggleStream = useCallback(async () => {
+  const toggleStream = async () => {
     if (!dockObsClient.isConnected) {
       showToast("Connecting to OBS Studio...", "info");
       const conn = await ensureObsConnected();
@@ -488,7 +499,19 @@ export default function DockBroadcastTab() {
       }
       showToast("Failed to start/stop stream in OBS. Check OBS settings.", "error");
     }
-  }, [activeProfile, isStreaming, showToast, store]);
+  };
+
+  const handleToggleStream = async () => {
+    if (streamBusyRef.current) return;
+    streamBusyRef.current = true;
+    setStreamBusy(isStreaming ? "stopping" : "starting");
+    try {
+      await toggleStream();
+    } finally {
+      streamBusyRef.current = false;
+      setStreamBusy(null);
+    }
+  };
 
   // Person Modal handlers
   const openEditPersonModal = (p: BroadcastPersonProfile) => {
@@ -523,10 +546,7 @@ export default function DockBroadcastTab() {
   };
 
   const handleDeletePerson = (p: BroadcastPersonProfile) => {
-    if (confirm(`Delete profile "${p.nickname}" and its tied channels?`)) {
-      deletePersonProfile(p.id);
-      showToast(`Deleted profile: ${p.nickname}`, "info");
-    }
+    setPendingRemoval({ kind: "person", profile: p });
   };
 
   // Channel Modal handlers
@@ -587,10 +607,19 @@ export default function DockBroadcastTab() {
   };
 
   const handleDeleteChannel = (personId: string, ch: BroadcastChannel) => {
-    if (confirm(`Remove "${ch.name}" from this profile?`)) {
-      deleteChannel(personId, ch.id);
-      showToast(`Removed channel: ${ch.name}`, "info");
+    setPendingRemoval({ kind: "channel", personId, channel: ch });
+  };
+
+  const confirmPendingRemoval = () => {
+    if (!pendingRemoval) return;
+    if (pendingRemoval.kind === "person") {
+      deletePersonProfile(pendingRemoval.profile.id);
+      showToast(`Deleted profile: ${pendingRemoval.profile.nickname}`, "info");
+    } else {
+      deleteChannel(pendingRemoval.personId, pendingRemoval.channel.id);
+      showToast(`Removed channel: ${pendingRemoval.channel.name}`, "info");
     }
+    setPendingRemoval(null);
   };
 
   const toggleKeyVisibility = (chId: string) => {
@@ -639,14 +668,14 @@ export default function DockBroadcastTab() {
                 ? "var(--dock-green, #10B981)"
                 : statusMessage.type === "error"
                 ? "var(--dock-red, #EF4444)"
-                : "var(--dock-accent, #6366F1)"
+                : "var(--dock-accent, var(--primary))"
             }`,
             color:
               statusMessage.type === "success"
                 ? "#34D399"
                 : statusMessage.type === "error"
                 ? "#F87171"
-                : "var(--dock-accent, #818CF8)",
+                : "var(--dock-accent, var(--primary))",
           }}
         >
           <Icon
@@ -687,7 +716,7 @@ export default function DockBroadcastTab() {
                     ? "#f87171"
                     : isStreaming && enabledChannels.length > 1
                     ? "#34d399"
-                    : "var(--dock-accent, #a5b4fc)",
+                    : "var(--dock-accent, var(--primary))",
                   display: "inline-flex",
                   alignItems: "center",
                   gap: "4px",
@@ -712,7 +741,7 @@ export default function DockBroadcastTab() {
                   borderRadius: "var(--radius)",
                   background: "rgba(255, 255, 255, 0.08)",
                   border: "1px solid var(--border)",
-                  color: "var(--dock-text-dim, #94a3b8)",
+                  color: "var(--dock-text-dim, var(--text-muted))",
                   display: "inline-flex",
                   alignItems: "center",
                   gap: "4px",
@@ -760,11 +789,11 @@ export default function DockBroadcastTab() {
                   borderRadius: "var(--radius-sm, 3px)",
                   fontSize: "12px",
                   fontWeight: isActive ? 650 : 500,
-                  background: isActive ? "var(--dock-accent-soft, rgba(99, 102, 241, 0.18))" : "var(--dock-surface-alt, #202026)",
+                  background: isActive ? "var(--dock-accent-soft, rgba(99, 102, 241, 0.18))" : "var(--dock-surface-alt, var(--surface-raised))",
                   border: `1px solid ${
-                    isActive ? "var(--dock-accent, #6366F1)" : "var(--dock-border, rgba(255,255,255,0.08))"
+                    isActive ? "var(--dock-accent, var(--primary))" : "var(--dock-border, var(--border))"
                   }`,
-                  color: isActive ? "#ffffff" : "var(--dock-text-secondary, #d4d4d8)",
+                  color: isActive ? "#ffffff" : "var(--dock-text-secondary, var(--text-secondary))",
                   cursor: isStreaming ? "not-allowed" : "pointer",
                   opacity: isStreaming && !isActive ? 0.4 : 1,
                   whiteSpace: "nowrap",
@@ -795,7 +824,7 @@ export default function DockBroadcastTab() {
               justifyContent: "space-between",
               padding: "0 2px",
               fontSize: "11px",
-              color: "var(--dock-text-dim, #64748b)",
+              color: "var(--dock-text-dim, var(--text-muted))",
             }}
           >
             <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -810,7 +839,7 @@ export default function DockBroadcastTab() {
                 style={{
                   background: "transparent",
                   border: "none",
-                  color: "var(--dock-text-dim, #64748b)",
+                  color: "var(--dock-text-dim, var(--text-muted))",
                   cursor: isStreaming ? "not-allowed" : "pointer",
                   opacity: isStreaming ? 0.4 : 1,
                   fontSize: "11px",
@@ -854,7 +883,7 @@ export default function DockBroadcastTab() {
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "2px" }}>
             <div style={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
               <span className="dock-media-header__label">Channels</span>
-              <span style={{ fontSize: "10px", color: "var(--dock-text-dim, #64748b)" }}>
+              <span style={{ fontSize: "10px", color: "var(--dock-text-dim, var(--text-muted))" }}>
                 ({enabledChannels.length} active)
               </span>
             </div>
@@ -870,9 +899,9 @@ export default function DockBroadcastTab() {
                 padding: "3px 9px",
                 fontSize: "11px",
                 fontWeight: 600,
-                background: "var(--dock-surface-alt, #202026)",
-                color: isStreaming ? "var(--dock-text-dim, #64748b)" : "var(--dock-text, #ffffff)",
-                border: "1px solid var(--dock-border, rgba(255,255,255,0.1))",
+                background: "var(--dock-surface-alt, var(--surface-raised))",
+                color: isStreaming ? "var(--dock-text-dim, var(--text-muted))" : "var(--dock-text, var(--text-primary))",
+                border: "1px solid var(--dock-border, var(--border))",
                 borderRadius: "var(--radius)",
                 cursor: isStreaming ? "not-allowed" : "pointer",
                 opacity: isStreaming ? 0.4 : 1,
@@ -888,10 +917,10 @@ export default function DockBroadcastTab() {
               style={{
                 textAlign: "center",
                 padding: "24px 16px",
-                background: "var(--dock-surface, #18181c)",
-                border: "1px dashed var(--dock-border, rgba(255,255,255,0.12))",
+                background: "var(--dock-surface, var(--surface))",
+                border: "1px dashed var(--dock-border, var(--border))",
                 borderRadius: "var(--radius)",
-                color: "var(--dock-text-dim, #94a3b8)",
+                color: "var(--dock-text-dim, var(--text-muted))",
                 fontSize: "12px",
                 display: "flex",
                 flexDirection: "column",
@@ -909,7 +938,7 @@ export default function DockBroadcastTab() {
                 style={{
                   marginTop: "4px",
                   padding: "6px 14px",
-                  background: isStreaming ? "rgba(99, 102, 241, 0.4)" : "var(--dock-accent, #6366F1)",
+                  background: isStreaming ? "rgba(99, 102, 241, 0.4)" : "var(--dock-accent, var(--primary))",
                   color: "#ffffff",
                   border: "none",
                   borderRadius: "var(--radius)",
@@ -932,9 +961,9 @@ export default function DockBroadcastTab() {
                   <div
                     key={ch.id}
                     style={{
-                      background: "var(--dock-surface-alt, #202026)",
+                      background: "var(--dock-surface-alt, var(--surface-raised))",
                       border: `1px solid ${
-                        ch.enabled ? "var(--dock-border, rgba(255,255,255,0.12))" : "rgba(255,255,255,0.04)"
+                        ch.enabled ? "var(--dock-border, var(--border))" : "rgba(255,255,255,0.04)"
                       }`,
                       borderRadius: "var(--radius)",
                       padding: "10px 12px",
@@ -956,7 +985,7 @@ export default function DockBroadcastTab() {
                             style={{
                               fontSize: "13px",
                               fontWeight: 600,
-                              color: "var(--dock-text, #ffffff)",
+                              color: "var(--dock-text, var(--text-primary))",
                               overflow: "hidden",
                               textOverflow: "ellipsis",
                               whiteSpace: "nowrap",
@@ -967,7 +996,7 @@ export default function DockBroadcastTab() {
                           <div
                             style={{
                               fontSize: "11px",
-                              color: "var(--dock-text-dim, #94a3b8)",
+                              color: "var(--dock-text-dim, var(--text-muted))",
                               marginTop: "1px",
                             }}
                           >
@@ -995,7 +1024,7 @@ export default function DockBroadcastTab() {
                             width: "36px",
                             height: "20px",
                             borderRadius: "var(--radius)",
-                            background: ch.enabled ? "var(--dock-accent, #6366F1)" : "rgba(255, 255, 255, 0.15)",
+                            background: ch.enabled ? "var(--dock-accent, var(--primary))" : "rgba(255, 255, 255, 0.15)",
                             border: "none",
                             padding: "2px",
                             cursor: isStreaming ? "not-allowed" : "pointer",
@@ -1030,7 +1059,7 @@ export default function DockBroadcastTab() {
                             style={{
                               background: menuChannelId === ch.id ? "rgba(255,255,255,0.08)" : "transparent",
                               border: "none",
-                              color: "var(--dock-text-secondary, #cbd5e1)",
+                              color: "var(--dock-text-secondary, var(--text-secondary))",
                               cursor: isStreaming ? "not-allowed" : "pointer",
                               opacity: isStreaming ? 0.35 : 1,
                               padding: "3px 2px",
@@ -1054,8 +1083,8 @@ export default function DockBroadcastTab() {
                                 minWidth: "188px",
                                 padding: "5px",
                                 borderRadius: "var(--radius)",
-                                background: "var(--dock-surface, #1b1b22)",
-                                border: "1px solid var(--dock-border, rgba(255,255,255,0.14))",
+                                background: "var(--dock-surface, var(--surface))",
+                                border: "1px solid var(--dock-border, var(--border))",
                                 boxShadow: "0 12px 28px rgba(0,0,0,0.55)",
                                 display: "flex",
                                 flexDirection: "column",
@@ -1087,7 +1116,7 @@ export default function DockBroadcastTab() {
                                       border: "none",
                                       borderRadius: "7px",
                                       background: "transparent",
-                                      color: item.danger ? "var(--dock-red, #ef4444)" : "var(--dock-text, #ffffff)",
+                                      color: item.danger ? "var(--dock-red, #ef4444)" : "var(--dock-text, var(--text-primary))",
                                       fontSize: "12.5px",
                                       fontWeight: 500,
                                       textAlign: "left",
@@ -1122,11 +1151,11 @@ export default function DockBroadcastTab() {
                       {/* Key Status Left */}
                       {hasKey ? (
                         <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0, flex: 1 }}>
-                          <span style={{ color: "var(--dock-text-dim, #64748b)" }}>Key:</span>
+                          <span style={{ color: "var(--dock-text-dim, var(--text-muted))" }}>Key:</span>
                           <span
                             style={{
                               fontFamily: "var(--dock-font-mono, monospace)",
-                              color: "var(--dock-text-secondary, #cbd5e1)",
+                              color: "var(--dock-text-secondary, var(--text-secondary))",
                               overflow: "hidden",
                               textOverflow: "ellipsis",
                               whiteSpace: "nowrap",
@@ -1142,7 +1171,7 @@ export default function DockBroadcastTab() {
                             style={{
                               background: "transparent",
                               border: "none",
-                              color: isStreaming ? "var(--dock-text-dim, #475569)" : "var(--dock-text-dim, #64748b)",
+                              color: isStreaming ? "var(--dock-text-dim, var(--text-muted))" : "var(--dock-text-dim, var(--text-muted))",
                               cursor: isStreaming ? "not-allowed" : "pointer",
                               padding: "2px",
                               display: "flex",
@@ -1208,7 +1237,7 @@ export default function DockBroadcastTab() {
                           style={{
                             background: "transparent",
                             border: "none",
-                            color: isStreaming ? "var(--dock-text-dim, #475569)" : "var(--dock-accent, #6366f1)",
+                            color: isStreaming ? "var(--dock-text-dim, var(--text-muted))" : "var(--dock-accent, var(--primary))",
                             cursor: isStreaming ? "not-allowed" : isSyncing ? "wait" : "pointer",
                             opacity: isStreaming ? 0.35 : 1,
                             padding: "3px 4px",
@@ -1233,8 +1262,8 @@ export default function DockBroadcastTab() {
       {activeProfile && (
         <section
           style={{
-            background: "var(--dock-surface, #18181c)",
-            border: "1px solid var(--dock-border, rgba(255,255,255,0.08))",
+            background: "var(--dock-surface, var(--surface))",
+            border: "1px solid var(--dock-border, var(--border))",
             borderRadius: "var(--radius)",
             padding: "12px",
             display: "flex",
@@ -1264,8 +1293,10 @@ export default function DockBroadcastTab() {
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: "4px 8px",
               fontSize: "11px",
-              color: "var(--dock-text-dim, #94a3b8)",
+              color: "var(--dock-text-dim, var(--text-muted))",
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
@@ -1277,7 +1308,7 @@ export default function DockBroadcastTab() {
                   background: obsConnected ? "var(--dock-green, #10B981)" : "var(--dock-red, #EF4444)",
                 }}
               />
-              <span style={{ color: obsConnected ? "var(--dock-text, #ffffff)" : "var(--dock-text-dim, #64748b)", fontWeight: 500 }}>
+              <span style={{ color: obsConnected ? "var(--dock-text, var(--text-primary))" : "var(--dock-text-dim, var(--text-muted))", fontWeight: 500 }}>
                 {obsConnected ? "OBS Connected" : "OBS Disconnected"}
               </span>
             </div>
@@ -1295,12 +1326,14 @@ export default function DockBroadcastTab() {
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               <button
                 type="button"
-                className="dock-btn dock-btn--danger"
+                className="dock-btn dock-btn--danger dock-stream-btn"
                 onClick={handleToggleStream}
-                style={{ flex: "none", minHeight: "42px", width: "100%", fontSize: "13px", fontWeight: 700 }}
+                disabled={streamBusy !== null}
+                aria-busy={streamBusy === "stopping"}
               >
-                <Icon name="stop" size={18} />
-                <span>Stop Live Stream ({streamTimecode})</span>
+                {streamBusy === "stopping"
+                  ? (<><Icon name="refresh" size={18} className="dock-spin" /><span>Stopping…</span></>)
+                  : (<><Icon name="stop_circle" size={18} /><span>Stop Live Stream</span></>)}
               </button>
               <div style={{ textAlign: "center", fontSize: "11px", color: "var(--dock-green, #10B981)", fontWeight: 500 }}>
                 Broadcasting live in OBS
@@ -1310,12 +1343,14 @@ export default function DockBroadcastTab() {
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               <button
                 type="button"
-                className="dock-btn dock-btn--primary"
+                className="dock-btn dock-btn--primary dock-stream-btn"
                 onClick={handleToggleStream}
-                style={{ flex: "none", minHeight: "42px", width: "100%", fontSize: "13px", fontWeight: 700 }}
+                disabled={streamBusy !== null}
+                aria-busy={streamBusy === "starting"}
               >
-                <Icon name="play_arrow" size={18} />
-                <span>Start Live Stream</span>
+                {streamBusy === "starting"
+                  ? (<><Icon name="refresh" size={18} className="dock-spin" /><span>Starting…</span></>)
+                  : (<><Icon name="play_arrow" size={18} /><span>Start Live Stream</span></>)}
               </button>
               <div style={{ textAlign: "center" }}>
                 <button
@@ -1325,7 +1360,7 @@ export default function DockBroadcastTab() {
                   style={{
                     background: "transparent",
                     border: "none",
-                    color: "var(--dock-text-dim, #64748b)",
+                    color: "var(--dock-text-dim, var(--text-muted))",
                     cursor: isSyncing || isStreaming ? "not-allowed" : "pointer",
                     opacity: isStreaming ? 0.4 : 1,
                     fontSize: "11px",
@@ -1378,6 +1413,31 @@ export default function DockBroadcastTab() {
       )}
 
       {/* ═══ MODAL: ADD / EDIT PERSON PROFILE ═══ */}
+      {pendingRemoval && (
+        <ModalDialog
+          tone="danger"
+          icon={<Trash2 size={26} />}
+          title={pendingRemoval.kind === "person" ? "Delete profile?" : "Remove channel?"}
+          actions={[
+            { label: "Cancel", variant: "ghost", onClick: () => setPendingRemoval(null) },
+            {
+              label: pendingRemoval.kind === "person" ? "Delete profile" : "Remove channel",
+              variant: "danger",
+              icon: <Trash2 size={14} />,
+              onClick: confirmPendingRemoval,
+            },
+          ]}
+          onClose={() => setPendingRemoval(null)}
+          zIndex={10002}
+        >
+          <p>
+            {pendingRemoval.kind === "person"
+              ? `Delete profile "${pendingRemoval.profile.nickname}" and its tied channels?`
+              : `Remove "${pendingRemoval.channel.name}" from this profile?`}
+          </p>
+        </ModalDialog>
+      )}
+
       {pendingSwitchId && (() => {
         const target = store.profiles.find((p) => p.id === pendingSwitchId);
         if (!target || !activeProfile) return null;
@@ -1388,70 +1448,53 @@ export default function DockBroadcastTab() {
                 width: "46px",
                 height: "46px",
                 borderRadius: "50%",
-                background: color || "#6366F1",
+                background: color || "var(--primary)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "#fff",
-                fontWeight: 800,
+                color: "#ffffff",
+                fontWeight: 700,
                 fontSize: "18px",
               }}
             >
               {name.trim().charAt(0).toUpperCase() || "?"}
             </span>
-            <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--dock-text, #fff)", textAlign: "center", overflowWrap: "anywhere" }}>{name}</span>
+            <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-primary)", textAlign: "center", overflowWrap: "anywhere" }}>{name}</span>
           </div>
         );
         return (
-          <div
-            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}
-            onClick={() => setPendingSwitchId(null)}
+          <ModalDialog
+            tone="brand"
+            icon={null}
+            title={`Switch to ${target.nickname}?`}
+            extra={
+              <>
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "center", gap: "16px" }}>
+                  {dot(activeProfile.color, activeProfile.nickname)}
+                  <span style={{ marginTop: "12px", color: "var(--text-muted)" }}><Icon name="arrow_forward" size={20} /></span>
+                  {dot(target.color, target.nickname)}
+                </div>
+                <label style={{ display: "flex", alignItems: "flex-start", gap: "8px", cursor: "pointer", fontSize: "12px", color: "var(--text-secondary)" }}>
+                  <input type="checkbox" checked={rememberSwitch} onChange={(e) => setRememberSwitch(e.target.checked)} style={{ marginTop: "2px" }} />
+                  <span>
+                    Remember my choice
+                    <br />
+                    <span style={{ color: "var(--text-muted)" }}>Don't show this again</span>
+                  </span>
+                </label>
+              </>
+            }
+            actions={[
+              { label: "Cancel", variant: "ghost", onClick: () => setPendingSwitchId(null) },
+              { label: "Switch Profile", variant: "primary", autoFocus: true, onClick: confirmSwitchPerson },
+            ]}
+            onClose={() => setPendingSwitchId(null)}
+            zIndex={10002}
           >
-            <div
-              role="dialog"
-              aria-modal="true"
-              aria-label={`Switch to ${target.nickname}?`}
-              style={{
-                background: "var(--dock-surface-alt, #182234)",
-                border: "1px solid var(--dock-border, rgba(255,255,255,0.12))",
-                borderRadius: "var(--radius)",
-                padding: "18px 16px 16px",
-                maxWidth: "360px",
-                width: "100%",
-                display: "flex",
-                flexDirection: "column",
-                gap: "12px",
-                boxShadow: "0 20px 25px -5px rgba(0,0,0,0.5)",
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "center", gap: "14px" }}>
-                {dot(activeProfile.color, activeProfile.nickname)}
-                <span style={{ marginTop: "12px", color: "var(--dock-text-dim, #94a3b8)" }}><Icon name="arrow_forward" size={20} /></span>
-                {dot(target.color, target.nickname)}
-              </div>
-              <div style={{ textAlign: "center", fontSize: "16px", fontWeight: 700, color: "#fff" }}>Switch to {target.nickname}?</div>
-              <div style={{ textAlign: "center", fontSize: "12.5px", lineHeight: 1.45, color: "var(--dock-text-secondary, #cbd5e1)" }}>
-                You are using <strong>{activeProfile.nickname}</strong>. Switching loads the channels for <strong>{target.nickname}</strong>. Your stream settings update when you start streaming.
-              </div>
-              <label style={{ display: "flex", alignItems: "flex-start", gap: "8px", cursor: "pointer", fontSize: "12px", color: "var(--dock-text-secondary, #cbd5e1)" }}>
-                <input type="checkbox" checked={rememberSwitch} onChange={(e) => setRememberSwitch(e.target.checked)} style={{ marginTop: "2px" }} />
-                <span>
-                  Remember my choice
-                  <br />
-                  <span style={{ color: "var(--dock-text-dim, #94a3b8)" }}>Don't show this again</span>
-                </span>
-              </label>
-              <div style={{ display: "flex", gap: "8px" }}>
-                <button type="button" className="dock-btn dock-btn--secondary" onClick={() => setPendingSwitchId(null)} style={{ minHeight: "38px" }}>
-                  Cancel
-                </button>
-                <button type="button" className="dock-btn dock-btn--primary" autoFocus onClick={confirmSwitchPerson} style={{ minHeight: "38px", flex: 1.3 }}>
-                  Switch Profile
-                </button>
-              </div>
-            </div>
-          </div>
+            <p>
+              You are using <strong>{activeProfile.nickname}</strong>. Switching loads the channels for <strong>{target.nickname}</strong>. Your stream settings update when you start streaming.
+            </p>
+          </ModalDialog>
         );
       })()}
 
@@ -1472,8 +1515,8 @@ export default function DockBroadcastTab() {
         >
           <div
             style={{
-              background: "var(--dock-surface-alt, #182234)",
-              border: "1px solid var(--dock-border, rgba(255,255,255,0.12))",
+              background: "var(--dock-surface-alt, var(--surface-raised))",
+              border: "1px solid var(--dock-border, var(--border))",
               borderRadius: "var(--radius)",
               padding: "16px",
               maxWidth: "360px",
@@ -1486,20 +1529,20 @@ export default function DockBroadcastTab() {
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{ fontWeight: 700, fontSize: "14px", color: "#fff" }}>
+              <span style={{ fontWeight: 700, fontSize: "14px", color: "var(--dock-text, var(--text-primary))" }}>
                 {editingPerson ? "Edit Speaker Profile" : "Add Speaker Profile"}
               </span>
               <button
                 type="button"
                 onClick={() => setShowPersonModal(false)}
-                style={{ background: "transparent", border: "none", color: "var(--dock-text-dim, #94a3b8)", cursor: "pointer" }}
+                style={{ background: "transparent", border: "none", color: "var(--dock-text-dim, var(--text-muted))", cursor: "pointer" }}
               >
                 <Icon name="close" size={16} />
               </button>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <label style={{ fontSize: "11px", fontWeight: 600, color: "var(--dock-text-dim, #94a3b8)" }}>
+              <label style={{ fontSize: "11px", fontWeight: 600, color: "var(--dock-text-dim, var(--text-muted))" }}>
                 Full Name / Description
               </label>
               <input
@@ -1508,9 +1551,9 @@ export default function DockBroadcastTab() {
                 value={personNameInput}
                 onChange={(e) => setPersonNameInput(e.target.value)}
                 style={{
-                  background: "var(--dock-surface, #0f172a)",
-                  border: "1px solid var(--dock-border, #334155)",
-                  color: "#fff",
+                  background: "var(--dock-surface, var(--surface))",
+                  border: "1px solid var(--dock-border, var(--border))",
+                  color: "var(--dock-text, var(--text-primary))",
                   padding: "8px 10px",
                   borderRadius: "var(--radius)",
                   fontSize: "12px",
@@ -1520,7 +1563,7 @@ export default function DockBroadcastTab() {
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <label style={{ fontSize: "11px", fontWeight: 600, color: "var(--dock-text-dim, #94a3b8)" }}>
+              <label style={{ fontSize: "11px", fontWeight: 600, color: "var(--dock-text-dim, var(--text-muted))" }}>
                 Button Nickname (Short label)
               </label>
               <input
@@ -1529,22 +1572,22 @@ export default function DockBroadcastTab() {
                 value={personNicknameInput}
                 onChange={(e) => setPersonNicknameInput(e.target.value)}
                 style={{
-                  background: "var(--dock-surface, #0f172a)",
-                  border: "1px solid var(--dock-border, #334155)",
-                  color: "#fff",
+                  background: "var(--dock-surface, var(--surface))",
+                  border: "1px solid var(--dock-border, var(--border))",
+                  color: "var(--dock-text, var(--text-primary))",
                   padding: "8px 10px",
                   borderRadius: "var(--radius)",
                   fontSize: "12px",
                   outline: "none",
                 }}
               />
-              <span style={{ fontSize: "10px", color: "var(--dock-text-dim, #64748b)" }}>
+              <span style={{ fontSize: "10px", color: "var(--dock-text-dim, var(--text-muted))" }}>
                 This is the name shown on the quick switch button in the Dock.
               </span>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <label style={{ fontSize: "11px", fontWeight: 600, color: "var(--dock-text-dim, #94a3b8)" }}>
+              <label style={{ fontSize: "11px", fontWeight: 600, color: "var(--dock-text-dim, var(--text-muted))" }}>
                 Tag Color
               </label>
               <div style={{ display: "flex", gap: "8px" }}>
@@ -1574,7 +1617,7 @@ export default function DockBroadcastTab() {
                   padding: "6px 12px",
                   borderRadius: "var(--radius)",
                   background: "transparent",
-                  color: "var(--dock-text-dim, #94a3b8)",
+                  color: "var(--dock-text-dim, var(--text-muted))",
                   border: "none",
                   cursor: "pointer",
                   fontSize: "12px",
@@ -1588,7 +1631,7 @@ export default function DockBroadcastTab() {
                 style={{
                   padding: "6px 14px",
                   borderRadius: "var(--radius)",
-                  background: "var(--dock-accent, #6366F1)",
+                  background: "var(--dock-accent, var(--primary))",
                   color: "#ffffff",
                   fontWeight: 600,
                   border: "none",
@@ -1621,8 +1664,8 @@ export default function DockBroadcastTab() {
         >
           <div
             style={{
-              background: "var(--dock-surface-alt, #182234)",
-              border: "1px solid var(--dock-border, rgba(255,255,255,0.12))",
+              background: "var(--dock-surface-alt, var(--surface-raised))",
+              border: "1px solid var(--dock-border, var(--border))",
               borderRadius: "var(--radius)",
               padding: "16px",
               maxWidth: "380px",
@@ -1635,20 +1678,20 @@ export default function DockBroadcastTab() {
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{ fontWeight: 700, fontSize: "14px", color: "#fff" }}>
+              <span style={{ fontWeight: 700, fontSize: "14px", color: "var(--dock-text, var(--text-primary))" }}>
                 {editingChannel?.channel ? "Edit Channel" : "Add Channel"}
               </span>
               <button
                 type="button"
                 onClick={() => setShowChannelModal(false)}
-                style={{ background: "transparent", border: "none", color: "var(--dock-text-dim, #94a3b8)", cursor: "pointer" }}
+                style={{ background: "transparent", border: "none", color: "var(--dock-text-dim, var(--text-muted))", cursor: "pointer" }}
               >
                 <Icon name="close" size={16} />
               </button>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <label style={{ fontSize: "11px", fontWeight: 600, color: "var(--dock-text-dim, #94a3b8)" }}>
+              <label style={{ fontSize: "11px", fontWeight: 600, color: "var(--dock-text-dim, var(--text-muted))" }}>
                 Platform
               </label>
               <select
@@ -1659,9 +1702,9 @@ export default function DockBroadcastTab() {
                   setChannelServerInput(PLATFORM_INFO[plat].defaultServer);
                 }}
                 style={{
-                  background: "var(--dock-surface, #0f172a)",
-                  border: "1px solid var(--dock-border, #334155)",
-                  color: "#fff",
+                  background: "var(--dock-surface, var(--surface))",
+                  border: "1px solid var(--dock-border, var(--border))",
+                  color: "var(--dock-text, var(--text-primary))",
                   padding: "8px 10px",
                   borderRadius: "var(--radius)",
                   fontSize: "12px",
@@ -1679,7 +1722,7 @@ export default function DockBroadcastTab() {
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <label style={{ fontSize: "11px", fontWeight: 600, color: "var(--dock-text-dim, #94a3b8)" }}>
+              <label style={{ fontSize: "11px", fontWeight: 600, color: "var(--dock-text-dim, var(--text-muted))" }}>
                 Channel Nickname / Label
               </label>
               <input
@@ -1688,9 +1731,9 @@ export default function DockBroadcastTab() {
                 value={channelNameInput}
                 onChange={(e) => setChannelNameInput(e.target.value)}
                 style={{
-                  background: "var(--dock-surface, #0f172a)",
-                  border: "1px solid var(--dock-border, #334155)",
-                  color: "#fff",
+                  background: "var(--dock-surface, var(--surface))",
+                  border: "1px solid var(--dock-border, var(--border))",
+                  color: "var(--dock-text, var(--text-primary))",
                   padding: "8px 10px",
                   borderRadius: "var(--radius)",
                   fontSize: "12px",
@@ -1701,7 +1744,7 @@ export default function DockBroadcastTab() {
 
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <label style={{ fontSize: "11px", fontWeight: 600, color: "var(--dock-text-dim, #94a3b8)" }}>
+                <label style={{ fontSize: "11px", fontWeight: 600, color: "var(--dock-text-dim, var(--text-muted))" }}>
                   Stream Key
                 </label>
                 <button
@@ -1710,7 +1753,7 @@ export default function DockBroadcastTab() {
                   style={{
                     background: "transparent",
                     border: "none",
-                    color: "var(--dock-text-dim, #64748b)",
+                    color: "var(--dock-text-dim, var(--text-muted))",
                     fontSize: "10px",
                     cursor: "pointer",
                     display: "flex",
@@ -1729,9 +1772,9 @@ export default function DockBroadcastTab() {
                 value={channelKeyInput}
                 onChange={(e) => setChannelKeyInput(e.target.value)}
                 style={{
-                  background: "var(--dock-surface, #0f172a)",
-                  border: "1px solid var(--dock-border, #334155)",
-                  color: "#fff",
+                  background: "var(--dock-surface, var(--surface))",
+                  border: "1px solid var(--dock-border, var(--border))",
+                  color: "var(--dock-text, var(--text-primary))",
                   padding: "8px 10px",
                   borderRadius: "var(--radius)",
                   fontSize: "12px",
@@ -1754,8 +1797,8 @@ export default function DockBroadcastTab() {
                     gap: "6px",
                   }}
                 >
-                  <div style={{ fontSize: "11px", color: "var(--dock-text-dim, #94a3b8)", lineHeight: 1.4 }}>
-                    <strong style={{ color: "#fff" }}>How to get this key:</strong>{" "}
+                  <div style={{ fontSize: "11px", color: "var(--dock-text-dim, var(--text-muted))", lineHeight: 1.4 }}>
+                    <strong style={{ color: "var(--dock-text, var(--text-primary))" }}>How to get this key:</strong>{" "}
                     <span>{PLATFORM_KEY_GUIDES[channelPlatformInput].instructions}</span>
                   </div>
                   {PLATFORM_KEY_GUIDES[channelPlatformInput].url && (
@@ -1770,7 +1813,7 @@ export default function DockBroadcastTab() {
                         background: "var(--dock-accent-soft, rgba(99, 102, 241, 0.15))",
                         border: "1px solid var(--dock-accent-soft-border, rgba(99, 102, 241, 0.3))",
                         borderRadius: "5px",
-                        color: "var(--dock-accent, #a5b4fc)",
+                        color: "var(--dock-accent, var(--primary))",
                         fontSize: "10.5px",
                         fontWeight: 600,
                         padding: "3px 8px",
@@ -1787,7 +1830,7 @@ export default function DockBroadcastTab() {
 
             {channelPlatformInput === "youtube" && (
               <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <label style={{ fontSize: "11px", fontWeight: 600, color: "var(--dock-text-dim, #94a3b8)" }}>
+                <label style={{ fontSize: "11px", fontWeight: 600, color: "var(--dock-text-dim, var(--text-muted))" }}>
                   Stream Server (YouTube Ingest)
                 </label>
                 <select
@@ -1798,9 +1841,9 @@ export default function DockBroadcastTab() {
                   }
                   onChange={(e) => setChannelServerInput(e.target.value)}
                   style={{
-                    background: "var(--dock-surface, #0f172a)",
-                    border: "1px solid var(--dock-border, #334155)",
-                    color: "#fff",
+                    background: "var(--dock-surface, var(--surface))",
+                    border: "1px solid var(--dock-border, var(--border))",
+                    color: "var(--dock-text, var(--text-primary))",
                     padding: "8px 10px",
                     borderRadius: "var(--radius)",
                     fontSize: "12px",
@@ -1812,7 +1855,7 @@ export default function DockBroadcastTab() {
                   <option value="Backup YouTube ingest server">Backup YouTube ingest server</option>
                   <option value="Backup YouTube ingest server (legacy RTMP)">Backup YouTube ingest server (legacy RTMP)</option>
                 </select>
-                <span style={{ fontSize: "10px", color: "var(--dock-text-dim, #64748b)" }}>
+                <span style={{ fontSize: "10px", color: "var(--dock-text-dim, var(--text-muted))" }}>
                   Standard RTMP matches your YouTube Studio URL (rtmp://a.rtmp.youtube.com/live2) for reliable delivery.
                 </span>
               </div>
@@ -1820,7 +1863,7 @@ export default function DockBroadcastTab() {
 
             {channelPlatformInput === "custom" && (
               <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <label style={{ fontSize: "11px", fontWeight: 600, color: "var(--dock-text-dim, #94a3b8)" }}>
+                <label style={{ fontSize: "11px", fontWeight: 600, color: "var(--dock-text-dim, var(--text-muted))" }}>
                   Streaming Server Address (RTMP URL)
                 </label>
                 <input
@@ -1829,9 +1872,9 @@ export default function DockBroadcastTab() {
                   value={channelServerInput}
                   onChange={(e) => setChannelServerInput(e.target.value)}
                   style={{
-                    background: "var(--dock-surface, #0f172a)",
-                    border: "1px solid var(--dock-border, #334155)",
-                    color: "#fff",
+                    background: "var(--dock-surface, var(--surface))",
+                    border: "1px solid var(--dock-border, var(--border))",
+                    color: "var(--dock-text, var(--text-primary))",
                     padding: "8px 10px",
                     borderRadius: "var(--radius)",
                     fontSize: "12px",
@@ -1850,7 +1893,7 @@ export default function DockBroadcastTab() {
                   padding: "6px 12px",
                   borderRadius: "var(--radius)",
                   background: "transparent",
-                  color: "var(--dock-text-dim, #94a3b8)",
+                  color: "var(--dock-text-dim, var(--text-muted))",
                   border: "none",
                   cursor: "pointer",
                   fontSize: "12px",
@@ -1864,7 +1907,7 @@ export default function DockBroadcastTab() {
                 style={{
                   padding: "6px 14px",
                   borderRadius: "var(--radius)",
-                  background: "var(--dock-accent, #6366F1)",
+                  background: "var(--dock-accent, var(--primary))",
                   color: "#ffffff",
                   fontWeight: 600,
                   border: "none",

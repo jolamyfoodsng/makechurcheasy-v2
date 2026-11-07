@@ -1,5 +1,5 @@
 /*
- * Make Church Eazy — "Sunday graphics" lower thirds (20 animated graphics), registered into
+ * Make Church Eazy — "Sunday graphics" lower thirds (21 animated graphics), registered into
  * the Motion engine (kinetic-lower-thirds.js must load first).
  *
  * Ported from the Sunday lower thirds bench (sunday-lower-thirds.html): service bars, ways to
@@ -514,6 +514,130 @@
     },
     out: function (r, tl) { tl.to($(".cur", r), { opacity: 0, duration: .1 }, 0).to($$(".tb", r), { y: 140, opacity: 0, duration: .4, ease: "back.in(1.6)", stagger: .1 }, 0); } };
 
+  /* ---------- Account Number · X Ribbons (full-screen giving screen) ----------
+   * Fills the whole 16:9 output (like scripture slides): two white ribbons cross corner to
+   * corner in an X behind a white card. Each ribbon wipes in along its diagonal while its
+   * words slide in, then keeps scrolling so words enter one edge and leave the other; on exit
+   * the words run off and the ribbons wipe away. */
+  (function () {
+    var P = ":is(#overlay-root,body) .kx-root .slt .ac";
+    var F = "Montserrat,\"MCE Archivo\",Arial,sans-serif !important";
+    var ANG = (Math.atan2(DESIGN_H, DESIGN_W) * 180 / Math.PI).toFixed(3); // corner-to-corner diagonal
+    CSS += [
+      P + "{width:1920px;height:1080px}",
+      P + " .ac-sq{position:absolute;inset:0;background:var(--a);overflow:hidden}",
+      P + " .ac-rib{position:absolute;left:50%;top:50%;width:2600px;height:92px;margin:-46px 0 0 -1300px;transform:rotate(" + ANG + "deg)}",
+      P + " .ac-rib.r2{transform:rotate(-" + ANG + "deg)}",
+      P + " .ac-band{position:absolute;inset:0;background:var(--rb);overflow:hidden;display:flex;align-items:center;box-shadow:0 6px 22px rgba(0,0,0,.16)}",
+      P + " .ac-rw," + P + " .ac-track{display:flex;align-items:center;flex:none;white-space:nowrap}",
+      P + " .ac-track span{font:800 34px/1 " + F + ";letter-spacing:.3em;color:var(--a);text-transform:uppercase;padding:0 .6em 0 .9em}",
+      P + " .ac-track i{display:block;flex:none;width:14px;height:14px;background:var(--a);transform:rotate(45deg)}",
+      P + " .ac-head{position:absolute;left:0;right:0;top:56px;display:flex;flex-direction:column;align-items:center;gap:16px}",
+      P + " .ac-logo{width:96px;height:96px;border-radius:20px;background:#fff;box-shadow:0 8px 22px rgba(0,0,0,.2)}",
+      P + " .ac-logo .logo-ph{font-size:24px !important;color:var(--a)}",
+      P + " .ac-org{font:700 58px/1.1 Cinzel,'Cormorant Garamond',Georgia,serif !important;color:#fff;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}",
+      P + " .ac-card{position:absolute;left:440px;right:440px;top:276px;height:560px;background:var(--c);border-radius:40px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;box-shadow:0 26px 60px rgba(0,0,0,.24)}",
+      P + " .ac-l{font:600 30px/1.15 " + F + ";letter-spacing:.06em;color:var(--a);text-transform:uppercase;white-space:nowrap}",
+      P + " .ac-num{font:900 128px/1.02 " + F + ";color:var(--a);white-space:nowrap;overflow:hidden;margin:6px 0 28px;padding:0 .04em}",
+      P + " .ac-num .ch{display:inline-block}",
+      P + " .ac-bank{font:800 80px/1.08 " + F + ";color:var(--a);white-space:nowrap;letter-spacing:-.01em;margin:6px 0 28px}",
+      P + " .ac-nm{font:800 52px/1.12 " + F + ";color:var(--a);white-space:nowrap;margin-top:6px}",
+      P + " .ac-foot{position:absolute;left:50%;transform:translateX(-50%);bottom:56px;height:92px;background:#fff;border-radius:24px;display:flex;align-items:center;justify-content:center;gap:36px;padding:0 32px;white-space:nowrap;box-shadow:0 10px 26px rgba(0,0,0,.18)}",
+      P + " .ac-tag{flex:none;background:var(--a);color:#fff;font:800 21px/1 " + F + ";letter-spacing:.12em;padding:13px 20px;border-radius:12px;text-transform:uppercase;white-space:nowrap}",
+      P + " .ac-it{display:flex;align-items:center;gap:12px;color:#1d1d1f;font:700 27px/1 " + F + ";white-space:nowrap}",
+      P + " .ac-it .ic{width:34px;height:34px;color:var(--a)}",
+      P + " .ac-it .bi{width:32px;height:32px;color:#1d1d1f}"
+    ].join("\n") + "\n";
+
+    /* Shrink a line's font so long values still fit the card. */
+    function fit(s, base, room, perChar) { var n = String(s || "").length || 1; return Math.max(16, Math.min(base, Math.floor(room / (n * perChar)))); }
+    function ribbon(cls, txt) {
+      // Each half of the track must be longer than the visible ribbon so the scroll loops seamlessly.
+      var raw = String(txt || "").trim() || " ", half = "", word = esc(raw);
+      var copies = Math.max(3, Math.ceil(2600 / (raw.length * 35 + 85)));
+      for (var i = 0; i < copies; i++) half += "<span>" + word + "</span><i></i>";
+      return '<div class="ac-rib ' + cls + '"><div class="ac-band"><div class="ac-rw"><div class="ac-track">' + half + half + "</div></div></div></div>";
+    }
+    var SHUT = "inset(50% 50% 50% 50%)", OPEN = "inset(0% 0% 0% 0%)";
+    /* After render, shrink any line that is still wider than its room (the estimate above can't know the font). */
+    function shrinkToFit(r) {
+      // The church name stays in the clear space between the two ribbons.
+      [[".ac-org", 1100], [".ac-num", 960], [".ac-bank", 960], [".ac-nm", 960]].forEach(function (x) {
+        var el = $(x[0], r); if (!el || el.scrollWidth <= x[1]) return;
+        // !important: the line's CSS font shorthand is !important too.
+        el.style.setProperty("font-size", Math.max(16, Math.floor(parseFloat(global.getComputedStyle(el).fontSize) * x[1] / el.scrollWidth)) + "px", "important");
+      });
+    }
+
+    T.accountx = { cls: "ac", group: "giving", tags: GIVING.concat(["Account", "Bank", "Full screen"]), color: "#e8194f", hold: 12, full: true,
+      name: "Account Number · X Ribbons", tech: "Full-screen pink giving screen: two crossing ribbons whose words scroll in and out, a white card with the account number, bank and account name, and a contact strip",
+      fields: [LOGO, mark("LOGO"), text("church", "Church name", "YOUR CHURCH NAME"),
+        text("l1", "Label 1", "ACCOUNT NUMBER"), text("acct", "Account number", "0123456789"),
+        text("l2", "Label 2", "BANK NAME"), text("bank", "Bank name", "YOUR BANK NAME"),
+        text("l3", "Label 3", "ACCOUNT NAME"), text("acctname", "Account name", "YOUR CHURCH NAME"),
+        text("rib1", "Ribbon 1 text", "GIVE"), text("rib2", "Ribbon 2 text", "ACCOUNT DETAILS"),
+        text("tag", "Contact tag", "CONTACT US"), text("phone", "Phone", "0800 000 0000"),
+        ["socials", "socials", "Social icons (comma list)", "instagram,tiktok", "list", BRAND_OPTIONS], text("handle", "Social handle", "@yourchurchname"),
+        color("a", "Background colour", "#e8194f"), color("c", "Card colour", "#ffffff"), color("rb", "Ribbon colour", "#ffffff")],
+      html: function (v) {
+        var num = String(v.acct || "").split("").map(function (c) { return '<span class="ch">' + (c === " " ? "&nbsp;" : esc(c)) + "</span>"; }).join("");
+        var soc = socRow(v), handle = String(v.handle || "").trim(), phone = String(v.phone || "").trim();
+        return '<div class="ac-sq">' + ribbon("r1", v.rib1) + ribbon("r2", v.rib2) +
+          '<div class="ac-head"><div class="ac-logo lbox">' + lp(v) + '</div><div class="ac-org" style="font-size:' + fit(v.church, 58, 1100, .82) + 'px !important">' + esc(v.church) + "</div></div>" +
+          '<div class="ac-card"><div class="ac-l">' + esc(v.l1) + '</div><div class="ac-num" style="font-size:' + fit(v.acct, 128, 960, .7) + 'px !important">' + num + "</div>" +
+          '<div class="ac-l">' + esc(v.l2) + '</div><div class="ac-bank" style="font-size:' + fit(v.bank, 80, 960, .64) + 'px !important">' + esc(v.bank) + "</div>" +
+          '<div class="ac-l">' + esc(v.l3) + '</div><div class="ac-nm" style="font-size:' + fit(v.acctname, 52, 960, .62) + 'px !important">' + esc(v.acctname) + "</div></div>" +
+          '<div class="ac-foot">' + (String(v.tag || "").trim() ? '<span class="ac-tag">' + esc(v.tag) + "</span>" : "") +
+          (phone ? '<span class="ac-it">' + ic("phone") + esc(phone) + "</span>" : "") +
+          (soc || handle ? '<span class="ac-it">' + soc + esc(handle) + "</span>" : "") + "</div></div>";
+      },
+      tl: function (r) {
+        var q = function (s) { return $(s, r); }, qa = function (s) { return $$(s, r); }, tl = gsap.timeline();
+        // Measure now, and again once the web fonts have loaded (widths change when they arrive).
+        shrinkToFit(r);
+        if (global.document && document.fonts && document.fonts.ready) document.fonts.ready.then(function () { shrinkToFit(r); });
+        global.setTimeout(function () { shrinkToFit(r); }, 700);
+        tl.fromTo(q(".ac-sq"), { clipPath: SHUT }, { clipPath: OPEN, duration: .75, ease: "expo.inOut" }, 0)
+          // Ribbons wipe in along their diagonals (one from each top corner); their words slide in with them.
+          .fromTo(q(".r1 .ac-band"), { scaleX: 0, transformOrigin: "0% 50%" }, { scaleX: 1, duration: .85, ease: "power3.inOut" }, .3)
+          .fromTo(q(".r1 .ac-rw"), { x: 1400 }, { x: 0, duration: 1.6, ease: "power3.out" }, .3)
+          .fromTo(q(".r2 .ac-band"), { scaleX: 0, transformOrigin: "100% 50%" }, { scaleX: 1, duration: .85, ease: "power3.inOut" }, .42)
+          .fromTo(q(".r2 .ac-rw"), { x: -1400 }, { x: 0, duration: 1.6, ease: "power3.out" }, .42)
+          .fromTo(q(".ac-logo"), { scale: 0, rotation: -90 }, { scale: 1, rotation: 0, duration: .55, ease: "back.out(2)" }, .55)
+          .fromTo(q(".ac-org"), { yPercent: 100, clipPath: "inset(0% 0% 100% 0%)" }, { yPercent: 0, clipPath: OPEN, duration: .55, ease: "expo.out" }, .7)
+          .fromTo(q(".ac-card"), { scale: .6, opacity: 0, rotation: -4 }, { scale: 1, opacity: 1, rotation: 0, duration: .65, ease: "back.out(1.6)" }, .72)
+          .fromTo(qa(".ac-l"), { yPercent: 100, clipPath: "inset(0% 0% 100% 0%)" }, { yPercent: 0, clipPath: OPEN, duration: .45, ease: "expo.out", stagger: .2 }, 1.0)
+          .fromTo(qa(".ac-num .ch"), { yPercent: 110 }, { yPercent: 0, duration: .5, ease: "back.out(1.8)", stagger: .035 }, 1.06)
+          .fromTo(q(".ac-bank"), { x: -70, opacity: 0, filter: "blur(12px)" }, { x: 0, opacity: 1, filter: "blur(0px)", duration: .5, ease: "power3.out" }, 1.3)
+          .fromTo(q(".ac-nm"), { x: 70, opacity: 0, filter: "blur(12px)" }, { x: 0, opacity: 1, filter: "blur(0px)", duration: .5, ease: "power3.out" }, 1.48)
+          .fromTo(q(".ac-foot"), { clipPath: "inset(0% 50% 0% 50% round 24px)" }, { clipPath: "inset(0% 0% 0% 0% round 24px)", duration: .6, ease: "power3.inOut" }, 1.3)
+          .fromTo(qa(".ac-foot > *"), { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: .45, ease: "power3.out", stagger: .1 }, 1.55);
+        return tl;
+      },
+      out: function (r, tl) {
+        var q = function (s) { return $(s, r); }, qa = function (s) { return $$(s, r); };
+        tl.to(qa(".ac-foot > *"), { y: 24, opacity: 0, duration: .2, ease: "power2.in", stagger: { each: .05, from: "end" } }, 0)
+          .to(q(".ac-foot"), { clipPath: "inset(0% 50% 0% 50% round 24px)", duration: .35, ease: "power3.in" }, .12)
+          .to(qa(".ac-num .ch"), { yPercent: -110, duration: .25, ease: "power2.in", stagger: { each: .02, from: "end" } }, 0)
+          .to([q(".ac-bank"), q(".ac-nm")], { opacity: 0, filter: "blur(10px)", duration: .25, ease: "power2.in" }, 0)
+          .to(qa(".ac-l"), { yPercent: -100, clipPath: "inset(100% 0% 0% 0%)", duration: .25, ease: "power2.in" }, .05)
+          .to(q(".ac-card"), { scale: .7, opacity: 0, duration: .35, ease: "back.in(1.4)" }, .22)
+          .to(q(".ac-org"), { yPercent: -100, clipPath: "inset(100% 0% 0% 0%)", duration: .3, ease: "power2.in" }, .12)
+          .to(q(".ac-logo"), { scale: 0, rotation: 90, duration: .3, ease: "back.in(2)" }, .18)
+          // The ribbons' words run off the far end, then each ribbon wipes away the way it came in.
+          .to(q(".r1 .ac-rw"), { x: "-=1400", duration: .85, ease: "power2.in" }, .15)
+          .to(q(".r2 .ac-rw"), { x: "+=1400", duration: .85, ease: "power2.in" }, .15)
+          .to(q(".r1 .ac-band"), { scaleX: 0, transformOrigin: "100% 50%", duration: .55, ease: "power3.in" }, .45)
+          .to(q(".r2 .ac-band"), { scaleX: 0, transformOrigin: "0% 50%", duration: .55, ease: "power3.in" }, .5)
+          .to(q(".ac-sq"), { clipPath: SHUT, duration: .5, ease: "expo.in" }, .75);
+      },
+      // While it holds, the ribbon words keep scrolling in opposite directions: in at one edge, out at the other.
+      amb: function (r) {
+        return [gsap.fromTo($(".r1 .ac-track", r), { xPercent: 0 }, { xPercent: -50, duration: 30, ease: "none", repeat: -1 }),
+          gsap.fromTo($(".r2 .ac-track", r), { xPercent: -50 }, { xPercent: 0, duration: 30, ease: "none", repeat: -1 })];
+      } };
+  })();
+
   /* ---------- animation vocabulary ---------- */
   var CL = { L: "inset(0% 100% 0% 0%)", R: "inset(0% 0% 0% 100%)", U: "inset(100% 0% 0% 0%)", D: "inset(0% 0% 100% 0%)", C: "inset(0% 50% 0% 50%)", V: "inset(50% 0% 50% 0%)", full: "inset(0% 0% 0% 0%)" };
   var FX = {
@@ -637,11 +761,21 @@
         box.innerHTML = d.html(P);
         sec.appendChild(box); frame.appendChild(sec); crop.appendChild(frame); stage.appendChild(crop);
         frame.style.cssText = "position:absolute;top:0;width:" + DESIGN_W + "px;height:" + DESIGN_H + "px;transform-origin:0 0";
+        // Full-screen graphics (d.full) fill the whole 1920×1080 frame like scripture slides: in OBS
+        // they cover the whole output at any source size, and Position / Size don't move them
+        // (the same rule as an admin graphic package's .pkg-fullscreen).
+        if (d.full) {
+          X = 0; Y = 0; PS = 1;
+          if (inOverlay) {
+            var host = kx.closest("#overlay-root");
+            Sc = Math.min(((host && host.clientWidth) || DESIGN_W) / DESIGN_W, ((host && host.clientHeight) || DESIGN_H) / DESIGN_H) || 1;
+          }
+        }
         var w = box.offsetWidth * PS, h = box.offsetHeight * PS;
         var f = inOverlay ? justifyFactor(kx) : 0;
         var left = f === 0 ? X : f === 1 ? DESIGN_W - X - w : (DESIGN_W - w) / 2;
         box.style.cssText += ";left:" + left + "px;bottom:" + Y + "px;transform:scale(" + PS + ")";
-        var H = Math.min(DESIGN_H, Math.ceil(Y + h + EDGE_TOP));
+        var H = d.full ? DESIGN_H : Math.min(DESIGN_H, Math.ceil(Y + h + EDGE_TOP));
         crop.style.cssText = "position:relative;overflow:visible;width:" + (inOverlay ? 0 : Math.round(DESIGN_W * Sc)) + "px;height:" + Math.round(H * Sc) + "px";
         frame.style.left = (inOverlay ? -DESIGN_W * Sc * f : 0) + "px";
         frame.style.transform = "scale(" + Sc + ") translateY(" + (-(DESIGN_H - H)) + "px)";

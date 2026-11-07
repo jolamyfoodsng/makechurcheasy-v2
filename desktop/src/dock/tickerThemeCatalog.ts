@@ -100,7 +100,7 @@ interface RenderDockTickerThemeOptions {
   brandName?: string;
   divider?: DockTickerDivider;
   messageSpacing?: number;
-  /** Pill tickers: what the heading shows. "time" = the live clock instead of the heading text. */
+  /** What the heading shows. "time" = the live clock instead of the heading text (see dockTickerSupportsHeadingTime). */
   headingMode?: "text" | "time";
 }
 
@@ -134,6 +134,23 @@ export const DEFAULT_DOCK_TICKER_THEME_OPTION =
  * downloaded catalog (main app) or dock-broadcast-graphics.json (Dock).
  */
 let adminPackageTickers: PermanentTickerTheme[] = [];
+
+/**
+ * Uploaded tickers that copy a bundled one (the admin page's example file is the Sunrise ticker).
+ * Mirrors DUPLICATE_PACKAGE_TICKERS in services/broadcastGraphicsCatalog.ts: the copy is not
+ * listed, and a saved pick of it shows the bundled ticker.
+ */
+const DUPLICATE_PACKAGE_TICKER_IDS: Readonly<Record<string, string>> = {
+  "ticker-pkg-starter-sunrise-ticker": "ticker-sunrise",
+};
+
+/** Retired tickers and the one that replaced them (a saved pick of a retired id shows its replacement). */
+const RETIRED_TICKER_IDS: Readonly<Record<string, string>> = {
+  ...DUPLICATE_PACKAGE_TICKER_IDS,
+  // "Minimal" and "Glass" were the "Fresh" bar in other colours; it is now "Clean Bar".
+  "ticker-minimal": "ticker-fresh",
+  "ticker-glass": "ticker-fresh",
+};
 let adminBlockedTickerIds = new Set<string>();
 
 export function setDockTickerAdminPolicy(policy: {
@@ -142,7 +159,8 @@ export function setDockTickerAdminPolicy(policy: {
 }): void {
   adminBlockedTickerIds = new Set(policy.blocked ?? []);
   adminPackageTickers = (policy.packageTickers ?? []).filter(
-    (theme) => theme && typeof theme.id === "string" && typeof theme.html === "string",
+    (theme) => theme && typeof theme.id === "string" && typeof theme.html === "string"
+      && !DUPLICATE_PACKAGE_TICKER_IDS[theme.id],
   );
 }
 
@@ -200,12 +218,20 @@ export function getAllDockTickerThemeOptions(
   return [...merged.values()].filter((option) => !adminBlockedTickerIds.has(option.id));
 }
 
+/** The ticker id to use for a saved pick: a retired or duplicate ticker gives the one that replaced it. */
+export function canonicalDockTickerThemeId(themeId: string | null | undefined): string {
+  const id = String(themeId || "");
+  return RETIRED_TICKER_IDS[id] ?? id;
+}
+
 export function resolveDockTickerThemeOption(
   themeId: string | null | undefined,
   remoteThemes: RemoteProductionTheme[] = [],
 ): DockTickerThemeOption | undefined {
   if (!themeId) return undefined;
-  return getAllDockTickerThemeOptions(remoteThemes).find((option) => option.id === themeId);
+  const options = getAllDockTickerThemeOptions(remoteThemes);
+  return options.find((option) => option.id === themeId)
+    ?? options.find((option) => option.id === RETIRED_TICKER_IDS[themeId]);
 }
 
 /**
@@ -226,6 +252,13 @@ export function getDockTickerThemeOptionsForFavorites(
 
   const filtered = allOptions.filter((option) => favorites.has(option.id));
   return cap(filtered.length > 0 ? filtered : allOptions);
+}
+
+/** Whether the ticker's heading can show the live time instead of the heading text. */
+export function dockTickerSupportsHeadingTime(option: DockTickerThemeOption | null | undefined): boolean {
+  if (!option) return false;
+  if (option.source === "dock" || option.source === "remote") return true;
+  return option.theme.headingTime === true;
 }
 
 export function renderDockTickerThemeHtml({
@@ -263,6 +296,7 @@ export function renderDockTickerThemeHtml({
       resolvedFontFamily || undefined,
       resolveDockTickerDividerChar(divider, option.theme.separatorChar),
       messageSpacing,
+      headingMode === "time" ? "time" : "text",
     );
   }
 

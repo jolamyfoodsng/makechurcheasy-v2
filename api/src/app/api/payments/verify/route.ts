@@ -29,6 +29,10 @@ import { stopActiveTrialForPaidPlan } from "@/lib/trialRecords";
 import { CreditTransactionType, type BillingCycle, type PlanTier } from "@/types/schemas";
 import { ObjectId } from "mongodb";
 import { recordActivationEvent } from "@/lib/activation";
+import { reportPaymentToTelegram } from "@/lib/paymentTelegramNotifications";
+
+// Paystack statuses that mean the charge is over and did not succeed.
+const FINAL_FAILED_STATUSES = new Set(["failed", "abandoned", "reversed"]);
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || "";
 const PAYSTACK_API = "https://api.paystack.co";
@@ -152,6 +156,23 @@ export async function POST(req: NextRequest) {
         "[Paystack Verify]",
         result.message || result.data?.status || "Verification failed"
       );
+      const failedStatus = String(result.data?.status || "").toLowerCase();
+      if (result.data && FINAL_FAILED_STATUSES.has(failedStatus)) {
+        const failedMetadata = result.data.metadata || {};
+        reportPaymentToTelegram({
+          outcome: "failed",
+          provider: "paystack",
+          reference,
+          userId: failedMetadata.user_id || failedMetadata.userId || null,
+          email: result.data.customer?.email || result.data.email,
+          plan: planId || failedMetadata.plan || null,
+          billingCycle: bodyBillingCycle || failedMetadata.billingCycle || null,
+          amount: typeof result.data.amount === "number" ? result.data.amount / 100 : null,
+          currency: result.data.currency,
+          failureReason: result.data.gateway_response || `Payment ${failedStatus}`,
+          source: "Paystack verify",
+        });
+      }
       return NextResponse.json(
         {
           error: result.message || "Payment verification failed",
@@ -500,6 +521,21 @@ export async function POST(req: NextRequest) {
         })
       ).catch(() => { });
     }
+
+    reportPaymentToTelegram({
+      outcome: "success",
+      provider: "paystack",
+      reference,
+      userId: targetUserId,
+      email,
+      plan,
+      billingCycle,
+      credits: planCredits,
+      amount: txData.amount / 100,
+      currency: txData.currency || "NGN",
+      source: "Paystack verify",
+      occurredAt: now,
+    });
 
     // ── 7. Return full provisioning result ──────────────────────────────────
 

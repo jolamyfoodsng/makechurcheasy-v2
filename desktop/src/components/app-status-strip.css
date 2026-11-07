@@ -60,13 +60,13 @@
 }
 
 .app-status-strip__chip--update {
-  color: #fbbf24;
+  color: var(--warning);
   background: rgba(245, 158, 11, 0.12);
   border-color: rgba(245, 158, 11, 0.4);
 }
 
 .app-status-strip__chip--urgent {
-  color: #fca5a5;
+  color: var(--error);
   background: rgba(239, 68, 68, 0.14);
   border-color: rgba(239, 68, 68, 0.5);
 }
@@ -131,13 +131,13 @@
 }
 
 .app-status-strip--free .app-status-strip__chip--plan {
-  color: #fde68a;
+  color: var(--warning);
   background: rgba(245, 158, 11, 0.16);
   border-color: rgba(245, 158, 11, 0.55);
 }
 
 .app-status-strip__limits {
-  color: var(--text-secondary, rgba(230, 233, 240, 0.75));
+  color: var(--text-secondary);
   font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;

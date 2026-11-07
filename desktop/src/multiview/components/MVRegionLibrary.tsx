@@ -1344,7 +1344,7 @@ export function MVRegionLibrary() {
             <Icon name="playlist_add" size={14} />
             <span>Assign to Slot</span>
             <button className="mv-popover-close" onClick={() => setSlotPopover(null)} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", padding: 2 }} title="Close">
-              <Icon name="close" size={14} style={{ color: "rgba(255, 255, 255, 0.5)" }} />
+              <Icon name="close" size={14} style={{ color: "var(--text-muted)" }} />
             </button>
           </div>
           {/* Tabs */}
@@ -1406,7 +1406,7 @@ export function MVRegionLibrary() {
               ))}
               {customBibleThemes.length > 0 && (
                 <>
-                  <div style={{ padding: "6px 10px", fontSize: 10, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: 1 }}>Custom</div>
+                  <div style={{ padding: "6px 10px", fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: 1 }}>Custom</div>
                   {customBibleThemes.map((theme) => (
                     <button key={theme.id} className="mv-popover-item"
                       onClick={() => {

@@ -1182,8 +1182,11 @@ export class ScriptureDetectionEngine {
     // matches may override stale passage context; weak fallbacks stay scoped.
     // ────────────────────────────────────────────────────────────────────────
     const fastMatch = fastKeywordMatch(searchInput);
+    // Generic speech ("god be with") can hit a verse's keyword list; only a confident match, or one
+    // backed by several distinctive words, is trusted.
     if (
       fastMatch &&
+      (hasEnoughDistinctiveText || fastMatch.confidence >= 0.85) &&
       (
         matchesQuoteSearchScope(fastMatch.book, fastMatch.chapter, searchScope) ||
         canStrongQuoteLeaveScope(fastMatch.confidence, quoteProfile)

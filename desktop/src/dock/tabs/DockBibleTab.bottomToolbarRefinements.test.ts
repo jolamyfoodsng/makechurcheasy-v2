@@ -19,11 +19,10 @@ describe("DockBibleTab bottom toolbar and picker refinements", () => {
   });
 
   it("merges top actions into the bottom toolbar overflow menu", () => {
-    // Bottom toolbar children now contains Compare, History, Reload, and Theme toggle
-    expect(dockBibleTabSource).toContain('onClick={() => setShowComparePopover(true)}');
-    expect(dockBibleTabSource).toContain('onClick={() => setShowBibleHistory(true)}');
-    expect(dockBibleTabSource).toContain('onClick={() => window.location.reload()}');
-    expect(dockBibleTabSource).toContain('onClick={() => setTheme(nextTheme)}');
+    // The actions menu holds Compare, History and Reload
+    expect(dockBibleTabSource).toContain("setShowBibleActionsMenu(false);\n                      setShowComparePopover(true);");
+    expect(dockBibleTabSource).toContain("setShowBibleActionsMenu(false);\n                      setShowBibleHistory(true);");
+    expect(dockBibleTabSource).toContain("setShowBibleActionsMenu(false);\n                      window.location.reload();");
     expect(dockBibleTabSource).toContain('data-dock-compare-trigger="true"');
   });
 

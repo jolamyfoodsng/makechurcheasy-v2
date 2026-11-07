@@ -14,7 +14,7 @@
   padding: 10px 14px;
   background: var(--app-surface);
   border: 1px solid var(--app-border);
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   color: var(--app-text);
   font-size: 14px;
   cursor: pointer;
@@ -69,7 +69,7 @@
   max-height: 70vh;
   background: var(--app-surface);
   border: 1px solid var(--app-border);
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
   display: flex;
   flex-direction: column;
@@ -113,7 +113,7 @@
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: var(--app-surface-variant, rgba(255, 255, 255, 0.06));
+  background: var(--surface-raised);
   border: none;
   color: var(--app-text-muted);
   cursor: pointer;
@@ -122,7 +122,7 @@
 }
 
 .lp-search-clear:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--surface-hover);
   color: var(--app-text);
 }
 
@@ -165,18 +165,18 @@
   color: var(--app-text);
   font-size: 14px;
   cursor: pointer;
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   text-align: left;
   gap: 8px;
   transition: background 0.1s;
 }
 
 .lp-item:hover {
-  background: var(--app-surface-variant, rgba(255, 255, 255, 0.06));
+  background: var(--surface-hover);
 }
 
 .lp-item.selected {
-  background: var(--app-primary, rgba(124, 58, 237, 0.12));
+  background: var(--primary-soft);
 }
 
 .lp-item-main {

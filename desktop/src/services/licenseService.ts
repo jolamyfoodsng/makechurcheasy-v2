@@ -143,7 +143,7 @@ function buildAllLimits(config: PlanConfig): Record<PlanTier, PlanLimits> {
     } else {
       // Plan exists but has no entitlements — give it free-tier limits
       result[tier] = entitlementsToPlanLimits(tier, planCfg?.credits ?? 0, {
-        songs: 3, images: 2, videos: 1, themes: 1, lowerThirds: 1, devices: 1, bibleVersions: 4,
+        songs: 5, images: 2, videos: 1, themes: 1, lowerThirds: 1, devices: 1, bibleVersions: 4,
         multiviewTemplates: 0, tickerThemes: 0, themePresets: 0, cloudStorageGB: 0,
         multiview: false, tickers: false, massImport: false, easyWorshipImport: false,
         proPresenterImport: false, translation: false, speechToScripture: true,

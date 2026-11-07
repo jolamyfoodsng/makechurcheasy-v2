@@ -1,0 +1,133 @@
+/* Settings → vMix. Colours come from the app tokens so dark/light mode and the accent apply. */
+.vmix-settings__status {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+}
+
+.vmix-settings__status--ok {
+  border-color: color-mix(in srgb, var(--success) 35%, var(--border));
+  background: color-mix(in srgb, var(--success) 8%, var(--surface));
+}
+
+.vmix-settings__status--wait {
+  border-color: color-mix(in srgb, var(--warning) 35%, var(--border));
+  background: color-mix(in srgb, var(--warning) 8%, var(--surface));
+}
+
+.vmix-settings__status--off {
+  border-color: color-mix(in srgb, var(--error) 35%, var(--border));
+  background: color-mix(in srgb, var(--error) 8%, var(--surface));
+}
+
+.vmix-settings__dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: var(--error);
+}
+
+.vmix-settings__status--ok .vmix-settings__dot { background: var(--success); }
+.vmix-settings__status--wait .vmix-settings__dot { background: var(--warning); }
+
+.vmix-settings__status-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.vmix-settings__status-text strong {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.vmix-settings__status-text span {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* Address, port and Test sit on one line and wrap when the dialog is narrow. */
+.vmix-settings__address {
+  flex-wrap: wrap;
+}
+
+.vmix-settings__address #vmix-host {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+
+.vmix-settings__port {
+  flex: 0 0 96px;
+  min-width: 0;
+}
+
+.vmix-settings__hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.vmix-settings__link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--primary);
+  cursor: pointer;
+}
+
+.vmix-settings__link:hover { text-decoration: underline; }
+
+.vmix-settings__link:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.vmix-settings__row {
+  gap: 16px;
+}
+
+/* Two classes so these beat the Settings page's own .custom-select / .switch-left rules. */
+.vmix-settings__row .switch-left {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.vmix-settings__row .vmix-settings__select {
+  flex: 0 0 auto;
+  width: 180px;
+}
+
+.vmix-settings__notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  border: 1px solid color-mix(in srgb, var(--warning) 38%, var(--border));
+  background: color-mix(in srgb, var(--warning) 10%, var(--surface));
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.vmix-settings__notice svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--warning);
+}
+
+.vmix-settings__error {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--error);
+}

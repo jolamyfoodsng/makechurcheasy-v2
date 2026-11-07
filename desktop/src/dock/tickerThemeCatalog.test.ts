@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  dockTickerSupportsHeadingTime,
+  getAllDockTickerThemeOptions,
+  setDockTickerAdminPolicy,
   formatDockTickerMessages,
   getDockTickerThemeOptionsForFavorites,
   renderDockTickerThemeHtml,
@@ -156,6 +159,47 @@ describe("tickerThemeCatalog", () => {
     const text = render("text");
     expect(text).toContain('data-heading="text"');
     expect(text).toContain("This Week");
+  });
+
+  it("offers the News Ticker Bar as a ticker with its label and messages", () => {
+    const option = resolveDockTickerThemeOption("ticker-news-bar")!;
+    expect(option.name).toBe("News Ticker Bar");
+    const html = renderDockTickerThemeHtml({ option, heading: "Latest", messages: ["Hello church", "Prayer at 6"], speed: 50, position: "bottom", loop: true });
+    expect(html).toContain("Latest");
+    expect(html).toContain("Hello church");
+    expect(html).toContain('data-state="in"');
+  });
+
+  it("lets every built-in ticker's heading show the text or the live time", () => {
+    for (const option of getAllDockTickerThemeOptions()) {
+      expect(dockTickerSupportsHeadingTime(option), option.id).toBe(true);
+      const render = (headingMode: "text" | "time") => renderDockTickerThemeHtml({ option, heading: "Notice", messages: ["Hi"], speed: 50, position: "bottom", loop: true, headingMode });
+      expect(render("time"), option.id).toContain("data-live-clock");
+      expect(render("time"), option.id).toContain("setInterval(t,1000)");
+      expect(render("text"), option.id).toContain("Notice");
+    }
+  });
+
+  it("has one Clean Bar instead of Fresh, Minimal and Glass", () => {
+    const names = getDockTickerThemeOptionsForFavorites(null).map((o) => o.name);
+    expect(names).toContain("Clean Bar");
+    expect(names).not.toContain("Fresh");
+    expect(names).not.toContain("Minimal");
+    expect(names).not.toContain("Glass");
+    expect(resolveDockTickerThemeOption("ticker-minimal")?.id).toBe("ticker-fresh");
+    expect(resolveDockTickerThemeOption("ticker-glass")?.name).toBe("Clean Bar");
+  });
+
+  it("merges an uploaded Sunrise Ticker copy into the bundled Sunrise", () => {
+    const copy = { id: "ticker-pkg-starter-sunrise-ticker", name: "Sunrise Ticker", description: "", accentColor: "#F97316", badge: "This Week", tickerText: "", speed: "24s", html: "<div>{{tickerText}}</div>", css: "", fontImports: [], variables: [] };
+    setDockTickerAdminPolicy({ packageTickers: [copy] });
+    try {
+      const names = getDockTickerThemeOptionsForFavorites(null).map((o) => o.name);
+      expect(names.filter((n) => /sunrise/i.test(n))).toEqual(["Sunrise"]);
+      expect(resolveDockTickerThemeOption("ticker-pkg-starter-sunrise-ticker")?.id).toBe("ticker-sunrise");
+    } finally {
+      setDockTickerAdminPolicy({});
+    }
   });
 
   it("has one Sunrise ticker, not a separate Sunrise Clock", () => {

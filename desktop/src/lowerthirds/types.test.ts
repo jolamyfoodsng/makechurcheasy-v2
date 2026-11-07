@@ -35,8 +35,8 @@ describe("lower-third size presets", () => {
   it("limits the Ministry lower-third picker to XS, SM, MD, and LG", () => {
     expect(ministrySource).toContain('const MINISTRY_LT_SIZE_OPTIONS: LTSize[] = ["xs", "sm", "md", "lg"];');
     expect(ministrySource).toContain("return resolveMinistryLtSize(getSettings().defaultSpeakerSize);");
-    expect(ministrySource).toContain("readUserScopedStorage(MINISTRY_LT_SIZE_STORAGE_KEY)");
-    expect(ministrySource).toContain("writeUserScopedStorage(MINISTRY_LT_SIZE_STORAGE_KEY, s)");
+    expect(ministrySource).toContain("readNativeDockSetting<unknown>(MINISTRY_LT_SIZE_STORAGE_KEY)");
+    expect(ministrySource).toContain("writeNativeDockSetting(MINISTRY_LT_SIZE_STORAGE_KEY, s)");
     expect(ministrySource).toContain("sourceWidth: 1920");
     expect(ministrySource).toContain("sourceHeight: 1080");
     expect(ministrySource).not.toContain('(["xl", "x2"] as LTSize[])');

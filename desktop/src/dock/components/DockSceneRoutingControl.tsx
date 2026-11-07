@@ -26,6 +26,7 @@ import {
 } from "../dockDisplayOutput";
 import { useDockDisplays } from "../useDockDisplays";
 import DockDisplayList from "./DockDisplayList";
+import { fitPopover } from "../useKeepInViewport";
 
 interface Props {
   module: DockSceneRouteModule;
@@ -369,7 +370,7 @@ function DockSceneRoutingControlInner({
 
       {open && typeof document !== "undefined" && createPortal(
         <div
-          ref={popoverRef}
+          ref={(el) => { popoverRef.current = el; fitPopover(el); }}
           data-dock-keep-overflow-open="true"
           role="dialog"
           aria-label={label}

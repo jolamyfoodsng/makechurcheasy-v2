@@ -8,6 +8,7 @@ import {
   verifyFlutterwaveTransaction,
   verifyFlutterwaveWebhookSignature,
 } from "@/lib/flutterwave";
+import { paymentDetailsFromIntent, reportPaymentToTelegram } from "@/lib/paymentTelegramNotifications";
 
 function received(reference?: string, status?: string) {
   return NextResponse.json({
@@ -15,6 +16,16 @@ function received(reference?: string, status?: string) {
     ...(reference ? { reference } : {}),
     ...(status ? { status } : {}),
   });
+}
+
+function reportFailure(intent: Record<string, any>, reference: string, failureReason: string) {
+  reportPaymentToTelegram(paymentDetailsFromIntent(intent, {
+    outcome: "failed",
+    provider: "flutterwave",
+    reference,
+    failureReason,
+    source: "Flutterwave webhook",
+  }));
 }
 
 function amountMatchesExpected(actualValue: unknown, expectedValue: unknown) {
@@ -89,6 +100,7 @@ export async function POST(req: NextRequest) {
         { _id: intent._id, status: { $in: ["PENDING", "CREATING"] } },
         { $set: { status: "FAILED", failureReason: `Flutterwave payment ${eventStatus}.`, updatedAt: now } },
       );
+      reportFailure(intent, intentReference, `Flutterwave payment ${eventStatus}.`);
       return received(intentReference, eventStatus);
     }
     if (!transactionId || !["successful", "succeeded"].includes(eventStatus)) {
@@ -114,6 +126,7 @@ export async function POST(req: NextRequest) {
         { _id: intent._id, status: { $in: ["PENDING", "CREATING"] } },
         { $set: { status: "FAILED", failureReason: "Payment amount mismatch.", updatedAt: new Date().toISOString() } },
       );
+      reportFailure(intent, intentReference, "Payment amount mismatch.");
       return received(intentReference, "amount_mismatch");
     }
     if (!currencyMatches(verifiedData?.currency, expectedCurrency)) {
@@ -121,6 +134,7 @@ export async function POST(req: NextRequest) {
         { _id: intent._id, status: { $in: ["PENDING", "CREATING"] } },
         { $set: { status: "FAILED", failureReason: "Payment currency mismatch.", updatedAt: new Date().toISOString() } },
       );
+      reportFailure(intent, intentReference, "Payment currency mismatch.");
       return received(intentReference, "currency_mismatch");
     }
 

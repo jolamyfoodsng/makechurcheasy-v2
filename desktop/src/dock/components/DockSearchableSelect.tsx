@@ -13,6 +13,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import DockIcon from "../DockIcon";
+import { fitPopover } from "../useKeepInViewport";
 import "./DockSearchableSelect.css";
 
 export interface DockSelectOption {
@@ -269,7 +270,7 @@ export default function DockSearchableSelect({ options, value, onChange, storage
 
   const popover = open && rect ? createPortal(
     <div
-      ref={popRef}
+      ref={(el) => { popRef.current = el; fitPopover(el); }}
       className="dss__pop"
       style={{ left: rect.left, top: rect.top, width: rect.width, maxHeight: rect.maxHeight }}
       onKeyDown={onKeyDown}

@@ -74,7 +74,7 @@ export const DEFAULT_SUPPORT_CONTENT: SupportContent = {
   primaryChannelId: "whatsapp",
   channels: [
     { id: "whatsapp", kind: "whatsapp", label: "Chat on WhatsApp", description: "Message our support team directly.", value: "https://wa.me/2349054545286", enabled: true },
-    { id: "telegram", kind: "telegram", label: "Telegram", description: "Chat with us at @makechurcheasy.", value: "https://t.me/makechurcheasy", enabled: true },
+    { id: "telegram", kind: "telegram", label: "Telegram", description: "Chat with us at @makechurcheazy.", value: "https://t.me/makechurcheazy", enabled: true },
     { id: "email", kind: "email", label: "Email", description: "We reply within one working day.", value: "support@makechurcheazy.com", enabled: true },
     { id: "videos", kind: "youtube", label: "Help videos", description: "Step-by-step tutorials on YouTube.", value: "https://www.youtube.com/playlist?list=PLRua6gJfgC0o", enabled: true },
   ],

@@ -214,12 +214,9 @@ describe("Background picker compact navigation", () => {
 
 describe("Text appearance layout", () => {
   it("places the color card beside font size for Bible and Reference", () => {
-    expect(backgroundPickerSource).toContain(
-      '<div className="dtb-typography-control-row">\n                          <ColorPickerCard',
-    );
-    expect(backgroundPickerSource).toContain(
-      '<div className="dtb-typography-control-row">\n            <ColorPickerCard',
-    );
+    // Bible text, then Reference text (which only shows the colour card when it is not linked).
+    expect(backgroundPickerSource).toMatch(/dtb-typography-control-row">\s*<ColorPickerCard/);
+    expect(backgroundPickerSource).toMatch(/dtb-typography-control-row">\s*\{!linked && \(\s*<ColorPickerCard/);
   });
 });
 
@@ -300,7 +297,6 @@ describe("Background picker layout", () => {
     expect(backgroundPickerSource).toContain('data-compact-height={isCompactHeight || undefined}');
     expect(backgroundPickerSource).toContain('aria-orientation={isCompactHeight ? "vertical" : "horizontal"}');
     expect(backgroundPickerSource).toContain('dtb-bg-picker__layout--compact');
-    expect(backgroundPickerSource).toContain('className="dtb-bg-picker__subtabs"');
     expect(backgroundPickerSource).not.toContain('dtb-bg-picker__panel--compact-subtabs');
     expect(dockThemeSettingsModalSource).toContain('dtb-studio__modal${view === "settings" ? " dtb-studio__modal--picker" : ""}');
     expect(dockCssSource).toContain('.dtb-studio__modal--picker');
@@ -428,15 +424,11 @@ describe("Deleted media propagation", () => {
 });
 
 describe("Bible picker reference tabs", () => {
-  it("splits Bible text and layout settings into Bible/Text and Reference sub-tabs", () => {
-    expect(backgroundPickerSource).toContain('className="dtb-bg-picker__subtabs"');
-    expect(backgroundPickerSource).toContain('setTextSubTab("bible")');
-    expect(backgroundPickerSource).toContain('setTextSubTab("reference")');
-    expect(backgroundPickerSource).toContain('setLayoutSubTab("text")');
-    expect(backgroundPickerSource).toContain('setLayoutSubTab("reference")');
-    expect(backgroundPickerSource).toContain('t("bible.bible", "Bible")');
-    expect(backgroundPickerSource).toContain('t("common.text", "Text")');
+  it("keeps Bible text and layout in the Text and Layout tabs, with reference settings in their own sections", () => {
+    expect(backgroundPickerSource).toContain('setActiveTab("text")');
+    expect(backgroundPickerSource).toContain('setActiveTab("layout")');
     expect(backgroundPickerSource).toContain("ReferenceDisplaySection");
+    expect(backgroundPickerSource).toContain("ReferenceBackgroundSection");
     expect(backgroundPickerSource).toContain("!isBiblePicker && (");
   });
 
@@ -1251,14 +1243,14 @@ describe("Active OBS Bible overlay wiring", () => {
     expect(themeCreatorSource).toContain("await addBibleFavorite(themeToSave.id)");
     expect(productionThemeSettingsSource).toContain("<ThemeCreatorModal");
     expect(productionThemeSettingsSource).toContain("onSaved={(theme) => void handleThemeSaved(theme)}");
-    expect(productionSettingsSource).toContain("const customThemes = await getCustomThemes()");
+    expect(productionSettingsSource).toContain("customThemes = await getCustomThemes()");
     expect(productionSettingsSource).toContain("...customThemes.filter((theme) => !builtinIds.has(theme.id))");
-    expect(bibleDbSource).toContain("syncCustomThemesToDock().catch");
-    expect(bibleDbSource).toContain("syncFavoriteBibleThemesToDock().catch");
+    expect(bibleDbSource).toContain("syncCustomThemesToDock()");
+    expect(bibleDbSource).toContain("syncFavoriteBibleThemesToDock()");
     expect(bibleDbSource).toContain('name: "dock-bible-themes"');
     expect(dockThemeDataSource).toContain("const customThemes = await loadDockCustomBibleThemes()");
-    expect(dockThemeDataSource).toContain("const localThemes = [...favoritedBuiltins, ...uniqueCustom]");
-    expect(backgroundPickerSource).toContain("const all = await loadDockFavoriteBibleThemes()");
+    expect(dockThemeDataSource).toContain("const localThemes = [...uniqueCustom, ...favoritedBuiltins, ...otherBuiltins]");
+    expect(backgroundPickerSource).toContain("const available = await loadDockThemesForArea(area, categories, { fresh })");
     expect(backgroundPickerSource).toContain("themeSupportsBibleOverlayMode(theme, overlayMode)");
     expect(backgroundPickerSource).toContain("window.addEventListener(FAVORITE_THEMES_UPDATED_EVENT, refresh)");
     expect(dockBibleTabSource).toContain('allowedCategories={["bible", "general"]}');

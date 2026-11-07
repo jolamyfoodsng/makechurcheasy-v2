@@ -33,8 +33,8 @@ const [CURRENT_NAME, OLDER_NAME] = RETIRED_MCE_SOURCE_NAMES;
 
 describe("retired OBS sources", () => {
   it("lists the retired Text overlay source under its current and older names", () => {
-    expect(RETIRED_MCE_SOURCE_NAMES.length).toBe(3);
-    expect(new Set(RETIRED_MCE_SOURCE_NAMES).size).toBe(3);
+    expect(RETIRED_MCE_SOURCE_NAMES.length).toBe(2);
+    expect(new Set(RETIRED_MCE_SOURCE_NAMES).size).toBe(2);
   });
 
   it("removes a hidden source and keeps one that is on air or unanswered", () => {

@@ -22,6 +22,8 @@ import { extractFirstLineAsTitle } from "../../worship/songTitleFromLyrics";
 import { nextAutoNoteTitle, isDummyTitle } from "../../worship/songTitleAutoGen";
 import type { DockFullscreenQuickThemeSettings } from "../components/DockFullscreenThemeQuickSettings";
 import Icon from "../DockIcon";
+import ModalDialog from "../../components/ModalDialog";
+import { Trash2 } from "../../components/icons/NativeIcons";
 import DockBottomToolbar from "../components/DockBottomToolbar";
 import DockBottomSearchPanel from "../components/DockBottomSearchPanel";
 import DockSceneRoutingControl from "../components/DockSceneRoutingControl";
@@ -117,6 +119,8 @@ import {
   getPendingNoteSelection,
   setPendingNoteSelection,
 } from "../dockScheduleService";
+import { fitPopover } from "../useKeepInViewport";
+import { useDockWideLayout } from "../useDockWideLayout";
 
 interface Props {
   staged: DockStagedItem | null;
@@ -602,6 +606,7 @@ export default function DockNotesTab({
   const initialPrefs = initialPrefsRef.current;
   const initialOverlayMode: OverlayMode = initialPrefs.overlayMode === "lower-third" ? "lower-third" : "fullscreen";
 
+  const wideLayout = useDockWideLayout();
   const [notes, setNotes] = useState<DockNote[]>(() => loadDockNotes());
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebouncedValue(searchQuery, 160);
@@ -2057,8 +2062,10 @@ export default function DockNotesTab({
 
   return (
     <div className="dock-module dock-module--worship">
-      {!selectedNote ? (
-        <>
+      {/* Note list (when no note is open; always beside the slides on a wide dock) */}
+      <div className={`dock-wide-split${wideLayout ? "" : " dock-wide-split--off"}`}>
+      {!selectedNote || wideLayout ? (
+        <div className="dock-wide-split__list">
           {searchPlacement !== "bottom" && renderNotesSearchPanel()}
 
           <section className="dock-console-panel dock-console-panel--workspace dock-worship-workspace">
@@ -2080,7 +2087,7 @@ export default function DockNotesTab({
                 {renderedNotes.map((note) => (
                   <div
                     key={note.id}
-                    className="dock-card dock-card--console dock-song-card dock-notes-card"
+                    className={`dock-card dock-card--console dock-song-card dock-notes-card${selectedNote?.id === note.id ? " dock-song-card--selected" : ""}`}
                     onContextMenu={(event) => {
                       event.preventDefault();
                       event.stopPropagation();
@@ -2153,6 +2160,7 @@ export default function DockNotesTab({
                 )}
                 {noteContextMenu && (
                   <div
+                    ref={(el) => fitPopover(el)}
                     className="dock-bible-context-menu"
                     style={{
                       position: "fixed",
@@ -2214,24 +2222,19 @@ export default function DockNotesTab({
                   </div>
                 )}
                 {noteDeleteTarget && (
-                  <div className="dock-modal-backdrop" onClick={() => setNoteDeleteTarget(null)}>
-                    <div className="dock-modal dock-modal--confirm" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 400 }}>
-                      <div className="dock-modal__header">
-                        <div className="dock-modal__title">{t("notes.deleteNoteTitle", "Delete Note")}</div>
-                      </div>
-                      <div className="dock-modal__body">
-                        <p>{t("notes.confirmDelete", { title: getNoteDisplayTitle(noteDeleteTarget), defaultValue: `Are you sure you want to delete "${getNoteDisplayTitle(noteDeleteTarget)}"?` })}</p>
-                      </div>
-                      <div className="dock-modal__footer" style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
-                        <button type="button" className="dock-btn dock-btn--ghost" onClick={() => setNoteDeleteTarget(null)}>
-                          {t("common.cancel", "Cancel")}
-                        </button>
-                        <button type="button" className="dock-btn dock-btn--danger" onClick={() => handleDeleteNote(noteDeleteTarget)}>
-                          {t("common.delete", "Delete")}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+                  <ModalDialog
+                    tone="danger"
+                    icon={<Trash2 size={26} />}
+                    title={t("notes.deleteNoteTitle", "Delete Note")}
+                    actions={[
+                      { label: t("common.cancel", "Cancel"), variant: "ghost", onClick: () => setNoteDeleteTarget(null) },
+                      { label: t("common.delete", "Delete"), variant: "danger", icon: <Trash2 size={14} />, onClick: () => handleDeleteNote(noteDeleteTarget) },
+                    ]}
+                    onClose={() => setNoteDeleteTarget(null)}
+                    zIndex={10002}
+                  >
+                    <p>{t("notes.confirmDelete", { title: getNoteDisplayTitle(noteDeleteTarget), defaultValue: `Are you sure you want to delete "${getNoteDisplayTitle(noteDeleteTarget)}"?` })}</p>
+                  </ModalDialog>
                 )}
               </div>
             )}
@@ -2244,9 +2247,10 @@ export default function DockNotesTab({
               {renderNotesSearchPanel()}
             </DockBottomSearchPanel>
           )}
-        </>
-      ) : (
-        <>
+        </div>
+      ) : null}
+      {selectedNote ? (
+        <div className="dock-wide-split__detail">
           <section className="dock-console-panel dock-console-panel--toolbar dock-worship-summary">
             <div className="dock-worship-summary__header">
               <button
@@ -2579,6 +2583,7 @@ export default function DockNotesTab({
             )}
             {slideContextMenu && (
               <div
+                ref={(el) => fitPopover(el)}
                 className="dock-bible-context-menu"
                 style={{
                   position: "fixed",
@@ -2785,8 +2790,14 @@ export default function DockNotesTab({
               />
             </div>
           </section>
-        </>
-      )}
+        </div>
+      ) : wideLayout ? (
+        <div className="dock-wide-split__detail dock-wide-split__placeholder">
+          <Icon name="sticky_note_2" size={20} />
+          <span>{t("notes.pickNoteWide", "Pick a note on the left to show its slides here.")}</span>
+        </div>
+      ) : null}
+      </div>
 
       {actionError && (
         <div className="dock-console-error" style={{ padding: "8px 12px", fontSize: 11, color: "var(--error)" }}>

@@ -16,8 +16,8 @@ body,
 body {
   margin: 0;
   overflow: hidden;
-  background: var(--bg-dark, #0c0e17);
-  color: var(--text-primary, #ffffff);
+  background: var(--bg);
+  color: var(--text-primary);
   --text-primary: inherit;
   --text-secondary: inherit;
   --text-muted: inherit;
@@ -359,7 +359,7 @@ html.mv-theme-light #dock-root,
 }
 
 :root.light .dock-search-dropdown__item--recent svg {
-  color: var(--dock-accent, #4f46e5);
+  color: var(--dock-accent, var(--primary));
 }
 
 :root.light .dock-bible-favorites-modal__item {
@@ -856,7 +856,6 @@ html.mv-theme-light #dock-root,
   .dtb-studio-card,
   .dock-theme-quick__modal,
   .dock-shortcuts-overlay__content,
-  .dock-presentation-modal,
   .ssm-modal,
   .dock-media-document-modal,
   .dock-mv-content-picker,
@@ -875,7 +874,6 @@ html.mv-theme-light #dock-root,
   .dtb-header,
   .dock-shortcuts-overlay__header,
   .dock-theme-quick__modal-head,
-  .dock-presentation-modal__header,
   .ssm-header,
   .dock-media-document-modal__header,
   .dock-bible-compare-modal__header
@@ -891,7 +889,6 @@ html.mv-theme-light #dock-root,
   .dtb-title,
   .dock-shortcuts-overlay__title,
   .dock-theme-quick__title,
-  .dock-presentation-modal__title,
   .ssm-title,
   .dock-media-document-modal__header h3,
   .dock-bible-compare-modal__title
@@ -1031,7 +1028,8 @@ html.mv-theme-light #dock-root,
 
 :root.light .dock-bible-verse-row--selected .dock-bible-verse-row__text,
 :root.light .dock-bible-verse-row--highlighted .dock-bible-verse-row__text {
-  color: var(--text-primary);
+  /* --dock-text, like the other rows: --text-primary can still hold the dark theme's near-white here. */
+  color: var(--dock-text);
   font-weight: 600;
 }
 
@@ -1266,10 +1264,10 @@ html.mv-theme-light #dock-root,
   align-items: center;
   gap: 6px;
   padding: 3px 8px;
-  background: var(--dock-surface-alt, #222);
-  border: 1px solid var(--dock-border, #333);
+  background: var(--dock-surface-alt, var(--surface-raised));
+  border: 1px solid var(--dock-border, var(--border));
   border-radius: 4px;
-  color: var(--dock-text, #eee);
+  color: var(--dock-text, var(--text-primary));
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
@@ -1277,14 +1275,14 @@ html.mv-theme-light #dock-root,
 }
 
 .dtb-ref-color-chip:hover {
-  background: var(--dock-surface-hover, #2a2a2a);
+  background: var(--dock-surface-hover, var(--surface-hover));
   border-color: var(--dock-border-active, #a95335);
 }
 
 .dtb-ref-color-chip--active {
   background: var(--dock-accent-soft, rgba(169, 83, 53, 0.2));
-  border-color: var(--dock-accent, #a95335);
-  color: #fff;
+  border-color: var(--dock-accent, var(--primary));
+  color: var(--dock-text);
 }
 
 .dtb-ref-color-swatch {
@@ -1293,32 +1291,6 @@ html.mv-theme-light #dock-root,
   border-radius: 2px;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
   flex-shrink: 0;
-}
-
-/* ── Language Confirmation Modal Theme Support ── */
-:root.light .dock-language-modal {
-  background: var(--dock-surface, var(--surface));
-  border-color: var(--dock-border, var(--border));
-  box-shadow: 0 20px 48px rgba(36, 29, 24, 0.14), 0 0 0 1px rgba(0, 0, 0, 0.04);
-}
-
-:root.light .dock-language-modal__title {
-  color: var(--dock-text, var(--text));
-}
-
-:root.light .dock-language-modal__desc {
-  color: var(--dock-text-secondary, var(--text-secondary));
-}
-
-:root.light .dock-language-modal__btn--cancel {
-  background: var(--dock-surface-alt, var(--surface-raised));
-  border-color: var(--dock-border, var(--border));
-  color: var(--dock-text, var(--text));
-}
-
-:root.light .dock-language-modal__btn--cancel:hover {
-  background: var(--dock-surface-hover, var(--surface-hover));
-  color: var(--dock-text, var(--text));
 }
 
 :root.light .dock-bible-reader__quick-edit-toolbar-btn {
@@ -1334,3 +1306,61 @@ html.mv-theme-light #dock-root,
   box-shadow: 0 2px 8px rgba(169, 83, 53, 0.18);
 }
 
+
+/* ── Quick Settings in light mode ──
+   The --qs-* palette now follows the dock tokens; these rules only adjust the remaining
+   fixed parts (header, footer, "Apply changes to" menu, Close and Reset). */
+:root.light .dtb-studio__modal--picker .dtb-studio__header-label {
+  color: var(--dock-text);
+}
+
+:root.light .dtb-studio__modal--picker .dtb-studio__close--strong {
+  background: var(--dock-surface-alt);
+  border-color: var(--dock-border);
+  color: var(--dock-text-secondary);
+}
+
+:root.light .dtb-studio__modal--picker .dtb-studio__close--strong:hover {
+  background: var(--dock-surface-hover);
+  color: var(--dock-text);
+}
+
+:root.light .dtb-studio__sync-title {
+  color: var(--dock-text);
+}
+
+:root.light .dtb-studio__sync-dropdown-trigger {
+  background: var(--dock-surface);
+  border-color: var(--dock-border);
+  color: var(--dock-text);
+}
+
+:root.light .dtb-studio__sync-dropdown-menu {
+  /* Solid: --dock-surface can be translucent (glass look), and the labels behind would show through. */
+  background: var(--surface);
+  border-color: var(--dock-border);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16), 0 0 0 1px var(--dock-border);
+}
+
+:root.light .dtb-studio__sync-dropdown-item {
+  color: var(--dock-text-secondary);
+}
+
+:root.light .dtb-studio__sync-dropdown-item:hover {
+  background: var(--dock-surface-hover);
+  color: var(--dock-text);
+}
+
+:root.light .dtb-studio__sync-dropdown-item--active {
+  color: var(--dock-text) !important;
+}
+
+:root.light .dtb-studio__modal--picker .dtb-studio__footer-btn--reset {
+  background: var(--dock-surface) !important;
+  border-color: var(--dock-border) !important;
+  color: var(--dock-text) !important;
+}
+
+:root.light .dtb-studio__modal--picker .dtb-studio__footer-btn--reset:hover {
+  background: var(--dock-surface-hover) !important;
+}

@@ -15,6 +15,7 @@
  * - Session invalidation (tokenVersion incremented)
  */
 
+import { describe, expect, it } from "vitest";
 import { ReservedEmail } from "@/types/schemas";
 
 // ─── Mock Helpers ───────────────────────────────────────────────────────────

@@ -104,7 +104,7 @@ export const DEFAULT_PLAN_LIMITS: Record<EffectivePlan, PlanLimits> = {
 
   free: {
     devices: 1,
-    songs: 1,
+    songs: 5,
     images: 2,
     videos: 2,
     themes: 2,
@@ -116,7 +116,7 @@ export const DEFAULT_PLAN_LIMITS: Record<EffectivePlan, PlanLimits> = {
     cloudStorageGB: 0.5,
     credits: 25,
     multiview: false,
-    tickers: true,
+    tickers: false,
     massImport: false,
     easyWorshipImport: false,
     proPresenterImport: false,
@@ -139,9 +139,9 @@ export const DEFAULT_PLAN_LIMITS: Record<EffectivePlan, PlanLimits> = {
 
   basic: {
     devices: 3,
-    songs: 100,
-    images: 100,
-    videos: 100,
+    songs: UNLIMITED,
+    images: UNLIMITED,
+    videos: UNLIMITED,
     themes: 10,
     lowerThirds: 15,
     bibleVersions: UNLIMITED,
@@ -152,9 +152,9 @@ export const DEFAULT_PLAN_LIMITS: Record<EffectivePlan, PlanLimits> = {
     credits: 100,
     multiview: true,
     tickers: true,
-    massImport: false,
-    easyWorshipImport: false,
-    proPresenterImport: false,
+    massImport: true,
+    easyWorshipImport: true,
+    proPresenterImport: true,
     translation: false,
     speechToScripture: true,
     sermonExport: false,

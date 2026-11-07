@@ -78,7 +78,11 @@ import LayerPanel from "../themes/layout/editor/LayerPanel";
 import LayerCanvasOverlay from "../themes/layout/editor/LayerCanvasOverlay";
 import { continuesLastEdit, historyShortcut, isTextEntryTarget, type LastEdit } from "../themes/layout/editor/editHistory";
 import { isMacPlatform } from "../studio/shortcuts";
-import { alignLayerPatch, getLayer, isBackdropLayer, nudgeLayer, removeLayer, updateLayer, type AlignHow } from "../themes/layout/editor/layoutOps";
+import {
+  alignLayerPatch, applyLayerPatches, autoCentrePatches, duplicateLayer, getLayer, isBackdropLayer, moveLayer, moveLayerTo,
+  moveLayersPatches, removeLayer, updateLayer, type AlignHow, type LayerRect,
+} from "../themes/layout/editor/layoutOps";
+import LayerContextMenu from "../themes/layout/editor/LayerContextMenu";
 import type { ThemeContent, ThemeLayer, ThemeLayout } from "../themes/layout/types";
 
 // ---------------------------------------------------------------------------
@@ -954,7 +958,17 @@ export default function ThemeCreatorModal({ onClose, onSaved, editTheme, initial
   const [showGrid, setShowGrid] = useState(false);
 
   // ── Layer editor (themes built from layers) ──
-  const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
+  // Every selected layer (Shift / Ctrl / Cmd-click picks several); the last one is shown in the settings panel.
+  const [selectedLayerIds, setSelectedLayerIds] = useState<string[]>([]);
+  const selectedLayerId = selectedLayerIds.length ? selectedLayerIds[selectedLayerIds.length - 1] : null;
+  const setSelectedLayerId = useCallback((id: string | null) => setSelectedLayerIds(id ? [id] : []), []);
+  /** Select a layer; `toggle` adds it to the selection or takes it out. */
+  const selectLayer = useCallback((id: string | null, mode?: "toggle") => {
+    if (!id) { setSelectedLayerIds([]); return; }
+    if (mode === "toggle") setSelectedLayerIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+    else setSelectedLayerIds([id]);
+  }, []);
+  const [layerMenu, setLayerMenu] = useState<{ x: number; y: number } | null>(null);
   const [draftLayout, setDraftLayout] = useState<ThemeLayout | null>(null);
   const [layerSample, setLayerSample] = useState<"verse" | "song" | "note">("verse");
   const [layerPlaying, setLayerPlaying] = useState(0);
@@ -1103,10 +1117,13 @@ export default function ThemeCreatorModal({ onClose, onSaved, editTheme, initial
     patch({ layout: next });
   }, [patch]);
 
-  // Selection belongs to the layout on screen; drop it when the layer is gone.
+  // Selection belongs to the layout on screen; drop layers that are gone.
   useEffect(() => {
-    if (selectedLayerId && (!activeLayout || !getLayer(activeLayout, selectedLayerId))) setSelectedLayerId(null);
-  }, [activeLayout, selectedLayerId]);
+    setSelectedLayerIds((prev) => {
+      const kept = activeLayout ? prev.filter((id) => getLayer(activeLayout, id)) : [];
+      return kept.length === prev.length ? prev : kept;
+    });
+  }, [activeLayout]);
 
   const playLayerAnimation = useCallback(() => {
     setSelectedLayerId(null);
@@ -1114,37 +1131,62 @@ export default function ThemeCreatorModal({ onClose, onSaved, editTheme, initial
     window.setTimeout(() => setLayerPlaying(0), 3200);
   }, []);
 
-  // Arrow keys nudge the selected layer (Shift = 10 px); Delete removes it.
+  // Keyboard, for every selected layer: arrows nudge (Shift = 10 px), Delete removes, Esc clears,
+  // Ctrl/Cmd+D duplicates, ] / [ move forward / backward (with Ctrl/Cmd: to front / back),
+  // Ctrl/Cmd+Shift+H hides or shows, Ctrl/Cmd+Shift+L locks or unlocks, Ctrl/Cmd+A selects all.
   useEffect(() => {
-    if (!activeLayout || !selectedLayerId) return;
+    if (!activeLayout) return;
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement | null;
       if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable)) return;
-      const layer = getLayer(activeLayout, selectedLayerId);
-      if (!layer) return;
-      // The background stays put and stays there: no nudging, no delete key.
-      if (isBackdropLayer(layer)) {
-        if (e.key === "Escape") setSelectedLayerId(null);
+      const mod = e.metaKey || e.ctrlKey;
+      if (mod && !e.shiftKey && e.key.toLowerCase() === "a") {
+        e.preventDefault();
+        setSelectedLayerIds(activeLayout.layers.filter((l) => !l.hidden && !isBackdropLayer(l)).map((l) => l.id));
         return;
       }
+      if (!selectedLayerIds.length) return;
+      if (e.key === "Escape") { setSelectedLayerIds([]); return; }
+      // The background stays put and stays there: no nudging, no delete key.
+      const layers = selectedLayerIds.map((id) => getLayer(activeLayout, id)).filter((l): l is ThemeLayer => Boolean(l) && !isBackdropLayer(l as ThemeLayer));
+      if (!layers.length) return;
+      const ids = layers.map((l) => l.id);
       const step = e.shiftKey ? 10 : 1;
       const moves: Record<string, [number, number]> = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] };
-      if (moves[e.key]) {
-        if (layer.locked) return;
+      if (moves[e.key] && !mod) {
         e.preventDefault();
         const [dx, dy] = moves[e.key];
-        commitLayout(updateLayer(activeLayout, layer.id, nudgeLayer(layer, dx, dy)));
-      } else if (e.key === "Delete" || e.key === "Backspace") {
+        commitLayout(applyLayerPatches(activeLayout, moveLayersPatches(activeLayout, ids, dx, dy)));
+      } else if ((e.key === "Delete" || e.key === "Backspace") && !mod) {
         e.preventDefault();
-        commitLayout(removeLayer(activeLayout, layer.id));
-        setSelectedLayerId(null);
-      } else if (e.key === "Escape") {
-        setSelectedLayerId(null);
+        commitLayout(ids.reduce((acc, id) => removeLayer(acc, id), activeLayout));
+        setSelectedLayerIds([]);
+      } else if (mod && !e.shiftKey && e.key.toLowerCase() === "d") {
+        e.preventDefault();
+        let next = activeLayout;
+        const copies: string[] = [];
+        for (const id of ids) { const r = duplicateLayer(next, id); next = r.layout; copies.push(r.id); }
+        commitLayout(next);
+        setSelectedLayerIds(copies);
+      } else if (e.key === "]" || e.key === "[") {
+        e.preventDefault();
+        const order = activeLayout.layers.map((l) => l.id);
+        const bottomUp = [...ids].sort((a, b) => order.indexOf(a) - order.indexOf(b));
+        const up = e.key === "]";
+        const seq = up === Boolean(mod) ? bottomUp : [...bottomUp].reverse();
+        let next = activeLayout;
+        for (const id of seq) next = mod ? moveLayerTo(next, id, up ? "front" : "back") : moveLayer(next, id, up ? "up" : "down");
+        commitLayout(next);
+      } else if (mod && e.shiftKey && (e.key.toLowerCase() === "h" || e.key.toLowerCase() === "l")) {
+        e.preventDefault();
+        const key = e.key.toLowerCase() === "h" ? "hidden" : "locked";
+        const on = !layers.every((l) => l[key]);
+        commitLayout(ids.reduce((acc, id) => updateLayer(acc, id, { [key]: on }), activeLayout));
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [activeLayout, selectedLayerId, commitLayout]);
+  }, [activeLayout, selectedLayerIds, commitLayout]);
 
   const [missingMediaIds, setMissingMediaIds] = useState<Set<string>>(() => new Set());
   const refreshBackgroundMediaLibrary = useCallback(async () => {
@@ -1428,6 +1470,30 @@ export default function ThemeCreatorModal({ onClose, onSaved, editTheme, initial
     commitLayout(updateLayer(activeLayout, layer.id, alignLayerPatch(layer, rect, container, how)));
   }, [activeLayout, selectedLayerId, currentScale, commitLayout]);
 
+  /** Every layer's box on the canvas, in design pixels (measured from the renderer's own DOM). */
+  const measureLayerRects = useCallback((): Record<string, LayerRect> => {
+    const canvas = layerCanvasRef.current;
+    const out: Record<string, LayerRect> = {};
+    if (!canvas) return out;
+    const base = canvas.getBoundingClientRect();
+    const k = currentScale || 1;
+    canvas.querySelectorAll<HTMLElement>("[data-layer-id]").forEach((el) => {
+      const id = el.dataset.layerId;
+      if (!id || el.classList.contains("mtl-hidden")) return;
+      const r = el.getBoundingClientRect();
+      if (!r.width && !r.height) return;
+      out[id] = { x: (r.left - base.left) / k, y: (r.top - base.top) / k, w: r.width / k, h: r.height / k };
+    });
+    return out;
+  }, [currentScale]);
+
+  /** "Auto": centre what is inside the selected box or bar (or the selected layers inside the biggest one). */
+  const handleAutoCentre = useCallback(() => {
+    if (!activeLayout || !selectedLayerIds.length) return;
+    const result = autoCentrePatches(activeLayout, selectedLayerIds, measureLayerRects());
+    if (result && Object.keys(result.patches).length) commitLayout(applyLayerPatches(activeLayout, result.patches));
+  }, [activeLayout, selectedLayerIds, measureLayerRects, commitLayout]);
+
   const modalContent = (
     <div className="tc-editor">
       {/* ── Top Toolbar ── */}
@@ -1440,7 +1506,10 @@ export default function ThemeCreatorModal({ onClose, onSaved, editTheme, initial
             <Redo2 size={16} />
           </button>
           <div className="tc-toolbar-separator" />
-          <input className="tc-theme-name-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Theme name..." />
+          <label className="tc-theme-name" title="Type a name for this theme, then press Save. The name is how you find it in your theme list.">
+            <span className="tc-theme-name__label">Theme name · type it, then Save</span>
+            <input className="tc-theme-name-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Name this theme" />
+          </label>
         </div>
 
         <div className="tc-toolbar-center">
@@ -1661,13 +1730,29 @@ export default function ThemeCreatorModal({ onClose, onSaved, editTheme, initial
                         canvasRef={layerCanvasRef}
                         layout={previewLayout}
                         scale={currentScale}
-                        selectedId={selectedLayerId}
+                        selectedIds={selectedLayerIds}
                         contentKey={layerSample}
-                        onSelect={setSelectedLayerId}
-                        onDraft={(id, change: Partial<ThemeLayer>) => activeLayout && setDraftLayout(updateLayer(activeLayout, id, change))}
-                        onCommit={(id, change: Partial<ThemeLayer>) => activeLayout && commitLayout(updateLayer(activeLayout, id, change))}
+                        onSelect={selectLayer}
+                        onDraft={(patches) => activeLayout && setDraftLayout(applyLayerPatches(activeLayout, patches))}
+                        onCommit={(patches) => activeLayout && commitLayout(applyLayerPatches(activeLayout, patches))}
+                        onContextMenu={(_id, x, y) => setLayerMenu({ x, y })}
                       />
                     )}
+                    {layerMenu && activeLayout && selectedLayerIds.length > 0 && (() => {
+                      const auto = autoCentrePatches(activeLayout, selectedLayerIds, measureLayerRects());
+                      return (
+                        <LayerContextMenu
+                          layout={activeLayout}
+                          ids={selectedLayerIds}
+                          x={layerMenu.x}
+                          y={layerMenu.y}
+                          onChange={commitLayout}
+                          onSelect={setSelectedLayerIds}
+                          onAutoCentre={auto && Object.keys(auto.patches).length ? handleAutoCentre : undefined}
+                          onClose={() => setLayerMenu(null)}
+                        />
+                      );
+                    })()}
                   </>
                 ) : (
                 <iframe
@@ -1779,7 +1864,11 @@ export default function ThemeCreatorModal({ onClose, onSaved, editTheme, initial
               <LayerPanel
                 layout={activeLayout}
                 selectedId={selectedLayerId}
+                selectedIds={selectedLayerIds}
                 onSelect={setSelectedLayerId}
+                onToggleSelect={(id) => selectLayer(id, "toggle")}
+                onAutoCentre={handleAutoCentre}
+                onLayerMenu={(id, x, y) => { if (!selectedLayerIds.includes(id)) setSelectedLayerId(id); setLayerMenu({ x, y }); }}
                 onChange={commitLayout}
                 mediaItems={backgroundMediaLibrary}
                 mediaPreviewSrc={(item) => resolveMediaPreviewSrc(item as MediaItem)}

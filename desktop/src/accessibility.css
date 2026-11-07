@@ -68,8 +68,8 @@ body :is(button, a, input, select, textarea, [role="button"]):focus:not(:focus-v
   padding: 0.5rem 0.75rem;
   border: 2px solid var(--mce-focus-ring);
   border-radius: 4px;
-  background: var(--dock-surface, var(--surface, #1E293B));
-  color: var(--dock-text, var(--text-primary, #F8FAFC));
+  background: var(--dock-surface, var(--surface));
+  color: var(--dock-text, var(--text-primary));
   font-weight: 700;
   text-decoration: none;
   transition: top 120ms ease;

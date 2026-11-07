@@ -57,6 +57,8 @@ import {
 } from "../documentConversion";
 import { checkEntitlementSync, getFeatureLimit } from "../../services/entitlementClient";
 import Icon from "../DockIcon";
+import ModalDialog from "../../components/ModalDialog";
+import { Trash2 } from "../../components/icons/NativeIcons";
 import { addMediaToActiveSchedule } from "../dockScheduleService";
 import { getUserScopedKey } from "../../services/userScopedStorage";
 import { readNativeDockSetting, writeNativeDockSetting } from "../../services/localDockSettings";
@@ -76,6 +78,8 @@ import {
   loadSavedTemplateImagesFromDockData,
   type DockTemplateImage,
 } from "../../templates/editableTemplateStorage";
+import { fitPopover } from "../useKeepInViewport";
+import { useDockWideLayout } from "../useDockWideLayout";
 
 interface Props {
   staged: DockStagedItem | null;
@@ -868,6 +872,7 @@ function DockMediaTab({
     [],
   );
   const [filterMenuOpen, setFilterMenuOpen] = useState(false);
+  const wideLayout = useDockWideLayout();
   const filterMenuRef = useRef<HTMLDivElement>(null);
   // Short docks: Uploads / Animations / Patterns collapse into one dropdown (was a third side column).
   const [viewMenuOpen, setViewMenuOpen] = useState(false);
@@ -4494,10 +4499,10 @@ let _cachedGlobalUploadsDir: string | null = null;
         justifyItems: "center",
       }}
     >
-      <div style={{ fontWeight: 700, fontSize: "12px", color: "var(--dock-text, #f8fafc)" }}>
+      <div style={{ fontWeight: 700, fontSize: "12px", color: "var(--dock-text, var(--text-primary))" }}>
         No {label} match "{query.trim()}".
       </div>
-      <div style={{ fontWeight: 700, fontSize: "11px", color: "var(--dock-text-dim, #94a3b8)", lineHeight: "1.4" }}>
+      <div style={{ fontWeight: 700, fontSize: "11px", color: "var(--dock-text-dim, var(--text-muted))", lineHeight: "1.4" }}>
         This is because you searched for a term. Clear your search or search for something else.
       </div>
       <button
@@ -5224,7 +5229,45 @@ let _cachedGlobalUploadsDir: string | null = null;
                 })() : (
                   <>
                     {/* Filter: pick one or several types and the order, in one menu. */}
-                    <div className="dock-media-filterbar" ref={filterMenuRef}>
+                    <div className={`dock-media-filterbar${wideLayout ? " dock-media-filterbar--tabs" : ""}`} ref={filterMenuRef}>
+                      {/* Wide dock: the types are tabs; the menu stays for several types and the order. */}
+                      {wideLayout && (
+                        <div className="dock-media-type-tabs" role="tablist" aria-label={t('media.filterType', 'Type')}>
+                          <button
+                            type="button"
+                            role="tab"
+                            aria-selected={activeKinds.length === 0}
+                            className={`dock-media-type-tabs__tab${activeKinds.length === 0 ? " dock-media-type-tabs__tab--active" : ""}`}
+                            onClick={() => setActiveKinds([])}>
+                            <span>{t('media.all')}</span>
+                            <span className="dock-media-type-tabs__count">{nonDocumentMediaEntries.length + documentDecks.length}</span>
+                          </button>
+                          {mediaKindOptions.map((option) => {
+                            const selected = activeKinds.length === 1 && activeKinds[0] === option.id;
+                            return (
+                              <button
+                                key={option.id}
+                                type="button"
+                                role="tab"
+                                aria-selected={selected}
+                                aria-disabled={option.locked || undefined}
+                                className={`dock-media-type-tabs__tab${selected ? " dock-media-type-tabs__tab--active" : ""}`}
+                                onClick={() => {
+                                  if (option.locked) {
+                                    showUpgradeModal("Audio library and playback are available on Basic and Growth plans. Upgrade to unlock.");
+                                    return;
+                                  }
+                                  setActiveKind(option.id);
+                                }}>
+                                <span>{option.label}</span>
+                                <span className="dock-media-type-tabs__count">
+                                  {option.locked ? <Icon name="lock" size={10} /> : option.count}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
                       <button
                         type="button"
                         className={`dock-media-filterbar__trigger${filterMenuOpen ? " dock-media-filterbar__trigger--open" : ""}${activeKinds.length > 0 ? " dock-media-filterbar__trigger--active" : ""}`}
@@ -6483,7 +6526,7 @@ let _cachedGlobalUploadsDir: string | null = null;
                 </div>
               ) : entry.kind === "audio" && entry.previewUrl ? (
                 <div className="dock-media-inspector__preview" style={{ padding: 16, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12 }}>
-                  <Icon name="music_note" size={40} style={{ color: "var(--dock-accent, #3b82f6)" }} />
+                  <Icon name="music_note" size={40} style={{ color: "var(--dock-accent, var(--primary))" }} />
                   <audio
                     src={entry.previewUrl}
                     controls
@@ -6955,7 +6998,7 @@ let _cachedGlobalUploadsDir: string | null = null;
                       >
                         {previewEntry.name}
                       </div>
-                      <div style={{ fontSize: 11, color: "var(--dock-text-dim, #94a3b8)" }}>
+                      <div style={{ fontSize: 11, color: "var(--dock-text-dim, var(--text-muted))" }}>
                         {t("media.audio", "Audio")}
                       </div>
                     </div>
@@ -7072,6 +7115,7 @@ let _cachedGlobalUploadsDir: string | null = null;
 
         return (
           <div
+            ref={(el) => fitPopover(el)}
             className="dock-media-context-menu"
             role="menu"
             style={{ left: mediaContextMenu.x, top: mediaContextMenu.y }}
@@ -7288,35 +7332,19 @@ let _cachedGlobalUploadsDir: string | null = null;
       {showClearAllConfirm && (() => {
         const totalCount = mediaEntries.length;
         return (
-          <div className="dock-dialog-backdrop" role="presentation" onClick={() => setShowClearAllConfirm(false)}>
-            <div
-              className="dock-dialog dock-media-clear-confirm"
-              role="dialog"
-              aria-modal="true"
-              onClick={(event) => event.stopPropagation()}
-            >
-              <div className="dock-dialog__header">
-                <h2 className="dock-dialog__title">{t('media.clearAllMedia')}</h2>
-                <button type="button" className="dock-dialog__close" onClick={() => setShowClearAllConfirm(false)} aria-label={t('common.close')} title={t('common.close')}>
-                  <Icon name="close" size={14} />
-                </button>
-              </div>
-              <div className="dock-dialog__body">
-                <p className="dock-media-clear-confirm__summary">
-                  {t('media.clearAllSummary', { count: totalCount, item: totalCount === 1 ? t('media.upload') : t('media.uploads') })}
-                </p>
-              </div>
-              <div className="dock-dialog__footer">
-                <button type="button" className="dock-btn dock-btn--compact" onClick={() => setShowClearAllConfirm(false)} title={t('common.cancel')}>
-                  {t('common.cancel')}
-                </button>
-                <button type="button" className="dock-btn dock-btn--danger dock-btn--compact" onClick={() => void clearAllMedia()} title={t('media.clearAll')}>
-                  <Icon name="delete_sweep" size={12} />
-                  {t('media.clearAll')}
-                </button>
-              </div>
-            </div>
-          </div>
+          <ModalDialog
+            tone="danger"
+            icon={<Trash2 size={26} />}
+            title={t('media.clearAllMedia')}
+            actions={[
+              { label: t('common.cancel'), variant: "ghost", title: t('common.cancel'), onClick: () => setShowClearAllConfirm(false) },
+              { label: t('media.clearAll'), variant: "danger", title: t('media.clearAll'), icon: <Trash2 size={14} />, onClick: () => void clearAllMedia() },
+            ]}
+            onClose={() => setShowClearAllConfirm(false)}
+            zIndex={10002}
+          >
+            <p>{t('media.clearAllSummary', { count: totalCount, item: totalCount === 1 ? t('media.upload') : t('media.uploads') })}</p>
+          </ModalDialog>
         );
       })()}
     </div >

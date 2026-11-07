@@ -781,33 +781,33 @@ export default function CreditsPage() {
               <div className="credits-chart-container">
                 <ResponsiveContainer width="100%" height={190}>
                   <BarChart data={chartData} barCategoryGap="22%">
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border, rgba(0, 0, 0, 0.08))" vertical={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                     <XAxis
                       dataKey="date"
-                      tick={{ fontSize: 13, fill: "var(--text-muted, #a1a1aa)" }}
+                      tick={{ fontSize: 13, fill: "var(--text-muted)" }}
                       axisLine={false}
                       tickLine={false}
                     />
                     <YAxis
-                      tick={{ fontSize: 13, fill: "var(--text-muted, #a1a1aa)" }}
+                      tick={{ fontSize: 13, fill: "var(--text-muted)" }}
                       axisLine={false}
                       tickLine={false}
                       width={32}
                     />
                     <Tooltip
                       contentStyle={{
-                        background: "#18181b",
-                        border: "1px solid rgba(255, 255, 255, 0.14)",
+                        background: "var(--surface)",
+                        border: "1px solid var(--border-strong)",
                         borderRadius: "8px",
                         fontSize: "14px",
                         boxShadow: "0 10px 25px rgba(0, 0, 0, 0.5)",
-                        color: "#ffffff",
+                        color: "var(--text-primary)",
                       }}
                       formatter={((value: any) => [`${value} credits`, "Used"]) as any}
                     />
                     <Bar
                       dataKey="credits"
-                      fill="var(--primary, #4F46E5)"
+                      fill="var(--primary)"
                       radius={[4, 4, 0, 0]}
                     />
                   </BarChart>

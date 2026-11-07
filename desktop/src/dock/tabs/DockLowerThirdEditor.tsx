@@ -63,6 +63,7 @@ import { PER_KEY, isCycleTheme } from "../../lowerthirds/cycleSet";
 import DockGraphicPreviewModal from "../components/DockGraphicPreviewModal";
 import DockSceneRouteSendControl from "../components/DockSceneRouteSendControl";
 import type { DockSceneRoute } from "../dockSceneRouting";
+import { fitPopover } from "../useKeepInViewport";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -211,7 +212,7 @@ const dockFieldResetStyle: React.CSSProperties = {
   padding: 0,
   fontSize: 9,
   fontFamily: "inherit",
-  color: "var(--dock-accent, #6366f1)",
+  color: "var(--dock-accent, var(--primary))",
   cursor: "pointer",
   textDecoration: "underline",
   flexShrink: 0,
@@ -1195,8 +1196,8 @@ export default function DockLowerThirdEditor({
                                     fontSize: 10,
                                     fontWeight: 600,
                                     cursor: "pointer",
-                                    border: `1px solid ${on ? "var(--dock-accent, #6366f1)" : "var(--dock-border)"}`,
-                                    background: on ? "color-mix(in srgb, var(--dock-accent, #6366f1) 22%, transparent)" : "transparent",
+                                    border: `1px solid ${on ? "var(--dock-accent, var(--primary))" : "var(--dock-border)"}`,
+                                    background: on ? "color-mix(in srgb, var(--dock-accent, var(--primary)) 22%, transparent)" : "transparent",
                                     color: on ? "var(--dock-text)" : "var(--dock-text-dim)",
                                   }}
                                 >
@@ -1529,7 +1530,7 @@ export default function DockLowerThirdEditor({
       {/* ── Slot Context Menu ── */}
       {contextMenu && (
         <div
-          ref={contextMenuRef}
+          ref={(el) => { contextMenuRef.current = el; fitPopover(el); }}
           className="dock-lt-slot-context-menu"
           style={{ top: contextMenu.y, left: contextMenu.x }}
         >

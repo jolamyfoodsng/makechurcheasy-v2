@@ -1,12 +1,12 @@
 .broadcast-settings-panel {
-  --broadcast-surface: var(--bg-card, #131724);
-  --broadcast-raised: var(--bg-input, #171b28);
-  --broadcast-hover: var(--bg-card-hover, #1c2132);
-  --broadcast-border: var(--border-color, rgba(255, 255, 255, 0.1));
-  --broadcast-text: var(--text-primary, #f8fafc);
-  --broadcast-muted: var(--text-secondary, #94a3b8);
-  --broadcast-subtle: var(--text-muted, #64748b);
-  --broadcast-accent: var(--accent-color, #2563eb);
+  --broadcast-surface: var(--surface);
+  --broadcast-raised: var(--surface-raised);
+  --broadcast-hover: var(--surface-hover);
+  --broadcast-border: var(--border);
+  --broadcast-text: var(--text-primary);
+  --broadcast-muted: var(--text-secondary);
+  --broadcast-subtle: var(--text-muted);
+  --broadcast-accent: var(--primary);
 
   display: flex;
   flex-direction: column;
@@ -53,7 +53,7 @@
 .broadcast-settings-card {
   min-width: 0;
   border: 1px solid var(--broadcast-border);
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   background: var(--broadcast-surface);
 }
 
@@ -138,7 +138,7 @@
 .broadcast-settings-panel .action-btn {
   min-height: 36px;
   padding: 8px 12px;
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   font-size: 13px;
   line-height: 1.25;
 }
@@ -198,7 +198,7 @@
   min-height: 36px;
   padding: 7px 12px;
   border: 1px solid transparent;
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   font-size: 13px;
   font-weight: 600;
   line-height: 1.2;
@@ -258,7 +258,7 @@
   min-width: 0;
   padding: 10px 12px;
   border: 1px solid var(--broadcast-border);
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   background: var(--broadcast-raised);
 }
 
@@ -310,7 +310,7 @@
   gap: 10px;
   padding: 12px 14px;
   border: 1px solid color-mix(in srgb, #f59e0b 32%, var(--broadcast-border));
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   background: color-mix(in srgb, #f59e0b 7%, var(--broadcast-surface));
   color: var(--broadcast-muted);
   font-size: 13px;
@@ -374,7 +374,7 @@
   gap: 10px;
   padding: 9px 10px;
   border: 1px solid var(--broadcast-border);
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   background: var(--broadcast-raised);
   cursor: pointer;
   transition: border-color 140ms ease, background-color 140ms ease;
@@ -456,7 +456,7 @@
   min-width: 0;
   padding: 13px;
   border: 1px solid var(--broadcast-border);
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   background: var(--broadcast-raised);
 }
 
@@ -513,7 +513,7 @@
   max-width: min(350px, 45vw);
   overflow: hidden;
   color: var(--broadcast-text);
-  font-family: var(--font-mono, ui-monospace, monospace);
+  font-family: var(--font-mono);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -528,21 +528,21 @@
 }
 
 .broadcast-channel-key__saved {
-  color: var(--success-color, #22c55e);
+  color: var(--success);
 }
 
 .broadcast-channel-key__warning,
 .broadcast-channel-key--missing {
-  color: var(--warning, #b45309);
+  color: var(--warning);
 }
 
 .broadcast-key-entry-button {
   min-height: 30px;
   padding: 4px 9px;
-  border: 1px solid color-mix(in srgb, var(--warning, #f59e0b) 42%, var(--broadcast-border));
-  border-radius: var(--radius, 4px);
-  background: color-mix(in srgb, var(--warning, #f59e0b) 10%, var(--broadcast-surface));
-  color: var(--warning, #b45309);
+  border: 1px solid color-mix(in srgb, var(--warning) 42%, var(--broadcast-border));
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--warning) 10%, var(--broadcast-surface));
+  color: var(--warning);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -554,7 +554,7 @@
   padding: 24px;
   place-items: center;
   border: 1px dashed var(--broadcast-border);
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   background: var(--broadcast-raised);
   color: var(--broadcast-muted);
   font-size: 13px;

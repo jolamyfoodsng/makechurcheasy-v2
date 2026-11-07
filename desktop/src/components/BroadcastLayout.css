@@ -122,7 +122,7 @@
 .broadcast-idle-badge {
     padding: 2px 10px;
     border-radius: 3px;
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--surface-raised);
     color: var(--text-muted);
     font-size: 11px;
     font-weight: 600;
@@ -216,7 +216,7 @@
 }
 
 .broadcast-col-left {
-    background: #1a1a1a;
+    background: var(--surface);
     flex-shrink: 0;
 }
 
@@ -227,7 +227,7 @@
 }
 
 .broadcast-col-right {
-    background: #1a1a1a;
+    background: var(--surface);
     flex-shrink: 0;
 }
 
@@ -278,7 +278,7 @@
     padding: 8px 12px;
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
-    background: rgba(255, 255, 255, 0.02);
+    background: var(--surface-raised);
 }
 
 .panel-title {
@@ -312,7 +312,7 @@
 }
 
 .panel-action-btn:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--surface-hover);
     color: var(--text-primary);
 }
 
@@ -346,7 +346,7 @@
     padding: 0 8px;
     height: 32px;
     border-radius: var(--radius);
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--surface-raised);
     border: 1px solid transparent;
     transition: border-color 0.15s;
 }
@@ -385,14 +385,14 @@
     height: 18px;
     border: none;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--surface-raised);
     color: var(--text-muted);
     cursor: pointer;
     flex-shrink: 0;
 }
 
 .library-search-clear:hover {
-    background: rgba(255, 255, 255, 0.15);
+    background: var(--surface-hover);
     color: var(--text-primary);
 }
 
@@ -422,7 +422,7 @@
     border: none;
     border-radius: 4px 8px 0 0;
     background: transparent;
-    color: var(--tab-text-inactive, var(--text-muted));
+    color: var(--tab-text-inactive);
     font-size: 11px;
     font-weight: 500;
     cursor: pointer;
@@ -438,19 +438,19 @@
     bottom: 0;
     height: 3px;
     border-radius: 999px 999px 0 0;
-    background: var(--tab-indicator, var(--primary));
+    background: var(--tab-indicator);
     opacity: 0;
     transform: scaleX(0.55);
     transition: opacity 0.15s, transform 0.15s;
 }
 
 .library-tab:hover {
-    background: var(--tab-hover-bg, rgba(255, 255, 255, 0.06));
+    background: var(--tab-hover-bg);
     color: var(--text-primary);
 }
 
 .library-tab.active {
-    color: var(--tab-text-active, var(--text-primary));
+    color: var(--tab-text-active);
     font-weight: 700;
 }
 
@@ -460,7 +460,7 @@
 }
 
 .library-tab:focus-visible {
-    outline: 2px solid var(--focus-ring, var(--primary));
+    outline: 2px solid var(--focus-ring);
     outline-offset: 2px;
 }
 
@@ -499,7 +499,7 @@
 }
 
 .library-item:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--surface-hover);
 }
 
 .library-item-live {
@@ -519,7 +519,7 @@
     width: 30px;
     height: 30px;
     border-radius: var(--radius);
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--surface-raised);
     flex-shrink: 0;
 }
 
@@ -611,7 +611,7 @@
 }
 
 .library-action-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--surface-hover);
     color: var(--text-primary);
 }
 
@@ -866,7 +866,7 @@
     gap: 12px;
     padding: 8px 12px;
     border-radius: var(--radius-lg);
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--surface-raised);
     border: 1px solid var(--border);
     flex-shrink: 0;
 }
@@ -922,7 +922,7 @@
     height: 4px;
     -webkit-appearance: none;
     appearance: none;
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--surface-hover);
     border-radius: 2px;
     outline: none;
 }
@@ -1011,7 +1011,7 @@
 }
 
 .queue-item:hover {
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--surface-hover);
 }
 
 .queue-item-live {
@@ -1053,7 +1053,7 @@
     width: 24px;
     height: 24px;
     border-radius: 3px;
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--surface-raised);
     flex-shrink: 0;
 }
 
@@ -1103,7 +1103,7 @@
 }
 
 .queue-badge-pvw {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--surface-raised);
     color: var(--text-secondary);
 }
 
@@ -1134,7 +1134,7 @@
 }
 
 .queue-action-btn:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--surface-hover);
     color: var(--text-primary);
 }
 
@@ -1190,7 +1190,7 @@
     gap: 6px;
     padding: 4px 8px;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--surface-raised);
     border: 1px solid var(--border);
     font-size: 10px;
     color: var(--text-secondary);
@@ -1214,7 +1214,7 @@
     gap: 5px;
     padding: 4px 8px;
     border-radius: var(--radius);
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--surface-raised);
 }
 
 .status-item-icon {
@@ -1268,7 +1268,7 @@
     padding: 8px;
     border-radius: calc(var(--radius) + 2px);
     border: 1px solid var(--border);
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--surface-raised);
 }
 
 .stream-check-card-good {
@@ -1324,7 +1324,7 @@
     margin-top: 8px;
     padding: 8px;
     border-radius: calc(var(--radius) + 2px);
-    background: rgba(255, 255, 255, 0.025);
+    background: var(--surface-raised);
     border: 1px solid var(--border);
 }
 
@@ -1425,12 +1425,12 @@
 }
 
 .emergency-btn-refresh {
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--surface-raised);
     border-color: var(--border);
     color: var(--text-secondary);
 }
 
 .emergency-btn-refresh:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--surface-hover);
     color: var(--text-primary);
 }

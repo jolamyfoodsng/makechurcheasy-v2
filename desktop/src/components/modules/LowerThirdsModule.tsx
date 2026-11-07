@@ -353,13 +353,13 @@ function ListVariableInput({
                 display: "flex",
                 alignItems: "center",
                 gap: 6,
-                background: "rgba(255,255,255,0.04)",
+                background: "var(--surface-raised)",
                 borderRadius: 4,
                 padding: "4px 8px",
                 fontSize: 12,
               }}
             >
-              <span style={{ flex: 1, color: "rgba(255,255,255,0.8)" }}>{item}</span>
+              <span style={{ flex: 1, color: "var(--text-secondary)" }}>{item}</span>
               <button
                 onClick={() => removeItem(i)}
                 style={{
@@ -368,7 +368,7 @@ function ListVariableInput({
                   cursor: "pointer",
                   padding: 2,
                   display: "flex",
-                  color: "rgba(255,255,255,0.3)",
+                  color: "var(--text-disabled)",
                 }}
                 title="Remove item"
               >
@@ -1376,7 +1376,7 @@ export function LowerThirdsModule({ isActive = true }: LowerThirdsModuleProps) {
           <Icon name="subtitles" size={22} style={{ color: "#C8102E" }} />
           <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
             <h1 className="lt-page-title">Announcements &amp; Notes</h1>
-            <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 13, fontWeight: 400 }}>/</span>
+            <span style={{ color: "var(--text-disabled)", fontSize: 13, fontWeight: 400 }}>/</span>
             <p className="lt-page-subtitle" style={{ margin: 0 }}>Design &amp; push overlays to OBS</p>
           </div>
         </div>
@@ -1426,7 +1426,7 @@ export function LowerThirdsModule({ isActive = true }: LowerThirdsModuleProps) {
                   background: "none",
                   border: "1px solid var(--border)",
                   borderRadius: 6,
-                  color: "rgba(255,255,255,0.6)",
+                  color: "var(--text-secondary)",
                   cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
@@ -1460,7 +1460,7 @@ export function LowerThirdsModule({ isActive = true }: LowerThirdsModuleProps) {
                   </div>
                   <div className="lt-page-card-info">
                     <span className="lt-page-card-name">{p.label}</span>
-                    <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>
+                    <span style={{ fontSize: 10, color: "var(--text-disabled)" }}>
                       {cat ? cat.description : (matchedTheme?.name ?? "Unknown theme")}
                     </span>
                   </div>
@@ -1473,7 +1473,7 @@ export function LowerThirdsModule({ isActive = true }: LowerThirdsModuleProps) {
                         className="lt-page-card-delete"
                         title="Move up"
                         onClick={(e) => { e.stopPropagation(); handleMovePreset(p.id, "up"); }}
-                        style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "rgba(255,255,255,0.2)", display: "flex" }}
+                        style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "var(--text-disabled)", display: "flex" }}
                       >
                         <Icon name="arrow_upward" size={12} />
                       </button>
@@ -1481,7 +1481,7 @@ export function LowerThirdsModule({ isActive = true }: LowerThirdsModuleProps) {
                         className="lt-page-card-delete"
                         title="Move down"
                         onClick={(e) => { e.stopPropagation(); handleMovePreset(p.id, "down"); }}
-                        style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "rgba(255,255,255,0.2)", display: "flex" }}
+                        style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "var(--text-disabled)", display: "flex" }}
                       >
                         <Icon name="arrow_downward" size={12} />
                       </button>
@@ -1489,7 +1489,7 @@ export function LowerThirdsModule({ isActive = true }: LowerThirdsModuleProps) {
                         className="lt-page-card-delete"
                         title="Duplicate preset"
                         onClick={(e) => { e.stopPropagation(); handleDuplicatePreset(p.id); }}
-                        style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "rgba(255,255,255,0.2)", display: "flex" }}
+                        style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "var(--text-disabled)", display: "flex" }}
                       >
                         <Icon name="content_copy" size={12} />
                       </button>
@@ -1497,7 +1497,7 @@ export function LowerThirdsModule({ isActive = true }: LowerThirdsModuleProps) {
                         className="lt-page-card-delete"
                         title="Delete preset"
                         onClick={(e) => { e.stopPropagation(); handleDeletePreset(p.id); }}
-                        style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "rgba(255,255,255,0.2)", display: "flex" }}
+                        style={{ background: "none", border: "none", cursor: "pointer", padding: 2, color: "var(--text-disabled)", display: "flex" }}
                       >
                         <Icon name="close" size={14} />
                       </button>
@@ -1528,7 +1528,7 @@ export function LowerThirdsModule({ isActive = true }: LowerThirdsModuleProps) {
                   <div className="lt-version-empty">
                     <Icon name="history" size={28} style={{ opacity: 0.4 }} />
                     <span>No history yet</span>
-                    <span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)" }}>
+                    <span style={{ fontSize: 10, color: "var(--text-disabled)" }}>
                       Edits will be saved automatically
                     </span>
                   </div>
@@ -1595,7 +1595,7 @@ export function LowerThirdsModule({ isActive = true }: LowerThirdsModuleProps) {
         <main className="lt-page-center">
           {!theme ? (
             <div className="lt-page-empty-center">
-              <Icon name="subtitles" size={48} style={{ color: "rgba(255, 255, 255, 0.15)" }} />
+              <Icon name="subtitles" size={48} style={{ color: "var(--text-disabled)" }} />
               <h3>Select a Preset</h3>
               <p>Choose a preset from the Quick Select panel on the left to get started.</p>
             </div>
@@ -1768,7 +1768,7 @@ export function LowerThirdsModule({ isActive = true }: LowerThirdsModuleProps) {
                             </div>
                           ))}
                           {groupedVars.length === 0 && (
-                            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", textAlign: "center", padding: 8 }}>
+                            <p style={{ fontSize: 12, color: "var(--text-disabled)", textAlign: "center", padding: 8 }}>
                               This template has no editable detail fields.
                             </p>
                           )}
@@ -1822,7 +1822,7 @@ export function LowerThirdsModule({ isActive = true }: LowerThirdsModuleProps) {
                         ))}
 
                         {theme.variables.length === 0 && (
-                          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", textAlign: "center", padding: 16 }}>
+                          <p style={{ fontSize: 12, color: "var(--text-disabled)", textAlign: "center", padding: 16 }}>
                             This template has no editable fields.
                           </p>
                         )}
@@ -2164,7 +2164,7 @@ export function LowerThirdsModule({ isActive = true }: LowerThirdsModuleProps) {
               </button>
             </div>
             <div className="lt-modal-body" style={{ padding: "12px 16px 20px" }}>
-              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", margin: "0 0 12px" }}>
+              <p style={{ fontSize: 12, color: "var(--text-muted)", margin: "0 0 12px" }}>
                 Choose a preset type. Each comes with curated templates and a tailored content form.
               </p>
               <div className="lt-preset-picker-grid">
@@ -2190,9 +2190,9 @@ export function LowerThirdsModule({ isActive = true }: LowerThirdsModuleProps) {
 
               {/* Divider + custom preset option */}
               <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "16px 0 8px" }}>
-                <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
-                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", textTransform: "uppercase", letterSpacing: "0.05em" }}>or</span>
-                <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
+                <div style={{ flex: 1, height: 1, background: "var(--surface-raised)" }} />
+                <span style={{ fontSize: 10, color: "var(--text-disabled)", textTransform: "uppercase", letterSpacing: "0.05em" }}>or</span>
+                <div style={{ flex: 1, height: 1, background: "var(--surface-raised)" }} />
               </div>
               <div style={{ display: "flex", gap: 6 }}>
                 <input
@@ -2213,7 +2213,7 @@ export function LowerThirdsModule({ isActive = true }: LowerThirdsModuleProps) {
                 </button>
               </div>
               {presetError && (
-                <span style={{ fontSize: 11, color: "#ef5350", marginTop: 4, display: "block" }}>{presetError}</span>
+                <span style={{ fontSize: 11, color: "var(--error)", marginTop: 4, display: "block" }}>{presetError}</span>
               )}
             </div>
           </div>

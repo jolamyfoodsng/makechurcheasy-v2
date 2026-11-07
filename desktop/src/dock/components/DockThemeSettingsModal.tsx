@@ -618,7 +618,7 @@ export default function DockThemeSettingsModal({
                         <Icon
                           name={
                             syncScopeMode === "all"
-                              ? "layers"
+                              ? "grid_view"
                               : syncScopeMode === "current"
                                 ? "radio_button_checked"
                                 : "tune"
@@ -658,7 +658,7 @@ export default function DockThemeSettingsModal({
                           }}
                         >
                           <div className="dtb-studio__sync-dropdown-item-icon">
-                            <Icon name="layers" size={15} />
+                            <Icon name="grid_view" size={15} />
                           </div>
                           <div className="dtb-studio__sync-dropdown-item-content">
                             <div className="dtb-studio__sync-dropdown-item-title">

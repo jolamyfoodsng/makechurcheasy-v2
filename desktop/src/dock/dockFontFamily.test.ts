@@ -30,10 +30,11 @@ describe("dock typography settings", () => {
     expect(css).toContain('--mce-output-font-family');
   });
 
-  it("offers CMG Sans as the default bundled family", () => {
+  it("defaults to the system UI font and still offers CMG Sans as a bundled family", () => {
+    expect(DEFAULT_DOCK_FONT_FAMILY).toContain("system-ui");
+    expect(buildDockFontFamilyStack(undefined)).toContain("system-ui");
     const selected = DOCK_FONT_FAMILY_OPTIONS.find((option) => option.id === "cmg-sans");
-    expect(selected?.family).toBe(DEFAULT_DOCK_FONT_FAMILY);
-    expect(buildDockFontFamilyStack(undefined)).toContain('"CMG Sans"');
+    expect(selected?.family).toContain('"CMG Sans"');
   });
 
   it("does not accept arbitrary CSS as a selectable font family", () => {

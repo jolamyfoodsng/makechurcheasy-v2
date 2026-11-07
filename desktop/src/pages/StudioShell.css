@@ -312,7 +312,7 @@ html.st-resizing iframe { pointer-events: none !important; }
 .st-alert { display: flex; gap: 8px; align-items: flex-start; margin: 0 12px; padding: 7px 9px; border-radius: 7px; background: var(--st-red-soft); color: #fecaca; font-size: 12px; }
 .st-alert span { flex: 1; }
 .st-alert button { border: 0; background: transparent; color: inherit; cursor: pointer; padding: 0; }
-.st-vai__search { display: flex; align-items: center; gap: 6px; margin: 0 12px; height: 28px; padding: 0 8px; border-radius: 7px; background: #0a1222; border: 1px solid var(--st-line); color: var(--st-text-3); }
+.st-vai__search { display: flex; align-items: center; gap: 6px; margin: 0 12px; height: 28px; padding: 0 8px; border-radius: 7px; background: var(--input-bg); border: 1px solid var(--st-line); color: var(--st-text-3); }
 .st-vai__search input { flex: 1; height: 100% !important; border: 0 !important; background: transparent !important; padding: 0 !important; font-size: 12.5px !important; outline: none; }
 .st-vai__search button { border: 0; background: transparent; color: inherit; cursor: pointer; display: inline-flex; }
 .st-vai__body { flex: 1; min-height: 60px; overflow-y: auto; padding: 0 6px 6px; }
@@ -2309,3 +2309,25 @@ html.st-resizing iframe { pointer-events: none !important; }
   .st-lo__stack { grid-template-columns: minmax(0, 1fr); }
   .st-lo__cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
 }
+
+/* One search field across the Studio (songs, notes, documents, media, Bible, Verse AI).
+   The app-wide input rule adds min-height 36px and a focus outline, which made the input taller
+   than its 32px box and drew a second rounded frame inside it. The input now fills the box and the
+   focus ring is drawn on the box itself. */
+.st-searchbox input,
+.st-vai__search input {
+  min-height: 0 !important;
+  height: 100% !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.st-searchbox:focus-within,
+.st-vai__search:focus-within {
+  border-color: var(--st-blue-2);
+  box-shadow: 0 0 0 1px var(--st-blue-2);
+}
+
+/* New song / Import document: side by side when they fit, stacked when the list is narrow. */
+.st-lib__foot--pair { flex-wrap: wrap; }
+.st-lib__foot--pair .studio-btn { flex: 1 1 auto; min-width: fit-content; }

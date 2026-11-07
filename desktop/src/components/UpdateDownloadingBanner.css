@@ -42,7 +42,7 @@
 }
 
 .update-downloading-banner__spinner {
-  color: #38bdf8;
+  color: var(--accent-blue);
   animation: spin 1s linear infinite;
   flex-shrink: 0;
 }
@@ -71,7 +71,7 @@
   padding: 1px 6px;
   border-radius: 4px;
   background: rgba(56, 189, 248, 0.18);
-  color: #38bdf8;
+  color: var(--accent-blue);
   border: 1px solid rgba(56, 189, 248, 0.3);
 }
 
@@ -93,7 +93,7 @@
   border: 1px solid var(--border);
   color: var(--text-primary);
   padding: 4px 10px;
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
@@ -104,7 +104,7 @@
 }
 
 .update-downloading-banner__btn:hover {
-  background: #334155;
+  background: var(--surface-hover);
   border-color: var(--border);
   transform: translateY(-1px);
 }
@@ -112,7 +112,7 @@
 .update-downloading-banner__track {
   width: 100%;
   height: 4px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--surface-hover);
   border-radius: 2px;
   overflow: hidden;
 }
@@ -136,17 +136,17 @@
 
 /* Ready-to-restart state */
 .update-downloading-banner--ready .update-downloading-banner__ready-icon {
-  color: #22c55e;
+  color: var(--success);
   flex-shrink: 0;
 }
 
 .update-downloading-banner__btn--primary {
-  background: var(--primary, #1d4ed8);
+  background: var(--primary);
   border-color: transparent;
   color: #fff;
 }
 
 .update-downloading-banner__btn--primary:hover {
-  background: color-mix(in srgb, var(--primary, #1d4ed8) 85%, #fff);
+  background: color-mix(in srgb, var(--primary) 85%, #fff);
   color: #fff;
 }

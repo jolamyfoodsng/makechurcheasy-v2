@@ -12,7 +12,7 @@ describe("Support window content", () => {
     expect(byKind.whatsapp).toMatchObject({ value: "https://chat.whatsapp.com/abc", enabled: true });
     expect(byKind.youtube).toMatchObject({ value: "", enabled: false });
     expect(byKind.email.value).toBe("help@church.org");
-    expect(byKind.telegram.value).toBe("https://t.me/makechurcheasy");
+    expect(byKind.telegram.value).toBe("https://t.me/makechurcheazy");
     expect(content.title).toBe(DEFAULT_SUPPORT_CONTENT.title);
     expect(content.emergency.phone).toBe("+234 906 945 5406");
   });

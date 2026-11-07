@@ -739,7 +739,7 @@ export function getPlanMonthlyPrice(planCfg: { price?: number; pricing?: { NGN?:
 
 /** Hardcoded defaults — used to seed or migrate the DB-backed plan config. */
 const DEFAULT_PLAN_CONFIG: PlanConfig = {
-  version: 11,
+  version: 13,
   plans: {
     trial: {
       label: "Trial",
@@ -763,10 +763,10 @@ const DEFAULT_PLAN_CONFIG: PlanConfig = {
       paystack: { monthlyPlanCode: "", yearlyPlanCode: "" },
       credits: 50,
       entitlements: {
-        songs: 3, images: 2, videos: 1, themes: 2, lowerThirds: 3, devices: 1,
+        songs: 5, images: 2, videos: 1, themes: 2, lowerThirds: 3, devices: 1,
         bibleVersions: 4, multiviewTemplates: 0, tickerThemes: 3, themePresets: 0,
         cloudStorageGB: 0.5,
-        multiview: false, tickers: true, massImport: false, easyWorshipImport: false,
+        multiview: false, tickers: false, massImport: false, easyWorshipImport: false,
         proPresenterImport: false, translation: false, speechToScripture: true,
         sermonExport: false, aiFeatures: false, cloudSync: false, advancedAnalytics: false,
         customReports: false, mobileControl: false, apiAccess: false, slideshow: false,
@@ -779,11 +779,11 @@ const DEFAULT_PLAN_CONFIG: PlanConfig = {
       paystack: { monthlyPlanCode: "mce_basic_monthly", yearlyPlanCode: "mce_basic_yearly" },
       credits: 720,
       entitlements: {
-        songs: 100, images: 100, videos: 100, themes: 10, lowerThirds: 15, devices: 3,
+        songs: -1, images: -1, videos: -1, themes: 10, lowerThirds: 15, devices: 3,
         bibleVersions: -1, multiviewTemplates: 5, tickerThemes: -1, themePresets: 3,
         cloudStorageGB: 5,
-        multiview: true, tickers: true, massImport: false, easyWorshipImport: false,
-        proPresenterImport: false, translation: false, speechToScripture: true,
+        multiview: true, tickers: true, massImport: true, easyWorshipImport: true,
+        proPresenterImport: true, translation: false, speechToScripture: true,
         sermonExport: false, aiFeatures: false, cloudSync: true, advancedAnalytics: false,
         customReports: false, mobileControl: false, apiAccess: false, slideshow: true,
         teamManagement: false, campusManagement: false, countdowns: false,
@@ -825,7 +825,7 @@ const DEFAULT_PLAN_CONFIG: PlanConfig = {
         USD: { monthly: "$5", yearly: "$50" },
       },
       features: [
-        { text: "100 songs, 100 images, and 100 videos" },
+        { text: "Unlimited songs, images, and videos, plus EasyWorship and bulk import" },
         { text: "Unlimited Bible versions and 3 devices" },
         { text: "Bible, Worship, Media, and up to 5 multiview templates" },
         { text: "Verse AI with 100 monthly credits" },
@@ -958,7 +958,7 @@ export async function getPlanConfig(): Promise<PlanConfig> {
     // and set the canonical Nigerian monthly prices. This is a
     // targeted migration so existing paid users receive the new entitlements
     // while preserving USD prices and unrelated plan settings.
-    if ((doc.version ?? 0) < DEFAULT_PLAN_CONFIG.version) {
+    if ((doc.version ?? 0) < 11) {
       const defaultBasic = DEFAULT_PLAN_CONFIG.plans.basic;
       const defaultFree = DEFAULT_PLAN_CONFIG.plans.free;
       const defaultGrowth = DEFAULT_PLAN_CONFIG.plans.growth;
@@ -1013,7 +1013,64 @@ export async function getPlanConfig(): Promise<PlanConfig> {
               "plans.growth.entitlements.countdowns": defaultGrowth.entitlements.countdowns,
               "plans.growth.pricing.NGN": defaultGrowth.pricing.NGN,
               pricingPlans,
-              version: DEFAULT_PLAN_CONFIG.version,
+              version: 11,
+              updatedAt: new Date().toISOString(),
+            },
+          },
+        );
+      doc = await db
+        .collection<PlanConfig>(COLLECTIONS.PLAN_CONFIG)
+        .findOne({ _id: "default" as any }) as PlanConfig | null;
+    }
+
+    // v12: Free plan is 5 songs, with no imports and no tickers. Only these Free fields change,
+    // so prices and limits an admin set on other plans are left alone.
+    if (doc && (doc.version ?? 0) < 12) {
+      const defaultFree = DEFAULT_PLAN_CONFIG.plans.free;
+      await db
+        .collection<PlanConfig>(COLLECTIONS.PLAN_CONFIG)
+        .updateOne(
+          { _id: "default" as any },
+          {
+            $set: {
+              "plans.free.entitlements.songs": defaultFree.entitlements.songs,
+              "plans.free.entitlements.tickers": defaultFree.entitlements.tickers,
+              "plans.free.entitlements.massImport": defaultFree.entitlements.massImport,
+              "plans.free.entitlements.easyWorshipImport": defaultFree.entitlements.easyWorshipImport,
+              "plans.free.entitlements.proPresenterImport": defaultFree.entitlements.proPresenterImport,
+              version: 12,
+              updatedAt: new Date().toISOString(),
+            },
+          },
+        );
+      doc = await db
+        .collection<PlanConfig>(COLLECTIONS.PLAN_CONFIG)
+        .findOne({ _id: "default" as any }) as PlanConfig | null;
+    }
+
+    // v13: Basic gets unlimited songs, images and videos plus imports. Only these Basic fields
+    // change, so prices and credits an admin set are left alone.
+    if (doc && (doc.version ?? 0) < 13) {
+      const defaultBasic = DEFAULT_PLAN_CONFIG.plans.basic;
+      const pricingPlans = (doc.pricingPlans || DEFAULT_PLAN_CONFIG.pricingPlans || []).map((p: any) =>
+        p.id === "basic"
+          ? { ...p, features: DEFAULT_PLAN_CONFIG.pricingPlans?.find((d: any) => d.id === "basic")?.features ?? p.features }
+          : p,
+      );
+      await db
+        .collection<PlanConfig>(COLLECTIONS.PLAN_CONFIG)
+        .updateOne(
+          { _id: "default" as any },
+          {
+            $set: {
+              "plans.basic.entitlements.songs": defaultBasic.entitlements.songs,
+              "plans.basic.entitlements.images": defaultBasic.entitlements.images,
+              "plans.basic.entitlements.videos": defaultBasic.entitlements.videos,
+              "plans.basic.entitlements.massImport": defaultBasic.entitlements.massImport,
+              "plans.basic.entitlements.easyWorshipImport": defaultBasic.entitlements.easyWorshipImport,
+              "plans.basic.entitlements.proPresenterImport": defaultBasic.entitlements.proPresenterImport,
+              pricingPlans,
+              version: 13,
               updatedAt: new Date().toISOString(),
             },
           },

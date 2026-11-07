@@ -86,7 +86,7 @@ describe("checkEntitlement (async — server)", () => {
 
     const result = await checkEntitlement("songs", "free", 2);
     expect(result.allowed).toBe(true);
-    expect(result.limit).toBe(10);
+    expect(result.limit).toBe(5);
   });
 
   it("falls back when server returns non-ok", async () => {
@@ -105,7 +105,7 @@ describe("checkEntitlement (async — server)", () => {
 
     const result = await checkEntitlement("songs", undefined, 10);
     expect(result.allowed).toBe(false);
-    expect(result.limit).toBe(10);
+    expect(result.limit).toBe(5);
   });
 });
 
@@ -113,7 +113,7 @@ describe("checkEntitlementSync (local fallback)", () => {
   it("returns allowed=true for free plan under limit", () => {
     const result = checkEntitlementSync("songs", "free", 1);
     expect(result.allowed).toBe(true);
-    expect(result.limit).toBe(10);
+    expect(result.limit).toBe(5);
   });
 
   it("returns allowed=false for free plan at limit", () => {
@@ -134,10 +134,11 @@ describe("checkEntitlementSync (local fallback)", () => {
     expect(result.requiredPlan).toBe("basic");
   });
 
-  it("allows Basic multiview, unlimited graphics and tickers, but keeps countdowns for Growth", () => {
+  it("allows Basic multiview, 15 graphics and unlimited tickers, but keeps countdowns for Growth", () => {
     expect(checkEntitlementSync("multiview", "basic").allowed).toBe(true);
     expect(checkEntitlementSync("tickers", "basic").allowed).toBe(true);
-    expect(checkEntitlementSync("lowerThirds", "basic", 500).allowed).toBe(true);
+    expect(checkEntitlementSync("lowerThirds", "basic", 5).allowed).toBe(true);
+    expect(checkEntitlementSync("lowerThirds", "basic", 500).allowed).toBe(false);
     expect(checkEntitlementSync("tickerThemes", "basic", 500).allowed).toBe(true);
     expect(checkEntitlementSync("countdowns", "basic").allowed).toBe(false);
   });
@@ -165,13 +166,13 @@ describe("checkEntitlementSync (local fallback)", () => {
   it("defaults to free plan for null/undefined", () => {
     const result = checkEntitlementSync("songs", null as unknown as string, 10);
     expect(result.allowed).toBe(false);
-    expect(result.limit).toBe(10);
+    expect(result.limit).toBe(5);
   });
 });
 
 describe("getFeatureLimit", () => {
-  it("returns 10 for free plan songs", () => {
-    expect(getFeatureLimit("songs", "free")).toBe(10);
+  it("returns 5 for free plan songs", () => {
+    expect(getFeatureLimit("songs", "free")).toBe(5);
   });
 
   it("returns -1 for basic plan songs", () => {
@@ -219,6 +220,6 @@ describe("getEntitlementConfig", () => {
 
     const config = await getEntitlementConfig();
     expect(config).toHaveProperty("free");
-    expect(config.free.songs).toBe(10);
+    expect(config.free.songs).toBe(5);
   });
 });

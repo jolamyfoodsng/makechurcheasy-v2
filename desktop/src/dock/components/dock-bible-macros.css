@@ -6,7 +6,7 @@
   max-height: 85vh;
   display: flex;
   flex-direction: column;
-  background: var(--dock-surface-panel, #0f172a);
+  background: var(--dock-surface-panel, var(--surface));
   border: 1px solid var(--dock-border-subtle, var(--border));
   border-radius: var(--radius-lg, 6px);
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
@@ -26,7 +26,7 @@
 .dock-macro-intro {
   margin: 0 0 14px 0;
   font-size: 12px;
-  color: var(--dock-text-secondary, #94a3b8);
+  color: var(--dock-text-secondary, var(--text-secondary));
   line-height: 1.5;
   background: rgba(255, 255, 255, 0.03);
   padding: 9px 13px;
@@ -114,7 +114,7 @@
 .dock-macro-card__title {
   font-size: 13px;
   font-weight: 700;
-  color: var(--dock-text-primary, #f8fafc);
+  color: var(--dock-text-primary, var(--text-primary));
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -126,7 +126,7 @@
   gap: 4px;
   font-size: 11.5px;
   font-weight: 500;
-  color: var(--dock-text-secondary, #94a3b8);
+  color: var(--dock-text-secondary, var(--text-secondary));
 }
 
 .dock-macro-card__reference-icon {
@@ -158,10 +158,10 @@
 }
 
 .dock-macro-card__project-btn:hover {
-  background: #3b82f6;
+  background: var(--primary);
   color: #ffffff;
-  border-color: #3b82f6;
-  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+  border-color: var(--primary);
+  box-shadow: none;
 }
 
 .dock-macro-card__delete-btn {

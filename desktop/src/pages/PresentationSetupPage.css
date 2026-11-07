@@ -3,15 +3,15 @@
 .remote-presentation-page {
   --remote-bg: var(--bg);
   --remote-surface: var(--surface);
-  --remote-elevated: #171b28;
-  --remote-border: rgba(255, 255, 255, 0.08);
+  --remote-elevated: var(--surface-raised);
+  --remote-border: var(--border);
   --remote-text: var(--text-primary);
   --remote-text-secondary: var(--text-secondary);
   --remote-text-muted: var(--text-muted);
   --remote-blue: var(--primary);
   --remote-blue-hover: var(--primary-hover);
-  --remote-success: #10b981;
-  --remote-error: #ef4444;
+  --remote-success: var(--success);
+  --remote-error: var(--error);
 
   min-height: 100dvh;
   background: var(--remote-bg);
@@ -36,7 +36,7 @@
   min-height: 44px;
   padding: 0 16px;
   border: 1px solid var(--border);
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   background: var(--surface-raised);
   color: var(--text-primary);
   font: inherit;
@@ -48,9 +48,9 @@
 }
 
 .remote-back-button:hover {
-  border-color: rgba(255, 255, 255, 0.2);
-  background: #334155;
-  color: #ffffff;
+  border-color: var(--border-strong);
+  background: var(--surface-hover);
+  color: var(--text-primary);
 }
 
 .remote-presentation-page--workspace {
@@ -73,8 +73,8 @@
   width: min(720px, 100%);
   padding: 36px;
   border: 1px solid var(--remote-border);
-  border-radius: var(--radius, 4px);
-  background: #18181b;
+  border-radius: var(--radius);
+  background: var(--surface);
 }
 
 .remote-connect-card--choice {
@@ -89,7 +89,7 @@
   height: 56px;
   margin-bottom: 20px;
   border-radius: 12px;
-  background: rgba(59, 130, 246, 0.12);
+  background: var(--primary-soft);
   color: var(--accent-blue);
 }
 
@@ -97,7 +97,7 @@
 .remote-presentation-header h1,
 .remote-preview-panel__header h2 {
   margin: 0;
-  color: #ffffff;
+  color: var(--text-primary);
   font-weight: 700;
 }
 
@@ -110,7 +110,7 @@
 .remote-connect-card__header p,
 .remote-presentation-header p {
   margin: 12px 0 0;
-  color: #d4d4d8;
+  color: var(--text-secondary);
   font-size: 15px;
   line-height: 1.6;
 }
@@ -129,8 +129,8 @@
   min-height: 100%;
   padding: 28px;
   border: 1px solid var(--remote-border);
-  border-radius: var(--radius, 4px);
-  background: #27272a;
+  border-radius: var(--radius);
+  background: var(--surface);
 }
 
 .remote-choice-card__icon {
@@ -140,7 +140,7 @@
   width: 52px;
   height: 52px;
   border-radius: 12px;
-  background: rgba(59, 130, 246, 0.12);
+  background: var(--primary-soft);
   color: var(--accent-blue);
 }
 
@@ -153,7 +153,7 @@
 
 .remote-choice-card__body p {
   margin: 10px 0 0;
-  color: #d4d4d8;
+  color: var(--text-secondary);
   font-size: 15px;
   line-height: 1.6;
 }
@@ -164,7 +164,7 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  color: #d4d4d8;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
@@ -181,7 +181,7 @@
   width: 6px;
   height: 6px;
   border-radius: 999px;
-  background: #60a5fa;
+  background: var(--accent-blue);
 }
 
 .remote-connect-form {
@@ -202,7 +202,7 @@
 }
 
 .remote-field span {
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 14px;
   font-weight: 600;
 }
@@ -212,10 +212,10 @@
   width: 100%;
   padding: 0 14px;
   border: 1px solid var(--remote-border);
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   outline: none;
-  background: #18181b;
-  color: #ffffff;
+  background: var(--input-bg);
+  color: var(--text-primary);
   font: inherit;
   font-size: 15px;
   transition: border-color 150ms, box-shadow 150ms;
@@ -226,8 +226,8 @@
 }
 
 .remote-field input:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 .remote-url-preview,
@@ -244,18 +244,18 @@
   padding: 10px 14px;
   border: 1px solid var(--remote-border);
   border-radius: 10px;
-  background: #27272a;
-  color: #d4d4d8;
+  background: var(--surface-raised);
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
 .remote-connect-alert {
   gap: 10px;
   padding: 14px;
-  border: 1px solid rgba(239, 68, 68, 0.35);
-  border-radius: var(--radius, 4px);
-  background: rgba(239, 68, 68, 0.1);
-  color: #fca5a5;
+  border: 1px solid var(--error-border);
+  border-radius: var(--radius);
+  background: var(--error-bg);
+  color: var(--danger-text);
   font-size: 14px;
 }
 
@@ -285,12 +285,12 @@
   gap: 10px;
   height: 46px;
   padding: 0 24px;
-  background: var(--remote-blue, #4f46e5);
+  background: var(--remote-blue);
   color: #ffffff;
 }
 
 .remote-primary-button:hover:not(:disabled) {
-  background: var(--remote-blue-hover, #4338ca);
+  background: var(--remote-blue-hover);
   transform: translateY(-1px);
 }
 
@@ -308,8 +308,8 @@
 
 .remote-secondary-button:hover,
 .remote-icon-button:hover {
-  background: #334155;
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--surface-hover);
+  border-color: var(--border-strong);
   transform: translateY(-1px);
 }
 
@@ -342,8 +342,8 @@
   gap: 12px;
   padding: 14px;
   border: 1px solid var(--remote-border);
-  border-radius: var(--radius, 4px);
-  background: #27272a;
+  border-radius: var(--radius);
+  background: var(--surface);
 }
 
 .remote-discovery-header {
@@ -378,9 +378,9 @@
   min-height: 44px;
   padding: 10px 12px;
   border: 1px solid var(--remote-border);
-  border-radius: var(--radius, 4px);
-  background: #18181b;
-  color: #ffffff;
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  color: var(--text-primary);
   font: inherit;
   font-size: 14px;
   text-align: left;
@@ -389,9 +389,9 @@
 }
 
 .remote-discovery-candidate:hover {
-  border-color: #3b82f6;
-  background: rgba(59, 130, 246, 0.1);
-  color: #ffffff;
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  color: var(--text-primary);
 }
 
 .remote-discovery-candidate small {
@@ -414,8 +414,8 @@
   min-height: 96px;
   padding: 18px;
   border: 1px solid var(--remote-border);
-  border-radius: var(--radius, 4px);
-  background: #27272a;
+  border-radius: var(--radius);
+  background: var(--surface);
 }
 
 .remote-connect-steps strong,
@@ -425,12 +425,12 @@
 
 .remote-connect-steps strong {
   margin-bottom: 6px;
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 15px;
 }
 
 .remote-connect-steps span {
-  color: #d4d4d8;
+  color: var(--text-secondary);
   font-size: 13px;
   line-height: 1.55;
 }
@@ -447,7 +447,7 @@
   min-height: 84px;
   padding: 16px 24px;
   border-bottom: 1px solid var(--remote-border);
-  background: #18181b;
+  background: var(--surface);
   flex-shrink: 0;
 }
 
@@ -467,7 +467,7 @@
 .remote-presentation-header p {
   max-width: 760px;
   font-size: 14px;
-  color: #d4d4d8;
+  color: var(--text-secondary);
 }
 
 .remote-presentation-workspace {
@@ -477,7 +477,7 @@
   min-height: 0;
   height: 100%;
   padding: 16px;
-  background: #18181b;
+  background: var(--bg);
 }
 
 .remote-presentation-workspace--link {
@@ -490,7 +490,7 @@
   min-height: 0;
   border: 1px solid var(--remote-border);
   border-radius: 14px;
-  background: #18181b;
+  background: var(--surface);
   overflow: hidden;
 }
 
@@ -510,12 +510,12 @@
   gap: 16px;
   padding: 18px 20px;
   border-bottom: 1px solid var(--remote-border);
-  background: #18181b;
+  background: var(--surface);
 }
 
 .remote-preview-panel__header h2 {
   font-size: 18px;
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .remote-preview-meta {
@@ -523,9 +523,9 @@
   gap: 10px;
   padding: 12px 20px;
   border-bottom: 1px solid var(--remote-border);
-  color: #a1a1aa;
+  color: var(--text-muted);
   font-size: 13px;
-  background: #18181b;
+  background: var(--surface-raised);
 }
 
 .remote-status-pill {
@@ -533,25 +533,25 @@
   min-height: 26px;
   padding: 4px 12px;
   border-radius: 999px;
-  color: #ffffff;
-  background: #27272a;
+  color: var(--text-primary);
+  background: var(--surface-raised);
   font-size: 13px;
   font-weight: 500;
 }
 
 .remote-status-pill--connected {
-  color: #bbf7d0;
-  background: rgba(34, 197, 94, 0.15);
+  color: var(--success);
+  background: var(--success-bg);
 }
 
 .remote-status-pill--connecting {
-  color: #bfdbfe;
-  background: rgba(59, 130, 246, 0.15);
+  color: var(--accent-blue);
+  background: var(--primary-soft);
 }
 
 .remote-status-pill--error {
-  color: #fecaca;
-  background: rgba(239, 68, 68, 0.15);
+  color: var(--danger-text);
+  background: var(--error-bg);
 }
 
 .remote-preview-stage {
@@ -604,7 +604,7 @@
 }
 
 .remote-link-panel {
-  background: #18181b;
+  background: var(--surface);
 }
 
 .remote-link-body {
@@ -646,8 +646,8 @@
   gap: 10px;
   padding: 14px;
   border: 1px solid var(--remote-border);
-  border-radius: var(--radius, 4px);
-  background: #27272a;
+  border-radius: var(--radius);
+  background: var(--surface-raised);
 }
 
 .remote-link-control-heading {
@@ -655,7 +655,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  color: #d4d4d8;
+  color: var(--text-secondary);
   font-size: 13px;
   font-weight: 600;
 }
@@ -682,17 +682,17 @@
   height: 36px;
   padding: 0 10px;
   border: 1px solid var(--remote-border);
-  border-radius: var(--radius, 4px);
-  background: #18181b;
-  color: #ffffff;
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text-primary);
   font-size: 14px;
   cursor: pointer;
   transition: background 150ms, border-color 150ms;
 }
 
 .remote-mini-control:hover:not(:disabled) {
-  background: #3f3f46;
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--surface-hover);
+  border-color: var(--border-strong);
 }
 
 .remote-mini-control--wide {
@@ -717,7 +717,7 @@
 }
 
 .remote-link-field span {
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 14px;
   font-weight: 600;
 }
@@ -727,10 +727,10 @@
   width: 100%;
   padding: 0 14px;
   border: 1px solid var(--remote-border);
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   outline: none;
-  background: #27272a;
-  color: #ffffff;
+  background: var(--input-bg);
+  color: var(--text-primary);
   font: 13px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
 }
 
@@ -753,10 +753,10 @@
   gap: 10px;
   min-height: 44px;
   padding: 10px 14px;
-  border: 1px solid rgba(34, 197, 94, 0.28);
-  border-radius: var(--radius, 4px);
-  background: rgba(34, 197, 94, 0.1);
-  color: #bbf7d0;
+  border: 1px solid var(--success-border);
+  border-radius: var(--radius);
+  background: var(--success-bg);
+  color: var(--success);
   font-size: 14px;
   line-height: 1.45;
 }

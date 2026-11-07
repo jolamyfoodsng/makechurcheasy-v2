@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react";
-import { Check, ChevronLeft, ChevronRight, Clock, Crown, Tag, X } from "./icons/NativeIcons";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, Crown, Megaphone, Tag, X } from "./icons/NativeIcons";
+import ModalDialog, { ModalChoices, ModalCodeRow, type ModalAction, type ModalTone } from "./ModalDialog";
 import { useNavigate } from "react-router-dom";
 import {
   clearCachedDesktopAnnouncement,
@@ -475,7 +476,6 @@ export function AnnouncementModalHost() {
   const pagedClass = items.length > 1 ? " desktop-announcement-overlay--paged" : "";
 
   const layout = resolveLayout(announcement);
-  const buttons = getAnnouncementButtons(announcement);
 
   if (layout === "image_only" && announcement.imageUrl) {
     const actionUrl = resolveActionUrl(announcement);
@@ -549,7 +549,77 @@ export function AnnouncementModalHost() {
     );
   }
 
+  return (
+    <AnnouncementDialog
+      announcement={announcement}
+      countdown={countdown}
+      selectedCycle={selectedCycle}
+      onSelectCycle={setSelectedCycle}
+      onClose={() => closeAll()}
+      onLater={() => dismissCurrent()}
+      onOpenAction={(cycle) => void openAction(cycle)}
+      onOpenButton={openButton}
+      pager={pager}
+    />
+  );
+}
+
+const TONE_ICONS: Record<DesktopAnnouncement["tone"], ReactNode> = {
+  info: <Megaphone size={26} />,
+  success: <CheckCircle2 size={26} />,
+  warning: <AlertTriangle size={26} />,
+  offer: <Tag size={26} />,
+  upgrade: <Crown size={26} />,
+};
+
+const TONE_DIALOG: Record<DesktopAnnouncement["tone"], ModalTone> = {
+  info: "brand",
+  success: "success",
+  warning: "warning",
+  offer: "brand",
+  upgrade: "brand",
+};
+
+/**
+ * The standard and promo announcement layouts, drawn with the app's one dialog (ModalDialog).
+ * Exported so the dev modal gallery shows exactly what churches see.
+ */
+export function AnnouncementDialog({
+  announcement,
+  countdown,
+  selectedCycle,
+  onSelectCycle,
+  onClose,
+  onLater,
+  onOpenAction,
+  onOpenButton,
+  pager,
+}: {
+  announcement: DesktopAnnouncement;
+  countdown?: string | null;
+  selectedCycle: DiscountBillingCycle | null;
+  onSelectCycle: (cycle: DiscountBillingCycle) => void;
+  onClose: () => void;
+  /** "Later" / "OK": dismiss this one (the host moves to the next). */
+  onLater: () => void;
+  onOpenAction: (cycle?: DiscountBillingCycle) => void;
+  onOpenButton: (button: AnnouncementButton) => void;
+  pager?: ReactNode;
+}) {
+  const [copied, setCopied] = useState(false);
+  const layout = resolveLayout(announcement);
+  const buttons = getAnnouncementButtons(announcement);
   const discountPercent = clampDiscount(announcement.offerDiscountPercent);
+
+  useEffect(() => setCopied(false), [announcement.deliveryId]);
+
+  const copyCode = () => {
+    if (!announcement.offerCode) return;
+    void navigator.clipboard?.writeText(announcement.offerCode).then(
+      () => setCopied(true),
+      () => setCopied(false),
+    );
+  };
 
   if (layout === "promo") {
     const effectivePercent = discountPercent || 50;
@@ -563,193 +633,97 @@ export function AnnouncementModalHost() {
       announcement.ctaLabel ||
       (discountPercent ? `Claim ${discountPercent}% Discount` : "Upgrade Now");
     const actionUrl = resolveActionUrl(announcement, activeCycle);
+    const label = discountPercent ? `${discountPercent}% off` : "Special offer";
 
     return (
-      <div className={`desktop-announcement-overlay desktop-announcement-overlay--promo${pagedClass}`}>
-        <div
-          className="desktop-announcement-backdrop desktop-announcement-backdrop--promo"
-          onClick={() => closeAll()}
-        />
-        <section className="desktop-announcement-promo" role="dialog" aria-modal="true">
-          <button
-            type="button"
-            className="desktop-announcement-close"
-            onClick={() => closeAll()}
-            aria-label="Dismiss announcement"
-          >
-            <X size={16} />
-          </button>
-
-          {announcement.imageUrl ? (
-            <div className="desktop-announcement-promo__cover">
-              <img
-                src={announcement.imageUrl}
-                alt=""
-                className="desktop-announcement-promo__cover-img"
-              />
-            </div>
-          ) : null}
-
-          <div className="desktop-announcement-promo__inner">
-            <div className="desktop-announcement-promo__badge-row">
-              <span className="desktop-announcement-promo__tag">
-                <Tag size={12} />
-                <span>{discountPercent ? `${discountPercent}% OFF` : "SPECIAL OFFER"}</span>
-              </span>
-              {countdown ? (
-                <span className="desktop-announcement-promo__timer">
-                  <Clock size={12} />
-                  <span>Ends in {countdown}</span>
-                </span>
+      <ModalDialog
+        tone="brand"
+        icon={announcement.imageUrl ? null : <Tag size={26} />}
+        image={announcement.imageUrl || undefined}
+        eyebrow={countdown ? `${label} · Ends in ${countdown}` : label}
+        title={announcement.title}
+        extra={
+          announcement.offerCode || offerCards.length > 1 ? (
+            <>
+              {announcement.offerCode ? (
+                <ModalCodeRow
+                  label="Promo code"
+                  code={announcement.offerCode}
+                  note="Applied automatically at checkout"
+                  copied={copied}
+                  onCopy={copyCode}
+                />
               ) : null}
-            </div>
-
-            <div className="desktop-announcement-promo__headings">
-              <h2 className="desktop-announcement-promo__title">{announcement.title}</h2>
-              {announcement.message ? (
-                <p className="desktop-announcement-promo__desc">{announcement.message}</p>
+              {offerCards.length > 1 ? (
+                <ModalChoices
+                  label="Billing"
+                  value={activeCycle}
+                  onChange={(id) => onSelectCycle(id as DiscountBillingCycle)}
+                  choices={offerCards.map((card) => ({
+                    id: card.cycle,
+                    title: card.title,
+                    meta: card.meta,
+                    description: card.body,
+                  }))}
+                />
               ) : null}
-            </div>
-
-            {announcement.offerCode ? (
-              <div className="desktop-announcement-promo__code-banner">
-                <div className="desktop-announcement-promo__code-left">
-                  <span className="desktop-announcement-promo__code-label">PROMO CODE</span>
-                  <code className="desktop-announcement-promo__code-val">{announcement.offerCode}</code>
-                </div>
-                <span className="desktop-announcement-promo__code-note">✓ Auto-applied at checkout</span>
-              </div>
-            ) : null}
-
-            {offerCards.length > 0 ? (
-              <div className="desktop-announcement-promo__plans-section">
-                <span className="desktop-announcement-promo__plans-title">Choose billing cycle</span>
-                <div className="desktop-announcement-offer-list">
-                  {offerCards.map((card) => {
-                    const isSelected = activeCycle === card.cycle;
-                    return (
-                      <button
-                        type="button"
-                        key={card.cycle}
-                        onClick={() => setSelectedCycle(card.cycle)}
-                        className={`desktop-announcement-offer-card ${
-                          isSelected ? "desktop-announcement-offer-card--selected" : ""
-                        }`}
-                      >
-                        <span className="desktop-announcement-offer-card__radio">
-                          {isSelected ? (
-                            <span className="desktop-announcement-offer-card__radio-dot" />
-                          ) : null}
-                        </span>
-                        <div className="desktop-announcement-offer-card__content">
-                          <div className="desktop-announcement-offer-card__header">
-                            <span className="desktop-announcement-offer-card__name">{card.title}</span>
-                            <span className="desktop-announcement-offer-card__badge">{card.meta}</span>
-                          </div>
-                          <p className="desktop-announcement-offer-card__sub">{card.body}</p>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : null}
-
-            <div className="desktop-announcement-promo__perks">
-              <div className="desktop-announcement-promo__perk">
-                <Check size={14} className="desktop-announcement-promo__check" />
-                <span>Instant unlock of all premium features</span>
-              </div>
-              <div className="desktop-announcement-promo__perk">
-                <Check size={14} className="desktop-announcement-promo__check" />
-                <span>Cancel or switch plans anytime</span>
-              </div>
-            </div>
-
-            <div className="desktop-announcement-promo__footer">
-              {actionUrl ? (
-                <button
-                  type="button"
-                  className="desktop-announcement-promo__cta"
-                  onClick={() => void openAction(activeCycle)}
-                >
-                  <Crown size={15} />
-                  <span>{actionLabel}</span>
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  className="desktop-announcement-promo__cta"
-                  onClick={() => dismissCurrent()}
-                >
-                  OK
-                </button>
-              )}
-              <button
-                type="button"
-                className="desktop-announcement-promo__dismiss-btn"
-                onClick={() => dismissCurrent()}
-              >
-                Maybe later
-              </button>
-            </div>
-          </div>
-        </section>
-        {pager}
-      </div>
+            </>
+          ) : undefined
+        }
+        hint="Premium features unlock straight away. Cancel or switch plans anytime."
+        actions={[
+          { label: "Maybe later", variant: "ghost", onClick: onLater },
+          actionUrl
+            ? { label: actionLabel, variant: "primary", autoFocus: true, onClick: () => onOpenAction(activeCycle) }
+            : { label: "OK", variant: "primary", autoFocus: true, onClick: onLater },
+        ]}
+        onClose={onClose}
+        footer={pager}
+        width={460}
+      >
+        {announcement.message ? <p>{announcement.message}</p> : null}
+      </ModalDialog>
     );
   }
 
+  const offerNote = announcement.offerDiscountPercent
+    ? `${announcement.offerDiscountPercent}% off${
+        announcement.offerDurationMonths
+          ? ` for ${announcement.offerDurationMonths} month${announcement.offerDurationMonths === 1 ? "" : "s"}`
+          : ""
+      }`
+    : undefined;
 
   return (
-    <div className={`desktop-announcement-overlay${pagedClass}`}>
-      <div className="desktop-announcement-backdrop" onClick={() => closeAll()} />
-      <section className={`desktop-announcement-modal desktop-announcement-modal--${announcement.tone}`}>
-        {announcement.imageUrl ? (
-          <img className="desktop-announcement-image" src={announcement.imageUrl} alt="" />
-        ) : null}
-        <div className="desktop-announcement-body">
-          <div className="desktop-announcement-pill">{toneLabel(announcement.tone)}</div>
-          <h2>{announcement.title}</h2>
-          <p>{announcement.message}</p>
-          {announcement.offerCode ? (
-            <div className="desktop-announcement-offer">
-              <span>Offer code</span>
-              <strong>{announcement.offerCode}</strong>
-              {announcement.offerDiscountPercent ? (
-                <small>
-                  {announcement.offerDiscountPercent}% off
-                  {announcement.offerDurationMonths ? ` for ${announcement.offerDurationMonths} month${announcement.offerDurationMonths === 1 ? "" : "s"}` : ""}
-                </small>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
-        <div className="desktop-announcement-actions">
-          {buttons.length > 0 ? (
-            <>
-              <button type="button" className="desktop-announcement-button" onClick={() => dismissCurrent()}>
-                Later
-              </button>
-              {buttons.map((button) => (
-                <button
-                  type="button"
-                  key={button.id}
-                  className={`desktop-announcement-button desktop-announcement-button--${button.style || "secondary"}`}
-                  onClick={() => openButton(button)}
-                >
-                  {button.label}
-                </button>
-              ))}
-            </>
-          ) : (
-            <button type="button" className="desktop-announcement-button desktop-announcement-button--primary" onClick={() => dismissCurrent()}>
-              OK
-            </button>
-          )}
-        </div>
-      </section>
-      {pager}
-    </div>
+    <ModalDialog
+      tone={TONE_DIALOG[announcement.tone] ?? "brand"}
+      icon={announcement.imageUrl ? null : (TONE_ICONS[announcement.tone] ?? <Megaphone size={26} />)}
+      image={announcement.imageUrl || undefined}
+      eyebrow={toneLabel(announcement.tone)}
+      title={announcement.title}
+      extra={
+        announcement.offerCode ? (
+          <ModalCodeRow label="Offer code" code={announcement.offerCode} note={offerNote} copied={copied} onCopy={copyCode} />
+        ) : undefined
+      }
+      actions={
+        buttons.length > 0
+          ? [
+              { label: "Later", variant: "ghost", onClick: onLater },
+              ...buttons.map((button, index) => ({
+                label: button.label,
+                variant: (button.style === "primary" || (index === buttons.length - 1 && !buttons.some((b) => b.style === "primary"))
+                  ? "primary"
+                  : "ghost") as ModalAction["variant"],
+                onClick: () => onOpenButton(button),
+              })),
+            ]
+          : [{ label: "OK", variant: "primary", autoFocus: true, onClick: onLater }]
+      }
+      onClose={onClose}
+      footer={pager}
+    >
+      {announcement.message ? <p>{announcement.message}</p> : null}
+    </ModalDialog>
   );
 }

@@ -852,12 +852,12 @@ describe("dockObsClient background reflection stress", () => {
     expect(client._lastBrowserSourceUrlBySource[sourceName]).toBe(baseUrl);
   });
 
-  it("automatically cache-busts the first Bible document after a Dock startup", async () => {
+  it("automatically cache-busts the Bible document when OBS has a different page loaded after a Dock startup", async () => {
     const sourceName = "MCE Browser - Bible";
     const baseUrl = "http://overlay.test/mce-bible-overlay.html";
     inputs.set(sourceName, {
       inputKind: "browser_source",
-      inputSettings: { url: baseUrl, css: "" },
+      inputSettings: { url: "http://overlay.test/mce-bible-overlay.html?v=older-build", css: "" },
     });
     delete client._lastBrowserSourceUrlBySource[sourceName];
 

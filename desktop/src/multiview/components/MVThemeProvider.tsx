@@ -7,22 +7,21 @@
 
 import { useEffect } from "react";
 import { getSettings } from "../mvStore";
+import { getEffectiveTheme } from "../../hooks/useAppTheme";
 
-/** Resolve effective theme ("dark" | "light") from settings */
-function resolveTheme(pref: "dark" | "light" | "system"): "dark" | "light" {
-  if (pref === "system") {
-    return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
-  }
-  return pref;
-}
-
-/** Apply theme classes to <html> element */
-function applyTheme(theme: "dark" | "light", highContrast: boolean): void {
+/**
+ * Dark / light comes from the one app theme (hooks/useAppTheme.ts), which sets `light` and
+ * `mv-theme-light` on <html> for every page. Multi-View only adds its own high-contrast class here,
+ * so entering Multi-View can no longer flip the app to a different mode.
+ */
+function applyTheme(highContrast: boolean): void {
   const root = document.documentElement;
-  root.classList.remove("mv-theme-dark", "mv-theme-light", "mv-high-contrast", "light", "dark");
-  root.classList.add(`mv-theme-${theme}`);
-  root.classList.add(theme);
-  if (highContrast) root.classList.add("mv-high-contrast");
+  const light = getEffectiveTheme() === "light";
+  root.classList.toggle("light", light);
+  root.classList.toggle("mv-theme-light", light);
+  root.classList.toggle("mv-theme-dark", !light);
+  root.classList.remove("dark");
+  root.classList.toggle("mv-high-contrast", highContrast);
 }
 
 /**
@@ -31,16 +30,14 @@ function applyTheme(theme: "dark" | "light", highContrast: boolean): void {
  */
 export function useThemeSync(): void {
   useEffect(() => {
-    const settings = getSettings();
-    const effective = resolveTheme(settings.theme);
-    applyTheme(effective, settings.highContrast);
+    applyTheme(getSettings().highContrast);
 
     // Listen for system theme changes (only matters if pref === "system")
     const mq = window.matchMedia("(prefers-color-scheme: light)");
     const handler = () => {
       const s = getSettings();
       if (s.theme === "system") {
-        applyTheme(resolveTheme("system"), s.highContrast);
+        applyTheme(s.highContrast);
       }
     };
     mq.addEventListener("change", handler);
@@ -49,7 +46,7 @@ export function useThemeSync(): void {
     const storageHandler = (e: StorageEvent) => {
       if (e.key === "mv-settings") {
         const s = getSettings();
-        applyTheme(resolveTheme(s.theme), s.highContrast);
+        applyTheme(s.highContrast);
       }
     };
     window.addEventListener("storage", storageHandler);
@@ -66,7 +63,5 @@ export function useThemeSync(): void {
  * This is synchronous and immediate.
  */
 export function refreshTheme(): void {
-  const settings = getSettings();
-  const effective = resolveTheme(settings.theme);
-  applyTheme(effective, settings.highContrast);
+  applyTheme(getSettings().highContrast);
 }

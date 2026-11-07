@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { CheckCircle, Download, ExternalLink, Loader2, Puzzle, RefreshCw, X } from "./icons/NativeIcons";
+import { CheckCircle, Download, ExternalLink, Loader2, Puzzle, RefreshCw } from "./icons/NativeIcons";
+import ModalDialog, { ModalFacts, ModalNotice } from "./ModalDialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   getObsMovePluginStatus,
@@ -10,7 +11,6 @@ import {
   MOVE_TRANSITION_RELEASE_URL,
   type ObsMovePluginStatus,
 } from "../services/obsMovePlugin";
-import "./MovePluginInstallModal.css";
 
 interface Props {
   onClose: () => void;
@@ -72,93 +72,68 @@ export default function MovePluginInstallModal({ onClose }: Props) {
     void openUrl(MOVE_TRANSITION_RELEASE_URL);
   };
 
+  const busy = state === "checking" || state === "installing";
+  const pluginInstalled = Boolean(plugin?.installed && plugin.bridgeInstalled);
+  const runtimeReady = loaded && bridgeLoaded;
+  const statusLabel = busy ? "Checking" : runtimeReady ? "Ready" : pluginInstalled ? "Restart OBS" : "Not installed";
+
   return (
-    <div className="move-plugin-modal__backdrop" role="presentation" onClick={onClose}>
-      <section
-        className="move-plugin-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="move-plugin-modal-title"
-        onClick={(event) => event.stopPropagation()}>
-        <button className="move-plugin-modal__close" onClick={onClose} title="Close" aria-label="Close">
-          <X size={18} />
-        </button>
-
-        <div className="move-plugin-modal__icon">
-          <Puzzle size={24} />
-        </div>
-        <h2 id="move-plugin-modal-title">Install OBS motion support</h2>
-        <p>
-          Add optional smooth scene movement to OBS. MakeChurchEazy downloads
-          Move Transition and its small bridge, then places both in your user
-          OBS folder. You can leave this disabled and use the built-in layout
-          fallback.
-        </p>
-
-        <div className="move-plugin-modal__status">
-          <div>
-            <strong>OBS motion support</strong>
-            <span>
-              {plugin?.platform || "Desktop"} · Move {plugin?.version || "3.2.1"} · Bridge {plugin?.bridgeVersion || "1.0.0"}
-            </span>
-          </div>
-          <span className={`move-plugin-modal__badge move-plugin-modal__badge--${loaded && bridgeLoaded ? "ready" : plugin?.installed && plugin.bridgeInstalled ? "pending" : "idle"}`}>
-            {state === "checking" || state === "installing"
-              ? "Checking"
-              : loaded && bridgeLoaded
-                ? "Ready"
-                : plugin?.installed && plugin.bridgeInstalled
-                  ? "Restart OBS"
-                  : "Not installed"}
-          </span>
-        </div>
-
-        {plugin?.installed && plugin.bridgeInstalled && (!loaded || !bridgeLoaded) && (
-          <div className="move-plugin-modal__notice">
-            <RefreshCw size={15} />
-            <span>Restart OBS, then return here and choose Check again.</span>
-          </div>
-        )}
-        <div className="move-plugin-modal__actions">
-          <button className="move-plugin-modal__secondary" onClick={onClose} title="Not now">
-            Not now
-          </button>
-          {plugin?.installed && plugin.bridgeInstalled ? (
-            <button
-              className="move-plugin-modal__primary"
-              onClick={() => void check()}
-              disabled={state === "checking" || state === "installing"}
-              title="Check plugin status">
-              <RefreshCw size={15} />
-              Check again
-            </button>
-          ) : (
-            <button
-              className="move-plugin-modal__primary"
-              onClick={() => {
+    <ModalDialog
+      tone={runtimeReady ? "success" : "brand"}
+      icon={state === "installing" ? <Loader2 size={26} /> : <Puzzle size={26} />}
+      iconBusy={state === "installing"}
+      title="Install OBS motion support"
+      onClose={onClose}
+      width={460}
+      extra={
+        <>
+          <ModalFacts
+            rows={[
+              {
+                label: "OBS motion support",
+                value: `${plugin?.platform || "Desktop"} · Move ${plugin?.version || "3.2.1"} · Bridge ${plugin?.bridgeVersion || "1.0.0"}`,
+              },
+              { label: "Status", value: statusLabel },
+            ]}
+          />
+          {pluginInstalled && !runtimeReady && (
+            <ModalNotice tone="info" icon={<RefreshCw size={15} />}>
+              Restart OBS, then return here and choose Check again.
+            </ModalNotice>
+          )}
+          {runtimeReady && (
+            <ModalNotice tone="info" icon={<CheckCircle size={15} />}>
+              Move Transition and the MCE OBS Bridge are active in OBS.
+            </ModalNotice>
+          )}
+        </>
+      }
+      actions={[
+        { label: "Not now", variant: "ghost", onClick: onClose, title: "Not now" },
+        pluginInstalled
+          ? {
+              label: "Check again",
+              variant: "primary",
+              icon: <RefreshCw size={14} />,
+              disabled: busy,
+              title: "Check plugin status",
+              onClick: () => void check(),
+            }
+          : {
+              label: canInstallInApp ? "Install motion support" : "Open Move Transition",
+              variant: "primary",
+              icon: canInstallInApp ? <Download size={14} /> : <ExternalLink size={14} />,
+              disabled: busy,
+              title: canInstallInApp ? "Install OBS motion support" : "Open Move Transition download",
+              onClick: () => {
                 if (canInstallInApp) void install();
                 else openMoveTransitionRelease();
-              }}
-              disabled={state === "checking" || state === "installing"}
-              title={canInstallInApp ? "Install OBS motion support" : "Open Move Transition download"}>
-              {state === "installing" ? (
-                <Loader2 size={15} className="move-plugin-modal__spin" />
-              ) : canInstallInApp ? (
-                <Download size={15} />
-              ) : (
-                <ExternalLink size={15} />
-              )}
-              {canInstallInApp ? "Install motion support" : "Open Move Transition"}
-            </button>
-          )}
-        </div>
-
-        {loaded && bridgeLoaded && (
-          <div className="move-plugin-modal__ready">
-            <CheckCircle size={15} /> Move Transition and the MCE OBS Bridge are active in OBS.
-          </div>
-        )}
-      </section>
-    </div>
+              },
+            },
+      ]}
+    >
+      Add optional smooth scene movement to OBS. MakeChurchEazy downloads Move Transition and its small bridge, then
+      places both in your user OBS folder. You can leave this disabled and use the built-in layout fallback.
+    </ModalDialog>
   );
 }

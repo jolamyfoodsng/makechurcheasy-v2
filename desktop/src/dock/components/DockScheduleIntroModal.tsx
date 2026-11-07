@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import Icon from "../DockIcon";
+import ModalDialog, { ModalPanel } from "../../components/ModalDialog";
+import { CalendarDays, Check } from "../../components/icons/NativeIcons";
 import { DOCK_ONBOARDING_KEY, DOCK_ONBOARDING_COMPLETED_EVENT } from "./DockOnboardingTour";
-import "./DockScheduleIntroModal.css";
 
 export const DOCK_SCHEDULE_INTRO_KEY = "__mce_dock_schedule_intro_v1";
 export const DOCK_OPEN_SCHEDULE_GUIDE_EVENT = "mce-open-schedule-guide";
@@ -85,81 +85,48 @@ export function DockScheduleIntroModal({ open: controlledOpen, onClose: controll
   if (!isOpen) return null;
 
   return (
-    <div className="ssm-backdrop dock-schedule-intro-backdrop" onClick={handleDismiss} role="dialog" aria-modal="true" aria-labelledby="dock-schedule-intro-title">
-      <div className="ssm-modal dock-schedule-intro-modal" onClick={(e) => e.stopPropagation()}>
-        <button
-          type="button"
-          className="um-close"
-          onClick={handleDismiss}
-          aria-label={t("common.close", "Close")}
-          title={t("common.close", "Close")}
-        >
-          <Icon name="close" size={18} />
-        </button>
-
-        <div className="dock-schedule-intro__header">
-          <div className="dock-schedule-intro__icon-badge">
-            <Icon name="playlist_play" size={22} />
-          </div>
-          <div className="dock-schedule-intro__header-text">
-            <span className="dock-schedule-intro__badge">{t("schedule.intro.badge", "New Feature")}</span>
-            <h2 id="dock-schedule-intro-title" className="dock-schedule-intro__title">
-              {t("schedule.intro.title", "Service Schedule & History")}
-            </h2>
-          </div>
-        </div>
-
-        <p className="dock-schedule-intro__desc">
-          {t("schedule.intro.subtitle", "Queue scriptures, songs and media, or bring back anything you already projected.")}
-        </p>
-
-        <ul className="dock-schedule-intro__list">
-          <li className="dock-schedule-intro__item">
-            <span className="dock-schedule-intro__dot" aria-hidden="true" />
-            <span>
+    <ModalDialog
+      tone="brand"
+      icon={<CalendarDays size={26} />}
+      eyebrow={t("schedule.intro.badge", "Quick guide")}
+      title={t("schedule.intro.title", "Service Schedule & History")}
+      extra={
+        <ModalPanel>
+          <ul>
+            <li>
               <strong>{t("schedule.intro.locationLabel", "Where to find it:")}</strong>{" "}
-              {t("schedule.intro.locationText", "click the playlist icon on the left edge of your Dock to open or close it.")}
-            </span>
-          </li>
-          <li className="dock-schedule-intro__item">
-            <span className="dock-schedule-intro__dot" aria-hidden="true" />
-            <span>
+              {t("schedule.intro.locationText", "click the schedule icon on the left edge of your Dock to open or close it.")}
+            </li>
+            <li>
               <strong>{t("schedule.intro.point1Title", "Schedule & History:")}</strong>{" "}
               {t("schedule.intro.point1Detail", "queue items for the service, or switch tabs to see what you projected earlier.")}
-            </span>
-          </li>
-          <li className="dock-schedule-intro__item">
-            <span className="dock-schedule-intro__dot" aria-hidden="true" />
-            <span>
+            </li>
+            <li>
               <strong>{t("schedule.intro.point2Title", "One-click projection:")}</strong>{" "}
               {t("schedule.intro.point2Detail", "click any card to show it on your live screen and OBS.")}
-            </span>
-          </li>
-          <li className="dock-schedule-intro__item">
-            <span className="dock-schedule-intro__dot" aria-hidden="true" />
-            <span>
+            </li>
+            <li>
               <strong>{t("schedule.intro.point3Title", "Resize & pin:")}</strong>{" "}
               {t("schedule.intro.point3Detail", "drag the right edge to resize, or pin it to keep it open.")}
-            </span>
-          </li>
-        </ul>
-
-        <div className="dock-schedule-intro__footer">
-          <span className="dock-schedule-intro__hint">
-            <Icon name="help_outline" size={13} />
-            {t("schedule.intro.reopenHint", "Reopen this from the ? icon in the Schedule header.")}
-          </span>
-          <button
-            type="button"
-            className="dock-btn dock-btn--primary dock-schedule-intro__get-started-btn"
-            onClick={handleDismiss}
-          >
-            <span>{t("schedule.intro.gotIt", "Got it")}</span>
-            <Icon name="check" size={14} />
-          </button>
-        </div>
-      </div>
-    </div>
+            </li>
+          </ul>
+        </ModalPanel>
+      }
+      hint={t("schedule.intro.reopenHint", "Reopen this from the ? icon in the Schedule header.")}
+      actions={[
+        {
+          label: t("schedule.intro.gotIt", "Got it"),
+          variant: "primary",
+          autoFocus: true,
+          icon: <Check size={14} />,
+          onClick: handleDismiss,
+        },
+      ]}
+      onClose={handleDismiss}
+      zIndex={10002}
+    >
+      <p>{t("schedule.intro.subtitle", "Queue scriptures, songs and media, or bring back anything you already projected.")}</p>
+    </ModalDialog>
   );
 }
 

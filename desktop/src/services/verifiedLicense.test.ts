@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   __resetVerifiedLicenseForTests,
   getClockFloor,
@@ -13,6 +13,22 @@ import {
   readLastSyncMs,
   trustedNowMs,
 } from "./offlineEntitlement";
+
+// Tests run in a node environment, so stand in for the browser's localStorage.
+function installLocalStorage() {
+  const values = new Map<string, string>();
+  const storage = {
+    get length() { return values.size; },
+    clear: () => values.clear(),
+    getItem: (key: string) => values.get(key) ?? null,
+    key: (index: number) => Array.from(values.keys())[index] ?? null,
+    removeItem: (key: string) => { values.delete(key); },
+    setItem: (key: string, value: string) => { values.set(key, String(value)); },
+  } as Storage;
+  vi.stubGlobal("localStorage", storage);
+  vi.stubGlobal("window", { localStorage: storage });
+}
+installLocalStorage();
 
 const DAY = 24 * 60 * 60 * 1000;
 

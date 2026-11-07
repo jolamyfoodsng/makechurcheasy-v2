@@ -85,6 +85,8 @@ import {
   probeHtmlTickerColors,
   resolveDockTickerDividerChar,
   resolveDockTickerThemeOption,
+  canonicalDockTickerThemeId,
+  dockTickerSupportsHeadingTime,
   type DockTickerDivider,
 } from "../tickerThemeCatalog";
 import {
@@ -96,6 +98,7 @@ import {
 } from "../../services/remoteProductionThemes";
 import { loadDockSceneRoute, useDockSceneRoute } from "../dockSceneRouting";
 import DockSceneRouteSendControl from "../components/DockSceneRouteSendControl";
+import { fitPopover } from "../useKeepInViewport";
 
 const ALL_LT_THEMES: LowerThirdTheme[] = [
   ...LT_ALL_THEMES,
@@ -309,10 +312,10 @@ function TickerColorTextInput({
       style={{
         minWidth: 0,
         height: 24,
-        background: "var(--dock-surface, #111827)",
-        border: `1px solid ${invalid ? "#ef4444" : "var(--dock-border, #334155)"}`,
+        background: "var(--dock-surface, var(--surface))",
+        border: `1px solid ${invalid ? "#ef4444" : "var(--dock-border, var(--border))"}`,
         borderRadius: 3,
-        color: "var(--dock-text, #f8fafc)",
+        color: "var(--dock-text, var(--text-primary))",
         fontFamily: "inherit",
         fontSize: 10,
         padding: "0 6px",
@@ -803,7 +806,7 @@ export default function DockMinistryTab({
     getDockEntitlementLimit("tickerThemes"),
   );
   const selectedTickerTheme =
-    effectiveThemeList.find((option) => option.id === settings.themeId) ??
+    effectiveThemeList.find((option) => option.id === canonicalDockTickerThemeId(settings.themeId)) ??
     effectiveThemeList[0] ??
     DEFAULT_DOCK_TICKER_THEME_OPTION;
   const activeMessages = messages.filter((m) => m.active);
@@ -1703,7 +1706,7 @@ export default function DockMinistryTab({
                     </button>
                   </div>
                 </div>
-                {selectedTickerTheme?.source === "permanent" && selectedTickerTheme.theme.headingTime && (
+                {dockTickerSupportsHeadingTime(selectedTickerTheme) && (
                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                     <label style={{ fontSize: 10, color: "var(--dock-text-dim)", flex: "0 0 50px" }}>Shows</label>
                     <div role="group" aria-label="Heading shows" style={{ display: "flex", flex: 1, minWidth: 0 }}>
@@ -2190,7 +2193,7 @@ export default function DockMinistryTab({
               const menuLabel = menuTab.name ?? t("ministry.ltTabLabel", { n: menuIndex + 1, defaultValue: "Tab {{n}}" });
               return (
                 <div
-                  ref={ltTabMenuRef}
+                  ref={(el) => { ltTabMenuRef.current = el; fitPopover(el); }}
                   className="dock-lt-tabs__menu"
                   role="menu"
                   aria-label={menuLabel}
@@ -2850,7 +2853,7 @@ export default function DockMinistryTab({
 
       {tickerColorPopoverOpen && tickerColors && createPortal(
         <div
-          ref={tickerColorPopoverPanelRef}
+          ref={(el) => { tickerColorPopoverPanelRef.current = el; fitPopover(el); }}
           role="dialog"
           aria-label={t("ministry.tickerColors", "Ticker colors")}
           style={{
@@ -2860,24 +2863,24 @@ export default function DockMinistryTab({
             zIndex: 10000,
             width: TICKER_COLOR_POPOVER_WIDTH,
             padding: 10,
-            background: "var(--dock-surface-alt, #1f2937)",
-            border: "1px solid var(--dock-border, #334155)",
+            background: "var(--dock-surface-alt, var(--surface-raised))",
+            border: "1px solid var(--dock-border, var(--border))",
             borderRadius: 4,
             boxShadow: "0 18px 50px rgba(0,0,0,0.36)",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
-            <span style={{ fontSize: 10, fontWeight: 800, color: "var(--dock-text, #f8fafc)", textTransform: "uppercase", letterSpacing: 0.3 }}>
+            <span style={{ fontSize: 10, fontWeight: 800, color: "var(--dock-text, var(--text-primary))", textTransform: "uppercase", letterSpacing: 0.3 }}>
               {t("ministry.tickerColors", "Ticker colors")}
             </span>
             <button
               type="button"
               onClick={() => setSettings((s) => ({ ...s, colors: {} }))}
               style={{
-                border: "1px solid var(--dock-border, #334155)",
+                border: "1px solid var(--dock-border, var(--border))",
                 borderRadius: 3,
-                background: "var(--dock-surface, #111827)",
-                color: "var(--dock-text-dim, #cbd5e1)",
+                background: "var(--dock-surface, var(--surface))",
+                color: "var(--dock-text-dim, var(--text-muted))",
                 cursor: "pointer",
                 fontSize: 10,
                 padding: "2px 6px",
@@ -2900,7 +2903,7 @@ export default function DockMinistryTab({
                     alignItems: "center",
                     gap: 6,
                     fontSize: 10,
-                    color: "var(--dock-text-dim, #cbd5e1)",
+                    color: "var(--dock-text-dim, var(--text-muted))",
                     opacity: needsDivider ? 0.55 : 1,
                   }}
                   title={needsDivider ? t("ministry.tickerColor.separatorHint", "Choose a divider (Dot, Line, Diamond or Spark) to use this colour.") : undefined}
@@ -2914,7 +2917,7 @@ export default function DockMinistryTab({
                     style={{
                       width: 28,
                       height: 24,
-                      border: "1px solid var(--dock-border, #334155)",
+                      border: "1px solid var(--dock-border, var(--border))",
                       borderRadius: 3,
                       background: "transparent",
                       padding: 0,

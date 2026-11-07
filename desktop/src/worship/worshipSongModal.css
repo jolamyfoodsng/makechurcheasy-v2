@@ -442,7 +442,7 @@ body.ws-modal-open {
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--text-muted);
   z-index: 2;
 }
 
@@ -602,7 +602,7 @@ body.ws-modal-open {
   min-width: 0;
   flex: 1;
   margin: 0;
-  color: var(--error, #ef4444);
+  color: var(--error);
   font-size: 12px;
   line-height: 1.35;
   text-align: left;
@@ -676,11 +676,6 @@ html.mv-theme-light .ws-modal--fullscreen {
 :root.light .ws-modal-header-icon,
 html.mv-theme-light .ws-modal-header-icon {
   color: var(--text-primary);
-}
-
-:root.light .ws-slide-card-label,
-html.mv-theme-light .ws-slide-card-label {
-  color: rgba(0, 0, 0, 0.4);
 }
 
 /* ── Slide layout bar: layout and wrap side by side, extra toolbar tools ── */

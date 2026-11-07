@@ -35,9 +35,10 @@ export const defaultTickerThemes: TickerTheme[] = [
     tickerText:
       "Prayer Meeting Tuesday 6:30 PM \u2022 Youth Night Friday 7:00 PM \u2022 New Members Class starts next Sunday \u2022",
     speed: "24s",
-    html: `<div class="lt pos-full-bottom in-up" data-state="{{state}}">
+    headingTime: true,
+    html: `<div class="lt pos-full-bottom in-up" data-state="{{state}}" data-heading="{{headingMode}}">
   <div class="ticker-shell" style="--bg:#FFFFFF;--fg:#1F2A38;--accent:#2F4D8A;--bd:rgba(47,77,138,.22);--tagFg:#fff;">
-    <div class="ticker-badge">{{badge}}</div>
+    <div class="ticker-badge"><span class="pill-title">{{badge}}</span><span class="pill-clock" data-live-clock>{{clock}}</span></div>
     <div class="ticker-track">
       <div class="ticker-move" style="--speed:{{speed}};">
         <span>{{tickerText}}</span>
@@ -100,7 +101,9 @@ body { font-family: "Montserrat", sans-serif; }
   font-weight: 600;
   letter-spacing: .01em;
   animation: tickerMove var(--speed, 20s) linear infinite;
-}`,
+}
+.pill-clock { font-size: 17px; font-variant-numeric: tabular-nums; letter-spacing: .04em; }
+.lt:not([data-heading="time"]) .pill-clock, .lt[data-heading="time"] .pill-title { display: none; }`,
     fontImports: [
       "/fonts/google/google-fonts.css",
     ],
@@ -298,5 +301,68 @@ export const pillTickerThemes: TickerTheme[] = [
   }),
 ];
 
-// Show the pill tickers first in every ticker list.
+// News Ticker Bar — was the "lt-stream-ticker" lower third; now a real ticker so it gets the
+// ticker controls (messages, speed, divider, Top/Bottom, colours). Slanted label tab with a dot,
+// navy bar with an accent top edge. Same Dock class names as the other tickers.
+const NEWS_BAR_TEXT =
+  "Welcome to our service • Add announcements, prayer points or event details here • Type your own messages in the ticker panel";
+
+export const newsBarTickerTheme: TickerTheme = {
+  id: "ticker-news-bar",
+  name: "News Ticker Bar",
+  description: "A slanted label tab and a full-width bar of messages that scroll across.",
+  accentColor: "#2FE0C3",
+  colors: { accent: "#2FE0C3", accentText: "#10243F", barBg: "#10243F", barText: "#FFFFFF" },
+  badge: "Latest",
+  tickerText: NEWS_BAR_TEXT,
+  speed: "28s",
+  headingTime: true,
+  html: `<div class="lt pos-full-bottom" data-state="{{state}}" data-heading="{{headingMode}}">
+  <div class="ticker-shell">
+    <div class="ticker-badge"><i class="nb-dot"></i><span class="pill-title">{{badge}}</span><span class="pill-clock" data-live-clock>{{clock}}</span></div>
+    <div class="ticker-track">
+      <div class="ticker-move" style="--speed:{{speed}};">
+        <span>{{tickerText}}</span>
+        <span>{{tickerText}}</span>
+      </div>
+    </div>
+  </div>
+</div>`,
+  css: `
+body { font-family: "Noto Sans", "Montserrat", sans-serif; }
+@keyframes tickerMove { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes nbBarIn { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes nbTabIn { from { transform: translateX(-105%); } to { transform: translateX(0); } }
+.pos-full-bottom { position: fixed; left: 0; right: 0; bottom: 0; padding: 0 0 24px; }
+/* The shell carries the bar colour (the Dock's bar colour sets it), so it also shows under the tab's slant. */
+.ticker-shell {
+  position: relative; height: 78px; display: flex; align-items: stretch; overflow: hidden;
+  background: #10243F; color: #FFFFFF;
+}
+.ticker-badge {
+  position: relative; z-index: 2; flex: none; display: flex; align-items: center; gap: 16px;
+  padding: 0 62px 0 36px; background: #2FE0C3; color: #10243F;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 26px) 100%, 0 100%);
+  font-size: 28px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase;
+}
+.pill-clock { font-variant-numeric: tabular-nums; letter-spacing: .06em; }
+.lt:not([data-heading="time"]) .pill-clock, .lt[data-heading="time"] .pill-title { display: none; }
+.nb-dot { width: 14px; height: 14px; border-radius: 50%; background: #10243F; flex: none; }
+.ticker-track {
+  position: relative; flex: 1; min-width: 0; margin-left: -26px; padding-left: 26px;
+  display: flex; align-items: center; overflow: hidden; border-top: 4px solid #2FE0C3;
+}
+.ticker-move { display: inline-flex; gap: 88px; white-space: nowrap; font-size: 29px; font-weight: 600; animation: tickerMove var(--speed, 28s) linear infinite; }
+/* In: the bar wipes across, then the label tab slides in over it. */
+.pos-full-bottom[data-state="in"] .ticker-shell { animation: nbBarIn .55s cubic-bezier(.7,0,.2,1) both; }
+.pos-full-bottom[data-state="in"] .ticker-badge { animation: nbTabIn .5s .25s cubic-bezier(.2,.8,.2,1) both; }
+.pos-full-bottom[data-state="out"] .ticker-badge { animation: nbTabIn .35s ease-in reverse both; }
+.pos-full-bottom[data-state="out"] .ticker-shell { animation: nbBarIn .45s .15s cubic-bezier(.7,0,.2,1) reverse both; }
+@media (prefers-reduced-motion: reduce) { .ticker-badge, .ticker-shell { animation: none !important; } }`,
+  fontImports: ["/fonts/google/google-fonts.css"],
+  variables: [],
+};
+
+// Show the pill tickers first in every ticker list; the News Ticker Bar goes after them.
 defaultTickerThemes.unshift(...pillTickerThemes);
+defaultTickerThemes.push(newsBarTickerTheme);

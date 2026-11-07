@@ -25,13 +25,19 @@
   flex: none;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 10px;
+  gap: 8px;
+  padding: 4px 8px;
   border: 1px solid var(--border);
-  border-radius: 999px;
-  background: rgba(15, 23, 42, 0.92);
-  color: #ffffff;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--text-secondary);
+}
+
+/* Inside a dialog card (standard and promo announcements) the pager is a plain row. */
+.mce-modal__footer .desktop-announcement-pager {
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .desktop-announcement-pager__arrow {
@@ -42,19 +48,20 @@
   height: 28px;
   padding: 0;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius);
   background: transparent;
   color: inherit;
   cursor: pointer;
-  transition: background 0.15s ease, opacity 0.15s ease;
+  transition: background var(--transition), color var(--transition);
 }
 
 .desktop-announcement-pager__arrow:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.16);
+  background: var(--surface-hover);
+  color: var(--text-primary);
 }
 
 .desktop-announcement-pager__arrow:disabled {
-  opacity: 0.35;
+  color: var(--text-disabled);
   cursor: default;
 }
 
@@ -69,19 +76,19 @@
   height: 8px;
   padding: 0;
   border: 0;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  background: var(--border-strong);
   cursor: pointer;
-  transition: width 0.2s ease, background 0.2s ease;
+  transition: background var(--transition);
 }
 
 .desktop-announcement-pager__dot:hover {
-  background: rgba(255, 255, 255, 0.7);
+  background: var(--text-muted);
 }
 
-.desktop-announcement-pager__dot--active {
-  width: 20px;
-  background: #ffffff;
+.desktop-announcement-pager__dot--active,
+.desktop-announcement-pager__dot--active:hover {
+  background: var(--primary);
 }
 
 .desktop-announcement-pager__count {
@@ -90,5 +97,11 @@
   font-size: 12px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  color: rgba(255, 255, 255, 0.78);
+  color: var(--text-muted);
+}
+
+.desktop-announcement-pager__arrow:focus-visible,
+.desktop-announcement-pager__dot:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }

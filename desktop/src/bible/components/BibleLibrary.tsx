@@ -990,7 +990,7 @@ export default function BibleLibrary({
         <div className="bible-library-confirm-overlay" onClick={() => setConfirmDelete(null)}>
           <div className="bible-library-confirm-modal" onClick={(e) => e.stopPropagation()}>
             <div className="bible-library-confirm-header">
-              <Icon name="warning" size={20} style={{ color: "#ff5050" }} />
+              <Icon name="warning" size={20} style={{ color: "var(--error)" }} />
               <h3>Delete Translation</h3>
             </div>
             <p className="bible-library-confirm-text">

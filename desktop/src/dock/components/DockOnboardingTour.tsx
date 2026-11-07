@@ -236,7 +236,7 @@ export const DockOnboardingTour: React.FC = () => {
             >
               Step {currentStep + 1} of {TOUR_STEPS.length}
             </span>
-            <span style={{ fontWeight: 600, fontSize: 14, color: "#fff" }}>{step.title}</span>
+            <span style={{ fontWeight: 600, fontSize: 14, color: "var(--text-primary)" }}>{step.title}</span>
           </div>
           <button
             onClick={handleDismiss}

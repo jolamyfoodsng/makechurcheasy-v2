@@ -27,9 +27,7 @@ import {
   Trash2,
   Monitor,
   Bell,
-  Check,
-  Copy,
-  ExternalLink,
+  Download,
   ShieldAlert,
   Flame,
   HelpCircle,
@@ -40,8 +38,10 @@ import { UpgradeModal } from "../components/UpgradeModal";
 import ForceUpdateModal from "../components/ForceUpdateModal";
 import TrialModal from "../components/TrialModal";
 import DockPresentationLinkModal from "../dock/components/DockPresentationLinkModal";
-import type { DesktopAnnouncement } from "../services/announcementService";
-import ModalDialog, { ModalProgress } from "../components/ModalDialog";
+import type { DesktopAnnouncement, DiscountBillingCycle } from "../services/announcementService";
+import ModalDialog, { ModalFacts, ModalProgress } from "../components/ModalDialog";
+import { AnnouncementDialog } from "../components/AnnouncementModalHost";
+import UpdateReleaseNotes from "../components/UpdateReleaseNotes";
 import PlanLimitModal from "../components/PlanLimitModal";
 import "./dev-modals.css";
 
@@ -49,9 +49,11 @@ import "./dev-modals.css";
 
 const SAMPLE_UPDATE_INFO = {
   available: true,
+  version: "3.31.0",
   currentVersion: "3.30.0",
   latestVersion: "3.31.0",
-  releaseNotes: "• Redesigned modern modals with glassmorphic backdrop blur\n• Real-time high-speed device sync\n• Enhanced worship lyrics auto-alignment",
+  notes: "- Songs keep their line breaks when you import from EasyWorship\n- The Dock reconnects to OBS faster after a restart\n- Fixed: Bible verses could show twice on the second screen",
+  releaseNotes: "- Songs keep their line breaks when you import from EasyWorship\n- The Dock reconnects to OBS faster after a restart\n- Fixed: Bible verses could show twice on the second screen",
   mandatory: false,
   releaseDate: new Date().toISOString(),
   downloadUrl: "https://makechurcheazy.com/downloads",
@@ -71,14 +73,15 @@ const SAMPLE_ANNOUNCEMENTS: Record<string, DesktopAnnouncement> = {
     offerDiscountPercent: 40,
     expiresAt: new Date(Date.now() + 86400000 * 3).toISOString(),
     offerApplicablePlans: ["growth"],
-    offerApplicableBillingCycles: ["yearly"],
+    offerApplicableBillingCycles: ["monthly", "yearly"],
   },
   newFeature: {
     id: "feature-verse-ai-preview",
     deliveryId: "del-verse-ai-preview",
     title: "Introducing Speech-to-Scripture 2.0",
     message: "Experience near-instant offline Bible verse detection as pastors speak. Automatic citation overlays and zero cloud lag.",
-    tone: "upgrade",
+    tone: "success",
+    layout: "standard",
     tags: ["feature", "speech"],
     ctaLabel: "Explore Features",
     ctaUrl: "https://makechurcheazy.com/features",
@@ -89,6 +92,7 @@ const SAMPLE_ANNOUNCEMENTS: Record<string, DesktopAnnouncement> = {
     title: "Scheduled Cloud Sync Maintenance",
     message: "Cloud song backup and online sync will undergo scheduled maintenance this Sunday between 02:00 UTC and 04:00 UTC. Local dock & OBS features will continue working uninterrupted.",
     tone: "warning",
+    layout: "standard",
     tags: ["maintenance", "system"],
     ctaLabel: "View Status Page",
     ctaUrl: "https://status.makechurcheazy.com",
@@ -128,7 +132,7 @@ export default function DevModalsGalleryPage() {
   const [selectedLanguageCode, setSelectedLanguageCode] = useState("ak");
   const [lastAction, setLastAction] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"all" | "system" | "announcements" | "updates" | "plans" | "studio">("all");
-  const [copiedCode, setCopiedCode] = useState(false);
+  const [previewCycle, setPreviewCycle] = useState<DiscountBillingCycle | null>(null);
 
   // Close on ESC
   useEffect(() => {
@@ -145,12 +149,6 @@ export default function DevModalsGalleryPage() {
   const handleAction = (msg: string) => {
     setLastAction(msg);
     setActiveModal(null);
-  };
-
-  const copyPromoCode = (code: string) => {
-    navigator.clipboard.writeText(code);
-    setCopiedCode(true);
-    setTimeout(() => setCopiedCode(false), 2000);
   };
 
   return (
@@ -673,195 +671,63 @@ export default function DevModalsGalleryPage() {
         Switch interface language to <strong>{getInterfaceLanguageLabel(selectedLanguageCode)}</strong>?
       </ModalDialog>
 
-      {/* 2. Announcement Modal: Special Offer */}
+      {/* 2-4. Announcements: the same dialog churches see (components/AnnouncementModalHost.tsx) */}
       {activeModal === "announcement_offer" && (
-        <div className="mv-modal-backdrop" onClick={() => handleAction("Dismissed Offer Announcement")}>
-          <div className="dev-announcement-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="dev-announcement-header">
-              <div className="dev-announcement-tag">
-                <Tag size={14} />
-                <span>Special Ministry Offer</span>
-              </div>
-              <button
-                type="button"
-                className="dev-announcement-close"
-                onClick={() => handleAction("Closed Offer Announcement")}
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            <div className="dev-announcement-content">
-              <div className="dev-discount-badge">40% OFF</div>
-              <h3>{SAMPLE_ANNOUNCEMENTS.blackFriday.title}</h3>
-              <p>{SAMPLE_ANNOUNCEMENTS.blackFriday.message}</p>
-
-              <div className="dev-coupon-box">
-                <span className="dev-coupon-label">Coupon Code:</span>
-                <code className="dev-coupon-code">{SAMPLE_ANNOUNCEMENTS.blackFriday.offerCode}</code>
-                <button
-                  type="button"
-                  className="dev-copy-code-btn"
-                  onClick={() => copyPromoCode(SAMPLE_ANNOUNCEMENTS.blackFriday.offerCode!)}
-                >
-                  {copiedCode ? <Check size={14} /> : <Copy size={14} />}
-                  <span>{copiedCode ? "Copied" : "Copy"}</span>
-                </button>
-              </div>
-
-              <div className="dev-announcement-timer">
-                <Clock size={15} />
-                <span>Offer expires in: <strong>2 days, 14 hours</strong></span>
-              </div>
-            </div>
-
-            <div className="dev-announcement-footer">
-              <button
-                type="button"
-                className="mv-modal-btn mv-modal-btn--ghost"
-                onClick={() => handleAction("Later clicked")}
-              >
-                Maybe Later
-              </button>
-              <button
-                type="button"
-                className="mv-modal-btn mv-modal-btn--primary"
-                onClick={() => handleAction("Claim Offer Clicked")}
-              >
-                <span>{SAMPLE_ANNOUNCEMENTS.blackFriday.ctaLabel}</span>
-                <ExternalLink size={14} />
-              </button>
-            </div>
-          </div>
-        </div>
+        <AnnouncementDialog
+          announcement={SAMPLE_ANNOUNCEMENTS.blackFriday}
+          countdown="2d 14h 05m"
+          selectedCycle={previewCycle}
+          onSelectCycle={setPreviewCycle}
+          onClose={() => handleAction("Closed Offer Announcement")}
+          onLater={() => handleAction("Maybe Later clicked")}
+          onOpenAction={(cycle) => handleAction(`Claim Offer Clicked (${cycle ?? "default"})`)}
+          onOpenButton={(button) => handleAction(`Clicked ${button.label}`)}
+        />
       )}
 
-      {/* 3. Announcement Modal: Feature Update */}
       {activeModal === "announcement_feature" && (
-        <div className="mv-modal-backdrop" onClick={() => handleAction("Dismissed Feature Announcement")}>
-          <div className="dev-announcement-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="dev-announcement-header">
-              <div className="dev-announcement-tag dev-announcement-tag--emerald">
-                <Zap size={14} />
-                <span>What&apos;s New</span>
-              </div>
-              <button
-                type="button"
-                className="dev-announcement-close"
-                onClick={() => handleAction("Closed Feature Announcement")}
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            <div className="dev-announcement-content">
-              <div className="mv-modal-icon-badge mv-modal-icon-badge--emerald" style={{ margin: "8px auto 14px" }}>
-                <Zap size={28} />
-              </div>
-              <h3>{SAMPLE_ANNOUNCEMENTS.newFeature.title}</h3>
-              <p>{SAMPLE_ANNOUNCEMENTS.newFeature.message}</p>
-            </div>
-
-            <div className="dev-announcement-footer">
-              <button
-                type="button"
-                className="mv-modal-btn mv-modal-btn--ghost"
-                onClick={() => handleAction("Got it clicked")}
-              >
-                Got It
-              </button>
-              <button
-                type="button"
-                className="mv-modal-btn mv-modal-btn--primary"
-                onClick={() => handleAction("Explore Features Clicked")}
-              >
-                <span>{SAMPLE_ANNOUNCEMENTS.newFeature.ctaLabel}</span>
-              </button>
-            </div>
-          </div>
-        </div>
+        <AnnouncementDialog
+          announcement={SAMPLE_ANNOUNCEMENTS.newFeature}
+          selectedCycle={null}
+          onSelectCycle={() => undefined}
+          onClose={() => handleAction("Closed Feature Announcement")}
+          onLater={() => handleAction("Later clicked")}
+          onOpenAction={() => handleAction("Opened feature")}
+          onOpenButton={(button) => handleAction(`Clicked ${button.label}`)}
+        />
       )}
 
-      {/* 4. Announcement Modal: Warning / Maintenance */}
       {activeModal === "announcement_warning" && (
-        <div className="mv-modal-backdrop" onClick={() => handleAction("Dismissed Warning Notice")}>
-          <div className="dev-announcement-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="dev-announcement-header">
-              <div className="dev-announcement-tag dev-announcement-tag--amber">
-                <AlertTriangle size={14} />
-                <span>Notice</span>
-              </div>
-              <button
-                type="button"
-                className="dev-announcement-close"
-                onClick={() => handleAction("Closed Warning Notice")}
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            <div className="dev-announcement-content">
-              <div className="mv-modal-icon-badge mv-modal-icon-badge--amber" style={{ margin: "8px auto 14px" }}>
-                <AlertTriangle size={28} />
-              </div>
-              <h3>{SAMPLE_ANNOUNCEMENTS.maintenance.title}</h3>
-              <p>{SAMPLE_ANNOUNCEMENTS.maintenance.message}</p>
-            </div>
-
-            <div className="dev-announcement-footer">
-              <button
-                type="button"
-                className="mv-modal-btn mv-modal-btn--ghost"
-                onClick={() => handleAction("Dismissed Warning")}
-              >
-                Dismiss
-              </button>
-              <button
-                type="button"
-                className="mv-modal-btn mv-modal-btn--primary"
-                onClick={() => handleAction("Status Page Clicked")}
-              >
-                <span>View Status Page</span>
-              </button>
-            </div>
-          </div>
-        </div>
+        <AnnouncementDialog
+          announcement={SAMPLE_ANNOUNCEMENTS.maintenance}
+          selectedCycle={null}
+          onSelectCycle={() => undefined}
+          onClose={() => handleAction("Closed Warning Notice")}
+          onLater={() => handleAction("Dismissed Warning")}
+          onOpenAction={() => handleAction("Status Page Clicked")}
+          onOpenButton={(button) => handleAction(`Clicked ${button.label}`)}
+        />
       )}
 
-      {/* 5. Optional Update Dialog */}
-      {activeModal === "update_optional" && (
-        <div className="mv-modal-backdrop" onClick={() => handleAction("Dismissed Update Dialog")}>
-          <div className="mv-modal" style={{ maxWidth: 460 }} onClick={(e) => e.stopPropagation()}>
-            <div className="mv-modal-icon-badge mv-modal-icon-badge--indigo">
-              <RefreshCw size={26} />
-            </div>
-            <h3 className="mv-modal-title">New Version Available!</h3>
-            <p className="mv-modal-prompt">
-              MakeChurchEazy <strong>v3.31.0</strong> is ready to install (current: v3.30.0).
-            </p>
-            <div className="dev-release-notes-box">
-              <p className="dev-release-notes-heading">What&apos;s new:</p>
-              <pre className="dev-release-notes-pre">{SAMPLE_UPDATE_INFO.releaseNotes}</pre>
-            </div>
-            <div className="mv-modal-actions mv-modal-actions--modern">
-              <button
-                type="button"
-                className="mv-modal-btn mv-modal-btn--ghost"
-                onClick={() => handleAction("Remind Me Later")}
-              >
-                Remind Me Later
-              </button>
-              <button
-                type="button"
-                className="mv-modal-btn mv-modal-btn--primary"
-                onClick={() => handleAction("Started Update Download")}
-              >
-                Update Now
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* 5. Optional Update Dialog (same layout as components/UpdateNotification.tsx) */}
+      <ModalDialog
+        open={activeModal === "update_optional"}
+        tone="brand"
+        icon={<Download size={26} />}
+        eyebrow="Update available"
+        title={`MakeChurchEazy ${SAMPLE_UPDATE_INFO.version} is available`}
+        onClose={() => handleAction("Remind Me Later")}
+        closeOnBackdrop={false}
+        width={560}
+        extra={<UpdateReleaseNotes version={SAMPLE_UPDATE_INFO.version} notes={SAMPLE_UPDATE_INFO.notes} />}
+        actions={[
+          { label: "Remind me later", variant: "ghost", onClick: () => handleAction("Remind Me Later") },
+          { label: "Update in background", variant: "ghost", onClick: () => handleAction("Started Background Update") },
+          { label: "Update now", variant: "primary", autoFocus: true, onClick: () => handleAction("Started Update Download") },
+        ]}
+      >
+        A new version is ready to install. You have {SAMPLE_UPDATE_INFO.currentVersion}.
+      </ModalDialog>
 
       {/* 6. Mandatory Force Update */}
       {activeModal === "update_force" && (
@@ -934,45 +800,20 @@ export default function DevModalsGalleryPage() {
       )}
 
       {/* 10. Trial Expired Modal */}
-      {activeModal === "trial_expired" && (
-        <div className="trial-expired-upgrade" onClick={() => setActiveModal(null)}>
-          <div className="trial-expired-upgrade__card" onClick={(e) => e.stopPropagation()}>
-            <button
-              type="button"
-              className="trial-expired-upgrade__close"
-              onClick={() => { setActiveModal(null); handleAction("Closed Trial Expired Modal"); }}
-              aria-label="Close"
-            >
-              <X size={18} />
-            </button>
-            <div className="trial-expired-upgrade__badge">
-              <Clock size={16} />
-              <span>Trial Period Concluded</span>
-            </div>
-            <h3 className="trial-expired-upgrade__title">Your 14-Day Free Trial Has Ended</h3>
-            <p className="trial-expired-upgrade__desc">
-              Upgrade to the Growth Plan today to continue accessing all premium features including
-              Multiview, 4K Display, Speech-to-Scripture AI, and Unlimited Media Library.
-            </p>
-            <div className="trial-expired-upgrade__actions">
-              <button
-                type="button"
-                className="trial-expired-upgrade__btn-secondary"
-                onClick={() => { setActiveModal(null); handleAction("Continue on Free Plan"); }}
-              >
-                Continue Free
-              </button>
-              <button
-                type="button"
-                className="trial-expired-upgrade__btn-primary"
-                onClick={() => { setActiveModal(null); handleAction("Clicked Upgrade to Growth"); }}
-              >
-                Upgrade to Growth
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ModalDialog
+        open={activeModal === "trial_expired"}
+        tone="brand"
+        icon={<Clock size={26} />}
+        eyebrow="Trial ended"
+        title="Your 14-day free trial has ended"
+        onClose={() => handleAction("Closed Trial Expired Modal")}
+        actions={[
+          { label: "Continue free", variant: "ghost", onClick: () => handleAction("Continue on Free Plan") },
+          { label: "Upgrade to Growth", variant: "primary", onClick: () => handleAction("Clicked Upgrade to Growth") },
+        ]}
+      >
+        Upgrade to the Growth plan to keep Multi-View, 4K output, Speech-to-Scripture and the full media library.
+      </ModalDialog>
 
       {/* 11. Feature Upgrade Modal */}
       {activeModal === "upgrade_growth" && (
@@ -1040,51 +881,27 @@ export default function DevModalsGalleryPage() {
       </ModalDialog>
 
       {/* 16. Studio - Keyboard Shortcuts */}
-      {activeModal === "shortcuts" && (
-        <div className="mv-modal-backdrop" onClick={() => handleAction("Closed Shortcuts")}>
-          <div className="mv-modal mv-shortcuts-modal" style={{ maxWidth: 540 }} onClick={(e) => e.stopPropagation()}>
-            <div className="mv-modal-icon-badge mv-modal-icon-badge--indigo">
-              <HelpCircle size={26} />
-            </div>
-            <h3 className="mv-modal-title">Keyboard Shortcuts</h3>
-            <div className="dev-shortcuts-table">
-              <div className="dev-shortcut-row">
-                <span>Next Slide</span>
-                <kbd>Space / Right Arrow</kbd>
-              </div>
-              <div className="dev-shortcut-row">
-                <span>Previous Slide</span>
-                <kbd>Left Arrow</kbd>
-              </div>
-              <div className="dev-shortcut-row">
-                <span>Clear / Black Screen</span>
-                <kbd>B</kbd>
-              </div>
-              <div className="dev-shortcut-row">
-                <span>Toggle Output</span>
-                <kbd>Ctrl + O / ⌘ + O</kbd>
-              </div>
-              <div className="dev-shortcut-row">
-                <span>Quick Bible Search</span>
-                <kbd>Ctrl + B / ⌘ + B</kbd>
-              </div>
-              <div className="dev-shortcut-row">
-                <span>Dismiss Dialog</span>
-                <kbd>Esc</kbd>
-              </div>
-            </div>
-            <div className="mv-modal-actions mv-modal-actions--modern" style={{ marginTop: 20 }}>
-              <button
-                type="button"
-                className="mv-modal-btn mv-modal-btn--primary"
-                onClick={() => handleAction("Closed Shortcuts")}
-              >
-                Got It
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ModalDialog
+        open={activeModal === "shortcuts"}
+        tone="brand"
+        icon={<HelpCircle size={26} />}
+        title="Keyboard shortcuts"
+        onClose={() => handleAction("Closed Shortcuts")}
+        width={480}
+        extra={
+          <ModalFacts
+            rows={[
+              { label: "Next slide", value: <kbd>Space / →</kbd> },
+              { label: "Previous slide", value: <kbd>←</kbd> },
+              { label: "Clear / black screen", value: <kbd>B</kbd> },
+              { label: "Toggle output", value: <kbd>Ctrl + O / ⌘ + O</kbd> },
+              { label: "Quick Bible search", value: <kbd>Ctrl + B / ⌘ + B</kbd> },
+              { label: "Close dialog", value: <kbd>Esc</kbd> },
+            ]}
+          />
+        }
+        actions={[{ label: "Got it", variant: "primary", onClick: () => handleAction("Closed Shortcuts") }]}
+      />
     </div>
   );
 }

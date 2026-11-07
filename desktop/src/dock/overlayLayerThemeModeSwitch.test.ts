@@ -57,7 +57,9 @@ describe("Full <-> Lower third plays out, then in", () => {
 
   it.each(pages)("%s overlay tells the theme renderer when a visible mode switch happens", (_name, source) => {
     expect(source).toContain("modeSwitch: themeModeSwitch,");
-    expect(source).toContain("shouldSequenceModeSwitch() });");
+    // Only a visible switch (something on air, a different layer, motion allowed) transitions.
+    expect(source).toContain("&& packet.mode !== activeMode");
+    expect(source).toContain("&& shouldSequenceModeSwitch();");
   });
 
   it.each(pages)("%s overlay gives the renderer the same out time as the page fade", (_name, source) => {
@@ -86,7 +88,7 @@ describe("Full <-> Lower third plays out, then in", () => {
   it("overlay adapter only transitions when asked and acks immediately", () => {
     expect(overlayEntrySource).toContain("modeSwitch?: boolean;");
     expect(overlayEntrySource).toContain("hooks.modeSwitch");
-    const start = overlayEntrySource.indexOf("r.switchLayout(layout, {");
+    const start = overlayEntrySource.indexOf("void r.switchLayout(layout, contentOf(packet.slide));");
     expect(start).toBeGreaterThan(-1);
     const end = overlayEntrySource.indexOf("return true;", start);
     expect(end).toBeGreaterThan(start);

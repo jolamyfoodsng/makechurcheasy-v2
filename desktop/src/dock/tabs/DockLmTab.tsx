@@ -3,7 +3,8 @@ export { normalizeLmOverlayMode } from "../../services/lmSettings";
 import { resolveScriptureProjection, isConfidentScriptureSuggestion } from "../../services/scriptureProjection";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Copy, Edit2, MonitorUp, Check, StickyNote, MoreHorizontal, X } from "../../components/icons/NativeIcons";
+import { Copy, Edit2, MonitorUp, Check, StickyNote, MoreHorizontal, X, Mic, MicOff, StopCircle, HelpCircle } from "../../components/icons/NativeIcons";
+import ModalDialog, { ModalPanel } from "../../components/ModalDialog";
 import { useAppTheme } from "../../hooks/useAppTheme";
 import { dockObsClient, type DockObsStatus } from "../dockObsClient";
 import {
@@ -51,6 +52,7 @@ import { getRecommendedPollingInterval } from "../../services/performanceManager
 import DockNotesTextTools from "../components/DockNotesTextTools";
 import { formatNoteText, type NoteTextToolAction } from "../noteTextTools";
 import { loadDockSceneRoute } from "../dockSceneRouting";
+import { fitPopover } from "../useKeepInViewport";
 
 type LmStatus = "idle" | "requesting-mic" | "connecting" | "listening" | "error";
 
@@ -1683,14 +1685,14 @@ export default function DockLmTab({
       <style>{`
         @keyframes lm-pulse{0%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.6)}100%{opacity:1;transform:scale(1)}}
         .lm-candidate-card {
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          background: #131724;
+          border: 1px solid var(--dock-border, var(--border));
+          background: var(--dock-surface, var(--surface));
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
           transition: background 140ms ease, border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
         }
         .lm-candidate-card:hover {
           border-color: rgba(56, 189, 248, 0.6);
-          background: #1c2132;
+          background: var(--dock-surface-hover, var(--surface-hover));
           box-shadow: 0 4px 16px rgba(14, 165, 233, 0.16);
           transform: translateY(-1px);
         }
@@ -1699,12 +1701,12 @@ export default function DockLmTab({
           outline-offset: 1px;
         }
         .lm-candidate-card--suggestion {
-          border-color: rgba(255, 255, 255, 0.08);
-          background: #131724;
+          border-color: var(--dock-border, var(--border));
+          background: var(--dock-surface, var(--surface));
         }
         .lm-candidate-card--suggestion:hover {
           border-color: rgba(56, 189, 248, 0.6);
-          background: #1c2132;
+          background: var(--dock-surface-hover, var(--surface-hover));
           box-shadow: 0 4px 16px rgba(14, 165, 233, 0.16);
         }
         .lm-candidate-card--pinned {
@@ -1713,13 +1715,13 @@ export default function DockLmTab({
         .lm-candidate-card--active,
         .lm-candidate-card--active:hover {
           border-color: rgba(56, 189, 248, 0.85);
-          background: #1e293b;
+          background: var(--dock-surface-alt, var(--surface-raised));
           box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.3), 0 4px 16px rgba(14, 165, 233, 0.25);
         }
         .lm-tab--compact:hover {
           border-color: rgba(96,165,250,0.58) !important;
           background: rgba(59,130,246,0.12) !important;
-          color: #F8FAFC !important;
+          color: var(--dock-text, var(--text-primary)) !important;
           box-shadow: 0 4px 12px rgba(15,23,42,0.24);
           transform: translateY(-1px);
         }
@@ -1731,16 +1733,16 @@ export default function DockLmTab({
           transform: translateY(1px) scale(0.98);
         }
         .lm-pin-button {
-          border: 1px solid var(--dock-border, rgba(255,255,255,0.1));
-          background: rgba(255,255,255,0.04);
-          color: var(--dock-text-dim, #94A3B8);
+          border: 1px solid var(--dock-border, var(--border));
+          background: var(--dock-surface-alt, var(--surface-raised));
+          color: var(--dock-text-dim, var(--text-muted));
           cursor: pointer;
           transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, transform 140ms ease;
         }
         .lm-pin-button:hover {
           border-color: rgba(96,165,250,0.6);
           background: rgba(96,165,250,0.18);
-          color: #BFDBFE;
+          color: var(--accent-blue);
         }
         .lm-pin-button:active {
           transform: scale(0.94);
@@ -1748,10 +1750,10 @@ export default function DockLmTab({
         .lm-pin-button--active {
           border-color: rgba(96,165,250,0.7);
           background: rgba(96,165,250,0.2);
-          color: #60A5FA;
+          color: var(--accent-blue);
         }
         .lm-suggestions-resizer {
-          border-top: 1px solid var(--dock-border, rgba(255,255,255,0.08));
+          border-top: 1px solid var(--dock-border, var(--border));
           background: rgba(255,255,255,0.015);
           cursor: row-resize;
           transition: background-color 140ms ease, border-color 140ms ease;
@@ -1767,7 +1769,7 @@ export default function DockLmTab({
           width: 38px;
           height: 3px;
           border-radius: 999px;
-          background: var(--dock-text-dim, #64748B);
+          background: var(--dock-text-dim, var(--text-muted));
           transition: background-color 140ms ease, width 140ms ease;
         }
         .lm-suggestions-resizer:hover .lm-suggestions-resizer__grip,
@@ -1972,7 +1974,7 @@ export default function DockLmTab({
                         <Icon name="book" size={13} style={{ marginRight: 6, flexShrink: 0, opacity: 0.95 }} />
                         {c.label}
                       </span>
-                      <span style={{ fontSize: 10, color: "var(--dock-text-dim, #94A3B8)", fontWeight: 500 }}>{freshness.label}</span>
+                      <span style={{ fontSize: 10, color: "var(--dock-text-dim, var(--text-muted))", fontWeight: 500 }}>{freshness.label}</span>
                     </div>
 
                     {c.snippet && (
@@ -2069,7 +2071,7 @@ export default function DockLmTab({
                         <Icon name="book" size={13} style={{ marginRight: 6, flexShrink: 0, opacity: 0.95 }} />
                         {c.label}
                       </span>
-                      <span style={{ fontSize: 10, color: "var(--dock-text-dim, #94A3B8)", fontWeight: 500 }}>{freshness.label}</span>
+                      <span style={{ fontSize: 10, color: "var(--dock-text-dim, var(--text-muted))", fontWeight: 500 }}>{freshness.label}</span>
                     </div>
 
                     {c.snippet && (
@@ -2336,48 +2338,37 @@ export default function DockLmTab({
       )}
 
       {showStopConfirm && (
-        <div style={S.modalOverlay} onClick={() => setShowStopConfirm(false)}>
-          <div style={S.modal} onClick={(e) => e.stopPropagation()}>
-            <div style={S.modalHeader}>
-              <h3 style={S.modalTitle}>{t("lm.stopListening")}</h3>
-            </div>
-            <div style={S.modalBody}>
-              <p style={S.modalText}>{t("lm.stopListeningConfirm")}</p>
-            </div>
-            <div style={S.modalFooter}>
-              <button style={S.modalBtnGhost} onClick={() => setShowStopConfirm(false)}>
-                {t("common.cancel")}
-              </button>
-              <button style={S.modalBtnDanger} onClick={confirmStop}>
-                <Icon name="stop" size={12} />
-                <span>{t("lm.stopListening")}</span>
-              </button>
-            </div>
-          </div>
-        </div>
+        <ModalDialog
+          tone="danger"
+          icon={<MicOff size={26} />}
+          title={t("lm.stopListening")}
+          actions={[
+            { label: t("common.cancel"), variant: "ghost", onClick: () => setShowStopConfirm(false) },
+            { label: t("lm.stopListening"), variant: "danger", icon: <StopCircle size={14} />, onClick: confirmStop },
+          ]}
+          onClose={() => setShowStopConfirm(false)}
+          zIndex={10002}
+        >
+          <p>{t("lm.stopListeningConfirm")}</p>
+        </ModalDialog>
       )}
 
       {inactivityPrompt?.active && (
-        <div style={S.modalOverlay}>
-          <div style={S.modal} onClick={(e) => e.stopPropagation()}>
-            <div style={S.modalHeader}>
-              <h3 style={S.modalTitle}>Are you still using Voice AI?</h3>
-            </div>
-            <div style={S.modalBody}>
-              <p style={S.modalText}>
-                No speech detected for {inactivityPrompt.intervalMinutes} minutes. Voice AI will stop in {inactivityPrompt.remainingSeconds}s unless you keep it on.
-              </p>
-            </div>
-            <div style={S.modalFooter}>
-              <button style={S.modalBtnGhost} onClick={handleInactivityStop}>
-                No, stop
-              </button>
-              <button style={S.modalBtnPrimary} onClick={handleConfirmStillUsing}>
-                Yes, keep listening
-              </button>
-            </div>
-          </div>
-        </div>
+        <ModalDialog
+          tone="warning"
+          role="alertdialog"
+          icon={<Mic size={26} />}
+          title="Are you still using Voice AI?"
+          actions={[
+            { label: "No, stop", variant: "ghost", onClick: handleInactivityStop },
+            { label: "Yes, keep listening", variant: "primary", autoFocus: true, onClick: handleConfirmStillUsing },
+          ]}
+          zIndex={10002}
+        >
+          <p>
+            No speech detected for {inactivityPrompt.intervalMinutes} minutes. Voice AI will stop in {inactivityPrompt.remainingSeconds}s unless you keep it on.
+          </p>
+        </ModalDialog>
       )}
 
       {inactivityNotice && (
@@ -2391,8 +2382,8 @@ export default function DockLmTab({
             alignItems: "center",
             gap: 8,
             padding: "8px 14px",
-            background: "#1e2029",
-            color: "#f9fafb",
+            background: "var(--surface)",
+            color: "var(--dock-text, var(--text-primary))",
             border: "1px solid var(--border)",
             borderRadius: 6,
             boxShadow: "0 6px 18px rgba(0,0,0,0.4)",
@@ -2420,54 +2411,23 @@ export default function DockLmTab({
       )}
 
       {showHelp && (
-        <div
-          style={S.modalOverlay}
-          onClick={() => setShowHelp(false)}
-          role="presentation"
-        >
-          <div
-            style={{ ...S.modal, ...S.helpModal }}
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="lm-help-title"
-            data-testid="lm-interaction-help-modal"
-          >
-            <div style={S.modalHeader}>
-              <h3 id="lm-help-title" style={S.modalTitle}>
-                <Icon name="help_outline" size={15} />
-                {t("lm.interactionHelpTitle", "LM transcript help")}
-              </h3>
-              <button
-                type="button"
-                style={S.settingsClose}
-                onClick={() => setShowHelp(false)}
-                aria-label={t("common.close", "Close")}
-              >
-                <Icon name="close" size={14} />
-              </button>
-            </div>
-            <div style={S.helpList}>
-              <div style={S.helpItem}>
-                <Icon name="content_copy" size={14} />
-                <span>{t("lm.interactionHelpCopy", "Click a transcript line to copy it.")}</span>
-              </div>
-              <div style={S.helpItem}>
-                <Icon name="select_all" size={14} />
-                <span>{t("lm.interactionHelpSelect", "Double-click a line to select it for actions.")}</span>
-              </div>
-              <div style={S.helpItem}>
-                <Icon name="send" size={14} />
-                <span>{t("lm.interactionHelpActions", "Use the action buttons to save in Notes or send to OBS.")}</span>
-              </div>
-            </div>
-            <div style={S.modalFooter}>
-              <button type="button" style={S.btnSecondary} onClick={() => setShowHelp(false)}>
-                {t("common.done", "Done")}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ModalDialog
+          tone="info"
+          icon={<HelpCircle size={26} />}
+          title={t("lm.interactionHelpTitle", "LM transcript help")}
+          extra={
+            <ModalPanel>
+              <ul data-testid="lm-interaction-help-modal">
+                <li>{t("lm.interactionHelpCopy", "Click a transcript line to copy it.")}</li>
+                <li>{t("lm.interactionHelpSelect", "Double-click a line to select it for actions.")}</li>
+                <li>{t("lm.interactionHelpActions", "Use the action buttons to save in Notes or send to OBS.")}</li>
+              </ul>
+            </ModalPanel>
+          }
+          actions={[{ label: t("common.done", "Done"), variant: "primary", autoFocus: true, onClick: () => setShowHelp(false) }]}
+          onClose={() => setShowHelp(false)}
+          zIndex={10002}
+        />
       )}
 
       {error && (
@@ -2479,6 +2439,7 @@ export default function DockLmTab({
 
       {contextMenu.visible && (
         <div
+          ref={(el) => fitPopover(el)}
           style={{ ...S.contextMenu, top: contextMenu.y, left: contextMenu.x }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -2806,8 +2767,8 @@ const S: Record<string, React.CSSProperties> = {
     minHeight: 0,
     minWidth: 0,
     overflow: "hidden",
-    background: "var(--dock-bg, #0f172a)",
-    color: "var(--dock-text, #E2E8F0)",
+    background: "var(--dock-bg, var(--bg))",
+    color: "var(--dock-text, var(--text-primary))",
     fontSize: 12,
     fontFamily: "system-ui, -apple-system, sans-serif",
   },
@@ -2817,10 +2778,10 @@ const S: Record<string, React.CSSProperties> = {
     alignItems: "center",
     justifyContent: "space-between",
     padding: "2px 12px",
-    borderBottom: "1px solid var(--dock-border, rgba(255,255,255,0.06))",
+    borderBottom: "1px solid var(--dock-border, var(--border))",
     flexShrink: 0,
     minHeight: 12,
-    background: "var(--dock-bg, #0f172a)",
+    background: "var(--dock-bg, var(--bg))",
   },
   statusBarLeft: {
     display: "flex",
@@ -2853,7 +2814,7 @@ const S: Record<string, React.CSSProperties> = {
     padding: "2px 6px",
     borderRadius: 4,
     background: "rgba(255,255,255,0.06)",
-    color: "var(--dock-text-dim, #94A3B8)",
+    color: "var(--dock-text-dim, var(--text-muted))",
   },
   gearBtn: {
     display: "flex",
@@ -2864,7 +2825,7 @@ const S: Record<string, React.CSSProperties> = {
     borderRadius: 6,
     border: "none",
     background: "rgba(255,255,255,0.06)",
-    color: "var(--dock-text-dim, #94A3B8)",
+    color: "var(--dock-text-dim, var(--text-muted))",
     cursor: "pointer",
     transition: "all 0.15s",
   },
@@ -2893,7 +2854,7 @@ const S: Record<string, React.CSSProperties> = {
     borderRadius: 6,
     border: "none",
     background: "transparent",
-    color: "var(--dock-text-dim, #64748B)",
+    color: "var(--dock-text-dim, var(--text-muted))",
     cursor: "pointer",
     transition: "all 0.15s",
   },
@@ -2902,7 +2863,7 @@ const S: Record<string, React.CSSProperties> = {
     alignItems: "center",
     gap: 8,
     padding: "7px 10px",
-    borderBottom: "1px solid var(--dock-border, rgba(255,255,255,0.06))",
+    borderBottom: "1px solid var(--dock-border, var(--border))",
     background: "rgba(255,255,255,0.025)",
     flexShrink: 0,
   },
@@ -2917,7 +2878,7 @@ const S: Record<string, React.CSSProperties> = {
     alignItems: "center",
     gap: 5,
     minWidth: 74,
-    color: "var(--dock-text, #E2E8F0)",
+    color: "var(--dock-text, var(--text-primary))",
     fontSize: 10,
     fontWeight: 700,
     whiteSpace: "nowrap",
@@ -2926,7 +2887,7 @@ const S: Record<string, React.CSSProperties> = {
     display: "inline-flex",
     alignItems: "center",
     gap: 6,
-    color: "var(--dock-text, #E2E8F0)",
+    color: "var(--dock-text, var(--text-primary))",
     fontSize: 11,
     fontWeight: 700,
   },
@@ -2962,7 +2923,7 @@ const S: Record<string, React.CSSProperties> = {
     border: "none",
     borderRadius: 5,
     background: "transparent",
-    color: "var(--dock-text-dim, #94A3B8)",
+    color: "var(--dock-text-dim, var(--text-muted))",
     fontSize: 10,
     fontWeight: 700,
     fontFamily: "inherit",
@@ -2982,9 +2943,9 @@ const S: Record<string, React.CSSProperties> = {
   tabBar: {
     display: "flex",
     gap: 0,
-    borderBottom: "1px solid var(--dock-border, rgba(255,255,255,0.06))",
+    borderBottom: "1px solid var(--dock-border, var(--border))",
     flexShrink: 0,
-    background: "var(--dock-bg, #0f172a)",
+    background: "var(--dock-bg, var(--bg))",
   },
   tabBarCompact: {
     flexDirection: "column",
@@ -2995,7 +2956,7 @@ const S: Record<string, React.CSSProperties> = {
     minHeight: 0,
     alignSelf: "stretch",
     borderBottom: "none",
-    borderRight: "1px solid var(--dock-border, rgba(255,255,255,0.06))",
+    borderRight: "1px solid var(--dock-border, var(--border))",
     overflow: "hidden",
     padding: "7px 5px",
     gap: 6,
@@ -3010,7 +2971,7 @@ const S: Record<string, React.CSSProperties> = {
     border: "none",
     borderBottom: "2px solid transparent",
     background: "transparent",
-    color: "var(--dock-text-dim, #64748B)",
+    color: "var(--dock-text-dim, var(--text-muted))",
     fontSize: 11,
     fontWeight: 600,
     cursor: "pointer",
@@ -3025,10 +2986,10 @@ const S: Record<string, React.CSSProperties> = {
     margin: "0 auto",
     padding: 0,
     boxSizing: "border-box",
-    border: "1px solid var(--dock-border, rgba(255,255,255,0.1))",
-    borderBottom: "1px solid var(--dock-border, rgba(255,255,255,0.1))",
+    border: "1px solid var(--dock-border, var(--border))",
+    borderBottom: "1px solid var(--dock-border, var(--border))",
     borderRadius: 0,
-    background: "color-mix(in srgb, var(--dock-surface-alt, #1F2937) 78%, var(--dock-surface, #111827))",
+    background: "color-mix(in srgb, var(--dock-surface-alt, var(--surface-raised)) 78%, var(--dock-surface, var(--surface)))",
   },
   tabActive: {
     color: "#3B82F6",
@@ -3036,10 +2997,10 @@ const S: Record<string, React.CSSProperties> = {
     background: "rgba(59,130,246,0.06)",
   },
   tabActiveCompact: {
-    color: "#FFFFFF",
+    color: "var(--dock-text, var(--text-primary))",
     borderBottom: "1px solid rgba(96,165,250,0.76)",
     borderColor: "rgba(96,165,250,0.76)",
-    background: "color-mix(in srgb, var(--dock-accent, #1D4ED8) 26%, var(--dock-surface, #111827))",
+    background: "color-mix(in srgb, var(--dock-accent, var(--primary)) 26%, var(--dock-surface, var(--surface)))",
     boxShadow: "inset 3px 0 0 var(--dock-accent-hover, #2563EB), 0 4px 12px rgba(15,23,42,0.24)",
   },
   tabContent: {
@@ -3082,17 +3043,17 @@ const S: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     textTransform: "uppercase",
     letterSpacing: "0.08em",
-    color: "#60A5FA",
+    color: "var(--accent-blue)",
   },
   currentRef: {
     fontSize: 13,
     fontWeight: 700,
-    color: "#E2E8F0",
+    color: "var(--dock-text, var(--text-primary))",
   },
   currentText: {
     fontSize: 11,
     lineHeight: "1.5",
-    color: "var(--dock-text-dim, #94A3B8)",
+    color: "var(--dock-text-dim, var(--text-muted))",
     fontStyle: "italic",
   },
   currentBottom: {
@@ -3103,7 +3064,7 @@ const S: Record<string, React.CSSProperties> = {
   },
   currentTime: {
     fontSize: 10,
-    color: "var(--dock-text-dim, #64748B)",
+    color: "var(--dock-text-dim, var(--text-muted))",
   },
   pinBtn: {
     display: "inline-flex",
@@ -3112,9 +3073,9 @@ const S: Record<string, React.CSSProperties> = {
     width: 22,
     height: 22,
     borderRadius: 3,
-    border: "1px solid var(--dock-border, rgba(255,255,255,0.08))",
+    border: "1px solid var(--dock-border, var(--border))",
     background: "rgba(255,255,255,0.04)",
-    color: "var(--dock-text-dim, #94A3B8)",
+    color: "var(--dock-text-dim, var(--text-muted))",
     cursor: "pointer",
   },
   pinBtnSmall: {
@@ -3139,10 +3100,10 @@ const S: Record<string, React.CSSProperties> = {
     padding: "1px 8px 1px 6px",
     borderRadius: 3,
     background: "rgba(255,255,255,0.04)",
-    border: "1px solid var(--dock-border, rgba(255,255,255,0.06))",
+    border: "1px solid var(--dock-border, var(--border))",
     fontSize: 10,
     fontWeight: 500,
-    color: "var(--dock-text-dim, #94A3B8)",
+    color: "var(--dock-text-dim, var(--text-muted))",
     cursor: "pointer",
     transition: "background 0.15s",
   },
@@ -3179,7 +3140,7 @@ const S: Record<string, React.CSSProperties> = {
     fontWeight: 700,
     textTransform: "uppercase",
     letterSpacing: "0.08em",
-    color: "var(--dock-text-dim, #64748B)",
+    color: "var(--dock-text-dim, var(--text-muted))",
   },
   sectionCount: {
     fontSize: 9,
@@ -3187,7 +3148,7 @@ const S: Record<string, React.CSSProperties> = {
     padding: "1px 5px",
     borderRadius: 4,
     background: "rgba(255,255,255,0.08)",
-    color: "var(--dock-text-dim, #94A3B8)",
+    color: "var(--dock-text-dim, var(--text-muted))",
   },
   queueScroll: {
     flex: 1,
@@ -3233,7 +3194,7 @@ const S: Record<string, React.CSSProperties> = {
   },
   sectionEmptyText: {
     fontSize: 11,
-    color: "var(--dock-text-dim, #64748B)",
+    color: "var(--dock-text-dim, var(--text-muted))",
     textAlign: "center",
   },
 
@@ -3267,7 +3228,7 @@ const S: Record<string, React.CSSProperties> = {
   queueRef: {
     fontSize: 13,
     fontWeight: 700,
-    color: "var(--dock-text, #E2E8F0)",
+    color: "var(--dock-text, var(--text-primary))",
   },
   queueCardBottom: {
     display: "flex",
@@ -3277,13 +3238,13 @@ const S: Record<string, React.CSSProperties> = {
   },
   suggestionHint: {
     fontSize: 10,
-    color: "var(--dock-text-dim, #94A3B8)",
+    color: "var(--dock-text-dim, var(--text-muted))",
   },
 
   verseText: {
     fontSize: 13.5,
     lineHeight: "1.55",
-    color: "rgba(255, 255, 255, 0.92)",
+    color: "var(--dock-text, var(--text-primary))",
     fontWeight: 500,
     fontStyle: "normal",
     display: "-webkit-box",
@@ -3296,9 +3257,9 @@ const S: Record<string, React.CSSProperties> = {
   verseRefBadge: {
     fontSize: 14.5,
     fontWeight: 800,
-    color: "#F8FAFC",
-    background: "rgba(255, 255, 255, 0.08)",
-    border: "1px solid rgba(255, 255, 255, 0.22)",
+    color: "var(--dock-text, var(--text-primary))",
+    background: "var(--dock-surface-alt, var(--surface-raised))",
+    border: "1px solid var(--dock-border, var(--border))",
     boxShadow: "0 1px 3px rgba(0, 0, 0, 0.3)",
     borderRadius: 6,
     padding: "3px 10px",
@@ -3309,9 +3270,9 @@ const S: Record<string, React.CSSProperties> = {
   verseRefBadgeLarge: {
     fontSize: 15.5,
     fontWeight: 800,
-    color: "#F8FAFC",
-    background: "rgba(255, 255, 255, 0.1)",
-    border: "1px solid rgba(255, 255, 255, 0.25)",
+    color: "var(--dock-text, var(--text-primary))",
+    background: "var(--dock-surface-alt, var(--surface-raised))",
+    border: "1px solid var(--dock-border, var(--border))",
     boxShadow: "0 2px 6px rgba(0, 0, 0, 0.35)",
     borderRadius: 7,
     padding: "4px 12px",
@@ -3329,8 +3290,8 @@ const S: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     borderRadius: 6,
     border: "1px solid rgba(59, 130, 246, 0.4)",
-    background: "#1e293b",
-    color: "#93C5FD",
+    background: "var(--dock-surface-alt, var(--surface-raised))",
+    color: "var(--accent-blue)",
     cursor: "pointer",
     transition: "all 0.15s ease",
   },
@@ -3375,13 +3336,13 @@ const S: Record<string, React.CSSProperties> = {
     transition: "color 0.15s",
   },
   transcriptTextDim: {
-    color: "var(--dock-text-dim, #64748B)",
+    color: "var(--dock-text-dim, var(--text-muted))",
   },
   transcriptTextActive: {
-    color: "var(--dock-text, #E2E8F0)",
+    color: "var(--dock-text, var(--text-primary))",
   },
   transcriptTextSelected: {
-    color: "#93C5FD",
+    color: "var(--accent-blue)",
   },
 
   checkboxContainer: {
@@ -3416,7 +3377,7 @@ const S: Record<string, React.CSSProperties> = {
     gap: 8,
     border: "1px solid rgba(59,130,246,0.22)",
     borderRadius: 8,
-    background: "rgba(15,23,42,0.82)",
+    background: "var(--dock-surface, var(--surface))",
   },
   actionBarLeft: {
     display: "flex",
@@ -3426,7 +3387,7 @@ const S: Record<string, React.CSSProperties> = {
   selectionCount: {
     fontSize: 10,
     fontWeight: 600,
-    color: "var(--dock-text, #E2E8F0)",
+    color: "var(--dock-text, var(--text-primary))",
   },
   actionBarRight: {
     display: "flex",
@@ -3455,9 +3416,9 @@ const S: Record<string, React.CSSProperties> = {
     width: 26,
     height: 26,
     padding: 0,
-    background: "#1F2937",
-    color: "#E2E8F0",
-    border: "1px solid rgba(148,163,184,0.18)",
+    background: "var(--dock-surface-alt, var(--surface-raised))",
+    color: "var(--dock-text, var(--text-primary))",
+    border: "1px solid var(--dock-border, var(--border))",
     borderRadius: 6,
     cursor: "pointer",
   },
@@ -3469,8 +3430,8 @@ const S: Record<string, React.CSSProperties> = {
     display: "flex",
     flexDirection: "column" as const,
     padding: "4px 0",
-    background: "#0F172A",
-    border: "1px solid rgba(255,255,255,0.10)",
+    background: "var(--surface)",
+    border: "1px solid var(--dock-border, var(--border))",
     borderRadius: 8,
     boxShadow: "0 10px 15px -3px rgba(0,0,0,0.5)",
     zIndex: 110,
@@ -3479,9 +3440,9 @@ const S: Record<string, React.CSSProperties> = {
     display: "flex",
     alignItems: "center",
     gap: 4,
-    background: "#1e293b",
-    color: "#f8fafc",
-    border: "1px solid rgba(255, 255, 255, 0.12)",
+    background: "var(--dock-surface-alt, var(--surface-raised))",
+    color: "var(--dock-text, var(--text-primary))",
+    border: "1px solid var(--dock-border, var(--border))",
     padding: "5px 8px",
     borderRadius: 6,
     fontSize: 11,
@@ -3493,7 +3454,7 @@ const S: Record<string, React.CSSProperties> = {
     display: "flex",
     alignItems: "center",
     gap: 4,
-    background: "#4f46e5",
+    background: "var(--dock-accent, var(--primary))",
     color: "#fff",
     border: "none",
     padding: "5px 9px",
@@ -3506,8 +3467,8 @@ const S: Record<string, React.CSSProperties> = {
   // ── Context menu ──
   contextMenu: {
     position: "fixed" as const,
-    background: "#0f172a",
-    border: "1px solid rgba(255,255,255,0.08)",
+    background: "var(--surface)",
+    border: "1px solid var(--dock-border, var(--border))",
     borderRadius: 8,
     padding: "4px 0",
     boxShadow: "0 10px 15px -3px rgba(0,0,0,0.5)",
@@ -3519,7 +3480,7 @@ const S: Record<string, React.CSSProperties> = {
   contextMenuItem: {
     padding: "6px 12px",
     fontSize: 12,
-    color: "#cbd5e1",
+    color: "var(--dock-text-secondary, var(--text-secondary))",
     background: "none",
     border: "none",
     textAlign: "left" as const,
@@ -3548,8 +3509,8 @@ const S: Record<string, React.CSSProperties> = {
     justifyContent: "center",
   },
   editModalContent: {
-    background: "#0f172a",
-    border: "1px solid rgba(255,255,255,0.08)",
+    background: "var(--surface)",
+    border: "1px solid var(--dock-border, var(--border))",
     borderRadius: 12,
     width: "90%",
     maxWidth: 500,
@@ -3559,13 +3520,13 @@ const S: Record<string, React.CSSProperties> = {
   },
   editModalHeader: {
     padding: "14px 16px",
-    borderBottom: "1px solid rgba(255,255,255,0.06)",
+    borderBottom: "1px solid var(--dock-border, var(--border))",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
   },
   editModalTitle: {
-    color: "#E2E8F0",
+    color: "var(--dock-text, var(--text-primary))",
     fontSize: 14,
     fontWeight: 600,
     display: "flex",
@@ -3576,7 +3537,7 @@ const S: Record<string, React.CSSProperties> = {
   editModalClose: {
     background: "none",
     border: "none",
-    color: "#64748B",
+    color: "var(--dock-text-muted, var(--text-muted))",
     fontSize: 18,
     cursor: "pointer",
     padding: "2px 6px",
@@ -3589,15 +3550,15 @@ const S: Record<string, React.CSSProperties> = {
     display: "block",
     fontSize: 11,
     fontWeight: 500,
-    color: "#64748B",
+    color: "var(--dock-text-muted, var(--text-muted))",
     marginBottom: 6,
   },
   editModalTextarea: {
     width: "100%",
-    background: "rgba(15,23,42,0.8)",
-    border: "1px solid rgba(255,255,255,0.1)",
+    background: "var(--dock-input-bg, var(--input-bg))",
+    border: "1px solid var(--dock-border, var(--border))",
     borderRadius: 8,
-    color: "#cbd5e1",
+    color: "var(--dock-text-secondary, var(--text-secondary))",
     padding: "10px 12px",
     fontFamily: "inherit",
     fontSize: 13,
@@ -3608,16 +3569,16 @@ const S: Record<string, React.CSSProperties> = {
   },
   editModalFooter: {
     padding: "12px 16px",
-    borderTop: "1px solid rgba(255,255,255,0.06)",
-    background: "rgba(30,41,59,0.3)",
+    borderTop: "1px solid var(--dock-border, var(--border))",
+    background: "var(--dock-surface-alt, var(--surface-raised))",
     display: "flex",
     justifyContent: "flex-end",
     gap: 8,
   },
   btnSecondary: {
     background: "transparent",
-    border: "1px solid #475569",
-    color: "#cbd5e1",
+    border: "1px solid var(--border-strong)",
+    color: "var(--dock-text-secondary, var(--text-secondary))",
     padding: "6px 12px",
     borderRadius: 6,
     fontSize: 12,
@@ -3631,9 +3592,9 @@ const S: Record<string, React.CSSProperties> = {
     top: 60,
     left: "50%",
     transform: "translateX(-50%)",
-    background: "#1e293b",
-    border: "1px solid #475569",
-    color: "#E2E8F0",
+    background: "var(--dock-surface-alt, var(--surface-raised))",
+    border: "1px solid var(--border-strong)",
+    color: "var(--dock-text, var(--text-primary))",
     padding: "6px 14px",
     borderRadius: 9999,
     display: "flex",
@@ -3658,7 +3619,7 @@ const S: Record<string, React.CSSProperties> = {
   historyItem: {
     fontSize: 11,
     padding: "6px 8px",
-    color: "var(--dock-text-dim, #94A3B8)",
+    color: "var(--dock-text-dim, var(--text-muted))",
     borderRadius: 6,
     display: "flex",
     alignItems: "center",
@@ -3667,7 +3628,7 @@ const S: Record<string, React.CSSProperties> = {
   historyItemClickable: {
     fontSize: 11,
     padding: "6px 8px",
-    color: "var(--dock-text, #E2E8F0)",
+    color: "var(--dock-text, var(--text-primary))",
     borderRadius: 6,
     display: "flex",
     alignItems: "center",
@@ -3717,95 +3678,24 @@ const S: Record<string, React.CSSProperties> = {
   // ── Matching indicator ──
   matchingBar: {
     padding: "4px 12px",
-    borderTop: "1px solid var(--dock-border, rgba(255,255,255,0.06))",
+    borderTop: "1px solid var(--dock-border, var(--border))",
     background: "rgba(59,130,246,0.06)",
   },
   matchingText: {
     fontSize: 10,
-    color: "#60A5FA",
+    color: "var(--accent-blue)",
     fontWeight: 600,
   },
 
-  // ── Stop confirmation modal ──
-  modalOverlay: {
-    position: "fixed" as const,
-    inset: 0,
-    background: "rgba(0,0,0,0.5)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 2000,
-  },
-  modal: {
-    width: "80%",
-    maxWidth: 280,
-    borderRadius: 10,
-    background: "var(--dock-bg, #1E293B)",
-    border: "1px solid var(--dock-border, rgba(255,255,255,0.1))",
-    overflow: "hidden",
-  },
-  helpModal: {
-    width: "min(88%, 340px)",
-    maxWidth: 340,
-  },
-  modalHeader: {
-    padding: "12px 16px 0",
-  },
-  modalTitle: {
-    fontSize: 14,
-    fontWeight: 700,
-    margin: 0,
-    color: "var(--dock-text, #E2E8F0)",
-  },
-  modalBody: {
-    padding: "8px 16px",
-  },
-  modalText: {
-    fontSize: 12,
-    color: "var(--dock-text-dim, #94A3B8)",
-    margin: 0,
-  },
-  helpList: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 10,
-    padding: "4px 16px 14px",
-  },
-  helpItem: {
-    display: "flex",
-    alignItems: "flex-start",
-    gap: 8,
-    color: "var(--dock-text-dim, #CBD5E1)",
-    fontSize: 12,
-    lineHeight: 1.4,
-  },
-  modalFooter: {
-    display: "flex",
-    gap: 8,
-    justifyContent: "flex-end",
-    padding: "8px 16px 12px",
-  },
+  // ── Edit modal ghost button ──
   modalBtnGhost: {
     padding: "5px 12px",
     fontSize: 12,
     fontWeight: 600,
     borderRadius: 6,
-    border: "1px solid rgba(255,255,255,0.1)",
+    border: "1px solid var(--dock-border, var(--border))",
     background: "transparent",
-    color: "var(--dock-text-dim, #94A3B8)",
-    cursor: "pointer",
-  },
-  modalBtnDanger: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 4,
-    padding: "5px 12px",
-    fontSize: 12,
-    fontWeight: 600,
-    borderRadius: 6,
-    border: "none",
-    background: "#DC2626",
-    color: "#fff",
+    color: "var(--dock-text-dim, var(--text-muted))",
     cursor: "pointer",
   },
 
@@ -3823,8 +3713,8 @@ const S: Record<string, React.CSSProperties> = {
     bottom: 0,
     width: "85%",
     maxWidth: 300,
-    background: "var(--dock-bg, #0f172a)",
-    borderLeft: "1px solid var(--dock-border, rgba(255,255,255,0.08))",
+    background: "var(--dock-bg, var(--bg))",
+    borderLeft: "1px solid var(--dock-border, var(--border))",
     display: "flex",
     flexDirection: "column",
     zIndex: 901,
@@ -3835,13 +3725,13 @@ const S: Record<string, React.CSSProperties> = {
     alignItems: "center",
     justifyContent: "space-between",
     padding: "12px 14px",
-    borderBottom: "1px solid var(--dock-border, rgba(255,255,255,0.06))",
+    borderBottom: "1px solid var(--dock-border, var(--border))",
     flexShrink: 0,
   },
   settingsTitle: {
     fontSize: 13,
     fontWeight: 700,
-    color: "var(--dock-text, #E2E8F0)",
+    color: "var(--dock-text, var(--text-primary))",
   },
   settingsClose: {
     display: "flex",
@@ -3851,8 +3741,8 @@ const S: Record<string, React.CSSProperties> = {
     height: 26,
     borderRadius: 6,
     border: "none",
-    background: "rgba(255,255,255,0.06)",
-    color: "var(--dock-text-dim, #94A3B8)",
+    background: "var(--dock-surface-alt, var(--surface-raised))",
+    color: "var(--dock-text-dim, var(--text-muted))",
     cursor: "pointer",
   },
   settingsBody: {
@@ -3868,7 +3758,7 @@ const S: Record<string, React.CSSProperties> = {
     fontWeight: 700,
     textTransform: "uppercase",
     letterSpacing: "0.08em",
-    color: "var(--dock-text-dim, #64748B)",
+    color: "var(--dock-text-dim, var(--text-muted))",
     marginBottom: 6,
   },
   settingRow: {
@@ -3879,11 +3769,11 @@ const S: Record<string, React.CSSProperties> = {
   },
   settingLabel: {
     fontSize: 11,
-    color: "var(--dock-text, #E2E8F0)",
+    color: "var(--dock-text, var(--text-primary))",
   },
   settingHint: {
     fontSize: 10,
-    color: "var(--dock-text-dim, #64748B)",
+    color: "var(--dock-text-dim, var(--text-muted))",
     marginTop: 6,
     marginBottom: 6,
     display: "block",
@@ -3905,9 +3795,9 @@ const S: Record<string, React.CSSProperties> = {
     fontSize: 11,
     padding: "3px 6px",
     borderRadius: 5,
-    border: "1px solid rgba(255,255,255,0.1)",
-    background: "rgba(255,255,255,0.06)",
-    color: "var(--dock-text, #E2E8F0)",
+    border: "1px solid var(--dock-border, var(--border))",
+    background: "var(--dock-surface-alt, var(--surface-raised))",
+    color: "var(--dock-text, var(--text-primary))",
     outline: "none",
   },
   settingSelectFull: {
@@ -3924,7 +3814,7 @@ const S: Record<string, React.CSSProperties> = {
     borderRadius: 5,
     border: "1px solid rgba(148,163,184,0.24)",
     background: "rgba(15,23,42,0.35)",
-    color: "var(--dock-text-dim, #94A3B8)",
+    color: "var(--dock-text-dim, var(--text-muted))",
     fontSize: 10,
     fontWeight: 700,
     cursor: "pointer",
@@ -3954,15 +3844,15 @@ const S: Record<string, React.CSSProperties> = {
     fontSize: 11,
     padding: "3px 6px",
     borderRadius: 5,
-    border: "1px solid rgba(255,255,255,0.1)",
-    background: "rgba(255,255,255,0.06)",
-    color: "var(--dock-text, #E2E8F0)",
+    border: "1px solid var(--dock-border, var(--border))",
+    background: "var(--dock-surface-alt, var(--surface-raised))",
+    color: "var(--dock-text, var(--text-primary))",
     outline: "none",
     textAlign: "center",
   },
   settingUnit: {
     fontSize: 10,
-    color: "var(--dock-text-dim, #64748B)",
+    color: "var(--dock-text-dim, var(--text-muted))",
     marginLeft: 4,
   },
   startBtn: {
@@ -4018,11 +3908,11 @@ const S: Record<string, React.CSSProperties> = {
     boxShadow: "0 0 6px rgba(59,130,246,0.6)",
   },
   transcriptTextLive: {
-    color: "#ffffff",
+    color: "var(--dock-text, var(--text-primary))",
     fontWeight: 600,
   },
   liveWord: {
-    color: "#93C5FD",
+    color: "var(--accent-blue)",
     fontWeight: 700,
     fontSize: 13,
     textShadow: "0 0 12px rgba(59,130,246,0.35)",
@@ -4031,13 +3921,13 @@ const S: Record<string, React.CSSProperties> = {
   hintBar: {
     flexShrink: 0,
     padding: "4px 12px",
-    borderTop: "1px solid var(--dock-border, rgba(255,255,255,0.06))",
+    borderTop: "1px solid var(--dock-border, var(--border))",
     background: "rgba(255,255,255,0.02)",
     textAlign: "center",
   },
   hintText: {
     fontSize: 9,
-    color: "var(--dock-text-dim, #64748B)",
+    color: "var(--dock-text-dim, var(--text-muted))",
     letterSpacing: "0.02em",
   },
 };

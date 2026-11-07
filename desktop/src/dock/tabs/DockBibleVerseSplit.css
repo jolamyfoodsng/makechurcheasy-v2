@@ -8,17 +8,17 @@
   border: 1px solid var(--border);
   border-left: 3px solid var(--border);
   border-radius: 3px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--dock-surface-alt, var(--surface-raised));
   cursor: pointer;
 }
-.dock-bible-verse-part:hover { border-color: var(--accent, #3b82f6); background: rgba(255, 255, 255, 0.06); }
+.dock-bible-verse-part:hover { border-color: var(--accent, #3b82f6); background: var(--dock-surface-hover, var(--surface-hover)); }
 .dock-bible-verse-part:focus-visible { outline: 2px solid var(--accent, #3b82f6); outline-offset: 1px; }
 .dock-bible-verse-part--active { border-color: var(--accent, #3b82f6); border-left-color: var(--accent, #3b82f6); background: rgba(59, 130, 246, 0.14); }
 .dock-bible-verse-part__badge {
   flex: none;
   padding: 0 5px;
   border-radius: 3px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--dock-surface-hover, var(--surface-hover));
   color: var(--text-secondary, #94a3b8);
   font-size: 10px;
   font-weight: 700;
@@ -36,7 +36,7 @@
   padding: 3px 6px;
   border: 1px solid var(--border);
   border-radius: 3px;
-  background: var(--dock-surface, #1e1e24);
+  background: var(--dock-surface, var(--surface));
   color: var(--text-primary);
   font: inherit;
   font-size: 11px;
@@ -74,14 +74,14 @@
   padding: 6px 4px;
   border: 1px solid transparent;
   border-radius: 3px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--dock-surface-alt, var(--surface-raised));
   color: var(--text-primary);
   font: inherit;
   font-size: 10.5px;
   font-weight: 600;
   cursor: pointer;
 }
-.dock-bible-context-menu__action:hover { border-color: var(--accent, #3b82f6); background: rgba(255, 255, 255, 0.09); }
+.dock-bible-context-menu__action:hover { border-color: var(--accent, #3b82f6); background: var(--dock-surface-hover, var(--surface-hover)); }
 .dock-bible-context-menu__action:focus-visible { outline: 2px solid var(--accent, #3b82f6); outline-offset: 1px; }
 .dock-bible-context-menu__item--small { min-height: 28px; font-size: 11px; }
 /* Word picker: tap the first and last word. */
@@ -100,7 +100,7 @@
   padding: 2px 5px;
   border: 1px solid transparent;
   border-radius: 3px;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--dock-surface-alt, var(--surface-raised));
   color: var(--text-primary);
   font: inherit;
   font-size: 11px;

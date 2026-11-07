@@ -8,6 +8,7 @@
  * - charge.success: Payment successful → provision account + send email
  * - subscription.create: New subscription created
  * - subscription.disable: Cancel a specific subscription (not ALL)
+ * - charge.failed: One-off charge declined → team Telegram alert
  * - invoice.payment_failed: Payment failed → notify user
  *
  * The desktop app picks up changes on its next 5-min sync cycle.
@@ -43,6 +44,7 @@ import {
   addPurchasedTranscriptionSeconds,
   resetMonthlyIncludedSeconds,
 } from "@/lib/transcriptionCredits";
+import { reportPaymentToTelegram } from "@/lib/paymentTelegramNotifications";
 import { CreditTransactionType, type PlanTier, type TransactionSource } from "@/types/schemas";
 import { ObjectId } from "mongodb";
 import crypto from "node:crypto";
@@ -169,6 +171,17 @@ export async function POST(req: NextRequest) {
           const amountPaid = (Number(data.amount) || 0) / 100;
           const currency = data.currency || "NGN";
           const reference = data.reference || `wh_${Date.now()}`;
+          // Paystack retries webhooks, and the verify route may already have credited this reference.
+          const alreadyCredited = data.reference
+            ? await db.collection("transcription_transactions").findOne({
+              requestId: reference,
+              type: "credit_purchase",
+            })
+            : null;
+          if (alreadyCredited) {
+            console.log(`[Paystack Webhook] Duplicate top-up, skipping: ${reference}`);
+            break;
+          }
           if (seconds > 0) {
             await addPurchasedTranscriptionSeconds({
               userId: targetUserId,
@@ -180,6 +193,18 @@ export async function POST(req: NextRequest) {
               description: `Paystack top-up: ${seconds / 3600}h (${seconds / 60} credits)`,
             });
             console.log(`[Paystack Webhook] Credited ${seconds}s top-up to user ${targetUserId}`);
+            reportPaymentToTelegram({
+              outcome: "success",
+              provider: "paystack",
+              reference,
+              userId: targetUserId,
+              email,
+              purchase: "credits",
+              credits: Math.round(seconds / 60),
+              amount: amountPaid,
+              currency,
+              source: "Paystack webhook",
+            });
           }
           break;
         }
@@ -458,6 +483,20 @@ export async function POST(req: NextRequest) {
           ).catch(() => { });
         }
 
+        reportPaymentToTelegram({
+          outcome: "success",
+          provider: "paystack",
+          reference: billingReference,
+          userId: targetUserId,
+          email,
+          plan,
+          billingCycle,
+          credits: planCredits,
+          amount: data.amount / 100,
+          currency: data.currency || "NGN",
+          source: "Paystack webhook",
+          occurredAt: now,
+        });
         console.log(`[Paystack Webhook] Charge success: user ${targetUserId} → plan ${plan}`);
         break;
       }
@@ -676,6 +715,33 @@ export async function POST(req: NextRequest) {
         break;
       }
 
+      // ── charge.failed ────────────────────────────────────────────────────
+      // A one-off charge was declined. Nothing is provisioned, so this only
+      // alerts the team; the user retries from checkout.
+      case "charge.failed": {
+        const metadata = (data.metadata || {}) as Record<string, any>;
+        const isTopup = metadata.type === "transcription_topup";
+        const seconds = Number(metadata.seconds) || (Number(metadata.hours) * 3600) || (Number(metadata.credits) * 60) || 0;
+        reportPaymentToTelegram({
+          outcome: "failed",
+          provider: "paystack",
+          reference: String(data.reference || data.id || ""),
+          userId: metadata.user_id || metadata.userId || null,
+          email: data.customer?.email || data.email,
+          ...(isTopup
+            ? { purchase: "credits" as const, credits: seconds ? Math.round(seconds / 60) : null }
+            : {
+              plan: metadata.plan ? String(metadata.plan) : null,
+              billingCycle: metadata.billingCycle || metadata.billing_cycle || null,
+            }),
+          amount: typeof data.amount === "number" ? data.amount / 100 : null,
+          currency: data.currency || "NGN",
+          failureReason: data.gateway_response || data.message || "Charge failed",
+          source: "Paystack webhook",
+        });
+        break;
+      }
+
       // ── invoice.payment_failed ───────────────────────────────────────────
       case "invoice.payment_failed": {
         const email = data.customer?.email;
@@ -773,6 +839,21 @@ export async function POST(req: NextRequest) {
           if (targetUserId) {
             notifyPaymentFailed(targetUserId, planName).catch(() => { });
           }
+          reportPaymentToTelegram({
+            outcome: "failed",
+            provider: "paystack",
+            reference: String(
+              data.transaction?.reference || data.reference || data.invoice_code || data.id || "",
+            ),
+            userId: targetUserId,
+            name: userName === "there" ? undefined : userName,
+            email,
+            plan: planKey === "free" ? null : planKey,
+            amount: typeof data.amount === "number" ? data.amount / 100 : null,
+            currency: data.currency || "NGN",
+            failureReason: data.gateway_response || data.description || "Subscription renewal charge failed",
+            source: "Paystack webhook (renewal)",
+          });
         }
 
         console.log(`[Paystack Webhook] Invoice payment failed for ${email || "unknown"}`);

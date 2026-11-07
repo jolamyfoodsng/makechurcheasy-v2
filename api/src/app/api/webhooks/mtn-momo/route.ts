@@ -10,6 +10,17 @@ import { NextRequest, NextResponse } from "next/server";
 import clientPromise from "@/lib/mongodb";
 import { completeMtnMomoPayment } from "@/lib/completeMtnMomoPayment";
 import { getMtnMomoRequestStatus, MtnMomoError } from "@/lib/mtnMomo";
+import { paymentDetailsFromIntent, reportPaymentToTelegram } from "@/lib/paymentTelegramNotifications";
+
+function reportFailure(intent: Record<string, any>, reference: string, failureReason: string) {
+  reportPaymentToTelegram(paymentDetailsFromIntent(intent, {
+    outcome: "failed",
+    provider: "mtn_momo",
+    reference,
+    failureReason,
+    source: "MTN MoMo callback",
+  }));
+}
 
 function received(reference?: string, status?: string) {
   return NextResponse.json({
@@ -64,6 +75,7 @@ async function handleCallback(req: NextRequest) {
           },
         },
       );
+      reportFailure(intent, reference, provider.reason || "MTN MoMo declined the payment.");
       return received(reference, provider.status);
     }
 
@@ -72,6 +84,7 @@ async function handleCallback(req: NextRequest) {
         { _id: reference, status: "PENDING" },
         { $set: { status: "FAILED", failureReason: "Payment amount mismatch.", updatedAt: new Date().toISOString() } },
       );
+      reportFailure(intent, reference, "Payment amount mismatch.");
       return NextResponse.json({ error: "Payment amount could not be verified" }, { status: 502 });
     }
     if (provider.currency && String(provider.currency).toUpperCase() !== String(intent.currency).toUpperCase()) {
@@ -79,6 +92,7 @@ async function handleCallback(req: NextRequest) {
         { _id: reference, status: "PENDING" },
         { $set: { status: "FAILED", failureReason: "Payment currency mismatch.", updatedAt: new Date().toISOString() } },
       );
+      reportFailure(intent, reference, "Payment currency mismatch.");
       return NextResponse.json({ error: "Payment currency could not be verified" }, { status: 502 });
     }
 

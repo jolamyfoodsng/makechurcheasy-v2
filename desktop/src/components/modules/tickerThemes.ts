@@ -9,6 +9,7 @@
  */
 
 import { normalizeDockFontFamily } from "../../dock/dockFontFamily";
+import { formatTickerClock, TICKER_CLOCK_SCRIPT } from "../../data/tickerClock";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -61,11 +62,12 @@ export interface TickerThemeConfig {
 // ---------------------------------------------------------------------------
 
 export const TICKER_THEMES: TickerThemeConfig[] = [
-  // ── 1. Fresh ──
+  // ── Clean Bar ── (was "Fresh". "Minimal" and "Glass" were the same bar in other colours and are
+  // retired: their ids open this one, and the colour picker gives the same looks.)
   {
     id: "ticker-fresh",
-    name: "Fresh",
-    description: "Clean modern ticker with rounded badge heading and smooth scroll",
+    name: "Clean Bar",
+    description: "A solid bar with a rounded heading badge and smooth scrolling messages. Pick any colours.",
     icon: "auto_awesome",
     tags: ["modern", "clean", "rounded"],
     defaultColors: {
@@ -82,52 +84,6 @@ export const TICKER_THEMES: TickerThemeConfig[] = [
     headingRadius: "6px",
     separatorChar: "•",
     barStyle: "solid",
-  },
-
-  // ── 4. Minimal ──
-  {
-    id: "ticker-minimal",
-    name: "Minimal",
-    description: "Ultra-clean white ticker with subtle accent line",
-    icon: "remove",
-    tags: ["minimal", "white", "subtle"],
-    defaultColors: {
-      accent: "#10B981",
-      accentText: "#FFFFFF",
-      barBg: "#FFFFFF",
-      barText: "#1E293B",
-      separator: "#CBD5E1",
-    },
-    defaultHeading: "UPDATE",
-    fontFamily: "'Inter', system-ui, sans-serif",
-    fontImport: "/fonts/google/google-fonts.css",
-    headingIcon: "info",
-    headingRadius: "20px",
-    separatorChar: "|",
-    barStyle: "solid",
-  },
-
-  // ── 5. Glass ──
-  {
-    id: "ticker-glass",
-    name: "Glass",
-    description: "Frosted glass translucent bar with blur backdrop effect",
-    icon: "blur_on",
-    tags: ["glass", "blur", "translucent"],
-    defaultColors: {
-      accent: "#8B5CF6",
-      accentText: "#FFFFFF",
-      barBg: "rgba(15, 23, 42, 0.65)",
-      barText: "#F8FAFC",
-      separator: "#A78BFA",
-    },
-    defaultHeading: "NOW",
-    fontFamily: "'Inter', 'SF Pro Display', sans-serif",
-    fontImport: "/fonts/google/google-fonts.css",
-    headingIcon: "fiber_manual_record",
-    headingRadius: "8px",
-    separatorChar: "◆",
-    barStyle: "glass",
   },
 ];
 
@@ -153,6 +109,8 @@ export function generateTickerHTML(
   fontFamilyOverride?: string,
   dividerChar: string = theme.separatorChar,
   messageSpacing = 0,
+  /** What the heading badge shows: the heading text, or the live time. */
+  headingMode: "text" | "time" = "text",
 ): string {
   // OBS Text Source v1 default is 32px. Use it as ticker base size for readability on program output.
 
@@ -216,6 +174,7 @@ html,body{background:transparent;overflow:hidden;width:100%;height:100%}
   z-index:2;
 }
 
+.tk-clock{font-variant-numeric:tabular-nums;letter-spacing:.04em}
 .tk-heading::after{
   content:'';
   position:absolute;
@@ -289,7 +248,9 @@ html,body{background:transparent;overflow:hidden;width:100%;height:100%}
 <body>
 <div class="tk-bar">
   <div class="tk-heading">
-    ${escapeHTML(heading)}
+    ${headingMode === "time"
+      ? `<span class="tk-clock" data-live-clock>${escapeHTML(formatTickerClock())}</span>`
+      : escapeHTML(heading)}
   </div>
   <div class="tk-scroll-wrap" id="tkWrap">
     <div class="tk-scroll-track" id="tkTrack">
@@ -299,6 +260,7 @@ html,body{background:transparent;overflow:hidden;width:100%;height:100%}
   </div>
 </div>
 <template id="tkTemplate">${cycleContent}</template>
+${headingMode === "time" ? TICKER_CLOCK_SCRIPT : ""}
 <script>
 (() => {
   const wrap = document.getElementById("tkWrap");

@@ -47,6 +47,7 @@ import { useAuth } from "../contexts/AuthContext";
 import UpgradeModal from "../components/UpgradeModal";
 import PlanLimitModal from "../components/PlanLimitModal";
 import { BroadcastHowItWorksModal } from "../components/BroadcastHowItWorksModal";
+import ModalDialog, { ModalNotice } from "../components/ModalDialog";
 import {
   Plus,
   Trash2,
@@ -54,7 +55,6 @@ import {
   EyeOff,
   Check,
   Radio,
-  X,
   RefreshCw,
   Loader2,
   Settings,
@@ -274,6 +274,13 @@ export default function BroadcastPage() {
   const [channelKeyInput, setChannelKeyInput] = useState("");
   const [channelServerInput, setChannelServerInput] = useState("");
   const [showKeyInModal, setShowKeyInModal] = useState(false);
+
+  // Profile / channel waiting for the person to confirm removal.
+  const [pendingRemoval, setPendingRemoval] = useState<
+    | { kind: "profile"; profile: BroadcastPersonProfile }
+    | { kind: "channel"; personId: string; channel: BroadcastChannel }
+    | null
+  >(null);
 
   const streamKeyInputRef = useRef<HTMLInputElement>(null);
 
@@ -686,10 +693,12 @@ export default function BroadcastPage() {
 
   const handleDeletePerson = (p: BroadcastPersonProfile) => {
     setOpenProfileMenuId(null);
-    if (confirm(`Delete profile "${p.nickname}" and its configured channels?`)) {
-      deletePersonProfile(p.id);
-      showToast(`Deleted profile: ${p.nickname}`, "info");
-    }
+    setPendingRemoval({ kind: "profile", profile: p });
+  };
+
+  const confirmDeletePerson = (p: BroadcastPersonProfile) => {
+    deletePersonProfile(p.id);
+    showToast(`Deleted profile: ${p.nickname}`, "info");
   };
 
   // Channel modal
@@ -841,9 +850,12 @@ export default function BroadcastPage() {
     }
   };
 
-  const handleDeleteChannel = async (personId: string, ch: BroadcastChannel) => {
+  const handleDeleteChannel = (personId: string, ch: BroadcastChannel) => {
     setOpenChannelMenuId(null);
-    if (!confirm(`Remove "${ch.name}" from this profile?`)) return;
+    setPendingRemoval({ kind: "channel", personId, channel: ch });
+  };
+
+  const confirmDeleteChannel = async (personId: string, ch: BroadcastChannel) => {
     const updatedStore = deleteChannel(personId, ch.id);
     setStore(updatedStore);
     showToast(`Removed channel: ${ch.name}`, "info");
@@ -1340,7 +1352,7 @@ export default function BroadcastPage() {
               {/* 4. Bottom Info Box */}
               <div className="broadcast-cloud-info-box">
                 <div className="broadcast-cloud-info-box__icon">
-                  <Info size={19} color="#3B82F6" />
+                  <Info size={19} color="var(--accent-blue)" />
                 </div>
                 <div className="broadcast-cloud-info-box__text">
                   <span className="broadcast-cloud-info-box__title">No extra plugins needed</span>
@@ -1356,22 +1368,13 @@ export default function BroadcastPage() {
 
       {/* ── MODAL: ADD / EDIT PROFILE ── */}
       {showPersonModal && (
-        <div className="broadcast-modal-overlay" onClick={() => setShowPersonModal(false)}>
-          <div className="broadcast-modal-card" onClick={(e) => e.stopPropagation()}>
-            <div className="broadcast-modal-card__header">
-              <h3 className="broadcast-modal-card__title">
-                {editingPerson ? "Rename Profile" : "Create Profile"}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setShowPersonModal(false)}
-                className="broadcast-modal-card__close-btn"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="broadcast-modal-card__body">
+        <ModalDialog
+          icon={<Users size={26} />}
+          title={editingPerson ? "Rename Profile" : "Create Profile"}
+          onClose={() => setShowPersonModal(false)}
+          closeOnBackdrop
+          extra={
+            <div className="broadcast-modal-form">
               <div className="broadcast-form-group">
                 <label className="broadcast-form-label">
                   Profile Name (e.g. Church Account, Sunday Service, Department)
@@ -1407,50 +1410,30 @@ export default function BroadcastPage() {
                       onClick={() => setPersonColorInput(c)}
                       className={`broadcast-color-swatch ${personColorInput === c ? "broadcast-color-swatch--active" : ""}`}
                       style={{ background: c }}
+                      aria-label={`Badge color ${c}`}
+                      aria-pressed={personColorInput === c}
                     />
                   ))}
                 </div>
               </div>
             </div>
-
-            <div className="broadcast-modal-card__footer">
-              <button
-                type="button"
-                onClick={() => setShowPersonModal(false)}
-                className="broadcast-btn-secondary"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleSavePerson}
-                className="broadcast-btn-primary"
-              >
-                Save Profile
-              </button>
-            </div>
-          </div>
-        </div>
+          }
+          actions={[
+            { label: "Cancel", onClick: () => setShowPersonModal(false), variant: "ghost" },
+            { label: "Save Profile", onClick: handleSavePerson, variant: "primary" },
+          ]}
+        />
       )}
 
       {/* ── MODAL: ADD / EDIT CHANNEL ── */}
       {showChannelModal && (
-        <div className="broadcast-modal-overlay" onClick={() => setShowChannelModal(false)}>
-          <div className="broadcast-modal-card" onClick={(e) => e.stopPropagation()}>
-            <div className="broadcast-modal-card__header">
-              <h3 className="broadcast-modal-card__title">
-                {editingChannel?.channel ? "Edit Channel" : "Add Channel"}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setShowChannelModal(false)}
-                className="broadcast-modal-card__close-btn"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="broadcast-modal-card__body">
+        <ModalDialog
+          icon={<Radio size={26} />}
+          title={editingChannel?.channel ? "Edit Channel" : "Add Channel"}
+          onClose={() => setShowChannelModal(false)}
+          width={520}
+          extra={
+            <div className="broadcast-modal-form">
               <div className="broadcast-form-group">
                 <label className="broadcast-form-label">Platform</label>
                 <select
@@ -1484,7 +1467,7 @@ export default function BroadcastPage() {
               </div>
 
               <div className="broadcast-form-group">
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div className="broadcast-form-label-row">
                   <label className="broadcast-form-label">Stream Key</label>
                   <button
                     type="button"
@@ -1560,47 +1543,23 @@ export default function BroadcastPage() {
                 </div>
               )}
             </div>
-
-            <div className="broadcast-modal-card__footer">
-              <button
-                type="button"
-                onClick={() => setShowChannelModal(false)}
-                className="broadcast-btn-secondary"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleSaveChannel}
-                className="broadcast-btn-primary"
-              >
-                Save Channel
-              </button>
-            </div>
-          </div>
-        </div>
+          }
+          actions={[
+            { label: "Cancel", onClick: () => setShowChannelModal(false), variant: "ghost" },
+            { label: "Save Channel", onClick: () => void handleSaveChannel(), variant: "primary" },
+          ]}
+        />
       )}
 
       {/* ── MODAL: OBS WEBSOCKET SETTINGS ── */}
       {showObsSettingsModal && (
-        <div className="broadcast-modal-overlay" onClick={() => setShowObsSettingsModal(false)}>
-          <div className="broadcast-modal-card" onClick={(e) => e.stopPropagation()}>
-            <div className="broadcast-modal-card__header">
-              <h3 className="broadcast-modal-card__title">OBS WebSocket Settings</h3>
-              <button
-                type="button"
-                onClick={() => setShowObsSettingsModal(false)}
-                className="broadcast-modal-card__close-btn"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="broadcast-modal-card__body">
-              <p style={{ margin: "0 0 14px", fontSize: "13.5px", color: "var(--text-muted)", lineHeight: 1.5 }}>
-                Make Church Eazy connects to OBS Studio using the built-in OBS WebSocket Server to synchronize stream keys automatically.
-              </p>
-
+        <ModalDialog
+          icon={<Settings size={26} />}
+          iconBusy={obsTestingConnection}
+          title="OBS WebSocket Settings"
+          onClose={() => setShowObsSettingsModal(false)}
+          extra={
+            <div className="broadcast-modal-form">
               <div className="broadcast-form-group">
                 <label className="broadcast-form-label">WebSocket URL</label>
                 <input
@@ -1614,7 +1573,7 @@ export default function BroadcastPage() {
               </div>
 
               <div className="broadcast-form-group">
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div className="broadcast-form-label-row">
                   <label className="broadcast-form-label">Server Password (Optional)</label>
                   <button
                     type="button"
@@ -1634,46 +1593,60 @@ export default function BroadcastPage() {
                 />
               </div>
 
-              <div
-                style={{
-                  padding: "10px 14px",
-                  background: "rgba(255, 255, 255, 0.04)",
-                  borderRadius: "var(--radius)",
-                  border: "1px solid var(--border)",
-                  fontSize: "13px",
-                  color: "#d4d4d8",
-                }}
-              >
+              <ModalNotice tone="info" icon={<Info size={14} />}>
                 <strong>Tip:</strong> In OBS Studio, go to <strong>Tools → WebSocket Server Settings</strong> and check <strong>&ldquo;Enable WebSocket server&rdquo;</strong>.
-              </div>
+              </ModalNotice>
             </div>
+          }
+          actions={[
+            { label: "Close", onClick: () => setShowObsSettingsModal(false), variant: "ghost" },
+            {
+              label: obsTestingConnection ? "Connecting..." : "Save & Test Connection",
+              onClick: () => void handleTestObsConnection(),
+              variant: "primary",
+              disabled: obsTestingConnection,
+              icon: obsTestingConnection ? <Loader2 size={14} className="spin" /> : undefined,
+            },
+          ]}
+        >
+          Make Church Eazy connects to OBS Studio using the built-in OBS WebSocket Server to synchronize stream keys automatically.
+        </ModalDialog>
+      )}
 
-            <div className="broadcast-modal-card__footer">
-              <button
-                type="button"
-                onClick={() => setShowObsSettingsModal(false)}
-                className="broadcast-btn-secondary"
-              >
-                Close
-              </button>
-              <button
-                type="button"
-                onClick={handleTestObsConnection}
-                disabled={obsTestingConnection}
-                className="broadcast-btn-primary"
-              >
-                {obsTestingConnection ? (
-                  <>
-                    <Loader2 size={14} className="spin" />
-                    <span>Connecting...</span>
-                  </>
-                ) : (
-                  <span>Save &amp; Test Connection</span>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* ── CONFIRM: REMOVE PROFILE / CHANNEL ── */}
+      {pendingRemoval && (
+        <ModalDialog
+          tone="danger"
+          icon={<Trash2 size={26} />}
+          title={pendingRemoval.kind === "profile" ? "Delete this profile?" : "Remove this channel?"}
+          onClose={() => setPendingRemoval(null)}
+          actions={[
+            { label: "Cancel", onClick: () => setPendingRemoval(null), variant: "ghost", autoFocus: true },
+            pendingRemoval.kind === "profile"
+              ? {
+                  label: "Delete profile",
+                  variant: "danger",
+                  onClick: () => {
+                    const { profile } = pendingRemoval;
+                    setPendingRemoval(null);
+                    confirmDeletePerson(profile);
+                  },
+                }
+              : {
+                  label: "Remove channel",
+                  variant: "danger",
+                  onClick: () => {
+                    const { personId, channel } = pendingRemoval;
+                    setPendingRemoval(null);
+                    void confirmDeleteChannel(personId, channel);
+                  },
+                },
+          ]}
+        >
+          {pendingRemoval.kind === "profile"
+            ? <>Delete profile &ldquo;{pendingRemoval.profile.nickname}&rdquo; and its configured channels?</>
+            : <>Remove &ldquo;{pendingRemoval.channel.name}&rdquo; from this profile?</>}
+        </ModalDialog>
       )}
 
       {/* ── MODAL: HOW IT WORKS ── */}

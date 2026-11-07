@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { isDockOutputRouted, presentationOnlyRoutePatch, type DockSceneRoute } from "../dockSceneRouting";
 import DockRoutedOutputMenu from "./DockRoutedOutputMenu";
 import Icon from "../DockIcon";
+import { fitPopover } from "../useKeepInViewport";
 import "./DockSceneRouteSendControl.css";
 
 export interface DockSceneRouteSendControlProps {
@@ -223,7 +224,7 @@ export default function DockSceneRouteSendControl({
 
       {menuOpen && typeof document !== "undefined" && createPortal(
         <div
-          ref={popoverRef}
+          ref={(el) => { popoverRef.current = el; fitPopover(el); }}
           data-dock-keep-overflow-open="true"
           role="menu"
           aria-label={t("sceneRouting.routedOutputMenu", "Routed output options")}

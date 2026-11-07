@@ -62,6 +62,7 @@ import { isPresentationLinkTarget } from "../dockPresentationTarget";
 import { getSong } from "../../worship/worshipDb";
 import { generateSlides } from "../../worship/slideEngine";
 import { publishMediaToPresentation } from "../../services/presentationPublish";
+import { fitPopover } from "../useKeepInViewport";
 
 const PIN_STORAGE_KEY = "__mce_dock_schedule_pinned_v1";
 const SCHEDULE_WIDTH_KEY = "__mce_dock_schedule_width_v2";
@@ -280,6 +281,52 @@ export default function DockScheduleDrawer({ initialSnapshot, onStage }: Props) 
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onMouseUp);
   }, [customWidth, handleCollapse]);
+
+  // Dragging the closed rail to the right opens the schedule and keeps sizing it while the pointer
+  // moves; a plain click on the rail button still just opens it.
+  const handleRailMouseDown = useCallback((e: React.MouseEvent) => {
+    if (e.button !== 0) return;
+    const startX = e.clientX;
+    const startWidth = (e.currentTarget as HTMLElement).getBoundingClientRect().width || 34;
+    let opened = false;
+
+    const onMove = (moveEvent: MouseEvent) => {
+      const delta = moveEvent.clientX - startX;
+      if (!opened) {
+        if (delta < 24) return;
+        opened = true;
+        setExpanded(true);
+        document.body.style.cursor = "col-resize";
+        document.body.style.userSelect = "none";
+      }
+      const minAllowed = Math.max(MIN_SCHEDULE_WIDTH, Math.floor(window.innerWidth * 0.15));
+      const maxAllowed = Math.max(minAllowed, Math.min(600, Math.floor(window.innerWidth * 0.45)));
+      const nextWidth = Math.round(Math.max(minAllowed, Math.min(maxAllowed, startWidth + delta)));
+      setCustomWidth(nextWidth);
+      if (typeof localStorage !== "undefined") {
+        localStorage.setItem(SCHEDULE_WIDTH_KEY, String(nextWidth));
+      }
+    };
+
+    const onUp = () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      if (opened) {
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+        // The click that ends a drag must not toggle anything else.
+        const swallow = (clickEvent: MouseEvent) => {
+          clickEvent.stopPropagation();
+          clickEvent.preventDefault();
+        };
+        window.addEventListener("click", swallow, { capture: true, once: true });
+        window.setTimeout(() => window.removeEventListener("click", swallow, { capture: true }), 0);
+      }
+    };
+
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }, []);
 
   const handleDoubleClickResize = useCallback(() => {
     setCustomWidth(null);
@@ -733,7 +780,11 @@ export default function DockScheduleDrawer({ initialSnapshot, onStage }: Props) 
     >
       {/* ── Collapsed Rail View (34px) ── */}
       {!isDrawerOpen && (
-        <div className="dock-schedule-rail">
+        <div
+          className="dock-schedule-rail"
+          onMouseDown={handleRailMouseDown}
+          title={t("schedule.dragToOpen", "Drag right to open the schedule")}
+        >
           <button
             type="button"
             className="dock-schedule-rail__trigger"
@@ -741,7 +792,7 @@ export default function DockScheduleDrawer({ initialSnapshot, onStage }: Props) 
             title={t("schedule.openSchedule", "Open Schedule (Shared Space)")}
             aria-label={t("schedule.openSchedule", "Open Schedule")}
           >
-            <Icon name="playlist_play" size={21} />
+            <Icon name="event_note" size={21} />
             {scheduleItems.length > 0 && (
               <span className="dock-schedule-rail__badge" />
             )}
@@ -1313,6 +1364,7 @@ export default function DockScheduleDrawer({ initialSnapshot, onStage }: Props) 
             }}
           />
           <div
+            ref={(el) => fitPopover(el)}
             className="dock-schedule-context-menu"
             style={{
               position: "fixed",
@@ -1428,6 +1480,7 @@ export default function DockScheduleDrawer({ initialSnapshot, onStage }: Props) 
             }}
           />
           <div
+            ref={(el) => fitPopover(el)}
             className="dock-schedule-context-menu"
             style={{
               position: "fixed",

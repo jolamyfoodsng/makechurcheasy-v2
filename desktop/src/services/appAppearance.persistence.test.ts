@@ -1,25 +1,21 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-function createStorage(): Storage {
-  const values = new Map<string, string>();
-  return {
-    get length() {
-      return values.size;
-    },
-    clear: () => values.clear(),
-    getItem: (key) => values.get(key) ?? null,
-    key: (index) => Array.from(values.keys())[index] ?? null,
-    removeItem: (key) => values.delete(key),
-    setItem: (key, value) => values.set(key, String(value)),
-  };
-}
+// Appearance now lives in the native dock settings store (not localStorage), which fills in
+// once the signed-in user's scope hydrates. The store is stood in for by a plain map.
+const nativeSettings = new Map<string, unknown>();
+
+vi.mock("./localDockSettings", () => ({
+  readNativeDockSetting: (key: string) => nativeSettings.get(key),
+  writeNativeDockSetting: (key: string, value: unknown) => {
+    nativeSettings.set(key, value);
+    return Promise.resolve();
+  },
+}));
 
 describe("app appearance hydration", () => {
   beforeEach(() => {
-    const localStorage = createStorage();
-    vi.stubGlobal("localStorage", localStorage);
+    nativeSettings.clear();
     vi.stubGlobal("window", {
-      localStorage,
       location: { pathname: "/settings" },
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
@@ -32,20 +28,16 @@ describe("app appearance hydration", () => {
     vi.unstubAllGlobals();
   });
 
-  it("rehydrates a saved palette after the auth scope becomes available", async () => {
+  it("rehydrates a saved palette after the user's settings become available", async () => {
     vi.resetModules();
     const appearance = await import("./appAppearance");
     expect(appearance.loadAppAppearance().palette).toBe("classic-blue");
 
-    localStorage.setItem("mce-auth-session", JSON.stringify({
-      user: { id: "user-1" },
-      expiresAt: Date.now() + 60_000,
-    }));
-    localStorage.setItem("ocs-app-appearance:user-1", JSON.stringify({
+    nativeSettings.set("ocs-app-appearance", {
       palette: "ember",
       customAccent: "#C2410C",
       updatedAt: Date.now(),
-    }));
+    });
 
     expect(appearance.refreshAppAppearance().palette).toBe("ember");
   });

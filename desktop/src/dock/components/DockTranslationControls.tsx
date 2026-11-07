@@ -17,6 +17,7 @@ import {
 import "./DockTranslationControls.css";
 
 export type { DockTranslationOrder } from "../dockTranslation";
+import { fitPopover } from "../useKeepInViewport";
 
 export interface DockTranslationSection {
   id: string;
@@ -281,7 +282,7 @@ export default function DockTranslationControls({
 
   const languageMenu = (
     <div
-      ref={languageMenuRef}
+      ref={(el) => { languageMenuRef.current = el; fitPopover(el); }}
       className={`dock-translation__language-menu${compact ? " dock-translation__language-menu--portal" : ""}`}
       data-dock-keep-overflow-open={compact ? "true" : undefined}
       style={compact && compactLanguageMenuPosition ? {

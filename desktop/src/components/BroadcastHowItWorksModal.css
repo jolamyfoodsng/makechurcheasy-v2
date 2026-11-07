@@ -1,0 +1,54 @@
+/* Multi-Stream "How it works": numbered steps inside the shared ModalPanel. */
+.mce-modal__panel .broadcast-how-steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.broadcast-how-steps__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 0;
+}
+
+.broadcast-how-steps__item + .broadcast-how-steps__item {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.broadcast-how-steps__number {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  border: 1px solid var(--primary-soft-border);
+  color: var(--accent-blue);
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.broadcast-how-steps__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.broadcast-how-steps__copy strong {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.broadcast-how-steps__copy span {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}

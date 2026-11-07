@@ -548,7 +548,7 @@ export function BroadcastSettingsPanel({
       {/* Contextual Notice for Free Plan when >1 destinations are active */}
       {!allocation.allowed && enabledChannels.length > 1 && (
         <div className="broadcast-multistream-notice">
-          <AlertTriangle size={16} style={{ flexShrink: 0, color: "#fbbf24" }} />
+          <AlertTriangle size={16} style={{ flexShrink: 0, color: "var(--warning)" }} />
           <span>
             Free Plan streams to 1 channel at a time. Upgrade to Growth (20 hrs/mo) or Basic (10 hrs/mo) to stream to all {enabledChannels.length} platforms at once with no extra plugins.
           </span>
@@ -827,12 +827,12 @@ export function BroadcastSettingsPanel({
               flexDirection: "column",
               gap: "18px",
               boxShadow: "0 20px 40px rgba(0, 0, 0, 0.6)",
-              color: "#f4f4f5",
+              color: "var(--text-primary)",
             }}
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid var(--border)", paddingBottom: "14px" }}>
-              <h3 style={{ margin: 0, fontSize: "20px", fontWeight: 700, color: "#ffffff" }}>
+              <h3 style={{ margin: 0, fontSize: "20px", fontWeight: 700, color: "var(--text-primary)" }}>
                 {editingPerson ? "Edit Speaker Profile" : "Add Speaker Profile"}
               </h3>
               <button
@@ -845,7 +845,7 @@ export function BroadcastSettingsPanel({
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              <label style={{ fontSize: "14px", fontWeight: 600, color: "#f4f4f5" }}>
+              <label style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-primary)" }}>
                 Profile Name (e.g. Church Account, Sunday Service, Youth Ministry)
               </label>
               <input
@@ -854,9 +854,9 @@ export function BroadcastSettingsPanel({
                 value={personNameInput}
                 onChange={(e) => setPersonNameInput(e.target.value)}
                 style={{
-                  background: "rgba(255, 255, 255, 0.05)",
-                  border: "1px solid rgba(255, 255, 255, 0.14)",
-                  color: "#ffffff",
+                  background: "var(--input-bg)",
+                  border: "1px solid var(--input-border)",
+                  color: "var(--text-primary)",
                   padding: "10px 14px",
                   borderRadius: "var(--radius)",
                   fontSize: "15px",
@@ -866,7 +866,7 @@ export function BroadcastSettingsPanel({
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              <label style={{ fontSize: "14px", fontWeight: 600, color: "#f4f4f5" }}>
+              <label style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-primary)" }}>
                 Short Nickname (Shown on quick switch buttons)
               </label>
               <input
@@ -875,9 +875,9 @@ export function BroadcastSettingsPanel({
                 value={personNicknameInput}
                 onChange={(e) => setPersonNicknameInput(e.target.value)}
                 style={{
-                  background: "rgba(255, 255, 255, 0.05)",
-                  border: "1px solid rgba(255, 255, 255, 0.14)",
-                  color: "#ffffff",
+                  background: "var(--input-bg)",
+                  border: "1px solid var(--input-border)",
+                  color: "var(--text-primary)",
                   padding: "10px 14px",
                   borderRadius: "var(--radius)",
                   fontSize: "15px",
@@ -887,7 +887,7 @@ export function BroadcastSettingsPanel({
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              <label style={{ fontSize: "14px", fontWeight: 600, color: "#f4f4f5" }}>
+              <label style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-primary)" }}>
                 Tag Color
               </label>
               <div style={{ display: "flex", gap: "8px" }}>
@@ -901,7 +901,7 @@ export function BroadcastSettingsPanel({
                       height: "32px",
                       borderRadius: "50%",
                       background: c,
-                      border: personColorInput === c ? "2px solid #ffffff" : "2px solid transparent",
+                      border: personColorInput === c ? "2px solid var(--text-primary)" : "2px solid transparent",
                       cursor: "pointer",
                     }}
                   />
@@ -913,14 +913,14 @@ export function BroadcastSettingsPanel({
               <button
                 type="button"
                 onClick={() => setShowPersonModal(false)}
-                style={{ padding: "8px 18px", borderRadius: "var(--radius)", background: "rgba(255, 255, 255, 0.08)", color: "#ffffff", border: "1px solid rgba(255, 255, 255, 0.14)", cursor: "pointer", fontSize: "14px", fontWeight: 500 }}
+                style={{ padding: "8px 18px", borderRadius: "var(--radius)", background: "var(--surface-raised)", color: "var(--text-primary)", border: "1px solid var(--border)", cursor: "pointer", fontSize: "14px", fontWeight: 500 }}
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleSavePerson}
-                style={{ padding: "8px 18px", borderRadius: "var(--radius)", background: "#6366f1", color: "#ffffff", fontWeight: 600, border: "none", cursor: "pointer", fontSize: "14px" }}
+                style={{ padding: "8px 18px", borderRadius: "var(--radius)", background: "var(--primary)", color: "#ffffff", fontWeight: 600, border: "none", cursor: "pointer", fontSize: "14px" }}
               >
                 Save Profile
               </button>
@@ -957,12 +957,12 @@ export function BroadcastSettingsPanel({
               flexDirection: "column",
               gap: "18px",
               boxShadow: "0 20px 40px rgba(0, 0, 0, 0.6)",
-              color: "#f4f4f5",
+              color: "var(--text-primary)",
             }}
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid var(--border)", paddingBottom: "14px" }}>
-              <h3 style={{ margin: 0, fontSize: "20px", fontWeight: 700, color: "#ffffff" }}>
+              <h3 style={{ margin: 0, fontSize: "20px", fontWeight: 700, color: "var(--text-primary)" }}>
                 {editingChannel?.channel ? "Edit Social Destination" : "Add Social Destination"}
               </h3>
               <button
@@ -975,7 +975,7 @@ export function BroadcastSettingsPanel({
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              <label style={{ fontSize: "14px", fontWeight: 600, color: "#f4f4f5" }}>
+              <label style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-primary)" }}>
                 Platform
               </label>
               <select
@@ -986,9 +986,9 @@ export function BroadcastSettingsPanel({
                   setChannelServerInput(PLATFORM_INFO[plat].defaultServer);
                 }}
                 style={{
-                  background: "rgba(255, 255, 255, 0.05)",
-                  border: "1px solid rgba(255, 255, 255, 0.14)",
-                  color: "#ffffff",
+                  background: "var(--input-bg)",
+                  border: "1px solid var(--input-border)",
+                  color: "var(--text-primary)",
                   padding: "10px 14px",
                   borderRadius: "var(--radius)",
                   fontSize: "15px",
@@ -1006,7 +1006,7 @@ export function BroadcastSettingsPanel({
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              <label style={{ fontSize: "14px", fontWeight: 600, color: "#f4f4f5" }}>
+              <label style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-primary)" }}>
                 Channel Nickname / Label
               </label>
               <input
@@ -1015,9 +1015,9 @@ export function BroadcastSettingsPanel({
                 value={channelNameInput}
                 onChange={(e) => setChannelNameInput(e.target.value)}
                 style={{
-                  background: "rgba(255, 255, 255, 0.05)",
-                  border: "1px solid rgba(255, 255, 255, 0.14)",
-                  color: "#ffffff",
+                  background: "var(--input-bg)",
+                  border: "1px solid var(--input-border)",
+                  color: "var(--text-primary)",
                   padding: "10px 14px",
                   borderRadius: "var(--radius)",
                   fontSize: "15px",
@@ -1028,7 +1028,7 @@ export function BroadcastSettingsPanel({
 
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <label style={{ fontSize: "14px", fontWeight: 600, color: "#f4f4f5" }}>
+                <label style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-primary)" }}>
                   Stream Key
                 </label>
                 <button
@@ -1056,9 +1056,9 @@ export function BroadcastSettingsPanel({
                 value={channelKeyInput}
                 onChange={(e) => setChannelKeyInput(e.target.value)}
                 style={{
-                  background: "rgba(255, 255, 255, 0.05)",
-                  border: "1px solid rgba(255, 255, 255, 0.14)",
-                  color: "#ffffff",
+                  background: "var(--input-bg)",
+                  border: "1px solid var(--input-border)",
+                  color: "var(--text-primary)",
                   padding: "10px 14px",
                   borderRadius: "var(--radius)",
                   fontSize: "15px",
@@ -1090,7 +1090,7 @@ export function BroadcastSettingsPanel({
 
             {channelPlatformInput === "youtube" && (
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                <label style={{ fontSize: "14px", fontWeight: 600, color: "#f4f4f5" }}>
+                <label style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-primary)" }}>
                   Stream Server (YouTube Ingest)
                 </label>
                 <select
@@ -1101,9 +1101,9 @@ export function BroadcastSettingsPanel({
                   }
                   onChange={(e) => setChannelServerInput(e.target.value)}
                   style={{
-                    background: "rgba(255, 255, 255, 0.05)",
-                    border: "1px solid rgba(255, 255, 255, 0.14)",
-                    color: "#ffffff",
+                    background: "var(--input-bg)",
+                    border: "1px solid var(--input-border)",
+                    color: "var(--text-primary)",
                     padding: "10px 14px",
                     borderRadius: "var(--radius)",
                     fontSize: "15px",
@@ -1123,7 +1123,7 @@ export function BroadcastSettingsPanel({
 
             {channelPlatformInput === "custom" && (
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                <label style={{ fontSize: "14px", fontWeight: 600, color: "#f4f4f5" }}>
+                <label style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-primary)" }}>
                   Server RTMP URL
                 </label>
                 <input
@@ -1132,9 +1132,9 @@ export function BroadcastSettingsPanel({
                   value={channelServerInput}
                   onChange={(e) => setChannelServerInput(e.target.value)}
                   style={{
-                    background: "rgba(255, 255, 255, 0.05)",
-                    border: "1px solid rgba(255, 255, 255, 0.14)",
-                    color: "#ffffff",
+                    background: "var(--input-bg)",
+                    border: "1px solid var(--input-border)",
+                    color: "var(--text-primary)",
                     padding: "10px 14px",
                     borderRadius: "var(--radius)",
                     fontSize: "15px",
@@ -1149,14 +1149,14 @@ export function BroadcastSettingsPanel({
               <button
                 type="button"
                 onClick={() => setShowChannelModal(false)}
-                style={{ padding: "8px 18px", borderRadius: "var(--radius)", background: "rgba(255, 255, 255, 0.08)", color: "#ffffff", border: "1px solid rgba(255, 255, 255, 0.14)", cursor: "pointer", fontSize: "14px", fontWeight: 500 }}
+                style={{ padding: "8px 18px", borderRadius: "var(--radius)", background: "var(--surface-raised)", color: "var(--text-primary)", border: "1px solid var(--border)", cursor: "pointer", fontSize: "14px", fontWeight: 500 }}
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleSaveChannel}
-                style={{ padding: "8px 18px", borderRadius: "var(--radius)", background: "#6366f1", color: "#ffffff", fontWeight: 600, border: "none", cursor: "pointer", fontSize: "14px" }}
+                style={{ padding: "8px 18px", borderRadius: "var(--radius)", background: "var(--primary)", color: "#ffffff", fontWeight: 600, border: "none", cursor: "pointer", fontSize: "14px" }}
               >
                 Save Channel
               </button>

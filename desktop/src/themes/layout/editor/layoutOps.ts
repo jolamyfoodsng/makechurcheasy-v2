@@ -194,3 +194,116 @@ export function isBackdropLayer(layer: ThemeLayer): boolean {
     && typeof layer.h === "number"
     && layer.h >= 972;
 }
+
+export interface LayerRect { x: number; y: number; w: number; h: number }
+
+/** Bring to front (drawn last, on top) or send to back (just above the theme background). */
+export function moveLayerTo(layout: ThemeLayout, id: string, where: "front" | "back"): ThemeLayout {
+  const i = layout.layers.findIndex((l) => l.id === id);
+  if (i < 0) return layout;
+  const layers = [...layout.layers];
+  const [layer] = layers.splice(i, 1);
+  if (where === "front") {
+    layers.push(layer);
+  } else {
+    // Stay above the backdrop layers at the bottom, so nothing hides behind the background.
+    let at = 0;
+    while (at < layers.length && isBackdropLayer(layers[at])) at += 1;
+    layers.splice(at, 0, layer);
+  }
+  return { ...layout, layers };
+}
+
+const area = (r: LayerRect) => Math.max(0, r.w) * Math.max(0, r.h);
+const centreInside = (r: LayerRect, box: LayerRect) => {
+  const cx = r.x + r.w / 2;
+  const cy = r.y + r.h / 2;
+  return cx >= box.x && cx <= box.x + box.w && cy >= box.y && cy <= box.y + box.h;
+};
+
+/**
+ * What sits inside a box or bar: the layers nested in it, or else the layers drawn on top of it
+ * whose middle is inside it (e.g. the verse text on its bar).
+ */
+export function contentsOf(layout: ThemeLayout, containerId: string, rects: Record<string, LayerRect>): string[] {
+  const box = rects[containerId];
+  if (!box) return [];
+  const children = layout.layers.filter((l) => l.parentId === containerId && !l.hidden && rects[l.id]).map((l) => l.id);
+  if (children.length) return children;
+  const at = layout.layers.findIndex((l) => l.id === containerId);
+  return layout.layers
+    .filter((l, i) => i > at && !l.parentId && !l.hidden && l.id !== containerId && !isBackdropLayer(l) && rects[l.id]
+      && area(rects[l.id]) < area(box) && centreInside(rects[l.id], box))
+    .map((l) => l.id);
+}
+
+/** Layers in `ids` that would move on their own (not locked, not the background, not inside another moving layer). */
+function movable(layout: ThemeLayout, ids: Iterable<string>): ThemeLayer[] {
+  const set = new Set(ids);
+  const hasMovingAncestor = (l: ThemeLayer): boolean => {
+    let p = l.parentId;
+    while (p) {
+      if (set.has(p)) return true;
+      p = getLayer(layout, p)?.parentId;
+    }
+    return false;
+  };
+  return layout.layers.filter((l) => set.has(l.id) && !l.locked && !isBackdropLayer(l) && !hasMovingAncestor(l));
+}
+
+/** Moves several layers together by the same amount (design pixels). */
+export function moveLayersPatches(layout: ThemeLayout, ids: Iterable<string>, dx: number, dy: number): Record<string, Partial<ThemeLayer>> {
+  const out: Record<string, Partial<ThemeLayer>> = {};
+  for (const l of movable(layout, ids)) out[l.id] = nudgeLayer(l, dx, dy);
+  return out;
+}
+
+export function applyLayerPatches(layout: ThemeLayout, patches: Record<string, Partial<ThemeLayer>>): ThemeLayout {
+  return { ...layout, layers: layout.layers.map((l) => (patches[l.id] ? { ...l, ...patches[l.id] } : l)) };
+}
+
+export function unionRect(rects: LayerRect[]): LayerRect | null {
+  if (!rects.length) return null;
+  const x = Math.min(...rects.map((r) => r.x));
+  const y = Math.min(...rects.map((r) => r.y));
+  const x2 = Math.max(...rects.map((r) => r.x + r.w));
+  const y2 = Math.max(...rects.map((r) => r.y + r.h));
+  return { x, y, w: x2 - x, h: y2 - y };
+}
+
+/**
+ * "Auto": centre what is inside a box (as one group, keeping their spacing).
+ * - One layer selected: it is the box; its contents move to its middle.
+ * - Several selected: the biggest one that holds the others is the box; the others move to its middle.
+ *   If none holds the others, the selection is centred on the screen.
+ * Returns null when there is nothing to move.
+ */
+export function autoCentrePatches(
+  layout: ThemeLayout,
+  ids: string[],
+  rects: Record<string, LayerRect>,
+  canvas: LayerRect = { x: 0, y: 0, w: 1920, h: 1080 },
+): { patches: Record<string, Partial<ThemeLayer>>; containerId: string | null } | null {
+  const known = ids.filter((id) => rects[id]);
+  if (!known.length) return null;
+  let containerId: string | null = null;
+  let contents: string[];
+  if (known.length === 1) {
+    containerId = known[0];
+    contents = contentsOf(layout, containerId, rects);
+  } else {
+    const bySize = [...known].sort((a, b) => area(rects[b]) - area(rects[a]));
+    const big = bySize[0];
+    const holdsOthers = bySize.slice(1).every((id) => centreInside(rects[id], rects[big]));
+    containerId = holdsOthers ? big : null;
+    contents = holdsOthers ? bySize.slice(1) : known;
+  }
+  const moving = movable(layout, contents);
+  const group = unionRect(moving.map((l) => rects[l.id]).filter(Boolean));
+  if (!group) return null;
+  const box = containerId ? rects[containerId] : canvas;
+  const dx = Math.round(box.x + box.w / 2 - (group.x + group.w / 2));
+  const dy = Math.round(box.y + box.h / 2 - (group.y + group.h / 2));
+  if (!dx && !dy) return { patches: {}, containerId };
+  return { patches: moveLayersPatches(layout, moving.map((l) => l.id), dx, dy), containerId };
+}

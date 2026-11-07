@@ -1,7 +1,7 @@
 .dock-bottom-search-panel {
   flex: 0 0 auto;
-  border-top: 1px solid var(--dock-border, #334155);
-  background: var(--dock-surface, #111827);
+  border-top: 1px solid var(--dock-border, var(--border));
+  background: var(--dock-surface, var(--surface));
 }
 
 .dock-bottom-search-panel__header {
@@ -17,7 +17,7 @@
   align-items: center;
   gap: 6px;
   min-width: 0;
-  color: var(--dock-text-dim, #94A3B8);
+  color: var(--dock-text-dim, var(--text-muted));
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -31,7 +31,7 @@
 }
 
 .dock-bottom-search-panel__title svg {
-  color: var(--dock-accent, #1D4ED8);
+  color: var(--dock-accent, var(--primary));
 }
 
 .dock-bottom-search-panel__toggle {
@@ -41,23 +41,23 @@
   width: 28px;
   height: 26px;
   padding: 0;
-  border: 1px solid var(--dock-border, #334155);
+  border: 1px solid var(--dock-border, var(--border));
   border-radius: 5px;
-  background: var(--dock-surface-alt, #1F2937);
-  color: var(--dock-text-dim, #94A3B8);
+  background: var(--dock-surface-alt, var(--surface-raised));
+  color: var(--dock-text-dim, var(--text-muted));
   cursor: pointer;
 }
 
 .dock-bottom-search-panel__toggle:hover,
 .dock-bottom-search-panel__toggle:focus-visible {
   border-color: var(--dock-border-active, #2563EB);
-  background: var(--dock-surface-hover, #334155);
-  color: var(--dock-text, #F8FAFC);
+  background: var(--dock-surface-hover, var(--surface-hover));
+  color: var(--dock-text, var(--text-primary));
   outline: none;
 }
 
 .dock-bottom-search-panel__body {
-  border-top: 1px solid color-mix(in srgb, var(--dock-border, #334155) 72%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--dock-border, var(--border)) 72%, transparent);
 }
 
 .dock-bottom-search-panel .dock-bible-search-row,
@@ -101,7 +101,7 @@
 
 /* Keep the Bible browser controls above the bottom search row. */
 .dock-bottom-search-panel .dock-bible-controls-panel--bottom {
-  border-top: 1px solid color-mix(in srgb, var(--dock-border, #334155) 72%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--dock-border, var(--border)) 72%, transparent);
   border-bottom: 0;
 }
 

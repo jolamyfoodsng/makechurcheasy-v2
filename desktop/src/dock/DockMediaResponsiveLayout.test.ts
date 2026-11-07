@@ -16,8 +16,8 @@ describe("Dock Media responsive layout", () => {
 
   it("includes ultra-compact height rules and shortened labels for docks <= 400px", () => {
     expect(dockMediaTabSource).toContain('isUltraCompactHeight ? " dock-media-console--ultra-compact" : ""');
-    expect(dockMediaTabSource).toContain("isUltraCompactHeight ? t('media.recentShort', 'Recent') : t('media.recentlyUsed')");
-    expect(dockMediaTabSource).toContain("isUltraCompactHeight ? t('media.uploadedShort', 'Uploaded') : t('media.newlyUploaded')");
+    expect(dockMediaTabSource).toContain("{ id: \"recent\", label: t('media.recentlyUsed') }");
+    expect(dockMediaTabSource).toContain("{ id: \"uploaded\", label: t('media.newlyUploaded') }");
     expect(dockCssSource).toContain(".dock-media-console--ultra-compact .dock-media-list");
     expect(dockCssSource).toContain(".dock-media-console--ultra-compact .dock-media-pill");
     expect(dockCssSource).toContain("@media (max-height: 400px)");

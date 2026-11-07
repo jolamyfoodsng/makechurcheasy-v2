@@ -76,10 +76,10 @@ export default function VersionFloorWarningBanner({
   const isWarning = hoursRemaining <= 24;
 
   const bgColor = isUrgent
-    ? "var(--error, #ef4444)"
+    ? "var(--error)"
     : isWarning
-      ? "var(--warning, #f59e0b)"
-      : "var(--primary, #8b5cf6)";
+      ? "var(--warning)"
+      : "var(--primary)";
 
   return (
     <div

@@ -48,6 +48,7 @@ import {
 import clientPromise from "@/lib/mongodb";
 import { recordActivationEvent } from "@/lib/activation";
 import { notifyTelegramCheckoutStarted } from "@/lib/telegramNotifications";
+import { reportPaymentToTelegram } from "@/lib/paymentTelegramNotifications";
 import crypto from "node:crypto";
 import { paymentProviderDisabledResponse } from "@/lib/adminControls";
 
@@ -564,6 +565,20 @@ export async function POST(req: NextRequest) {
             },
           },
         );
+        reportPaymentToTelegram({
+          outcome: "failed",
+          provider: "flutterwave",
+          reference: reference,
+          userId,
+          name: authUser.mongoUser.name,
+          email,
+          plan: purchasePlan,
+          billingCycle,
+          amount: numericAmount,
+          currency: paymentCurrency,
+          failureReason: error instanceof Error ? error.message : "Flutterwave payment creation failed",
+          source: "Checkout start",
+        });
         throw error;
       }
     }
@@ -638,6 +653,20 @@ export async function POST(req: NextRequest) {
             },
           },
         );
+        reportPaymentToTelegram({
+          outcome: "failed",
+          provider: "mtn_momo",
+          reference: providerReference,
+          userId,
+          name: authUser.mongoUser.name,
+          email,
+          plan: purchasePlan,
+          billingCycle,
+          amount: numericAmount,
+          currency: paymentCurrency,
+          failureReason: error instanceof Error ? error.message : "MTN MoMo request failed",
+          source: "Checkout start",
+        });
         throw error;
       }
 
@@ -765,6 +794,20 @@ export async function POST(req: NextRequest) {
             },
           },
         );
+        reportPaymentToTelegram({
+          outcome: "failed",
+          provider: "nowpayments",
+          reference: orderId,
+          userId,
+          name: authUser.mongoUser.name,
+          email,
+          plan: purchasePlan,
+          billingCycle,
+          amount: numericAmount,
+          currency: paymentCurrency,
+          failureReason: error instanceof Error ? error.message : "NOWPayments invoice creation failed",
+          source: "Checkout start",
+        });
         throw error;
       }
     }

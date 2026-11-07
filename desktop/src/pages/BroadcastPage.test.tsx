@@ -29,7 +29,7 @@ describe("BroadcastPage UI & Multi-Platform Streaming Redesign", () => {
     // Active Profile Card
     expect(html).toMatch(/channel|channels/);
     expect(html).toMatch(/Connected to OBS|Not Connected to OBS/);
-    expect(html).toContain("Manage Profile");
+    expect(html).toContain("Profile Settings");
 
     // Hero Multi-Platform Banner
     expect(html).toContain("Stream to multiple platforms");
@@ -39,12 +39,12 @@ describe("BroadcastPage UI & Multi-Platform Streaming Redesign", () => {
     expect(html).toContain("One-click stream");
     expect(html).toContain("Save multiple profiles");
     expect(html).toContain("How it works");
-    expect(html).toContain("broadcast-diagram-svg");
+    // The diagram lives in the "How it works" modal now, not inline on the page.
+    expect(html).not.toContain("broadcast-diagram-svg");
 
     // Channels Section
-    expect(html).toContain("Channels");
+    expect(html).toContain("Where your stream goes");
     expect(html).toContain("These platforms will be streamed when you go live in OBS.");
-    expect(html).toContain("Add Channel");
     expect(html).toContain("Add another channel:");
     expect(html).toContain("YouTube");
     expect(html).toContain("Facebook");

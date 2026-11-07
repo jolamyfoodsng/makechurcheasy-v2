@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Excellent Glory / Summit 2026 — Multi-View look</title>
+<meta name="robots" content="noindex">
+<link href="/fonts/google/google-fonts.css" rel="stylesheet">
+<!--
+  Excellent Glory / Summit 2026 — a custom Multi-View "complete look", built as a real deliverable
+  for the Multi-View Looks admin upload pipeline (see dashboard Admin → Multi-View Looks).
+
+  This is a full standalone HTML page, exactly like the bundled Scripture Circle/Arch/Gold Circle
+  panels (desktop/public/mce-multiview-scripture-circle.html) — OBS's browser source needs a real
+  URL to point at, so admin-uploaded looks ship as a whole page rather than a DOM fragment.
+
+  It is opaque everywhere except the left rounded-rectangle panel, which is left fully transparent
+  (see #camera-hole below) so the camera scene item underneath — cropped into that same rectangle
+  by the app using the uploaded package's `cameraSlot` metadata — reads as "in the frame". No OBS
+  mask filter is needed: this page simply paints over everything outside that rectangle.
+
+  Configurable via the query string, the same convention every look in this family uses
+  (see mce-multiview-scripture-circle.html's ?wedge=/?paper=/?text=/... params):
+    url      - website URL shown bottom-left                (default: "summitabuja.org")
+    handle   - social handle shown bottom-right              (default: "@summitabuja")
+    event    - the top-left wordmark text                    (default: "The Excellent Glory")
+    badge    - the top-right conference badge's year/line    (default: "2026 CONFERENCE")
+    tab      - the relay channel to listen on (see the Bible transport below; default "bible")
+    preview  - "1" shows only the sample verse below and never listens for live data (editor use)
+-->
+<style>
+  /* Drawn at real canvas pixel size (1920x1080) — no scaling, same approach as every other look
+     in this family. */
+  html, body { margin: 0; width: 1920px; height: 1080px; background: transparent; overflow: hidden; }
+  * { box-sizing: border-box; }
+  .stage {
+    position: relative; width: 1920px; height: 1080px; overflow: hidden;
+    font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    background: #0B1E3D;
+    color: #fff;
+  }
+
+  /* ---- background: dark navy + a low-opacity dot-grid texture standing in for a world map ---- */
+  .dotmap {
+    position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(255,255,255,.16) 1.6px, transparent 1.6px);
+    background-size: 26px 26px;
+    /* A soft, uneven mask over the dot grid gives the impression of landmasses without drawing
+       real geography — decorative only, not meant to be geographically accurate. */
+    -webkit-mask-image:
+      radial-gradient(ellipse 620px 260px at 18% 22%, #000 55%, transparent 72%),
+      radial-gradient(ellipse 540px 320px at 46% 68%, #000 50%, transparent 70%),
+      radial-gradient(ellipse 700px 300px at 78% 30%, #000 55%, transparent 74%),
+      radial-gradient(ellipse 460px 260px at 85% 78%, #000 50%, transparent 72%),
+      radial-gradient(ellipse 380px 220px at 10% 80%, #000 50%, transparent 72%);
+    mask-image:
+      radial-gradient(ellipse 620px 260px at 18% 22%, #000 55%, transparent 72%),
+      radial-gradient(ellipse 540px 320px at 46% 68%, #000 50%, transparent 70%),
+      radial-gradient(ellipse 700px 300px at 78% 30%, #000 55%, transparent 74%),
+      radial-gradient(ellipse 460px 260px at 85% 78%, #000 50%, transparent 72%),
+      radial-gradient(ellipse 380px 220px at 10% 80%, #000 50%, transparent 72%);
+    opacity: .55;
+  }
+  .vignette { position: absolute; inset: 0; background: radial-gradient(ellipse 1500px 900px at 50% 45%, transparent 55%, rgba(0,0,0,.35) 100%); }
+
+  /* ---- top-left wordmark ---- */
+  .wordmark {
+    position: absolute; left: 80px; top: 56px; max-width: 640px;
+    font-family: "Great Vibes", cursive; font-size: 64px; line-height: 1;
+    color: #E8C468;
+    text-shadow: 0 2px 10px rgba(0,0,0,.35);
+  }
+
+  /* ---- top-right badges ---- */
+  .badges { position: absolute; right: 70px; top: 46px; display: flex; align-items: center; gap: 18px; }
+  .badge { width: 118px; height: 118px; border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center;
+    border: 3px solid #E8C468; background: radial-gradient(circle at 35% 30%, #152a4e, #0B1E3D 75%); }
+  .badge__ring { position: absolute; inset: 8px; border-radius: 50%; border: 1px solid rgba(232,196,104,.55); }
+  .badge__text { text-align: center; font-family: "Cinzel", "Montserrat", serif; color: #E8C468; line-height: 1.15; }
+  .badge__text b { display: block; font-size: 22px; font-weight: 700; letter-spacing: .04em; }
+  .badge__text span { display: block; font-size: 10px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; margin-top: 2px; color: #cfd8e8; }
+  .badge--org svg { width: 44px; height: 44px; }
+
+  /* ---- the two side-by-side panels ---- */
+  .panel { position: absolute; top: 260px; width: 860px; height: 640px; border-radius: 24px; border: 4px solid #F4EFE3; overflow: hidden; }
+  .panel--camera { left: 80px; background: transparent; } /* the transparent "hole" the camera shows through */
+  .panel--camera::after {
+    /* A faint frame treatment so the empty hole still reads as a deliberate window in the editor
+       preview (when there is no camera feed yet) — purely decorative, never drawn over live video. */
+    content: ""; position: absolute; inset: 0; box-shadow: inset 0 0 60px rgba(0,0,0,.25); pointer-events: none;
+  }
+  .panel--verse { right: 80px; background: #0B1E3D; padding: 56px 58px; display: flex; flex-direction: column; justify-content: center; }
+  .panel--verse::before { content: ""; position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.05) 1.4px, transparent 1.4px); background-size: 22px 22px; pointer-events: none; }
+
+  .verse-num { font-size: 30px; font-weight: 800; color: #E8C468; vertical-align: super; margin-right: 6px; }
+  .verse { position: relative; font-size: 44px; line-height: 1.32; font-weight: 600; color: #fff; transition: opacity .3s ease; }
+  .verse.swap { opacity: 0; }
+  .verse-em { color: #E8C468; }
+  .ref-rule { position: relative; width: 120px; height: 4px; background: #E8C468; margin: 28px 0 16px; border-radius: 2px; }
+  .ref { position: relative; font-size: 24px; font-weight: 700; letter-spacing: .06em; color: #cfd8e8; transition: opacity .3s ease; }
+  .ref.swap { opacity: 0; }
+
+  /* ---- footer row ---- */
+  .footer { position: absolute; left: 80px; right: 80px; bottom: 40px; display: flex; align-items: center; justify-content: space-between; font-size: 22px; font-weight: 600; letter-spacing: .02em; color: #e8ecf5; }
+  .footer__social { display: flex; align-items: center; gap: 14px; }
+  .footer__social svg { width: 30px; height: 30px; }
+  .footer__handle { margin-left: 4px; }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="dotmap"></div>
+  <div class="vignette"></div>
+
+  <div class="wordmark" id="wordmark">The Excellent Glory</div>
+
+  <div class="badges">
+    <div class="badge badge--year">
+      <div class="badge__ring"></div>
+      <div class="badge__text" id="badgeText"><b>2026</b><span>Conference</span></div>
+    </div>
+    <div class="badge badge--org">
+      <div class="badge__ring"></div>
+      <svg viewBox="0 0 24 24" fill="none" stroke="#E8C468" stroke-width="1.6"><path d="M4 21V9l8-5 8 5v12" stroke-linejoin="round" stroke-linecap="round"/><path d="M9 21v-7h6v7" stroke-linejoin="round" stroke-linecap="round"/><path d="M9 11h.01M15 11h.01M9 7h.01M15 7h.01" stroke-linecap="round"/></svg>
+    </div>
+  </div>
+
+  <div class="panel panel--camera" id="camera-hole"></div>
+
+  <div class="panel panel--verse">
+    <div class="verse" id="verse"></div>
+    <div class="ref-rule"></div>
+    <div class="ref" id="ref"></div>
+  </div>
+
+  <div class="footer">
+    <div class="footer__url" id="footerUrl">summitabuja.org</div>
+    <div class="footer__social">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#e8ecf5" stroke-width="1.6"><circle cx="12" cy="12" r="10"/><path d="M15 8h-2a2 2 0 0 0-2 2v2H9v2h2v6h2v-6h2l.5-2H13v-1.5a.5.5 0 0 1 .5-.5H15z" fill="#e8ecf5" stroke="none"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="#e8ecf5" stroke-width="1.6"><circle cx="12" cy="12" r="10"/><path d="M8 8l8 8M16 8l-8 8" stroke-linecap="round"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="#e8ecf5" stroke-width="1.6"><rect x="4" y="4" width="16" height="16" rx="5"/><circle cx="12" cy="12" r="3.3"/><circle cx="16.3" cy="7.7" r=".9" fill="#e8ecf5" stroke="none"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="#e8ecf5" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9.5v5l5-2.5z" fill="#e8ecf5" stroke="none"/></svg>
+      <span class="footer__handle" id="footerHandle">@summitabuja</span>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  // ---- settings from the query string ----
+  var params = new URLSearchParams(location.search);
+  function text(v, fallback) { return v && String(v).trim() ? String(v).trim() : fallback; }
+  document.getElementById("wordmark").textContent = text(params.get("event"), "The Excellent Glory");
+  var badgeLine = text(params.get("badge"), "2026 Conference");
+  var badgeParts = /^(\S+)\s+(.+)$/.exec(badgeLine);
+  document.querySelector("#badgeText b").textContent = badgeParts ? badgeParts[1] : badgeLine;
+  document.querySelector("#badgeText span").textContent = badgeParts ? badgeParts[2] : "Conference";
+  document.getElementById("footerUrl").textContent = text(params.get("url"), "summitabuja.org");
+  document.getElementById("footerHandle").textContent = text(params.get("handle"), "@summitabuja");
+
+  // The channel this page accepts packets on — the Bible module always broadcasts on "bible", the
+  // same channel mce-bible-overlay.html and every Scripture Multi-View panel listens on.
+  var tabParam = params.get("tab") || "bible";
+  // Shown until the first live verse arrives, so the panel is never empty in OBS or in the editor.
+  var DEFAULT_SLIDE = {
+    text: "But we all, with open face beholding as in a glass the *glory* of the Lord, are changed into the same image from glory to glory, even as by the Spirit of the Lord.",
+    reference: "2 Corinthians 3:18 (NKJV)",
+  };
+
+  // ---- highlight markup: the same syntax and rules every Bible overlay in this app uses ----
+  // *words* = important words, bold/accent-colored; *[#facc15]words* = the same, in a chosen hex
+  // color. Escaped first so verse text can never inject HTML.
+  function escapeHtml(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+  function safeEmText(t) {
+    return escapeHtml(t).replace(/\*(?=\S)(?:\[(#[0-9a-fA-F]{3,8})\])?([^*\n]*?\S)\*/g, function (_m, color, words) {
+      return color
+        ? '<strong class="verse-em" style="color:' + color + '">' + words + '</strong>'
+        : '<strong class="verse-em">' + words + '</strong>';
+    });
+  }
+
+  // ---- fit the verse to the panel, shrinking the font until it clears the reference block ----
+  var verseEl = document.getElementById("verse");
+  var lastVerseRawText = "";
+  function fitVerseText(t) {
+    lastVerseRawText = t;
+    verseEl.innerHTML = safeEmText(t);
+    var maxHeight = 360;
+    var size = 44;
+    verseEl.style.fontSize = size + "px";
+    while (size > 22 && verseEl.scrollHeight > maxHeight) {
+      size -= 2;
+      verseEl.style.fontSize = size + "px";
+    }
+  }
+
+  // ---- reference parsing: "2 Corinthians 3:18 (NKJV)" -> verse-number prefix + reference line ----
+  function applyReference(reference) {
+    var raw = String(reference || "").trim();
+    var m = /^(.*?)\s*\(([^)]+)\)\s*$/.exec(raw);
+    var refLine = m ? m[1] : raw;
+    var version = m ? m[2] : "";
+    // Split "2 Corinthians 3:18" into "2 Corinthians 3:" + "18" so the verse number can be the
+    // superscript-style bold prefix the reference image shows.
+    var vm = /^(.*:)(\d+)$/.exec(refLine);
+    document.getElementById("ref").innerHTML = (vm
+      ? '<span class="verse-num">' + escapeHtml(vm[2]) + '</span>' + escapeHtml(vm[1] + vm[2])
+      : escapeHtml(refLine)) + (version ? "  ·  " + escapeHtml(version) : "");
+  }
+
+  var refEl = document.getElementById("ref");
+  var currentKey = "";
+  var swapTimer = null;
+  function render(slide) {
+    fitVerseText(slide.text || "");
+    applyReference(slide.reference || "");
+  }
+  function show(slide) {
+    var key = (slide.text || "") + "|" + (slide.reference || "");
+    if (!slide.text || key === currentKey) return;
+    var first = !currentKey;
+    currentKey = key;
+    clearTimeout(swapTimer);
+    if (first) { render(slide); return; }
+    verseEl.classList.add("swap");
+    refEl.classList.add("swap");
+    swapTimer = setTimeout(function () {
+      render(slide);
+      verseEl.classList.remove("swap");
+      refEl.classList.remove("swap");
+    }, 300);
+  }
+  function hide() { /* keep the last verse on screen rather than leaving the panel blank */ }
+
+  show(DEFAULT_SLIDE);
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(function () { fitVerseText(lastVerseRawText); });
+  }
+
+  // ---- receiving verse data: the exact transport every Multi-View Bible panel in this app uses
+  // (copy this block verbatim into any custom look — see the Multi-View Looks admin page) ----
+  var lastRevision = 0;
+  function handlePacket(packet) {
+    if (!packet || typeof packet !== "object") return;
+    if (packet.channel && packet.channel !== tabParam) return;
+    var data = packet.data && typeof packet.data === "object" ? packet.data : packet;
+    var revision = Number(data.revision ?? data.timestamp ?? 0);
+    if (revision && revision < lastRevision) return;
+    if (revision) lastRevision = revision;
+    if (data.live && data.slide && !data.blanked) show(data.slide);
+    else hide();
+  }
+
+  function readFromLocalStorage() {
+    try {
+      var raw = localStorage.getItem("bible-overlay-data");
+      if (raw) handlePacket(JSON.parse(raw));
+    } catch (e) { /* storage may be unavailable inside OBS */ }
+  }
+
+  function readFromHash() {
+    try {
+      var hash = location.hash.replace(/^#/, "");
+      if (!hash.startsWith("data=")) return;
+      handlePacket(JSON.parse(decodeURIComponent(hash.slice(5))));
+    } catch (e) { /* malformed hash */ }
+  }
+
+  function connectRelay() {
+    if (!("WebSocket" in window)) return;
+    var attempts = 0, timer = null, disabledUntil = 0;
+    function schedule() {
+      if (timer) return;
+      if (attempts >= 3) {
+        disabledUntil = Date.now() + 60000;
+        attempts = 0;
+        timer = setTimeout(function () { timer = null; open(); }, 60000);
+        return;
+      }
+      var delay = Math.min(10000, 500 * Math.pow(2, attempts++));
+      timer = setTimeout(function () { timer = null; open(); }, delay);
+    }
+    function open() {
+      if (Date.now() < disabledUntil) return;
+      try {
+        var ws = new WebSocket("ws://127.0.0.1:17891");
+        ws.onopen = function () { attempts = 0; };
+        ws.onmessage = function (e) { try { handlePacket(JSON.parse(e.data)); } catch (err) { /* ignore */ } };
+        ws.onclose = schedule;
+        ws.onerror = function () { try { ws.close(); } catch (err) { /* already closing */ } };
+      } catch (e) { schedule(); }
+    }
+    open();
+  }
+
+  readFromHash();
+  window.addEventListener("hashchange", readFromHash);
+  // ?preview=1 is the in-app editor: it shows only the sample verse above and never listens for
+  // live verses.
+  if (params.get("preview")) return;
+  readFromLocalStorage();
+  connectRelay();
+  try {
+    var bc = new BroadcastChannel("obs-church-studio-bible-overlay");
+    bc.onmessage = function (e) { handlePacket(e.data); };
+  } catch (e) { /* BroadcastChannel unavailable in this OBS build */ }
+})();
+</script>
+
+<script type="application/json" id="mce-multiview-look">
+{
+  "format": "mce-multiview-look@1",
+  "id": "excellent-glory-summit-2026",
+  "version": 1,
+  "name": "Excellent Glory · Summit 2026",
+  "description": "Dark navy branded look for The Excellent Glory / Summit 2026, with a camera window on the left and a live Bible verse panel on the right.",
+  "cameraSlot": { "x": 80, "y": 260, "width": 860, "height": 640, "shape": "rect" }
+}
+</script>
+</body>
+</html>

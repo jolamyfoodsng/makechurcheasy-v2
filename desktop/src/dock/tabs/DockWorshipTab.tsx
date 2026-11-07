@@ -36,6 +36,7 @@ import { trackWorshipSongPresented, trackWorshipSongCreated, trackOverlayModeSwi
 import {
   createWorshipDockSongSaveCommand,
   loadWorshipDockSongSaveResult,
+  postWorshipDockSongArchiveRequest,
   postWorshipDockSongSaveCommand,
   type WorshipDockSongSavePayload,
 } from "../../services/worshipDockInterop";
@@ -69,6 +70,8 @@ import {
   setPendingWorshipSongSelection,
 } from "../dockScheduleService";
 import Icon from "../DockIcon";
+import ModalDialog from "../../components/ModalDialog";
+import { Hourglass, Trash2 } from "../../components/icons/NativeIcons";
 import LoadingScreen from "../../components/LoadingScreen";
 import DockBottomToolbar from "../components/DockBottomToolbar";
 import DockBottomSearchPanel from "../components/DockBottomSearchPanel";
@@ -127,6 +130,8 @@ import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { useTextUndoRedo } from "../useTextUndoRedo";
 import { pickLayoutAdjust } from "../../themes/layout/adjust";
 import { layerThemeQuickDisplay, withLayerThemeQuickPatch } from "../layerThemeQuickPatch";
+import { fitPopover } from "../useKeepInViewport";
+import { useDockWideLayout } from "../useDockWideLayout";
 
 const DocumentSongImport = lazy(() => import("../../../others/SongImportFullprocess"));
 
@@ -197,6 +202,25 @@ const DOCK_WORSHIP_PREFS_APP_KEY = "dock-worship-preferences";
 const DOCK_WORSHIP_UI_PREFS_KEY = "ocs-dock-worship-ui-preferences";
 const DOCK_WORSHIP_SONG_DEFAULTS_KEY = "ocs-dock-worship-song-defaults-v1";
 const DOCK_WORSHIP_CACHED_SONGS_KEY = "ocs-dock-worship-cached-songs-v1";
+/** Songs removed in this Dock that the app has not confirmed yet (kept across reloads). */
+const DOCK_WORSHIP_REMOVED_SONGS_KEY = "ocs-dock-worship-removed-songs-v1";
+
+function loadRemovedSongIds(): Set<string> {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(getUserScopedKey(DOCK_WORSHIP_REMOVED_SONGS_KEY)) || "[]");
+    return new Set(Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === "string") : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveRemovedSongIds(ids: Set<string>): void {
+  try {
+    localStorage.setItem(getUserScopedKey(DOCK_WORSHIP_REMOVED_SONGS_KEY), JSON.stringify([...ids]));
+  } catch {
+    /* ignore */
+  }
+}
 const DOCK_WORSHIP_RECENT_SEARCHES_KEY = "ocs-dock-worship-recent-searches-v1";
 const WORSHIP_FONT_FIT_MIGRATION_VERSION = 1;
 const MIN_LINES_PER_SLIDE = 1;
@@ -665,50 +689,35 @@ function DockSongDeleteDialog({
   const { t } = useTranslation();
 
   return (
-    <DockModalPortal>
-      <div className="dock-dialog-backdrop" onClick={busy ? undefined : onCancel} role="presentation">
-        <div className="dock-dialog dock-dialog--compact" role="dialog" aria-modal="true" aria-labelledby="dock-song-delete-title" onClick={(event) => event.stopPropagation()}>
-          <div className="dock-dialog__header">
-            <div>
-              <div className="dock-dialog__eyebrow">{t("worship.title")}</div>
-              <h2 id="dock-song-delete-title" className="dock-dialog__title">
-                {t("worship.archiveSongTitle", "Remove song?")}
-              </h2>
-            </div>
-            <button
-              type="button"
-              className="dock-dialog__close"
-              onClick={onCancel}
-              disabled={busy}
-              aria-label={t("common.close")}
-              title={t("common.close")}
-            >
-              <Icon name="close" size={14} />
-            </button>
-          </div>
-          <div className="dock-dialog__body">
-            <p style={{ margin: 0, color: "var(--dock-text-secondary)", lineHeight: 1.5 }}>
-              {t(
-                "worship.archiveSongDescription",
-                {
-                  song: songTitle,
-                  defaultValue: `“${songTitle}” will be removed from the active worship library. You can restore it later from the archive.`,
-                },
-              )}
-            </p>
-          </div>
-          <div className="dock-dialog__footer">
-            <button type="button" className="dock-btn dock-btn--ghost" onClick={onCancel} disabled={busy} title={t("common.cancel")}>
-              {t("common.cancel")}
-            </button>
-            <button type="button" className="dock-btn dock-btn--danger" onClick={onConfirm} disabled={busy} title={t("common.delete")}>
-              <Icon name={busy ? "hourglass_top" : "delete_outline"} size={13} />
-              {busy ? t("worship.saving") : t("common.delete")}
-            </button>
-          </div>
-        </div>
-      </div>
-    </DockModalPortal>
+    <ModalDialog
+      tone="danger"
+      icon={<Trash2 size={26} />}
+      eyebrow={t("worship.title")}
+      title={t("worship.archiveSongTitle", "Remove song?")}
+      actions={[
+        { label: t("common.cancel"), variant: "ghost", onClick: onCancel, disabled: busy, title: t("common.cancel") },
+        {
+          label: busy ? t("worship.saving") : t("common.delete"),
+          variant: "danger",
+          onClick: onConfirm,
+          disabled: busy,
+          title: t("common.delete"),
+          icon: busy ? <Hourglass size={14} /> : <Trash2 size={14} />,
+        },
+      ]}
+      onClose={busy ? undefined : onCancel}
+      zIndex={10002}
+    >
+      <p>
+        {t(
+          "worship.archiveSongDescription",
+          {
+            song: songTitle,
+            defaultValue: `“${songTitle}” will be removed from the active worship library. You can restore it later from the archive.`,
+          },
+        )}
+      </p>
+    </ModalDialog>
   );
 }
 
@@ -1661,10 +1670,13 @@ function DockWorshipTab({
   // Show the last local song snapshot immediately while the main app bridge
   // refreshes it in the background.
   const [documentImportOpen, setDocumentImportOpen] = useState(false);
-  const [songs, setSongs] = useState<DockSong[]>(() => loadCachedSongs());
+  // Songs removed here stay hidden, across reloads too, until the app's own song list no longer has them.
+  const removedSongIdsRef = useRef<Set<string>>(loadRemovedSongIds());
+  const [songs, setSongs] = useState<DockSong[]>(() => {
+    const removed = loadRemovedSongIds();
+    return loadCachedSongs().filter((song) => !removed.has(song.id));
+  });
   const rawSongsRef = useRef<DockSong[]>([]);
-  // Songs removed here stay hidden even if an older song list arrives before the app has removed them.
-  const removedSongIdsRef = useRef<Set<string>>(new Set());
   // Initialize from localStorage so the limit is known immediately
   const [songLimit, setSongLimit] = useState<number>(() => {
     try {
@@ -1696,6 +1708,7 @@ function DockWorshipTab({
   const [lyricsSearchQuery, setLyricsSearchQuery] = useState("");
   const debouncedLyricsSearchQuery = useDebouncedValue(lyricsSearchQuery, 160);
   const [showRecentSearches, setShowRecentSearches] = useState(false);
+  const wideLayout = useDockWideLayout();
   const [toolbarCollapsed, setToolbarCollapsed] = useState(
     () => loadDockWorshipUiPreferences().toolbarCollapsed === true,
   );
@@ -2193,8 +2206,17 @@ function DockWorshipTab({
     [],
   );
 
-  const applySongLimit = useCallback((incomingSongs: DockSong[]) => {
+  const applySongLimit = useCallback((incomingSongs: DockSong[], fromApp = false) => {
     const removed = removedSongIdsRef.current;
+    // The app's own list no longer has a removed song: it is archived there, so stop tracking it.
+    if (fromApp && removed.size > 0) {
+      const present = new Set(incomingSongs.map((song) => song.id));
+      let changed = false;
+      for (const id of [...removed]) {
+        if (!present.has(id)) { removed.delete(id); changed = true; }
+      }
+      if (changed) saveRemovedSongIds(removed);
+    }
     const nextSongs = removed.size > 0 ? incomingSongs.filter((song) => !removed.has(song.id)) : incomingSongs;
     rawSongsRef.current = nextSongs;
     let limit = songLimitRef.current;
@@ -2299,7 +2321,7 @@ function DockWorshipTab({
         }
         const nextSongs = mapSongs(msg.payload as Parameters<typeof mapSongs>[0]);
         deferRememberDockSongDefaults(nextSongs);
-        applySongLimit(nextSongs);
+        applySongLimit(nextSongs, true);
         return;
       }
       if (msg.type === "state:library-updated") {
@@ -3552,6 +3574,7 @@ function DockWorshipTab({
     setSelectedIdx(0);
     setVisibleIdx(null);
     setHiddenSectionIndexes(new Set());
+    setLyricsSearchQuery("");
     setActionError("");
   }, []);
 
@@ -3712,7 +3735,10 @@ function DockWorshipTab({
     setDeletingSong(true);
     try {
       removedSongIdsRef.current.add(songId);
+      saveRemovedSongIds(removedSongIdsRef.current);
       dockClient.sendCommand({ type: "worship:song-archive", payload: { id: songId }, timestamp: Date.now() });
+      // Also through the file the app checks, for a Dock (in OBS) whose live messages don't reach it.
+      void postWorshipDockSongArchiveRequest([...removedSongIdsRef.current]).catch(() => undefined);
       // The app removes it from the library; this copy only matters when the dock shares the app's storage.
       await archiveSong(songId).catch((err) => console.warn("[DockWorshipTab] local archive failed:", err));
       setSongs((current) => {
@@ -4514,9 +4540,10 @@ function DockWorshipTab({
             overflow: "hidden",
           }}
         >
-          {/* Song Browser (when no song selected) */}
-      {!selectedSong ? (
-            <>
+          {/* Song Browser (when no song selected; always beside the slides on a wide dock) */}
+          <div className={`dock-wide-split${wideLayout ? "" : " dock-wide-split--off"}`}>
+          {!selectedSong || wideLayout ? (
+            <div className="dock-wide-split__list">
               {searchPlacement !== "bottom" && renderSongSearchPanel()}
 
               <section className="dock-console-panel dock-console-panel--workspace dock-worship-workspace" data-toolbar-collapsed={toolbarCollapsed || undefined}>
@@ -4543,7 +4570,7 @@ function DockWorshipTab({
                       return (
                         <div
                           key={song.id}
-                          className={`dock-card dock-card--console dock-song-card${isLocked ? " dock-song-card--locked" : ""}`}
+                          className={`dock-card dock-card--console dock-song-card${isLocked ? " dock-song-card--locked" : ""}${selectedSong?.id === song.id ? " dock-song-card--selected" : ""}`}
                           onContextMenu={(event) => {
                             if (isLocked) return;
                             event.preventDefault();
@@ -4657,6 +4684,7 @@ function DockWorshipTab({
                 )}
                 {songContextMenu && (
                   <div
+                    ref={(el) => fitPopover(el)}
                     className="dock-bible-context-menu"
                     style={{
                       position: "fixed",
@@ -4769,9 +4797,10 @@ function DockWorshipTab({
                   {renderSongSearchPanel()}
                 </DockBottomSearchPanel>
               )}
-            </>
-          ) : (
-            <>
+            </div>
+          ) : null}
+          {selectedSong ? (
+            <div className="dock-wide-split__detail">
               {/* Song Summary Header */}
               <section className="dock-console-panel dock-console-panel--toolbar dock-worship-summary">
                 <div className="dock-worship-summary__header">
@@ -5134,6 +5163,7 @@ function DockWorshipTab({
                 )}
                 {slideContextMenu && (
                   <div
+                    ref={(el) => fitPopover(el)}
                     className="dock-bible-context-menu"
                     style={{
                       position: "fixed",
@@ -5419,8 +5449,14 @@ function DockWorshipTab({
                   </div>
                 </section>
               )}
-            </>
-          )}
+            </div>
+          ) : wideLayout ? (
+            <div className="dock-wide-split__detail dock-wide-split__placeholder">
+              <Icon name="queue_music" size={20} />
+              <span>{t("worship.pickSongWide", "Pick a song on the left to show its slides here.")}</span>
+            </div>
+          ) : null}
+          </div>
 
           {songEditor && (
             <DockLyricsEditorDialog
@@ -5657,7 +5693,7 @@ function DockWorshipTab({
 
       {showDeletedSectionsPopover && createPortal(
         <div
-          ref={deletedSectionsPopoverRef}
+          ref={(el) => { deletedSectionsPopoverRef.current = el; fitPopover(el); }}
           className="dock-worship-history__popover"
           role="dialog"
           aria-label={t("worship.deletedSlides")}

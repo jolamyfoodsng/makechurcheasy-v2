@@ -38,7 +38,7 @@
   flex-direction: column;
   border: 1px solid var(--dock-border);
   border-radius: 3px;
-  background: var(--dock-surface, #1e1e24);
+  background: var(--dock-surface, var(--surface));
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
   color: var(--dock-text);
   font-size: 11px;
@@ -121,7 +121,7 @@
   cursor: pointer;
 }
 .dss__item { display: flex; align-items: center; border-radius: 3px; }
-.dss__item.is-active { background: rgba(255, 255, 255, 0.08); }
+.dss__item.is-active { background: var(--dock-surface-hover); }
 .dss__item .dss__row { flex: 1; min-width: 0; }
 .dss__row.is-selected { color: var(--dock-accent); font-weight: 700; }
 .dss__check { display: inline-flex; flex: none; width: 12px; }

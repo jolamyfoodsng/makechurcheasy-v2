@@ -702,9 +702,9 @@ function BackgroundSettings({ cd, onUpdate }: { cd: CountdownConfig; onUpdate: (
 
       {/* ── Upload error toast ───────────────────────────────────────── */}
       {uploadError && (
-        <div style={{ padding: "8px 10px", borderRadius: 6, background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.3)", color: "#ef4444", fontSize: 11, marginBottom: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ padding: "8px 10px", borderRadius: 6, background: "var(--error-bg)", border: "1px solid var(--error-border)", color: "var(--error)", fontSize: 11, marginBottom: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span>{uploadError}</span>
-          <button onClick={() => setUploadError(null)} style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", fontSize: 14 }}>×</button>
+          <button onClick={() => setUploadError(null)} style={{ background: "none", border: "none", color: "var(--error)", cursor: "pointer", fontSize: 14 }}>×</button>
         </div>
       )}
 
@@ -1005,18 +1005,18 @@ function CountdownDesignsView({ showPicker, setShowPicker }: { showPicker: boole
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 20px", borderBottom: "1px solid var(--border)", background: "var(--surface)", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <Timer size={18} style={{ color: "var(--accent-blue)" }} />
-            <span style={{ fontSize: 16, fontWeight: 700, color: "#ffffff" }}>Countdowns</span>
+            <span style={{ fontSize: 16, fontWeight: 700, color: "var(--text-primary)" }}>Countdowns</span>
           </div>
           {active && (
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <button onClick={timer.isRunning ? timer.pause : timer.start}
-                style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, fontSize: 13, fontWeight: 600, border: "none", cursor: "pointer", background: timer.isRunning ? "rgba(234, 179, 8, 0.2)" : "rgba(34, 197, 94, 0.2)", color: timer.isRunning ? "#facc15" : "#4ade80" }}>
+                style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, fontSize: 13, fontWeight: 600, border: "none", cursor: "pointer", background: timer.isRunning ? "var(--warning-bg)" : "var(--success-bg)", color: timer.isRunning ? "var(--warning)" : "var(--success)" }}>
                 {timer.isRunning ? <><Pause size={14} /> Pause</> : <><Play size={14} /> Play</>}
               </button>
-              <button onClick={timer.reset} style={{ padding: 7, borderRadius: 8, background: "transparent", border: "1px solid var(--border)", color: "#d4d4d8", cursor: "pointer" }} title="Reset">
+              <button onClick={timer.reset} style={{ padding: 7, borderRadius: 8, background: "transparent", border: "1px solid var(--border)", color: "var(--text-secondary)", cursor: "pointer" }} title="Reset">
                 <RotateCcw size={14} />
               </button>
-              <div style={{ width: 1, height: 22, background: "rgba(255, 255, 255, 0.12)" }} />
+              <div style={{ width: 1, height: 22, background: "var(--border)" }} />
               <button onClick={() => handleUpdate({})}
                 style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, fontSize: 13, fontWeight: 600, background: "var(--surface-raised)", color: "var(--text-primary)", border: "1px solid var(--border)", cursor: "pointer" }}>
                 <Save size={14} /> Save
@@ -1036,14 +1036,14 @@ function CountdownDesignsView({ showPicker, setShowPicker }: { showPicker: boole
               <CountdownPreview cd={active} timer={timer} />
               <div style={{ marginTop: 12, textAlign: "center" }}>
                 <input value={active.title} onChange={(e) => handleUpdate({ title: e.target.value })}
-                  style={{ background: "transparent", border: "none", fontSize: 15, fontWeight: 600, color: "#ffffff", textAlign: "center", width: "100%", outline: "none" }}
+                  style={{ background: "transparent", border: "none", fontSize: 15, fontWeight: 600, color: "var(--text-primary)", textAlign: "center", width: "100%", outline: "none" }}
                   placeholder="Countdown title..." />
               </div>
             </div>
           ) : (
             <div style={{ textAlign: "center" }}>
               <Clock size={48} style={{ color: "var(--text-disabled)", margin: "0 auto 12px" }} />
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: "#ffffff", marginBottom: 6 }}>No countdown selected</h2>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)", marginBottom: 6 }}>No countdown selected</h2>
               <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 16 }}>Create a countdown to get started</p>
               <button onClick={() => setShowPicker(true)}
                 style={{ padding: "10px 24px", background: "var(--primary)", color: "#fff", borderRadius: 8, fontSize: 14, fontWeight: 600, border: "none", cursor: "pointer" }}>
@@ -1201,7 +1201,7 @@ export default function CountdownsPage() {
     cursor: "pointer",
     fontSize: 13,
     fontWeight: 650,
-    color: active ? "#fff" : "#a1a1aa",
+    color: active ? "#fff" : "var(--text-muted)",
     background: active ? "var(--primary)" : "transparent",
   });
 

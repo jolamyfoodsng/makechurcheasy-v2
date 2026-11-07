@@ -8,6 +8,17 @@ import {
   NowPaymentsError,
 } from "@/lib/nowPayments";
 import { rateLimit } from "@/lib/rateLimit";
+import { paymentDetailsFromIntent, reportPaymentToTelegram } from "@/lib/paymentTelegramNotifications";
+
+function reportFailure(intent: Record<string, any>, reference: string, failureReason: string) {
+  reportPaymentToTelegram(paymentDetailsFromIntent(intent, {
+    outcome: "failed",
+    provider: "nowpayments",
+    reference,
+    failureReason,
+    source: "NOWPayments status check",
+  }));
+}
 
 const FINAL_FAILURE_STATUSES = new Set([
   "failed",
@@ -81,6 +92,7 @@ export async function GET(req: NextRequest) {
         { _id: reference, userId, status: "PENDING" },
         { $set: { status: "FAILED", failureReason: "Payment invoice expired.", updatedAt: new Date().toISOString() } },
       );
+      reportFailure(intent, reference, "Payment invoice expired.");
       return failureResponse(reference, "The crypto payment invoice expired. Please start again.");
     }
     if (!intent.providerPaymentId) {
@@ -115,6 +127,7 @@ export async function GET(req: NextRequest) {
         { _id: reference, userId, status: "PENDING" },
         { $set: { status: "FAILED", failureReason: `NOWPayments payment ${providerStatus.replaceAll("_", " ")}.`, updatedAt: now } },
       );
+      reportFailure(intent, reference, `NOWPayments payment ${providerStatus.replaceAll("_", " ")}.`);
       return failureResponse(reference, `NOWPayments payment ${providerStatus.replaceAll("_", " ")}.`);
     }
     if (providerStatus !== "finished") return pendingResponse(reference);
@@ -124,6 +137,7 @@ export async function GET(req: NextRequest) {
         { _id: reference, userId, status: "PENDING" },
         { $set: { status: "FAILED", failureReason: "Payment amount mismatch.", updatedAt: now } },
       );
+      reportFailure(intent, reference, "Payment amount mismatch.");
       return failureResponse(reference, "Payment amount could not be verified.", 502);
     }
     if (
@@ -134,6 +148,7 @@ export async function GET(req: NextRequest) {
         { _id: reference, userId, status: "PENDING" },
         { $set: { status: "FAILED", failureReason: "Payment currency mismatch.", updatedAt: now } },
       );
+      reportFailure(intent, reference, "Payment currency mismatch.");
       return failureResponse(reference, "Payment currency could not be verified.", 502);
     }
 

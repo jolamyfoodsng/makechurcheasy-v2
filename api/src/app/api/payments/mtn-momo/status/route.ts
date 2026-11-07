@@ -4,6 +4,17 @@ import { getAuthUserFromRequest } from "@/lib/auth";
 import { getMtnMomoRequestStatus, MtnMomoError } from "@/lib/mtnMomo";
 import { completeMtnMomoPayment } from "@/lib/completeMtnMomoPayment";
 import { rateLimit } from "@/lib/rateLimit";
+import { paymentDetailsFromIntent, reportPaymentToTelegram } from "@/lib/paymentTelegramNotifications";
+
+function reportFailure(intent: Record<string, any>, reference: string, failureReason: string) {
+  reportPaymentToTelegram(paymentDetailsFromIntent(intent, {
+    outcome: "failed",
+    provider: "mtn_momo",
+    reference,
+    failureReason,
+    source: "MTN MoMo status check",
+  }));
+}
 
 const limiter = rateLimit({ windowMs: 60_000, max: 60 });
 
@@ -68,6 +79,7 @@ export async function GET(req: NextRequest) {
         { _id: reference, userId, status: "PENDING" },
         { $set: { status: "FAILED", failureReason: "Payment request expired.", updatedAt: new Date().toISOString() } },
       );
+      reportFailure(intent, reference, "Payment request expired.");
       return NextResponse.json({
         success: false,
         paymentMethod: "mtn_momo",
@@ -98,6 +110,7 @@ export async function GET(req: NextRequest) {
           },
         },
       );
+      reportFailure(intent, reference, provider.reason || "MTN MoMo declined the payment.");
       return NextResponse.json({
         success: false,
         paymentMethod: "mtn_momo",
@@ -112,6 +125,7 @@ export async function GET(req: NextRequest) {
         { _id: reference, userId, status: "PENDING" },
         { $set: { status: "FAILED", failureReason: "Payment amount mismatch.", updatedAt: new Date().toISOString() } },
       );
+      reportFailure(intent, reference, "Payment amount mismatch.");
       return NextResponse.json({ error: "Payment amount could not be verified" }, { status: 502 });
     }
     if (provider.currency && String(provider.currency).toUpperCase() !== String(intent.currency).toUpperCase()) {
@@ -119,6 +133,7 @@ export async function GET(req: NextRequest) {
         { _id: reference, userId, status: "PENDING" },
         { $set: { status: "FAILED", failureReason: "Payment currency mismatch.", updatedAt: new Date().toISOString() } },
       );
+      reportFailure(intent, reference, "Payment currency mismatch.");
       return NextResponse.json({ error: "Payment currency could not be verified" }, { status: 502 });
     }
 

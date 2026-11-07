@@ -41,7 +41,8 @@ interface WorldBank {
 /** Well-known banks outside the Nigerian list, and Nigerian ones the list does not carry. */
 export const WORLD_BANKS: readonly WorldBank[] = [
   { name: "Wema Bank", domain: "wemabank.com", aliases: ["wema", "alat"] },
-  { name: "OPay", domain: "opay-nigeria.com", aliases: ["opay", "o pay"] },
+  // opayweb.com is OPay's own site; opay-nigeria.com has no site icon (the lookup returned 404).
+  { name: "OPay", domain: "opayweb.com", aliases: ["opay", "o pay", "opay digital services", "paycom"] },
   { name: "PalmPay", domain: "palmpay.com", aliases: ["palmpay", "palm pay"] },
   { name: "Paga", domain: "paga.com" },
   { name: "Flutterwave", domain: "flutterwave.com" },
@@ -141,6 +142,30 @@ export function searchBanks(text: string, limit = 6): BankSuggestion[] {
     })
     .slice(0, limit)
     .map(({ score: _score, ...suggestion }) => suggestion);
+}
+
+/**
+ * The logo to put on the graphic for a picked bank.
+ *
+ * First the picture is downloaded and saved with the church's own files (works offline in OBS). The site
+ * icon service used for banks outside the Nigerian list does not allow downloads from other web pages,
+ * so for those the download fails; the logo's web address is used instead (an <img> may load it), as
+ * long as `canLoad` confirms the picture shows.
+ */
+export async function resolveBankLogo(
+  suggestion: BankSuggestion,
+  save: (file: File) => Promise<string>,
+  options: { fetchImpl?: typeof fetch; canLoad?: (url: string) => Promise<boolean> } = {},
+): Promise<{ url: string; savedLocally: boolean }> {
+  try {
+    return { url: await save(await fetchBankLogoFile(suggestion, options.fetchImpl)), savedLocally: true };
+  } catch (error) {
+    const remote = suggestion.logoUrl;
+    if (/^https:\/\//i.test(remote) && (!options.canLoad || (await options.canLoad(remote)))) {
+      return { url: remote, savedLocally: false };
+    }
+    throw error;
+  }
 }
 
 /** Download a suggestion's logo as a file, so it can be saved with the church's own files. */

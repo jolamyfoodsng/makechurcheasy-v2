@@ -134,7 +134,7 @@
 .local-dev-plan-switcher__gallery-btn:hover {
     background: rgba(99, 102, 241, 0.22);
     border-color: rgba(99, 102, 241, 0.6);
-    color: #fff;
+    color: var(--text-primary);
     transform: translateY(-1px);
 }
 

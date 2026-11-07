@@ -185,8 +185,29 @@ function entryForTheme(catalog: BroadcastGraphicsCatalog | null, themeId: string
   return catalog.graphics.find((g) => catalogThemeId(g) === themeId);
 }
 
+/**
+ * Bundled lower thirds that moved to the Tickers section, hidden like a retired ticker even
+ * before the admin catalog arrives. "lt-stream-ticker" (News Ticker Bar) is now "ticker-news-bar".
+ */
+const RETIRED_GRAPHIC_THEME_IDS: ReadonlySet<string> = new Set(["lt-stream-ticker"]);
+
+/**
+ * Uploaded tickers that are copies of a bundled one (the admin page's example file is the
+ * Sunrise ticker). They are not listed twice; a saved pick of the copy uses the bundled ticker.
+ */
+const DUPLICATE_PACKAGE_TICKERS: Readonly<Record<string, string>> = {
+  "starter-sunrise-ticker": "ticker-sunrise",
+};
+
+/** The bundled ticker an uploaded copy stands for (its package or theme id), if any. */
+export function bundledTickerForPackage(id: string): string | undefined {
+  const packageId = String(id || "").replace(/^ticker-pkg-/, "");
+  return DUPLICATE_PACKAGE_TICKERS[packageId];
+}
+
 /** Whether a template (bundled theme id or package theme id) is listed and usable. */
 export function getGraphicAvailability(themeId: string, catalog = getBroadcastGraphicsCatalog()): GraphicAvailability {
+  if (RETIRED_GRAPHIC_THEME_IDS.has(themeId)) return { visible: false, usable: false, reason: null, tiers: { ...ALL_TIERS } };
   const entry = entryForTheme(catalog, themeId);
   if (!entry) {
     // Unknown to the admin catalog (or no catalog yet): bundled graphics stay available.
@@ -250,6 +271,7 @@ export function getPackageTickers(catalog = getBroadcastGraphicsCatalog()): Tick
   if (!catalog) return [];
   return catalog.graphics
     .filter((g) => g.kind === "ticker" && g.source === "package" && g.package && g.status !== "hidden")
+    .filter((g) => !bundledTickerForPackage(g.graphicId))
     .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
     .map((g) => tickerPackageToTheme(g.graphicId, g.package as TickerPackage));
 }

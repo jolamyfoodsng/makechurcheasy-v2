@@ -10,7 +10,7 @@
 
 .dock-scene-route-send-btn--routed {
   border-color: rgba(245, 158, 11, 0.6) !important;
-  background: color-mix(in srgb, var(--dock-accent, #2563eb) 85%, #d97706 15%) !important;
+  background: color-mix(in srgb, var(--dock-accent, var(--primary)) 85%, #d97706 15%) !important;
 }
 
 .dock-scene-route-send-btn__route-badge {

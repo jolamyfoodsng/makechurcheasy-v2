@@ -99,9 +99,9 @@ const btn: React.CSSProperties = {
   minHeight: 28,
   padding: "4px 10px",
   borderRadius: 7,
-  border: "1px solid var(--dock-border, rgba(255,255,255,0.12))",
-  background: "var(--dock-surface, rgba(255,255,255,0.05))",
-  color: "var(--dock-text, #f8fafc)",
+  border: "1px solid var(--dock-border, var(--border))",
+  background: "var(--dock-surface, var(--surface))",
+  color: "var(--dock-text, var(--text-primary))",
   fontSize: 11.5,
   fontWeight: 600,
   cursor: "pointer",
@@ -357,7 +357,7 @@ export default function DockRundownTab({
   const st = live && live.rundownId === rundown.id ? live : null;
   const timer = st?.timer ?? null;
   const level = timer ? warnLevel(timer.kind, currentValue(st!, now), timer.durationSeconds, timer.warnYellowSeconds, timer.warnRedSeconds) : "green";
-  const color = !timer || timer.kind === "timeofday" ? "var(--dock-text, #f8fafc)" : WARN_COLORS[level];
+  const color = !timer || timer.kind === "timeofday" ? "var(--dock-text, var(--text-primary))" : WARN_COLORS[level];
   const fraction = timer && st ? progressFraction(timer.kind, currentValue(st, now), timer.durationSeconds) : 0;
   const canAdjust = !!timer && timer.kind !== "timeofday";
 
@@ -370,7 +370,7 @@ export default function DockRundownTab({
           value={rundown.id}
           disabled={running}
           onChange={(e) => chooseRundown(e.target.value)}
-          style={{ flex: 1, minWidth: 0, minHeight: 28, borderRadius: 7, border: "1px solid var(--dock-border, rgba(255,255,255,0.12))", background: "var(--dock-input-bg, rgba(0,0,0,0.3))", color: "var(--dock-text)", fontSize: 12, padding: "0 8px" }}
+          style={{ flex: 1, minWidth: 0, minHeight: 28, borderRadius: 7, border: "1px solid var(--dock-border, var(--border))", background: "var(--dock-input-bg, var(--input-bg))", color: "var(--dock-text)", fontSize: 12, padding: "0 8px" }}
         >
           {rundowns.map((r) => <option key={r.id} value={r.id}>{r.name || "Untitled"}</option>)}
         </select>
@@ -378,7 +378,7 @@ export default function DockRundownTab({
       </div>
 
       {/* Big timer */}
-      <div style={{ borderRadius: 10, border: "1px solid var(--dock-border, rgba(255,255,255,0.1))", background: "var(--dock-surface, rgba(255,255,255,0.04))", padding: "10px 12px", display: "flex", flexDirection: "column", gap: 6, alignItems: "center", textAlign: "center" }}>
+      <div style={{ borderRadius: 10, border: "1px solid var(--dock-border, var(--border))", background: "var(--dock-surface, var(--surface))", padding: "10px 12px", display: "flex", flexDirection: "column", gap: 6, alignItems: "center", textAlign: "center" }}>
         <div style={{ fontSize: 11, color: "var(--dock-text-dim)", minHeight: 14 }}>
           {timer ? `${timer.name || "Timer"}${timer.speaker ? ` — ${timer.speaker}` : ""}` : "Ready"}
           {st && st.status === "paused" ? " · Paused" : ""}
@@ -399,7 +399,7 @@ export default function DockRundownTab({
       {/* Transport */}
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
         <button type="button" style={btn} aria-label="Previous timer" title="Previous timer" onClick={() => step(-1)} disabled={!st || st.index === 0}><Icon name="skip_previous" size={14} /></button>
-        <button type="button" style={{ ...btn, flex: 1, minWidth: 80, background: running ? "rgba(234,179,8,0.18)" : "var(--dock-accent, #3b82f6)", borderColor: "transparent", color: "#fff" }} onClick={togglePlay}>
+        <button type="button" style={{ ...btn, flex: 1, minWidth: 80, background: running ? "rgba(234,179,8,0.18)" : "var(--dock-accent, var(--primary))", borderColor: "transparent", color: "#fff" }} onClick={togglePlay}>
           <Icon name={running ? "pause" : "play_arrow"} size={15} /> {running ? "Pause" : st?.status === "paused" ? "Resume" : "Start"}
         </button>
         <button type="button" style={btn} aria-label="Next timer" title="Next timer" onClick={() => step(1)} disabled={!st || st.index >= st.total - 1}><Icon name="skip_next" size={14} /></button>
@@ -440,7 +440,7 @@ export default function DockRundownTab({
             <div
               key={t.id}
               onClick={() => jump(i, false)}
-              style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", borderRadius: 8, cursor: "pointer", border: `1px solid ${isCurrent ? (running ? "rgba(239,68,68,0.6)" : "var(--dock-accent, #3b82f6)") : "var(--dock-border, rgba(255,255,255,0.08))"}`, background: isCurrent && running ? "rgba(239,68,68,0.1)" : "var(--dock-surface, rgba(255,255,255,0.03))" }}
+              style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", borderRadius: 8, cursor: "pointer", border: `1px solid ${isCurrent ? (running ? "rgba(239,68,68,0.6)" : "var(--dock-accent, var(--primary))") : "var(--dock-border, var(--border))"}`, background: isCurrent && running ? "rgba(239,68,68,0.1)" : "var(--dock-surface, var(--surface))" }}
             >
               <span style={{ width: 18, fontSize: 10.5, color: "var(--dock-text-dim)", textAlign: "center" }}>{i + 1}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -476,7 +476,7 @@ export default function DockRundownTab({
             onKeyDown={(e) => { if (e.key === "Enter" && customText.trim()) { showMessage(createMessage({ text: customText.trim() })); setCustomText(""); } }}
             placeholder="Type a message…"
             aria-label="Custom message"
-            style={{ flex: 1, minWidth: 0, minHeight: 28, borderRadius: 7, border: "1px solid var(--dock-border, rgba(255,255,255,0.12))", background: "var(--dock-input-bg, rgba(0,0,0,0.3))", color: "var(--dock-text)", fontSize: 12, padding: "0 8px" }}
+            style={{ flex: 1, minWidth: 0, minHeight: 28, borderRadius: 7, border: "1px solid var(--dock-border, var(--border))", background: "var(--dock-input-bg, var(--input-bg))", color: "var(--dock-text)", fontSize: 12, padding: "0 8px" }}
           />
           <button type="button" style={btn} disabled={!customText.trim()} onClick={() => { showMessage(createMessage({ text: customText.trim() })); setCustomText(""); }}>Show</button>
           <button type="button" style={btn} disabled={!st?.message} onClick={() => showMessage(null)}>Hide</button>

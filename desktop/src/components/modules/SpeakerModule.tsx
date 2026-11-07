@@ -1685,12 +1685,12 @@ export function SpeakerModule({
               <kbd style={{
                 marginLeft: "auto",
                 padding: "1px 5px",
-                background: "rgba(255,255,255,0.08)",
+                background: "var(--surface-raised)",
                 border: "1px solid var(--border)",
                 borderRadius: 3,
                 fontSize: 9,
                 fontWeight: 700,
-                color: "rgba(255,255,255,0.45)",
+                color: "var(--text-muted)",
                 lineHeight: 1.4,
                 fontFamily: "inherit",
               }}>⌘⇧C</kbd>

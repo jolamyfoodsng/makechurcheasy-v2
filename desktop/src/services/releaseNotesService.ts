@@ -260,7 +260,7 @@ export function stripReleaseBoilerplate(notes?: string | null): string {
     if (heading) {
       const title = heading[1].trim().toLowerCase();
       skipping =
-        title === "makechurcheasy" ||
+        /^makechurch(?:eazy|easy)$/.test(title) ||
         title === "downloads" ||
         title === "auto-update" ||
         title === "auto update";

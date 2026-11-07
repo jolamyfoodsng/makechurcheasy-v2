@@ -2923,7 +2923,7 @@ fn load_dock_data(name: String) -> Result<String, String> {
 
     let contents = fs::read_to_string(&path)
         .map_err(|e| format!("Failed to read dock data '{}': {}", safe, e))?;
-    if !safe.starts_with("dock-voice-bible-") && !safe.starts_with("dock-worship-song-save") {
+    if !safe.starts_with("dock-voice-bible-") && !safe.starts_with("dock-worship-song-") {
         println!(
             "[Tauri] Loaded dock data '{}' ({} bytes)",
             safe,

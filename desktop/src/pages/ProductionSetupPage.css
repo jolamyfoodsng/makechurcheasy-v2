@@ -63,28 +63,28 @@
   margin-bottom: 16px;
 }
 
-/* Numbered steps: one card each, two side by side (step 1 left, step 2 right). */
+/* Numbered steps: one list read top to bottom; each step's button sits on the right. */
 .setup-steps {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
 }
 
 .setup-step {
   display: flex;
-  gap: 12px;
+  align-items: flex-start;
+  gap: 16px;
   padding: 16px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface-raised);
   min-width: 0;
 }
 
-.setup-step--done {
-  border-color: color-mix(in srgb, var(--success) 45%, var(--border));
+.setup-step + .setup-step {
+  border-top: 1px solid var(--border-subtle);
 }
 
 .setup-step__mark {
@@ -92,13 +92,14 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 24px;
-  height: 24px;
-  border: 1px solid var(--border-strong);
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  font-size: 12px;
+  background: var(--primary-soft);
+  border: 1px solid var(--primary-soft-border);
+  font-size: 13px;
   font-weight: 700;
-  color: var(--text-secondary);
+  color: var(--accent-blue);
 }
 
 .setup-step--done .setup-step__mark {
@@ -110,10 +111,11 @@
 .setup-step__body {
   flex: 1 1 auto;
   min-width: 0;
+  max-width: 640px;
 }
 
 .setup-step__title {
-  margin: 2px 0 4px;
+  margin: 3px 0 4px;
   font-size: 14px;
   font-weight: 700;
   color: var(--text-primary);
@@ -126,9 +128,31 @@
   color: var(--text-secondary);
 }
 
+.setup-step__body > :last-child {
+  margin-bottom: 0;
+}
+
 .setup-step__body strong {
   color: var(--text-primary);
   font-weight: 600;
+}
+
+.setup-step__action {
+  flex-shrink: 0;
+  align-self: center;
+  margin-left: auto;
+}
+
+/* Buttons on this page are full size, so the next action is obvious. */
+.setup-page .app-btn {
+  min-height: 36px;
+  padding: 0 16px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.setup-step__action .app-btn {
+  min-width: 160px;
 }
 
 .setup-actions {
@@ -182,6 +206,7 @@
 .setup-link {
   display: flex;
   gap: 8px;
+  max-width: 520px;
   margin-bottom: 8px;
 }
 
@@ -197,8 +222,16 @@
 }
 
 @media (max-width: 760px) {
-  .setup-choice,
-  .setup-steps {
+  .setup-choice {
     grid-template-columns: 1fr;
+  }
+
+  .setup-step {
+    flex-wrap: wrap;
+  }
+
+  .setup-step__action {
+    flex-basis: 100%;
+    padding-left: 44px;
   }
 }

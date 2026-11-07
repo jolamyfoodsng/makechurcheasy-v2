@@ -2,8 +2,12 @@
  * LayerPanel — the right-hand panel of the Theme Editor for layer themes:
  * the layers list (top = drawn last) and an inspector for the selected layer.
  */
-import { useRef, useState } from "react";
-import { Eye, EyeOff, Lock, Unlock } from "../../../components/icons/NativeIcons";
+import { useRef, useState, type ReactNode } from "react";
+import {
+  AlignCenter, AlignCenterHorizontal, AlignCenterVertical, AlignEndHorizontal, AlignEndVertical, AlignLeft, AlignRight,
+  AlignStartHorizontal, AlignStartVertical, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, AlignVerticalJustifyStart,
+  Eye, EyeOff, Italic, Lock, Underline, Unlock,
+} from "../../../components/icons/NativeIcons";
 import "./layerEditor.css";
 import type { AnimationPreset, LayerAnimation, LayerStyle, LayerType, SegmentStyle, ThemeLayer, ThemeLayout, WarnLevel } from "../types";
 import {
@@ -94,11 +98,24 @@ interface Props {
   missingMediaIds?: ReadonlySet<string>;
   /** Ask the person to locate a moved file again. */
   onRelinkMedia?: (id: string) => Promise<void> | void;
+  /** Every selected layer (several when Shift / Ctrl / Cmd-clicked); `selectedId` is the one shown here. */
+  selectedIds?: string[];
+  /** Shift / Ctrl / Cmd-click in the layer list: add to or take out of the selection. */
+  onToggleSelect?: (id: string) => void;
+  /** "Auto": centre what is inside the selected box or bar. */
+  onAutoCentre?: () => void;
+  /** Right-click on a layer in the list (screen coordinates). */
+  onLayerMenu?: (id: string, clientX: number, clientY: number) => void;
 }
 
-type BgKind = "colour" | "image" | "video" | "pattern";
+const isMacLike = typeof navigator !== "undefined" && /mac/i.test(navigator.platform || navigator.userAgent);
 
-const BG_KIND_LABEL: Record<BgKind, string> = { colour: "Colour", image: "Picture", video: "Video", pattern: "Pattern" };
+type BgKind = "off" | "colour" | "image" | "video" | "pattern";
+
+const BG_KIND_LABEL: Record<BgKind, string> = { off: "Off", colour: "Colour", image: "Picture", video: "Video", pattern: "Pattern" };
+/** "Off" keeps the layer but makes it see-through (a transparent fill), so it can be switched back on. */
+const BG_OFF_FILL = "transparent";
+const isNoFill = (fill: string | undefined) => !fill || fill === BG_OFF_FILL || fill === "none";
 
 /** The theme's own background: the first big box that is not the animated pattern or glow. */
 export function findThemeBackground(layout: ThemeLayout): ThemeLayer | null {
@@ -126,8 +143,10 @@ function BoxBackground({ layer, onStyle, mediaItems, mediaPreviewSrc, onImportMe
 }) {
   const s = layer.style;
   const isPattern = Boolean(s.src) && !s.videoSrc && BACKGROUND_PATTERNS.some((p) => p.src === s.src);
-  const kind: BgKind = s.videoSrc ? "video" : isPattern ? "pattern" : s.src ? "image" : "colour";
+  const kind: BgKind = s.videoSrc ? "video" : isPattern ? "pattern" : s.src ? "image" : !s.gradient && isNoFill(s.fill) ? "off" : "colour";
   const [picking, setPicking] = useState<BgKind | null>(null);
+  // The colour before "Off", so choosing Colour again brings it back.
+  const lastFill = useRef<string | undefined>(isNoFill(s.fill) ? undefined : s.fill);
   const [importing, setImporting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const shown: BgKind = picking ?? kind;
@@ -159,22 +178,37 @@ function BoxBackground({ layer, onStyle, mediaItems, mediaPreviewSrc, onImportMe
   return (
     <>
       <div className="le-chips">
-        {(["colour", "image", "video", "pattern"] as BgKind[]).map((k) => (
+        {(["off", "colour", "image", "video", "pattern"] as BgKind[]).map((k) => (
           <button
             key={k}
             type="button"
             className={`le-chip${shown === k ? " le-chip--on" : ""}`}
+            title={k === "off" ? "No background: see-through (shows what is behind it in OBS)" : undefined}
             onClick={() => {
               setPicking(k === kind ? null : k);
-              if (k === "colour") { onStyle({ src: undefined, videoSrc: undefined, dim: undefined }); setPicking(null); }
+              if (k === "off") {
+                if (!isNoFill(s.fill)) lastFill.current = s.fill;
+                onStyle({ fill: BG_OFF_FILL, gradient: undefined, src: undefined, videoSrc: undefined, dim: undefined });
+                setPicking(null);
+              }
+              if (k === "colour") {
+                onStyle({ src: undefined, videoSrc: undefined, dim: undefined, ...(isNoFill(s.fill) && !s.gradient ? { fill: lastFill.current ?? "#000000" } : {}) });
+                setPicking(null);
+              }
             }}
           >
             {BG_KIND_LABEL[k]}
           </button>
         ))}
       </div>
-      <ColorField label={shown === "colour" ? "Fill" : "Colour under it"} value={s.gradient ? undefined : s.fill} allowNone onChange={(v) => onStyle({ fill: v, gradient: undefined })} />
-      {s.gradient && <p className="le-hint">This layer uses a gradient. Picking a fill colour replaces it.</p>}
+      {shown === "off" ? (
+        <p className="le-hint">No background. It is see-through, so in OBS or vMix whatever is behind it shows.</p>
+      ) : (
+        <>
+          <ColorField label={shown === "colour" ? "Colour" : "Colour under it"} value={s.gradient || isNoFill(s.fill) ? undefined : s.fill} allowNone onChange={(v) => { if (v && !isNoFill(v)) lastFill.current = v; onStyle({ fill: v, gradient: undefined }); }} />
+          {s.gradient && <p className="le-hint">This layer uses a gradient. Picking a fill colour replaces it.</p>}
+        </>
+      )}
       {shown === "pattern" && (
         <>
           <div className="le-field"><span>Patterns</span></div>
@@ -306,6 +340,16 @@ function withAlphaOf(prev: string | undefined, hex: string): string {
   return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${m[1]})`;
 }
 
+/** A labelled group of icon buttons (e.g. "Align": left / centre / right). */
+function IconGroup({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="le-iconbar__item">
+      <span className="le-iconbar__label">{label}</span>
+      <div className="le-iconbar__group" role="group" aria-label={label}>{children}</div>
+    </div>
+  );
+}
+
 function ColorField({ label, value, onChange, allowNone }: { label: string; value: string | undefined; onChange: (v: string | undefined) => void; allowNone?: boolean }) {
   return (
     <div className="le-field le-field--color">
@@ -426,7 +470,7 @@ function TimerBoxControls({ s, onStyle }: { s: LayerStyle; onStyle: StylePatch }
   );
 }
 
-export default function LayerPanel({ layout, selectedId, onSelect, onChange, mediaItems = [], mediaPreviewSrc = (item) => item.url || "", onImportMedia, onAlign, onPickMedia, missingMediaIds, onRelinkMedia }: Props) {
+export default function LayerPanel({ layout, selectedId, onSelect, onChange, mediaItems = [], mediaPreviewSrc = (item) => item.url || "", onImportMedia, onAlign, onPickMedia, missingMediaIds, onRelinkMedia, selectedIds, onToggleSelect, onAutoCentre, onLayerMenu }: Props) {
   const isCountdown = layout.kind === "countdown";
   const roles = isCountdown ? COUNTDOWN_TEXT_ROLES : TEXT_ROLES;
   const fonts = isCountdown ? COUNTDOWN_FONTS : FONTS;
@@ -439,6 +483,56 @@ export default function LayerPanel({ layout, selectedId, onSelect, onChange, med
   const s = layer?.style ?? {};
   const role = layer?.type === "text" ? roleForContent(layer.content, roles) : "";
   const parentName = (id?: string) => layout.layers.find((l) => l.id === id)?.name;
+  // Advanced options stay closed until opened, and remember that while the editor is open.
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  // The bar colour last used per layer, so switching the bar off and on again brings it back.
+  const lastBar = useRef<Record<string, Pick<LayerStyle, "fill" | "gradient">>>({});
+  const hasTextBar = layer?.type === "text" && Boolean((s.fill && s.fill !== "transparent" && s.fill !== "none") || s.gradient);
+  const toggleTextBar = (on: boolean) => {
+    if (!layer) return;
+    if (on) {
+      const kept = lastBar.current[layer.id];
+      style(kept && (kept.fill || kept.gradient) ? kept : { fill: "rgba(0,0,0,0.6)", gradient: undefined });
+    } else {
+      lastBar.current[layer.id] = { fill: s.fill, gradient: s.gradient };
+      style({ fill: undefined, gradient: undefined });
+    }
+  };
+  // Quick "move it" buttons: snap the layer to a side or the middle of the screen (or of its box).
+  const positionBar = layer && onAlign && !layer.locked && !isBackdropLayer(layer) ? (
+    <>
+      <div className="le-subtitle">Position on screen</div>
+      <div className="le-iconbar" role="toolbar" aria-label="Position on screen">
+        <IconGroup label="Across">
+          {([["left", "Move to the left", AlignStartHorizontal], ["center", "Move to the centre", AlignCenterHorizontal], ["right", "Move to the right", AlignEndHorizontal]] as const).map(([how, label, Icon]) => (
+            <button key={how} type="button" className="le-iconbtn" title={label} aria-label={label} onClick={() => onAlign(how)}>
+              <Icon size={16} />
+            </button>
+          ))}
+        </IconGroup>
+        <IconGroup label="Up and down">
+          {([["top", "Move to the top", AlignStartVertical], ["middle", "Move to the middle", AlignCenterVertical], ["bottom", "Move to the bottom", AlignEndVertical]] as const).map(([how, label, Icon]) => (
+            <button key={how} type="button" className="le-iconbtn" title={label} aria-label={label} onClick={() => onAlign(how)}>
+              <Icon size={16} />
+            </button>
+          ))}
+        </IconGroup>
+        {onAutoCentre && (
+          <IconGroup label="Inside">
+            <button
+              type="button"
+              className="le-iconbtn le-iconbtn--wide"
+              title="Auto: centre what is inside this box or bar (or the selected layers inside the biggest one)"
+              aria-label="Auto-centre what is inside"
+              onClick={onAutoCentre}
+            >
+              Auto
+            </button>
+          </IconGroup>
+        )}
+      </div>
+    </>
+  ) : null;
   const heading = headingLayers(layout);
   const isHeadingLayer = (id: string) => heading.text.has(id) || heading.decor.has(id);
   /** Flag / unflag a layer as heading. The first flag also flags the auto-detected label text. */
@@ -460,7 +554,7 @@ export default function LayerPanel({ layout, selectedId, onSelect, onChange, med
       {themeBg && (
         <div className="le-section le-themebg">
           <span className="tc-inspector-section-title" style={{ margin: 0 }}>THEME BACKGROUND</span>
-          <p className="le-hint">What is behind the words: a colour, a picture, a video or a pattern.</p>
+          <p className="le-hint">What is behind the words: a colour, a picture, a video, a pattern, or Off for see-through.</p>
           <BoxBackground
             key={themeBg.id}
             layer={themeBg}
@@ -499,22 +593,22 @@ export default function LayerPanel({ layout, selectedId, onSelect, onChange, med
             )}
           </div>
         </div>
-        {hasHeading(layout) && (
+        <p className="le-hint">The parts this theme is made of: words, boxes, pictures and lines. Click one to change it; Shift, Ctrl or {isMacLike ? "⌘" : "Ctrl"}-click to pick several and move them together. Right-click for more (order, hide, lock, delete). The top of the list sits in front.</p>
+        {hasHeading(layout) && !isHeadingShown(layout) && (
+          // The heading can be hidden from the right-click menu; say so here so it is easy to bring back.
           <div className="le-heading-toggle">
-            <span>Heading (reference / label)</span>
-            <div className="le-chips">
-              <button type="button" className={`le-chip${isHeadingShown(layout) ? " le-chip--on" : ""}`} onClick={() => onChange({ ...layout, showHeading: undefined })}>Show</button>
-              <button type="button" className={`le-chip${!isHeadingShown(layout) ? " le-chip--on" : ""}`} onClick={() => onChange({ ...layout, showHeading: false })}>Hide</button>
-            </div>
+            <span>The heading (Bible reference, song part) is hidden.</span>
+            <button type="button" className="le-btn" onClick={() => onChange({ ...layout, showHeading: undefined })}>Show it</button>
           </div>
         )}
         <ul className="le-layers">
           {ordered.map((l) => (
             <li
               key={l.id}
-              className={`le-layer${l.id === selectedId ? " le-layer--selected" : ""}${l.hidden ? " le-layer--hidden" : ""}`}
+              className={`le-layer${l.id === selectedId || selectedIds?.includes(l.id) ? " le-layer--selected" : ""}${l.hidden ? " le-layer--hidden" : ""}`}
               style={{ paddingLeft: l.parentId ? 22 : 8 }}
-              onClick={() => onSelect(l.id)}
+              onClick={(e) => { if ((e.shiftKey || e.metaKey || e.ctrlKey) && onToggleSelect) onToggleSelect(l.id); else onSelect(l.id); }}
+              onContextMenu={onLayerMenu ? (e) => { e.preventDefault(); onLayerMenu(l.id, e.clientX, e.clientY); } : undefined}
             >
               <span className="le-layer-type">{TYPE_LABEL[l.type]}</span>
               <span className="le-layer-name">{l.name}{isHeadingLayer(l.id) && <span className="le-layer-tag" title="Part of the heading">H</span>}</span>
@@ -571,82 +665,30 @@ export default function LayerPanel({ layout, selectedId, onSelect, onChange, med
       ) : (
         <div className="le-section">
           <div className="tc-inspector-section-title">{TYPE_LABEL[layer.type].toUpperCase()} · {layer.name.toUpperCase()}</div>
-          <label className="le-field">
-            <span>Name</span>
-            <input className="tc-input" value={layer.name} onChange={(e) => set({ name: e.target.value })} />
-          </label>
-          {layer.parentId && <p className="le-hint">Inside “{parentName(layer.parentId)}”: positions are measured from its top-left corner.</p>}
-          {!isCountdown && layer.type !== "image" && !(layer.type === "text" && roleForContent(layer.content) === "verse") && (
-            <label className="le-check" title="Heading layers hide together when the heading is switched off, or when Worship / Notes send no label.">
-              <input type="checkbox" checked={isHeadingLayer(layer.id)} onChange={(e) => setHeading(layer.id, e.target.checked)} />
-              <span>Part of the heading</span>
-            </label>
+          {(selectedIds?.length ?? 0) > 1 && (
+            <p className="le-hint">{selectedIds!.length} layers selected. Drag any of them on the canvas to move them together. Auto centres them inside the biggest one. The settings below are for “{layer.name}”.</p>
           )}
 
+          {/* ── Quick changes: what people change most (words, colour, font, background) ── */}
           {layer.type === "text" && (
             <>
-              <label className="le-field">
-                <span>Shows</span>
-                <select
-                  className="tc-input tc-select"
-                  value={role}
-                  onChange={(e) => {
-                    const r = roles.find((x) => x.id === e.target.value);
-                    if (r) set({ content: r.content });
-                    else set({ content: layer.content && roleForContent(layer.content, roles) === "custom" ? layer.content : "Your text" });
-                  }}
-                >
-                  {roles.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
-                  <option value="custom">Fixed text (type it below)</option>
-                </select>
-              </label>
               {role === "custom" && (
                 <label className="le-field">
                   <span>Text</span>
                   <input className="tc-input" value={layer.content ?? ""} onChange={(e) => set({ content: e.target.value })} />
                 </label>
               )}
-            </>
-          )}
-
-          {isBackdropLayer(layer) ? (
-            <p className="le-hint">This is the theme background. It always fills the whole screen. Change it in Theme background above.</p>
-          ) : (
-            <>
-              <div className="le-subtitle">Position & size</div>
-              {onAlign && !layer.locked && (
-                <div className="le-align" role="group" aria-label="Align">
-                  {([["left", "Left"], ["center", "Center"], ["right", "Right"], ["top", "Top"], ["middle", "Middle"], ["bottom", "Bottom"]] as const).map(([how, label]) => (
-                    <button key={how} type="button" className="le-btn" title={`Align ${label.toLowerCase()}`} onClick={() => onAlign(how)}>{label}</button>
-                  ))}
-                </div>
-              )}
               <div className="le-grid-2">
-                <Num label="X" value={layer.x} onChange={(v) => set({ x: v })} />
-                <Num label="Y" value={layer.y} onChange={(v) => set({ y: v })} />
-                <Num label="Width" value={layer.w} min={1} onChange={(v) => set({ w: v })} />
-                {layer.h === "auto" ? (
-                  <label className="le-field"><span>Height</span><input className="tc-input" value="Fits text" disabled /></label>
-                ) : (
-                  <Num label="Height" value={layer.h} min={1} onChange={(v) => set({ h: v })} />
-                )}
+                <ColorField label="Text colour" value={s.color} onChange={(v) => style({ color: v })} />
+                <label className="le-field">
+                  <span>Font</span>
+                  <select className="tc-input tc-select" value={s.fontFamily ?? "Montserrat"} onChange={(e) => style({ fontFamily: e.target.value })}>
+                    {fonts.map((f) => <option key={f} value={f} style={{ fontFamily: f }}>{f}</option>)}
+                  </select>
+                </label>
               </div>
-            </>
-          )}
-          <Num label="Opacity (0–1)" value={layer.opacity ?? 1} step={0.05} min={0} max={1} onChange={(v) => set({ opacity: Math.min(1, Math.max(0, v)) })} />
-
-          {layer.type === "text" && (
-            <>
-              <div className="le-subtitle">Text</div>
-              <label className="le-field">
-                <span>Font</span>
-                <select className="tc-input tc-select" value={s.fontFamily ?? "Montserrat"} onChange={(e) => style({ fontFamily: e.target.value })}>
-                  {fonts.map((f) => <option key={f} value={f} style={{ fontFamily: f }}>{f}</option>)}
-                </select>
-              </label>
               <div className="le-grid-2">
                 <Num label="Size" value={s.fontSize} min={8} onChange={(v) => style({ fontSize: v })} />
-                <Num label="Smallest size" value={s.minFontSize} min={8} onChange={(v) => style({ minFontSize: v })} />
                 <label className="le-field">
                   <span>Weight</span>
                   <select className="tc-input tc-select" value={String(s.fontWeight ?? 400)} onChange={(e) => style({ fontWeight: Number(e.target.value) })}>
@@ -654,28 +696,39 @@ export default function LayerPanel({ layout, selectedId, onSelect, onChange, med
                     {!FONT_WEIGHTS.some(([w]) => w === (s.fontWeight ?? 400)) && <option value={s.fontWeight ?? 400}>Custom ({s.fontWeight})</option>}
                   </select>
                 </label>
-                <Num label="Max lines" value={s.maxLines} min={1} onChange={(v) => style({ maxLines: v })} />
-                <Num label="Line height" value={s.lineHeight ?? 1.3} step={0.05} min={0.8} onChange={(v) => style({ lineHeight: v })} />
-                <Num label="Letter spacing" value={s.letterSpacing ?? 0} step={0.1} onChange={(v) => style({ letterSpacing: v })} />
               </div>
-              <ColorField label="Colour" value={s.color} onChange={(v) => style({ color: v })} />
-              <div className="le-chips">
-                {(["left", "center", "right"] as const).map((a) => (
-                  <button key={a} type="button" className={`le-chip${(s.align ?? "left") === a ? " le-chip--on" : ""}`} onClick={() => style({ align: a })}>{a === "center" ? "Centre" : a[0].toUpperCase() + a.slice(1)}</button>
-                ))}
-                {(["top", "middle", "bottom"] as const).map((a) => (
-                  <button key={a} type="button" className={`le-chip${(s.verticalAlign ?? "middle") === a ? " le-chip--on" : ""}`} onClick={() => style({ verticalAlign: a })}>{a[0].toUpperCase() + a.slice(1)}</button>
-                ))}
+              {/* One compact row of icon buttons: alignment, letter case, italic, shadow. */}
+              <div className="le-iconbar" role="toolbar" aria-label="Text style">
+                <IconGroup label="Align">
+                  {([["left", "Align left", AlignLeft], ["center", "Align centre", AlignCenter], ["right", "Align right", AlignRight]] as const).map(([a, label, Icon]) => {
+                    const on = (s.align ?? "left") === a;
+                    return (
+                      <button key={a} type="button" className={`le-iconbtn${on ? " le-iconbtn--on" : ""}`} title={label} aria-label={label} aria-pressed={on} onClick={() => style({ align: a })}>
+                        <Icon size={16} />
+                      </button>
+                    );
+                  })}
+                </IconGroup>
+                <IconGroup label="Letters">
+                  {([["none", "As typed", "Aa"], ["uppercase", "ALL CAPITALS", "AA"], ["capitalize", "Capital First Letters", "Tt"]] as const).map(([t, label, glyph]) => {
+                    const on = (s.textTransform ?? "none") === t;
+                    return (
+                      <button key={t} type="button" className={`le-iconbtn le-iconbtn--glyph${on ? " le-iconbtn--on" : ""}`} title={label} aria-label={label} aria-pressed={on} onClick={() => style({ textTransform: t })}>
+                        {glyph}
+                      </button>
+                    );
+                  })}
+                </IconGroup>
+                <IconGroup label="Style">
+                  <button type="button" className={`le-iconbtn${s.italic ? " le-iconbtn--on" : ""}`} title="Italic" aria-label="Italic" aria-pressed={!!s.italic} onClick={() => style({ italic: !s.italic })}>
+                    <Italic size={16} />
+                  </button>
+                  <button type="button" className={`le-iconbtn le-iconbtn--glyph le-iconbtn--shadow${s.textShadow ? " le-iconbtn--on" : ""}`} title="Text shadow" aria-label="Text shadow" aria-pressed={!!s.textShadow} onClick={() => style({ textShadow: s.textShadow ? undefined : "0 2px 8px rgba(0,0,0,0.6)" })}>
+                    A
+                  </button>
+                </IconGroup>
               </div>
-              <div className="le-chips">
-                {(["none", "uppercase", "capitalize"] as const).map((t) => (
-                  <button key={t} type="button" className={`le-chip${(s.textTransform ?? "none") === t ? " le-chip--on" : ""}`} onClick={() => style({ textTransform: t })}>{t === "none" ? "Aa" : t === "uppercase" ? "AA" : "Title"}</button>
-                ))}
-                <button type="button" className={`le-chip${s.italic ? " le-chip--on" : ""}`} onClick={() => style({ italic: !s.italic })}><i>Italic</i></button>
-                <button type="button" className={`le-chip${s.underline ? " le-chip--on" : ""}`} onClick={() => style({ underline: !s.underline })}><u>Underline</u></button>
-                <button type="button" className={`le-chip${s.textShadow ? " le-chip--on" : ""}`} onClick={() => style({ textShadow: s.textShadow ? undefined : "0 2px 8px rgba(0,0,0,0.6)" })}>Shadow</button>
-                <button type="button" className={`le-chip${s.hug ? " le-chip--on" : ""}`} title="Background hugs the words (for tabs and labels)" onClick={() => style({ hug: !s.hug })}>Hug text</button>
-              </div>
+              {positionBar}
               {role === "verse" && (
                 <ColorField label="Verse number colour" value={s.verseNumberColor} onChange={(v) => style({ verseNumberColor: v })} />
               )}
@@ -683,18 +736,24 @@ export default function LayerPanel({ layout, selectedId, onSelect, onChange, med
                 <ColorField label="Important words colour (*words*)" value={s.emphasisColor} onChange={(v) => style({ emphasisColor: v })} />
               )}
               {isCountdown && <TimerTextControls s={s} onStyle={style} />}
+
+              <label className="le-check" title="A coloured bar behind the words. Turn it off to show the words on their own.">
+                <input type="checkbox" checked={hasTextBar} onChange={(e) => toggleTextBar(e.target.checked)} />
+                <span>Background bar behind the text</span>
+              </label>
+              {hasTextBar && (
+                <>
+                  <ColorField label="Bar colour" value={s.gradient ? undefined : s.fill} onChange={(v) => style({ fill: v, gradient: undefined })} />
+                  {s.gradient && <p className="le-hint">This bar uses a gradient. Picking a colour replaces it.</p>}
+                </>
+              )}
             </>
           )}
 
           {layer.type === "image" && (
             <>
-              <div className="le-subtitle">Image</div>
               <label className="le-field">
-                <span>Image address</span>
-                <input className="tc-input" value={s.src ?? ""} placeholder="https://… or data:image/…" onChange={(e) => style({ src: e.target.value })} />
-              </label>
-              <label className="le-field">
-                <span>Upload</span>
+                <span>Upload a picture</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -715,9 +774,9 @@ export default function LayerPanel({ layout, selectedId, onSelect, onChange, med
             </>
           )}
 
-          {layer.type !== "image" && (
+          {layer.type !== "image" && layer.type !== "text" && (
             <>
-              <div className="le-subtitle">{layer.type === "text" ? "Background behind the text" : layer.type === "box" ? "Background" : "Fill"}</div>
+              <div className="le-subtitle">{layer.type === "box" ? "Background" : "Fill"}</div>
               {layer.type === "box" && themeBg && layer.id === themeBg.id ? (
                 <p className="le-hint">This is the theme background. Change it in the Theme background box at the top.</p>
               ) : layer.type === "box" ? (
@@ -729,27 +788,131 @@ export default function LayerPanel({ layout, selectedId, onSelect, onChange, med
                 </>
               )}
               {isCountdown && layer.type === "box" && <TimerBoxControls s={s} onStyle={style} />}
-              <div className="le-grid-2">
-                <Num label="Corners" value={s.radius ?? 0} min={0} onChange={(v) => style({ radius: v })} />
-                <Num label="Border" value={s.borderWidth ?? 0} min={0} onChange={(v) => style({ borderWidth: v })} />
-              </div>
-              {(s.borderWidth ?? 0) > 0 && <ColorField label="Border colour" value={s.borderColor} onChange={(v) => style({ borderColor: v })} />}
-              {layer.type === "text" && (
-                <div className="le-grid-2">
-                  <Num label="Padding top/bottom" value={s.padding?.[0] ?? 0} min={0} onChange={(v) => { const p = s.padding ?? [0, 0, 0, 0]; style({ padding: [v, p[1], v, p[3]] }); }} />
-                  <Num label="Padding sides" value={s.padding?.[1] ?? 0} min={0} onChange={(v) => { const p = s.padding ?? [0, 0, 0, 0]; style({ padding: [p[0], v, p[2], v] }); }} />
-                </div>
-              )}
-              <div className="le-chips">
-                <button type="button" className={`le-chip${s.shadow ? " le-chip--on" : ""}`} onClick={() => style({ shadow: s.shadow ? undefined : "0 12px 30px rgba(0,0,0,0.35)" })}>Drop shadow</button>
-                <button type="button" className={`le-chip${s.backdropBlur ? " le-chip--on" : ""}`} title="Frosted glass. Heavier for OBS; use on one layer at most." onClick={() => style({ backdropBlur: s.backdropBlur ? undefined : 12 })}>Glass blur</button>
-              </div>
             </>
           )}
+
+          {layer.type !== "text" && positionBar}
 
           <div className="le-subtitle">Animation</div>
           <AnimField label="Animate in" value={layer.in} onChange={(v) => set({ in: v })} />
           <AnimField label="Animate out" value={layer.out} onChange={(v) => set({ out: v })} />
+
+          {/* ── Advanced: names, what a text shows, exact position and fine-tuning ── */}
+          <details className="le-advanced" open={advancedOpen} onToggle={(e) => setAdvancedOpen((e.currentTarget as HTMLDetailsElement).open)}>
+            <summary className="le-advanced__summary">Advanced options</summary>
+            <div className="le-advanced__body">
+              <label className="le-field">
+                <span>Layer name (only you see it)</span>
+                <input className="tc-input" value={layer.name} onChange={(e) => set({ name: e.target.value })} />
+              </label>
+              {layer.parentId && <p className="le-hint">Inside “{parentName(layer.parentId)}”: positions are measured from its top-left corner.</p>}
+              {!isCountdown && layer.type !== "image" && !(layer.type === "text" && roleForContent(layer.content) === "verse") && (
+                <label className="le-check" title="Heading layers hide together when the heading is switched off, or when Worship / Notes send no label.">
+                  <input type="checkbox" checked={isHeadingLayer(layer.id)} onChange={(e) => setHeading(layer.id, e.target.checked)} />
+                  <span>Part of the heading</span>
+                </label>
+              )}
+
+              {layer.type === "text" && (
+                <label className="le-field">
+                  <span>Shows</span>
+                  <select
+                    className="tc-input tc-select"
+                    value={role}
+                    onChange={(e) => {
+                      const r = roles.find((x) => x.id === e.target.value);
+                      if (r) set({ content: r.content });
+                      else set({ content: layer.content && roleForContent(layer.content, roles) === "custom" ? layer.content : "Your text" });
+                    }}
+                  >
+                    {roles.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
+                    <option value="custom">Fixed text (type it above)</option>
+                  </select>
+                </label>
+              )}
+
+              {isBackdropLayer(layer) ? (
+                <p className="le-hint">This is the theme background. It always fills the whole screen. Change it in Theme background above.</p>
+              ) : (
+                <>
+                  <div className="le-subtitle">Exact position & size</div>
+                  <p className="le-hint">In pixels on a 1920 × 1080 screen. You can also drag the layer on the canvas.</p>
+                  <div className="le-grid-2">
+                    <Num label="X" value={layer.x} onChange={(v) => set({ x: v })} />
+                    <Num label="Y" value={layer.y} onChange={(v) => set({ y: v })} />
+                    <Num label="Width" value={layer.w} min={1} onChange={(v) => set({ w: v })} />
+                    {layer.h === "auto" ? (
+                      <label className="le-field"><span>Height</span><input className="tc-input" value="Fits text" disabled /></label>
+                    ) : (
+                      <Num label="Height" value={layer.h} min={1} onChange={(v) => set({ h: v })} />
+                    )}
+                  </div>
+                </>
+              )}
+              <Num label="Opacity (0–1)" value={layer.opacity ?? 1} step={0.05} min={0} max={1} onChange={(v) => set({ opacity: Math.min(1, Math.max(0, v)) })} />
+
+              {layer.type === "text" && (
+                <>
+                  <div className="le-subtitle">Text fine-tuning</div>
+                  <div className="le-grid-2">
+                    <Num label="Smallest size" value={s.minFontSize} min={8} onChange={(v) => style({ minFontSize: v })} />
+                    <Num label="Max lines" value={s.maxLines} min={1} onChange={(v) => style({ maxLines: v })} />
+                    <Num label="Line height" value={s.lineHeight ?? 1.3} step={0.05} min={0.8} onChange={(v) => style({ lineHeight: v })} />
+                    <Num label="Letter spacing" value={s.letterSpacing ?? 0} step={0.1} onChange={(v) => style({ letterSpacing: v })} />
+                  </div>
+                  <div className="le-iconbar" role="toolbar" aria-label="Text placement">
+                    <IconGroup label="Words in the box">
+                      {([["top", "Words at the top of the box", AlignVerticalJustifyStart], ["middle", "Words in the middle of the box", AlignVerticalJustifyCenter], ["bottom", "Words at the bottom of the box", AlignVerticalJustifyEnd]] as const).map(([a, label, Icon]) => {
+                        const on = (s.verticalAlign ?? "middle") === a;
+                        return (
+                          <button key={a} type="button" className={`le-iconbtn${on ? " le-iconbtn--on" : ""}`} title={label} aria-label={label} aria-pressed={on} onClick={() => style({ verticalAlign: a })}>
+                            <Icon size={16} />
+                          </button>
+                        );
+                      })}
+                    </IconGroup>
+                    <IconGroup label="Underline">
+                      <button type="button" className={`le-iconbtn${s.underline ? " le-iconbtn--on" : ""}`} title="Underline" aria-label="Underline" aria-pressed={!!s.underline} onClick={() => style({ underline: !s.underline })}>
+                        <Underline size={16} />
+                      </button>
+                    </IconGroup>
+                  </div>
+                  <label className="le-check" title="The bar behind the words shrinks to fit them (for tabs and labels).">
+                    <input type="checkbox" checked={!!s.hug} onChange={(e) => style({ hug: e.target.checked || undefined })} />
+                    <span>Bar hugs the words</span>
+                  </label>
+                </>
+              )}
+
+              {layer.type === "image" && (
+                <label className="le-field">
+                  <span>Image address</span>
+                  <input className="tc-input" value={s.src ?? ""} placeholder="https://… or data:image/…" onChange={(e) => style({ src: e.target.value })} />
+                </label>
+              )}
+
+              {layer.type !== "image" && (
+                <>
+                  <div className="le-subtitle">{layer.type === "text" ? "Bar shape" : "Shape"}</div>
+                  <div className="le-grid-2">
+                    <Num label="Corners" value={s.radius ?? 0} min={0} onChange={(v) => style({ radius: v })} />
+                    <Num label="Border" value={s.borderWidth ?? 0} min={0} onChange={(v) => style({ borderWidth: v })} />
+                  </div>
+                  {(s.borderWidth ?? 0) > 0 && <ColorField label="Border colour" value={s.borderColor} onChange={(v) => style({ borderColor: v })} />}
+                  {layer.type === "text" && (
+                    <div className="le-grid-2">
+                      <Num label="Padding top/bottom" value={s.padding?.[0] ?? 0} min={0} onChange={(v) => { const p = s.padding ?? [0, 0, 0, 0]; style({ padding: [v, p[1], v, p[3]] }); }} />
+                      <Num label="Padding sides" value={s.padding?.[1] ?? 0} min={0} onChange={(v) => { const p = s.padding ?? [0, 0, 0, 0]; style({ padding: [p[0], v, p[2], v] }); }} />
+                    </div>
+                  )}
+                  <div className="le-chips">
+                    <button type="button" className={`le-chip${s.shadow ? " le-chip--on" : ""}`} onClick={() => style({ shadow: s.shadow ? undefined : "0 12px 30px rgba(0,0,0,0.35)" })}>Drop shadow</button>
+                    <button type="button" className={`le-chip${s.backdropBlur ? " le-chip--on" : ""}`} title="Frosted glass. Heavier for OBS; use on one layer at most." onClick={() => style({ backdropBlur: s.backdropBlur ? undefined : 12 })}>Glass blur</button>
+                  </div>
+                </>
+              )}
+            </div>
+          </details>
         </div>
       )}
     </div>

@@ -357,13 +357,13 @@ function DashboardObsDockStatus({
               <span>{t("dashboard.urls.warning", "These are OBS Dock URLs, not Browser Sources. Do not add them under Sources.")}</span>
             </div>
             {lanBase && (
-              <div style={{ marginTop: 14, padding: "10px 14px", background: "rgba(255, 255, 255, 0.05)", borderRadius: 8, border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, fontSize: 14, color: "var(--text-secondary, #d4d4d8)" }}>
+              <div style={{ marginTop: 14, padding: "10px 14px", background: "var(--surface-raised)", borderRadius: 8, border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, fontSize: 14, color: "var(--text-secondary)" }}>
                 <span>
-                  OBS on a <em>different laptop</em> on this Wi-Fi? Use: <strong style={{ color: "#ffffff" }}>{lanBase}/dock</strong>
+                  OBS on a <em>different laptop</em> on this Wi-Fi? Use: <strong style={{ color: "var(--text-primary)" }}>{lanBase}/dock</strong>
                 </span>
                 <button
                   type="button"
-                  style={{ background: "rgba(255, 255, 255, 0.06)", border: "1px solid var(--border)", borderRadius: 6, padding: "4px 12px", color: "#ffffff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                  style={{ background: "var(--surface-hover)", border: "1px solid var(--border)", borderRadius: 6, padding: "4px 12px", color: "var(--text-primary)", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
                   onClick={() => handleCopy("lan-overlay", `${lanBase}/dock`)}
                   title={t("dashboard.urls.copy", "Copy URL")}
                 >

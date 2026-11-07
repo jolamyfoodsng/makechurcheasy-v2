@@ -142,7 +142,7 @@ body {
     display: flex;
     background-color: var(--surface);
     border: 1px solid var(--border);
-    border-radius: var(--radius, 4px);
+    border-radius: var(--radius);
     padding: 4px;
     gap: 4px;
 }
@@ -630,7 +630,7 @@ html.mv-theme-light .canvas-area {
     max-width: 90%;
     margin: 0 auto 64px auto;
     padding: 40px 48px;
-    border-radius: var(--radius, 4px);
+    border-radius: var(--radius);
     background-color: rgba(11, 14, 22, 0.6);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;

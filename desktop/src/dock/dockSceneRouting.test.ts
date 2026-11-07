@@ -187,7 +187,7 @@ describe("dock scene routing", () => {
   });
 
   it("paints Worship from native and cached local state before background refresh", () => {
-    expect(worshipTabSource).toContain("useState<DockSong[]>(() => loadCachedSongs())");
+    expect(worshipTabSource).toMatch(/useState<DockSong\[\]>\(\(\) => \{[\s\S]{0,120}?loadCachedSongs\(\)/);
     expect(worshipTabSource).toContain("applyPreferences(loadDockWorshipPreferences(), BUILTIN_THEMES)");
     expect(worshipTabSource).toContain("if (!preferencesHydrated || !prefsReadyRef.current) return;");
   });

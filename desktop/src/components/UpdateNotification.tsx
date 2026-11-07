@@ -10,7 +10,7 @@
  * - Shows download progress inline when updating
  */
 
-import { useCallback, useEffect, useMemo, type ReactNode } from "react";
+import { useCallback, useEffect } from "react";
 import {
   type UpdateCheckResult,
 } from "../services/updateService";
@@ -18,9 +18,10 @@ import {
   updateDownloadManager,
   useUpdateDownload,
 } from "../services/updateDownloadManager";
-import { getReleaseHighlights, stripReleaseBoilerplate } from "../services/releaseNotesService";
 import type { Update } from "@tauri-apps/plugin-updater";
-import Icon from "./Icon";
+import ModalDialog, { ModalProgress, type ModalAction } from "./ModalDialog";
+import UpdateReleaseNotes from "./UpdateReleaseNotes";
+import { AlertTriangle, CheckCircle2, Download, ExternalLink, RefreshCw } from "./icons/NativeIcons";
 
 interface UpdateNotificationProps {
   result: UpdateCheckResult;
@@ -64,32 +65,6 @@ function shouldShowNotification(result: UpdateCheckResult): boolean {
     if (daysSinceDismissal < 1) return false;
   }
   return true;
-}
-
-function renderReleaseNotes(notes: string): ReactNode {
-  const lines = notes.slice(0, 12_000).split(/\r?\n/);
-
-  return lines.map((line, index) => {
-    const trimmed = line.trim();
-    if (!trimmed) return <div key={`space-${index}`} className="update-notification__note-space" />;
-
-    const heading = trimmed.match(/^#{1,3}\s+(.+)$/);
-    if (heading) {
-      return <h3 key={`heading-${index}`}>{heading[1]}</h3>;
-    }
-
-    const bullet = trimmed.match(/^[-*•]\s+(.+)$/);
-    if (bullet) {
-      return (
-        <div key={`bullet-${index}`} className="update-notification__note-bullet">
-          <span aria-hidden="true">•</span>
-          <span>{bullet[1]}</span>
-        </div>
-      );
-    }
-
-    return <p key={`paragraph-${index}`}>{trimmed}</p>;
-  });
 }
 
 export default function UpdateNotification({
@@ -137,11 +112,7 @@ export default function UpdateNotification({
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  const cleanedNotes = useMemo(() => stripReleaseBoilerplate(result.notes), [result.notes]);
 
-  const highlights = useMemo(() => {
-    return getReleaseHighlights(result.version, result.notes);
-  }, [result.version, result.notes]);
 
   const handleUpdate = useCallback(async () => {
     if (!result.update) {
@@ -187,250 +158,100 @@ export default function UpdateNotification({
     setTimeout(() => onRemindLater(), 300);
   }, [onRemindLater]);
 
-  const statusConfig: Record<UpdateStatus, string> = {
-    prompt: "system_update",
-    downloading: "downloading",
-    ready: "check_circle",
-    installing: "refresh",
-    relaunching: "restart_alt",
-    error: "error_outline",
-  };
-
-  const icon = statusConfig[status];
-
   if (!downloadState.isModalVisible) return null;
 
+  const readyVersion = downloadState.version || result.version;
+  const title =
+    status === "ready" ? `MakeChurchEazy ${readyVersion} is ready`
+      : status === "downloading" ? "Downloading update"
+        : status === "installing" ? "Installing update"
+          : status === "relaunching" ? "Restarting MakeChurchEazy"
+            : status === "error" ? "Update failed"
+              : `MakeChurchEazy ${result.version || "update"} is available`;
+
+  const icon =
+    status === "ready" ? <CheckCircle2 size={26} />
+      : status === "error" ? <AlertTriangle size={26} />
+        : isBusy ? <RefreshCw size={26} />
+          : <Download size={26} />;
+
+  const body =
+    status === "prompt" ? (
+      <p>
+        {message || "A new version is ready to install."}
+        {result.currentVersion ? ` You have ${result.currentVersion}.` : ""}
+      </p>
+    ) : status === "ready" ? (
+      <p>Restart now to finish updating, or keep working: it installs automatically when you close MakeChurchEazy.</p>
+    ) : status === "error" ? (
+      <p>{errorMsg}</p>
+    ) : status === "relaunching" ? (
+      <p>MakeChurchEazy will open again in a moment.</p>
+    ) : (
+      <p>You can keep working while it downloads.</p>
+    );
+
+  const extra =
+    status === "prompt" ? (
+      <UpdateReleaseNotes
+        version={result.version}
+        notes={result.notes}
+        footer={releaseNotesUrl ? (
+          <button
+            type="button"
+            className="mce-modal__link"
+            onClick={() => window.open(releaseNotesUrl, "_blank", "noopener,noreferrer")}
+          >
+            Open full release notes
+            <ExternalLink size={12} />
+          </button>
+        ) : null}
+      />
+    ) : status === "downloading" ? (
+      <ModalProgress
+        label={`MakeChurchEazy ${result.version ?? ""}`.trim()}
+        value={`${percentComplete}% · ${formatBytes(progress.downloaded)} / ${formatBytes(progress.contentLength)}`}
+        percent={percentComplete}
+      />
+    ) : status === "installing" ? (
+      <ModalProgress label="Installing" value="Almost done" percent={100} />
+    ) : undefined;
+
+  const actions: ModalAction[] =
+    status === "prompt"
+      ? [
+          { label: "Remind me later", variant: "ghost", onClick: handleRemindLater },
+          { label: "Update in background", variant: "ghost", title: "Download quietly; restart when you are ready", onClick: () => void handleUpdateInBackground() },
+          { label: "Update now", variant: "primary", autoFocus: true, title: "Download, install and restart now", onClick: () => void handleUpdate() },
+        ]
+      : status === "downloading"
+        ? [{ label: "Continue in background", variant: "ghost", onClick: handleContinueInBackground }]
+        : status === "ready"
+          ? [
+              { label: "Later", variant: "ghost", title: "Install when I close MakeChurchEazy", onClick: () => updateDownloadManager.dismissModal() },
+              { label: "Restart now", variant: "primary", autoFocus: true, onClick: handleRestartNow },
+            ]
+          : status === "error"
+            ? [
+                { label: "Remind me later", variant: "ghost", onClick: handleRemindLater },
+                { label: "Try again", variant: "primary", autoFocus: true, onClick: handleRetry },
+              ]
+            : [];
+
   return (
-    <div
-      className="update-notification update-notification--visible"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="update-notification-title"
+    <ModalDialog
+      tone={status === "error" ? "danger" : status === "ready" ? "success" : "brand"}
+      icon={icon}
+      iconBusy={isBusy}
+      eyebrow="Update available"
+      title={title}
+      extra={extra}
+      actions={actions}
+      onClose={isBusy ? undefined : handleRemindLater}
+      closeOnBackdrop={false}
+      width={status === "prompt" ? 560 : 460}
     >
-      <div className="update-notification__card">
-        <div className="update-notification__titlebar">
-          <div className="update-notification__titlebar-label">
-            <Icon name={icon} size={14} className={isBusy ? "update-notification__icon--spin" : ""} />
-            <span>New update available</span>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          className="update-notification__close"
-          onClick={handleRemindLater}
-          aria-label="Remind me later"
-          title="Remind me later"
-        >
-          <Icon name="close" size={14} />
-        </button>
-
-        <div className="update-notification__body">
-          {status === "prompt" && (
-            <>
-              <p className="update-notification__eyebrow">
-                {message || "There is a new update available:"}
-              </p>
-
-              <h2 id="update-notification-title" className="update-notification__release-title">
-                MakeChurchEazy {result.version || "update"}
-              </h2>
-
-              <div className="update-notification__versions">
-                <span className="update-notification__version-current">v{result.currentVersion}</span>
-                <Icon name="arrow_forward" size={12} className="update-notification__arrow" />
-                <span className="update-notification__version-new">v{result.version}</span>
-              </div>
-
-              <section className="update-notification__release-notes" aria-label="Release notes">
-                <div className="update-notification__obs-header">
-                  <Icon name="auto_awesome" size={13} className="update-notification__obs-header-icon" />
-                  <span>What's New in this Update</span>
-                </div>
-
-                <div className="update-notification__release-notes-scroll">
-                  {highlights.length > 0 ? (
-                    <div className="update-obs-list">
-                      {highlights.map((highlight) => (
-                        <div key={highlight.id} className="update-obs-card">
-                          <div className="update-obs-card__header">
-                            <div className="update-obs-card__title-row">
-                              <span className="update-obs-card__number">{highlight.number}.</span>
-                              <span className="update-obs-card__title">{highlight.title}</span>
-                              <span className={`update-obs-badge update-obs-badge--${highlight.badge}`}>
-                                {highlight.badgeLabel}
-                              </span>
-                            </div>
-                            {highlight.summary && (
-                              <p className="update-obs-card__summary">{highlight.summary}</p>
-                            )}
-                          </div>
-
-                          {highlight.points.length > 0 && (
-                            <ul className="update-obs-card__list">
-                              {highlight.points.map((pt, pIdx) => (
-                                <li key={pIdx} className="update-obs-card__item">
-                                  <span className="update-obs-card__bullet" aria-hidden="true">•</span>
-                                  <div className="update-obs-card__item-text">
-                                    {pt.lead && <strong className="update-obs-card__lead">{pt.lead}: </strong>}
-                                    <span>{pt.text}</span>
-                                  </div>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : cleanedNotes ? (
-                    renderReleaseNotes(cleanedNotes)
-                  ) : (
-                    <p className="update-notification__release-notes--empty">This update includes fixes and improvements.</p>
-                  )}
-                </div>
-
-                {releaseNotesUrl && (
-                  <button
-                    type="button"
-                    className="update-notification__changelog-btn"
-                    onClick={() => window.open(releaseNotesUrl, "_blank", "noopener,noreferrer")}
-                    title="Open full release notes"
-                  >
-                    <Icon name="open_in_new" size={12} />
-                    Open full release notes
-                  </button>
-                )}
-              </section>
-            </>
-          )}
-
-          {status === "downloading" && (
-            <div className="update-notification__progress">
-              <div className="update-notification__progress-track">
-                <div
-                  className="update-notification__progress-fill"
-                  style={{ width: `${percentComplete}%` }}
-                />
-              </div>
-              <span className="update-notification__progress-text">
-                {percentComplete}% — {formatBytes(progress.downloaded)} / {formatBytes(progress.contentLength)}
-              </span>
-            </div>
-          )}
-
-          {status === "ready" && (
-            <div className="update-notification__progress">
-              <h2 id="update-notification-title" className="update-notification__release-title">
-                MakeChurchEazy {downloadState.version || result.version} is ready
-              </h2>
-              <p className="update-notification__progress-text">
-                Restart now to finish updating, or keep working — it installs automatically when you close MakeChurchEazy.
-              </p>
-            </div>
-          )}
-
-          {status === "installing" && (
-            <div className="update-notification__progress">
-              <div className="update-notification__progress-track">
-                <div className="update-notification__progress-fill update-notification__progress-fill--pulse" style={{ width: "100%" }} />
-              </div>
-              <span className="update-notification__progress-text">Installing...</span>
-            </div>
-          )}
-
-          {status === "relaunching" && (
-            <p className="update-notification__progress-text">Restarting MakeChurchEazy...</p>
-          )}
-
-          {status === "error" && (
-            <div className="update-notification__error">
-              <p>{errorMsg}</p>
-            </div>
-          )}
-        </div>
-
-        {status === "prompt" && (
-          <div className="update-notification__actions">
-            <button
-              type="button"
-              className="update-notification__btn update-notification__btn--update"
-              onClick={handleUpdate}
-              title="Download, install and restart now">
-              Update Now
-            </button>
-            <button
-              type="button"
-              className="update-notification__btn update-notification__btn--later"
-              onClick={() => void handleUpdateInBackground()}
-              title="Download quietly; restart when you are ready"
-            >
-              Update in Background
-            </button>
-            <button
-              type="button"
-              className="update-notification__btn update-notification__btn--later"
-              onClick={handleRemindLater}
-              title="Remind me later"
-            >
-              Remind me later
-            </button>
-          </div>
-        )}
-
-        {status === "downloading" && (
-          <div className="update-notification__actions">
-            <button
-              type="button"
-              className="update-notification__btn update-notification__btn--later"
-              onClick={handleContinueInBackground}
-              title="Keep downloading in the background; restart when you are ready"
-            >
-              Continue in Background
-            </button>
-          </div>
-        )}
-
-        {status === "ready" && (
-          <div className="update-notification__actions">
-            <button
-              type="button"
-              className="update-notification__btn update-notification__btn--update"
-              onClick={handleRestartNow}
-              title="Install the update and restart MakeChurchEazy"
-            >
-              Restart Now
-            </button>
-            <button
-              type="button"
-              className="update-notification__btn update-notification__btn--later"
-              onClick={() => updateDownloadManager.dismissModal()}
-              title="Install when I close MakeChurchEazy"
-            >
-              Later
-            </button>
-          </div>
-        )}
-
-        {status === "error" && (
-          <div className="update-notification__actions">
-            <button
-              type="button"
-              className="update-notification__btn update-notification__btn--later"
-              onClick={handleRemindLater}
-              title="Remind me later"
-            >
-              Remind me later
-            </button>
-            <button
-              type="button"
-              className="update-notification__btn update-notification__btn--update"
-              onClick={handleRetry}
-             title="Try Again">
-              Try Again
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
+      {body}
+    </ModalDialog>
   );
 }

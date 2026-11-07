@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { domainFromText, fetchBankLogoFile, nigerianLogoUrl, searchBanks, siteIconUrl } from "./bankCatalog";
+import { domainFromText, fetchBankLogoFile, nigerianLogoUrl, resolveBankLogo, searchBanks, siteIconUrl } from "./bankCatalog";
 
 describe("bank search", () => {
   it("finds Nigerian banks by short name, alias or full name", () => {
@@ -43,5 +43,40 @@ describe("fetchBankLogoFile", () => {
   it("rejects a missing logo or something that is not a picture", async () => {
     await expect(fetchBankLogoFile(suggestion, (async () => new Response("no", { status: 404 })) as unknown as typeof fetch)).rejects.toThrow();
     await expect(fetchBankLogoFile(suggestion, (async () => new Response(new Blob(["<html>"], { type: "text/html" }))) as unknown as typeof fetch)).rejects.toThrow();
+  });
+});
+
+describe("common Nigerian banks and fintechs", () => {
+  it("finds each one with a logo source", () => {
+    expect(searchBanks("OPay")[0]).toMatchObject({ label: "OPay", logoUrl: siteIconUrl("opayweb.com") });
+    expect(searchBanks("Opay")[0].label).toBe("OPay");
+    expect(searchBanks("PalmPay")[0]).toMatchObject({ label: "PalmPay", logoUrl: siteIconUrl("palmpay.com") });
+    expect(searchBanks("moniepoint")[0]).toMatchObject({ label: "Moniepoint", logoUrl: nigerianLogoUrl("moniepoint-mfb-ng") });
+    expect(searchBanks("kuda")[0].logoUrl).toBe(nigerianLogoUrl("kuda-bank"));
+    expect(searchBanks("gtbank")[0].logoUrl).toBe(nigerianLogoUrl("guaranty-trust-bank"));
+    expect(searchBanks("access")[0].logoUrl).toBe(nigerianLogoUrl("access-bank"));
+    expect(searchBanks("first bank")[0].logoUrl).toBe(nigerianLogoUrl("first-bank-of-nigeria"));
+    expect(searchBanks("uba")[0].logoUrl).toBe(nigerianLogoUrl("united-bank-for-africa"));
+    expect(searchBanks("zenith")[0].logoUrl).toBe(nigerianLogoUrl("zenith-bank"));
+  });
+});
+
+describe("resolveBankLogo", () => {
+  const palmpay = searchBanks("palmpay")[0];
+  const save = async (file: File) => `/uploads/${file.name}`;
+
+  it("saves the downloaded logo with the church's files", async () => {
+    const ok = (async () => new Response(new Blob(["x"], { type: "image/png" }), { status: 200 })) as unknown as typeof fetch;
+    await expect(resolveBankLogo(palmpay, save, { fetchImpl: ok })).resolves.toEqual({ url: "/uploads/world_palmpay_com.png", savedLocally: true });
+  });
+
+  it("uses the logo's web address when the download is blocked but the picture shows", async () => {
+    const blocked = (async () => { throw new TypeError("Failed to fetch"); }) as unknown as typeof fetch;
+    await expect(resolveBankLogo(palmpay, save, { fetchImpl: blocked, canLoad: async () => true })).resolves.toEqual({ url: palmpay.logoUrl, savedLocally: false });
+  });
+
+  it("fails when the picture cannot be shown either", async () => {
+    const blocked = (async () => { throw new TypeError("Failed to fetch"); }) as unknown as typeof fetch;
+    await expect(resolveBankLogo(palmpay, save, { fetchImpl: blocked, canLoad: async () => false })).rejects.toThrow();
   });
 });

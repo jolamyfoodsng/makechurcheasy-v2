@@ -17,7 +17,7 @@ describe("MVSettings Critical Vocabulary & Tab Completeness", () => {
     expect(mvSettingsSource).toContain("Boost outline and contrast for washed-out auditoriums or high-ambient light.");
   });
 
-  it("defines all 11 tabs across Application, Production & Stream, and Account & System categories", () => {
+  it("defines all 12 tabs across Application, Production & Stream, and Account & System categories", () => {
     const allTabIds: SettingsTab[] = SETTINGS_CATEGORIES.flatMap((c) => c.items.map((i) => i.id));
     
     // Application
@@ -29,6 +29,7 @@ describe("MVSettings Critical Vocabulary & Tab Completeness", () => {
     expect(allTabIds).toContain("broadcast");
     expect(allTabIds).toContain("branding");
     expect(allTabIds).toContain("obs");
+    expect(allTabIds).toContain("vmix");
     expect(allTabIds).toContain("audio");
     expect(allTabIds).toContain("mobile");
     expect(allTabIds).toContain("automation");
@@ -37,7 +38,7 @@ describe("MVSettings Critical Vocabulary & Tab Completeness", () => {
     expect(allTabIds).toContain("usage");
     expect(allTabIds).toContain("storage");
     
-    expect(allTabIds.length).toBe(11);
+    expect(allTabIds.length).toBe(12);
   });
 
   it("lists Mobile Companion under Coming soon, not under Production & Stream", () => {
@@ -48,8 +49,8 @@ describe("MVSettings Critical Vocabulary & Tab Completeness", () => {
     expect(soon.items.every((i) => i.comingSoon === true)).toBe(true);
   });
 
-  it("includes broadcast and all 11 tabs in validTabs for direct navigation and URL search params", () => {
-    expect(mvSettingsSource).toContain('validTabs: SettingsTab[] = ["general", "appearance", "bible", "branding", "obs", "broadcast", "mobile", "automation", "usage", "storage", "audio"]');
+  it("includes broadcast and all 12 tabs in validTabs for direct navigation and URL search params", () => {
+    expect(mvSettingsSource).toContain('validTabs: SettingsTab[] = ["general", "appearance", "bible", "branding", "obs", "vmix", "broadcast", "mobile", "automation", "usage", "storage", "audio"]');
     expect(mvSettingsSource).toContain("setActiveTab(tabParam)");
   });
 });

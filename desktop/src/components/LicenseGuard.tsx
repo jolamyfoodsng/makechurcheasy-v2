@@ -34,6 +34,8 @@ import {
 } from "../services/forcedUpdateService";
 import { useAuth } from "@/contexts/AuthContext";
 import Icon from "./Icon";
+import { AlertCircle, Crown, ExternalLink, Headphones, LogIn, LogOut, Monitor, RefreshCw, User } from "./icons/NativeIcons";
+import ModalDialog, { ModalNotice, type ModalAction } from "./ModalDialog";
 import OfflineSyncPrompt from "./OfflineSyncPrompt";
 
 const API_BASE = import.meta.env.VITE_AUTH_API_URL || "https://api.makechurcheazy.com";
@@ -250,7 +252,8 @@ function LicenseLockScreen({
   onDismiss?: () => void;
 }) {
   const config = getLockScreenConfig(reason, payload);
-  const overlayRef = useRef<HTMLDivElement>(null);
+  // Marker rendered inside the dialog card, used to find it for the focus trap.
+  const markerRef = useRef<HTMLSpanElement>(null);
   const { logout } = useAuth();
   const [disconnecting, setDisconnecting] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -349,9 +352,10 @@ function LicenseLockScreen({
 
   // Focus trap + keyboard handler
   const getFocusableElements = useCallback(() => {
-    if (!overlayRef.current) return [];
+    const card = markerRef.current?.closest(".mce-modal");
+    if (!card) return [];
     return Array.from(
-      overlayRef.current.querySelectorAll<HTMLElement>(
+      card.querySelectorAll<HTMLElement>(
         'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
       )
     );
@@ -406,252 +410,119 @@ function LicenseLockScreen({
     return () => document.removeEventListener("keydown", onKeyDown, true);
   }, [getFocusableElements]);
 
+  type LockAction = ModalAction;
+  const quitAction: LockAction = { label: "Quit Application", variant: "ghost", onClick: () => void handleQuit() };
+  const upgradeAction: LockAction = {
+    label: "Upgrade Plan (Use Multiple Computers)",
+    variant: "ghost",
+    icon: <Crown size={14} />,
+    onClick: () => void handleManageSubscription(),
+  };
+
+  let actions: LockAction[];
+  if (config.primaryAction === "disconnect_others") {
+    actions = [
+      quitAction,
+      { label: "Sign Out This Computer", variant: "ghost", icon: <User size={14} />, onClick: () => void logout() },
+      upgradeAction,
+      {
+        label: disconnecting ? "Logging out other computer…" : config.primaryLabel,
+        variant: "primary",
+        icon: disconnecting ? <RefreshCw size={14} /> : <LogOut size={14} />,
+        disabled: disconnecting || verifying,
+        onClick: () => void handleDisconnectOthers(),
+      },
+    ];
+  } else if (config.primaryAction === "reconnect") {
+    actions = [
+      quitAction,
+      upgradeAction,
+      { label: "Sign In & Use Here", variant: "primary", icon: <LogIn size={14} />, onClick: () => void logout() },
+    ];
+  } else {
+    actions = [quitAction];
+    if (reason !== "maintenance") {
+      actions.push({ label: "Sign Out & Reconnect", variant: "ghost", icon: <LogOut size={14} />, onClick: () => void logout() });
+    }
+    if (config.primaryAction !== "retry") {
+      actions.push({
+        label: "Retry Verification",
+        variant: "ghost",
+        icon: <RefreshCw size={14} />,
+        disabled: verifying,
+        onClick: () => void handleRetry(),
+      });
+    }
+    if (config.primaryAction === "retry") {
+      actions.push({
+        label: config.primaryLabel,
+        variant: "primary",
+        icon: <RefreshCw size={14} />,
+        disabled: verifying,
+        onClick: () => void handleRetry(),
+      });
+    } else if (config.primaryAction === "subscribe") {
+      actions.push({ label: config.primaryLabel, variant: "primary", icon: <ExternalLink size={14} />, onClick: () => void handleManageSubscription() });
+    } else if (config.primaryAction === "manage_devices") {
+      actions.push({ label: config.primaryLabel, variant: "primary", icon: <Monitor size={14} />, onClick: () => void handleManageDevices() });
+    } else if (config.primaryAction === "contact_support") {
+      actions.push({ label: config.primaryLabel, variant: "primary", icon: <Headphones size={14} />, onClick: () => void handleContactSupport() });
+    }
+  }
+
+  const tone =
+    reason === "internet_required" || reason === "maintenance"
+      ? "warning"
+      : reason === "too_many_devices" || reason === "device_disconnected_by_other"
+      ? "info"
+      : "danger";
+
+  const eyebrow =
+    reason === "too_many_devices"
+      ? payload?.plan === "free" || payload?.maxDevices === 1
+        ? "Free Plan • 1 Computer Limit"
+        : "Device Limit Reached"
+      : reason === "device_disconnected_by_other"
+      ? "Session Transferred to Another Device"
+      : reason === "internet_required"
+      ? "Offline limit reached (3 weeks offline)"
+      : reason === "maintenance"
+      ? "Checking again automatically"
+      : "Access to MakeChurchEazy is currently blocked";
+
   return (
-    <div
-      ref={overlayRef}
-      className="license-guard-overlay"
-      role="dialog"
-      aria-modal="true"
-      aria-label={config.title}
-    >
-      <div className="license-guard-modal">
-        <div className="license-guard-banner">
-          <Icon
-            name={
-              reason === "internet_required"
-                ? "wifi_off"
-                : reason === "too_many_devices" || reason === "device_disconnected_by_other"
-                ? "devices"
-                : reason === "maintenance"
-                ? "schedule"
-                : "lock"
-            }
-            size={16}
-          />
-          <span>
-            {reason === "internet_required"
-              ? "Internet Connection Required"
-              : reason === "too_many_devices"
-              ? "Device Limit Check"
-              : reason === "device_disconnected_by_other"
-              ? "Session Switched"
-              : reason === "maintenance"
-              ? "Maintenance"
-              : "License Verification"}
-          </span>
-          {onDismiss && (
-            <button
-              type="button"
-              onClick={onDismiss}
-              className="license-guard-banner__dismiss"
-              style={{
-                marginLeft: "auto",
-                background: "transparent",
-                border: "none",
-                color: "#fca5a5",
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                padding: "2px 4px",
-                borderRadius: "4px",
-              }}
-              title="Close Preview"
-            >
-              <Icon name="close" size={16} />
-            </button>
-          )}
-        </div>
-
-        <div className="license-guard-header">
-          <div className="license-guard-icon-wrapper">
-            <Icon name={config.icon} size={32} />
-          </div>
-          <p className="license-guard-eyebrow">
-            {reason === "too_many_devices"
-              ? payload?.plan === "free" || payload?.maxDevices === 1
-                ? "Free Plan • 1 Computer Limit"
-                : "Device Limit Reached"
-              : reason === "device_disconnected_by_other"
-              ? "Session Transferred to Another Device"
-              : reason === "internet_required"
-              ? "Offline limit reached (3 weeks offline)"
-              : reason === "maintenance"
-              ? "Checking again automatically"
-              : "Access to MakeChurchEazy is currently blocked"}
-          </p>
-          <h2 className="license-guard-title">{config.title}</h2>
-        </div>
-
-        <div className="license-guard-body">
-          <p className="license-guard-description">{config.description}</p>
-
+    <ModalDialog
+      tone={tone}
+      icon={<Icon name={config.icon} size={26} />}
+      eyebrow={eyebrow}
+      title={config.title}
+      // Blocking: only the preview (onDismiss) can be closed, and only with its X.
+      onClose={onDismiss}
+      closeOnBackdrop={false}
+      closeOnEscape={false}
+      closeLabel="Close Preview"
+      zIndex={999999}
+      width={520}
+      extra={
+        <>
+          <span ref={markerRef} hidden />
           {actionError && (
-            <div className="license-guard-error-box" role="alert">
-              <Icon name="error" size={16} />
-              <span>{actionError}</span>
-            </div>
+            <ModalNotice tone="danger" icon={<AlertCircle size={15} />}>
+              {actionError}
+            </ModalNotice>
           )}
-
           {verifying && (
-            <div className="license-guard-verifying" aria-live="polite">
-              <div className="license-guard-spinner" />
-              <span>{reason === "internet_required" ? "Checking internet connection…" : "Verifying your license…"}</span>
+            <div aria-live="polite">
+              <ModalNotice tone="info" icon={<RefreshCw size={15} />}>
+                {reason === "internet_required" ? "Checking internet connection…" : "Verifying your license…"}
+              </ModalNotice>
             </div>
           )}
-
-          <div className="license-guard-actions">
-            {config.primaryAction === "disconnect_others" ? (
-              <>
-                <button
-                  type="button"
-                  className="license-guard-button license-guard-button--primary"
-                  onClick={handleDisconnectOthers}
-                  disabled={disconnecting || verifying}
-                >
-                  <Icon
-                    name={disconnecting ? "refresh" : "logout"}
-                    size={18}
-                    className={disconnecting ? "license-guard-spinner-icon" : ""}
-                  />
-                  {disconnecting ? "Logging out other computer…" : config.primaryLabel}
-                </button>
-
-                <button
-                  type="button"
-                  className="license-guard-button license-guard-button--secondary"
-                  onClick={handleManageSubscription}
-                >
-                  <Icon name="crown" size={18} />
-                  Upgrade Plan (Use Multiple Computers)
-                </button>
-
-                <button
-                  type="button"
-                  className="license-guard-button license-guard-button--secondary"
-                  onClick={() => logout()}
-                >
-                  <Icon name="user" size={18} />
-                  Sign Out This Computer
-                </button>
-
-                <button
-                  type="button"
-                  className="license-guard-button license-guard-button--ghost"
-                  onClick={handleQuit}
-                >
-                  Quit Application
-                </button>
-              </>
-            ) : config.primaryAction === "reconnect" ? (
-              <>
-                <button
-                  type="button"
-                  className="license-guard-button license-guard-button--primary"
-                  onClick={() => logout()}
-                >
-                  <Icon name="login" size={18} />
-                  Sign In & Use Here
-                </button>
-
-                <button
-                  type="button"
-                  className="license-guard-button license-guard-button--secondary"
-                  onClick={handleManageSubscription}
-                >
-                  <Icon name="crown" size={18} />
-                  Upgrade Plan (Use Multiple Computers)
-                </button>
-
-                <button
-                  type="button"
-                  className="license-guard-button license-guard-button--ghost"
-                  onClick={handleQuit}
-                >
-                  Quit Application
-                </button>
-              </>
-            ) : (
-              <>
-                {config.primaryAction === "retry" && (
-                  <button
-                    type="button"
-                    className="license-guard-button license-guard-button--primary"
-                    onClick={handleRetry}
-                    disabled={verifying}
-                  >
-                    <Icon name="refresh" size={18} />
-                    {config.primaryLabel}
-                  </button>
-                )}
-
-                {config.primaryAction === "subscribe" && (
-                  <button
-                    type="button"
-                    className="license-guard-button license-guard-button--primary"
-                    onClick={handleManageSubscription}
-                  >
-                    <Icon name="open_in_new" size={18} />
-                    {config.primaryLabel}
-                  </button>
-                )}
-
-                {config.primaryAction === "manage_devices" && (
-                  <button
-                    type="button"
-                    className="license-guard-button license-guard-button--primary"
-                    onClick={handleManageDevices}
-                  >
-                    <Icon name="devices" size={18} />
-                    {config.primaryLabel}
-                  </button>
-                )}
-
-                {config.primaryAction === "contact_support" && (
-                  <button
-                    type="button"
-                    className="license-guard-button license-guard-button--primary"
-                    onClick={handleContactSupport}
-                  >
-                    <Icon name="support_agent" size={18} />
-                    {config.primaryLabel}
-                  </button>
-                )}
-
-                {config.primaryAction !== "retry" && (
-                  <button
-                    type="button"
-                    className="license-guard-button license-guard-button--secondary"
-                    onClick={handleRetry}
-                    disabled={verifying}
-                  >
-                    <Icon name="refresh" size={18} />
-                    Retry Verification
-                  </button>
-                )}
-
-                {reason !== "maintenance" && (
-                  <button
-                    type="button"
-                    className="license-guard-button license-guard-button--secondary"
-                    onClick={() => logout()}
-                  >
-                    <Icon name="logout" size={18} />
-                    Sign Out & Reconnect
-                  </button>
-                )}
-
-                <button
-                  type="button"
-                  className="license-guard-button license-guard-button--ghost"
-                  onClick={handleQuit}
-                >
-                  Quit Application
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
+        </>
+      }
+      actions={actions}
+    >
+      {config.description}
+    </ModalDialog>
   );
 }

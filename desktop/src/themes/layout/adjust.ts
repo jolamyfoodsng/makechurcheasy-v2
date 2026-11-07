@@ -293,13 +293,30 @@ function applyLowerThirdBackdrop(layers: ThemeLayer[], b: LayoutBackdrop): Theme
   });
 }
 
-/** Lower thirds, Background: Off. Hide card / bar boxes and images; boxes that hold other layers just lose their fill. */
-function stripLowerThirdBackground(layers: ThemeLayer[]): ThemeLayer[] {
+/**
+ * Background: Off (full screen and lower thirds). Only the words are left on a transparent page:
+ * every top-level box and picture is hidden (full-screen backgrounds, inset cards, frames, panels,
+ * bars, logos), and boxes that hold other layers keep their children but lose their fill, glass,
+ * border and shadow.
+ */
+function stripLayoutBackground(layers: ThemeLayer[]): ThemeLayer[] {
   const parents = new Set(layers.map((l) => l.parentId).filter(Boolean) as string[]);
   return layers.map((l) => {
     if (l.hidden || l.parentId || (l.type !== "box" && l.type !== "image")) return l;
     if (!parents.has(l.id)) return { ...l, hidden: true };
-    return { ...l, style: { ...l.style, fill: "transparent", gradient: undefined, src: undefined, videoSrc: undefined } };
+    return {
+      ...l,
+      style: {
+        ...l.style,
+        fill: "transparent",
+        gradient: undefined,
+        src: undefined,
+        videoSrc: undefined,
+        backdropBlur: undefined,
+        borderWidth: undefined,
+        shadow: undefined,
+      },
+    };
   });
 }
 
@@ -507,11 +524,13 @@ function alignHeading(layers: ThemeLayer[], layout: ThemeLayout, align: LayoutHe
 export function applyLayoutAdjust(layout: ThemeLayout, source: unknown): ThemeLayout {
   const a = readLayoutAdjust(source);
   const offset = layout.format === "lower-third" ? a.layoutOffsetY : 0;
-  const backdrop = layout.format === "fullscreen" ? readLayoutBackdrop(source) : null;
+  const picked = readLayoutBackdrop(source);
+  // "Off" means no background at all, in both formats: only the words, on a transparent page.
+  const bgOff = picked.kind === "off";
+  const backdrop = layout.format === "fullscreen" && !bgOff ? picked : null;
   const backdropChanged = backdrop !== null && !isLayoutBackdropDefault(backdrop);
-  // Lower thirds: the card / bar is the background. "Off" removes it; a colour, picture or video fills it.
-  const ltBackdrop = layout.format === "lower-third" ? readLayoutBackdrop(source) : null;
-  const ltOff = ltBackdrop?.kind === "off";
+  // Lower thirds: the card / bar is the background. A colour, picture or video fills it.
+  const ltBackdrop = layout.format === "lower-third" ? picked : null;
   const ltFill = ltBackdrop !== null && (ltBackdrop.kind === "color" || ltBackdrop.kind === "image" || ltBackdrop.kind === "video");
   const showTitle = readLayoutShowTitle(source);
   // Switch on = the theme's default (heading shown); switch off = hidden.
@@ -520,7 +539,7 @@ export function applyLayoutAdjust(layout: ThemeLayout, source: unknown): ThemeLa
   const textStyle = readLayoutTextStyle(source);
   const styleChanged = textStyle.bold !== undefined || textStyle.italic !== undefined;
   const headingAlign = readLayoutHeadingAlign(source);
-  if (a.layoutTextScale === 100 && a.layoutRefScale === 100 && a.layoutLineHeight === 100 && offset === 0 && !backdropChanged && !ltOff && !ltFill && !titleChanged && !styleChanged && !headingAlign) return layout;
+  if (a.layoutTextScale === 100 && a.layoutRefScale === 100 && a.layoutLineHeight === 100 && offset === 0 && !backdropChanged && !bgOff && !ltFill && !titleChanged && !styleChanged && !headingAlign) return layout;
   const textK = a.layoutTextScale / 100;
   const refK = a.layoutRefScale / 100;
   const lineK = a.layoutLineHeight / 100;
@@ -551,7 +570,7 @@ export function applyLayoutAdjust(layout: ThemeLayout, source: unknown): ThemeLa
     if (offset && !layer.parentId) next = { ...next, y: layer.y + offset };
     return next;
   });
-  const stripped = ltOff ? stripLowerThirdBackground(layers) : ltFill && ltBackdrop ? applyLowerThirdBackdrop(layers, ltBackdrop) : layers;
+  const stripped = bgOff ? stripLayoutBackground(layers) : ltFill && ltBackdrop ? applyLowerThirdBackdrop(layers, ltBackdrop) : layers;
   const grown = growVerseBoxes(stripped, textK * lineK, nextShowHeading !== false);
   const aligned = headingAlign ? alignHeading(grown, layout, headingAlign) : grown;
   const finalLayers = backdropChanged && backdrop ? applyBackdrop(aligned, backdrop) : aligned;

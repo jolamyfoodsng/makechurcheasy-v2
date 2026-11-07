@@ -284,8 +284,8 @@ function ContentLibrary({
               left: 0,
               right: 0,
               zIndex: 100,
-              background: "var(--bg-secondary, #1e293b)",
-              border: "1px solid rgba(148,163,184,0.15)",
+              background: "var(--surface)",
+              border: "1px solid var(--border)",
               borderRadius: 8,
               maxHeight: 320,
               overflowY: "auto",
@@ -333,7 +333,7 @@ function ContentLibrary({
                   onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                 >
                   <span style={{ fontSize: 10, fontWeight: 600, color: "var(--text-muted)", whiteSpace: "nowrap", minWidth: 80 }}>{r.book} {r.chapter}:{r.verse}</span>
-                  <p style={{ fontSize: 11, margin: 0, color: "var(--text-primary, #e2e8f0)", lineHeight: 1.4 }}>{r.snippet}</p>
+                  <p style={{ fontSize: 11, margin: 0, color: "var(--text-primary)", lineHeight: 1.4 }}>{r.snippet}</p>
                 </div>
               ))}
               {conceptRefs.length > 0 && searchResults.length === 0 && (

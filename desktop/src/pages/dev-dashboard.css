@@ -84,7 +84,7 @@
   gap: 6px;
   padding: 8px 14px;
   border: 1px solid var(--border);
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   background: var(--surface-raised);
   color: var(--text-primary);
   font-size: 12px;
@@ -95,9 +95,9 @@
 }
 
 .dev-db-btn:hover:not(:disabled) {
-  background: #334155;
-  border-color: rgba(255, 255, 255, 0.2);
-  color: #ffffff;
+  background: var(--surface-hover);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
 }
 
 .dev-db-btn:disabled {
@@ -111,7 +111,7 @@
 }
 
 .dev-db-btn--accent {
-  background: var(--primary-soft, rgba(74, 222, 128, 0.1));
+  background: var(--primary-soft);
   border-color: var(--border-primary);
   color: var(--primary);
 }
@@ -124,7 +124,7 @@
 .dev-db-btn--sm {
   padding: 4px 8px;
   font-size: 11px;
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
 }
 
 /* ── Migration result ── */
@@ -306,9 +306,9 @@
   font-size: 11px;
   font-weight: 700;
   color: var(--primary);
-  background: var(--primary-soft, rgba(74, 222, 128, 0.08));
+  background: var(--primary-soft);
   padding: 2px 8px;
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   flex-shrink: 0;
 }
 
@@ -339,7 +339,7 @@
 /* ── Table ── */
 .dev-db-table-wrap {
   overflow-x: auto;
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   border: 1px solid var(--border);
 }
 
@@ -394,7 +394,7 @@
 .dev-db-json {
   background: var(--bg-dark);
   border: 1px solid var(--border);
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   padding: 12px 14px;
   font-size: 11px;
   font-family: "SF Mono", "Fira Code", monospace;

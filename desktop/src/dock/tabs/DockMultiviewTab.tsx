@@ -89,6 +89,7 @@ import {
   parseCustomLookLayoutId,
   saveCustomLookCameraScene,
 } from "../../multiview/customLookLook";
+import { fitPopover } from "../useKeepInViewport";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -1092,7 +1093,7 @@ const LayoutMiniPreview = memo(function LayoutMiniPreview({
         overflow: "hidden",
         background: isBgInset ? "#080C14" : "#111",
         borderRadius: 4,
-        border: "1px solid var(--dock-border, #334155)",
+        border: "1px solid var(--dock-border, var(--border))",
       }}
     >
       {/* Background layer */}
@@ -1874,7 +1875,7 @@ function SlotContentMenu({
       </button>
       {open && createPortal(
         <div
-          ref={menuRef}
+          ref={(el) => { menuRef.current = el; fitPopover(el); }}
           className="dock-mv-slot-row__dropdown dock-mv-slot-row__dropdown--portal"
           role="menu"
           style={{ top: position.top, left: position.left, right: "auto" }}
@@ -3702,7 +3703,7 @@ const MVCard = memo(function MVCard({
                     {showFrameSettings && mv.layoutFrameId && (
                       <div style={{
                         position: "absolute", right: 0, top: "100%", marginTop: 4,
-                        background: "var(--dock-surface, #1E293B)", border: "1px solid var(--dock-border, #334155)",
+                        background: "var(--dock-surface, var(--surface))", border: "1px solid var(--dock-border, var(--border))",
                         borderRadius: 4, padding: 10, zIndex: 50, minWidth: 180,
                         display: "flex", flexDirection: "column", gap: 8,
                       }}>

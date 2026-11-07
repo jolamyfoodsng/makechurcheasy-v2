@@ -328,12 +328,20 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "sortOrder": 38
   },
   {
+    "graphicId": "lt-sun-ministerslant",
+    "name": "Ministering · Gold Slant",
+    "category": "speaker",
+    "accentColor": "#7d1517",
+    "description": "A gold edge grows, a crimson banner wipes across, the name and title rise, a slanted logo box slides in and a script word writes on.",
+    "sortOrder": 39
+  },
+  {
     "graphicId": "lt-sun-minister",
     "name": "Ministering Bar",
     "category": "service",
     "accentColor": "#f26b21",
     "description": "White panel with an orange ministering tab, socials and an enquiries block.",
-    "sortOrder": 39
+    "sortOrder": 40
   },
   {
     "graphicId": "lt-sun-prayer",
@@ -341,7 +349,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "service",
     "accentColor": "#f2c230",
     "description": "Black bar opens from the centre with the church name, socials and a white info strip.",
-    "sortOrder": 40
+    "sortOrder": 41
   },
   {
     "graphicId": "lt-sun-givenavy",
@@ -349,7 +357,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "giving",
     "accentColor": "#13306b",
     "description": "Navy bar with glowing light streaks that draw on, three ways to give rise in.",
-    "sortOrder": 41
+    "sortOrder": 42
   },
   {
     "graphicId": "lt-sun-givesunset",
@@ -357,7 +365,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "giving",
     "accentColor": "#de7346",
     "description": "Drifting sunset gradient bar with a navy tab and three ways to give.",
-    "sortOrder": 42
+    "sortOrder": 43
   },
   {
     "graphicId": "lt-sun-sundaynavy",
@@ -365,7 +373,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "service",
     "accentColor": "#141d4a",
     "description": "Light strip with a yellow tab, socials and a slanted navy contact block.",
-    "sortOrder": 43
+    "sortOrder": 44
   },
   {
     "graphicId": "lt-sun-advert",
@@ -373,7 +381,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "announcements",
     "accentColor": "#331509",
     "description": "Brown box opens with a gold shimmer headline and WhatsApp / email contact.",
-    "sortOrder": 44
+    "sortOrder": 45
   },
   {
     "graphicId": "lt-sun-givegrey",
@@ -381,7 +389,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "giving",
     "accentColor": "#262626",
     "description": "Charcoal bar with a white divider and three ways to give.",
-    "sortOrder": 45
+    "sortOrder": 46
   },
   {
     "graphicId": "lt-sun-giveautumn",
@@ -389,7 +397,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "giving",
     "accentColor": "#3d1110",
     "description": "Falling-leaves panel and a maroon bar with three ways to give.",
-    "sortOrder": 46
+    "sortOrder": 47
   },
   {
     "graphicId": "lt-sun-healing",
@@ -397,7 +405,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "service",
     "accentColor": "#e5352a",
     "description": "Black title bar and red info strip slide in from opposite sides.",
-    "sortOrder": 47
+    "sortOrder": 48
   },
   {
     "graphicId": "lt-sun-logored",
@@ -405,7 +413,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "branding",
     "accentColor": "#c8161d",
     "description": "Logo box, silver title bar and a red social panel with a light sweep.",
-    "sortOrder": 48
+    "sortOrder": 49
   },
   {
     "graphicId": "lt-sun-logoline",
@@ -413,7 +421,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "branding",
     "accentColor": "#c8161d",
     "description": "Logo box, black and white stripes and a silver bar with centred text.",
-    "sortOrder": 49
+    "sortOrder": 50
   },
   {
     "graphicId": "lt-sun-logoredbar",
@@ -421,7 +429,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "branding",
     "accentColor": "#c8161d",
     "description": "White logo box and a glossy red bar with title, website and socials.",
-    "sortOrder": 50
+    "sortOrder": 51
   },
   {
     "graphicId": "lt-sun-logoslant",
@@ -429,7 +437,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "branding",
     "accentColor": "#d42a20",
     "description": "Slanted black logo block with socials and a white card, a spinning red corner.",
-    "sortOrder": 51
+    "sortOrder": 52
   },
   {
     "graphicId": "lt-sun-logodark",
@@ -437,7 +445,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "branding",
     "accentColor": "#d42a20",
     "description": "White logo box, dark title bar with socials and a red website strip.",
-    "sortOrder": 52
+    "sortOrder": 53
   },
   {
     "graphicId": "lt-sun-subscribe",
@@ -445,7 +453,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "subscribe",
     "accentColor": "#ff0000",
     "description": "Logo spins into a tile, the bar swings out, like is tapped, subscribe pressed and the bell rings.",
-    "sortOrder": 53
+    "sortOrder": 54
   },
   {
     "graphicId": "lt-sun-socials",
@@ -453,7 +461,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "social",
     "accentColor": "#ee1153",
     "description": "One card that cycles platform to platform: the tile pops, the bar opens and the handle rises.",
-    "sortOrder": 54
+    "sortOrder": 55
   },
   {
     "graphicId": "lt-sun-classicsub",
@@ -461,7 +469,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "subscribe",
     "accentColor": "#d30d0d",
     "description": "White card rises, a cursor clicks like, subscribe and the bell.",
-    "sortOrder": 55
+    "sortOrder": 56
   },
   {
     "graphicId": "lt-sun-threebtn",
@@ -469,7 +477,15 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "subscribe",
     "accentColor": "#e5141b",
     "description": "Three dark buttons pop up and a hand cursor clicks each one.",
-    "sortOrder": 56
+    "sortOrder": 57
+  },
+  {
+    "graphicId": "lt-sun-accountx",
+    "name": "Account Number · X Ribbons",
+    "category": "giving",
+    "accentColor": "#e8194f",
+    "description": "Full-screen pink giving screen: two crossing ribbons whose words scroll in and out, a white card with the account number, bank and account name, and a contact strip.",
+    "sortOrder": 58
   },
   {
     "graphicId": "lt-stream-day",
@@ -477,7 +493,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "service",
     "accentColor": "#10243f",
     "description": "A DAY tag with a date plate that wipes in beside it.",
-    "sortOrder": 57
+    "sortOrder": 59
   },
   {
     "graphicId": "lt-stream-partner",
@@ -485,7 +501,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "giving",
     "accentColor": "#10243f",
     "description": "A scan code beside a heading and link; the code opens exactly the link that is typed.",
-    "sortOrder": 58
+    "sortOrder": 60
   },
   {
     "graphicId": "lt-stream-ticker",
@@ -493,7 +509,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "announcements",
     "accentColor": "#2fe0c3",
     "description": "A label tab and a full-width bar of messages that scroll across, one message per line.",
-    "sortOrder": 59
+    "sortOrder": 61
   },
   {
     "graphicId": "lt-stream-live",
@@ -501,7 +517,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "service",
     "accentColor": "#ff3156",
     "description": "A LIVE pill with a pulsing dot and a hashtag.",
-    "sortOrder": 60
+    "sortOrder": 62
   },
   {
     "graphicId": "lt-pkg-prayer-bar",
@@ -509,7 +525,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "service",
     "accentColor": "#d32f2f",
     "description": "Wide colour bar for a prayer, declaration or confession, with a small label tab. The bar sweeps in, the tab drops onto it, the label spaces out and the words rise in line by line",
-    "sortOrder": 61
+    "sortOrder": 63
   },
   {
     "graphicId": "lt-pkg-website-bar",
@@ -517,7 +533,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "announcements",
     "accentColor": "#3d0b10",
     "description": "Two-tier bar that sends viewers to your website: a light caption strip above a bold address bar with a globe-and-pointer icon. The bar wipes in, the caption slides across, the icon spins in and the address rises",
-    "sortOrder": 62
+    "sortOrder": 64
   },
   {
     "graphicId": "lt-pkg-live-social-bar",
@@ -525,7 +541,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "social",
     "accentColor": "#7a2cf5",
     "description": "Gradient title bar with a logo tab, a LIVE badge and three social handles. The bar wipes in, the logo drops, LIVE flashes, the titles rise and the socials slide along the bottom strip",
-    "sortOrder": 63
+    "sortOrder": 65
   },
   {
     "graphicId": "lt-pkg-arrow-logo-bar",
@@ -533,7 +549,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "branding",
     "accentColor": "#f0641e",
     "description": "Chevron logo block with a gradient arrow bar, social icons and a website strip. The logo punches in, the arrow bar sweeps right, the titles stretch in, the icons pop and the website strip slides out underneath",
-    "sortOrder": 64
+    "sortOrder": 66
   },
   {
     "graphicId": "lt-pkg-contact-bar",
@@ -541,7 +557,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "announcements",
     "accentColor": "#3d0b10",
     "description": "Two-tier contact bar: a light caption strip above a bold bar with a round icon and your email, phone or handle. The bar wipes in, the caption slides across, the icon pops and the contact rises",
-    "sortOrder": 65
+    "sortOrder": 67
   },
   {
     "graphicId": "lt-pkg-testimony-bar",
@@ -549,7 +565,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "announcements",
     "accentColor": "#9b1414",
     "description": "Wide red panel with diagonal stripes, a bold headline and one or two contact boxes. The panel wipes in, the stripes slide in, the headline rises and the boxes grow out one after the other",
-    "sortOrder": 66
+    "sortOrder": 68
   },
   {
     "graphicId": "lt-pkg-question-bar",
@@ -557,7 +573,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "service",
     "accentColor": "#1d4ed8",
     "description": "Sermon point in two tiers: a white question strip above a solid colour bar with the answer in bold capitals. The bar wipes in, the question slides across and the answer rises in",
-    "sortOrder": 67
+    "sortOrder": 69
   },
   {
     "graphicId": "lt-pkg-quote-card",
@@ -565,7 +581,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "quotes",
     "accentColor": "#e3171c",
     "description": "Quote graphic for a lower third or the full screen. Letters track in one by one, highlight or underline bars sweep across each line, quote marks snap in and the name follows; on the way out the letters fold away from the end",
-    "sortOrder": 68
+    "sortOrder": 70
   },
   {
     "graphicId": "lt-pkg-quote-tag-box",
@@ -573,7 +589,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "quotes",
     "accentColor": "#0f9d58",
     "description": "Name tag sits on a solid colour box holding the quote in capitals; big quote marks snap onto the bottom corner. The tag and box wipe across, the words rise and the marks pop",
-    "sortOrder": 69
+    "sortOrder": 71
   },
   {
     "graphicId": "lt-pkg-quote-corner-frame",
@@ -581,7 +597,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "quotes",
     "accentColor": "#0f9d58",
     "description": "A thin outline frame draws itself around the quote, with a big opening mark on the top-left corner and a closing mark on the bottom-right. The words fade up inside and the name follows",
-    "sortOrder": 70
+    "sortOrder": 72
   },
   {
     "graphicId": "lt-pkg-quote-solid-box",
@@ -589,7 +605,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "quotes",
     "accentColor": "#0f9d58",
     "description": "Clean colour box with the quote in capitals and the name in small caps underneath, with a quote mark hanging off the left edge. The box wipes in, then the words and the name",
-    "sortOrder": 71
+    "sortOrder": 73
   },
   {
     "graphicId": "lt-pkg-quote-clean",
@@ -597,7 +613,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "quotes",
     "accentColor": "#ffffff",
     "description": "No box, just type: big quote marks, the quote in sentence case and a bold name. The marks fade down, each word rises in turn and the name slides up out of a mask",
-    "sortOrder": 72
+    "sortOrder": 74
   },
   {
     "graphicId": "lt-pkg-quote-centred-tag",
@@ -605,7 +621,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "quotes",
     "accentColor": "#0f9d58",
     "description": "Centred quote in capitals with a colour quote mark above, a thin rule underneath and the name in a colour tag. The rule draws out from the middle and the name spreads in letter by letter",
-    "sortOrder": 73
+    "sortOrder": 75
   },
   {
     "graphicId": "lt-pkg-quote-mark-block",
@@ -613,7 +629,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "quotes",
     "accentColor": "#0f9d58",
     "description": "A colour square with a huge quote mark grows from a thin line, the quote in capitals slides out from behind it and the name lands in a colour tag underneath",
-    "sortOrder": 74
+    "sortOrder": 76
   },
   {
     "graphicId": "lt-pkg-quote-outline-box",
@@ -621,7 +637,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "quotes",
     "accentColor": "#0f9d58",
     "description": "A colour outline box draws itself in, a quote mark drops onto its top-left corner, the quote types in word by word and the name appears centred underneath",
-    "sortOrder": 75
+    "sortOrder": 77
   },
   {
     "graphicId": "lt-pkg-quote-title-pill",
@@ -629,7 +645,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "quotes",
     "accentColor": "#0f9d58",
     "description": "Short title inside a rounded outline with quote marks on either side and a small subtitle under the box. The outline grows from the centre, the marks fly in from the sides and the title spreads out",
-    "sortOrder": 76
+    "sortOrder": 78
   },
   {
     "graphicId": "lt-pkg-giving-accounts-board",
@@ -637,7 +653,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "giving",
     "accentColor": "#6e1116",
     "description": "Fullscreen board for bank transfer giving: a gold title plaque, up to six banks in two columns with logo, bank name and account number, and the account name on a white panel at the bottom. The plaque opens from the centre, accounts drop in one by one and the bottom panel rises",
-    "sortOrder": 77
+    "sortOrder": 79
   },
   {
     "graphicId": "lt-pkg-quote-highlight-card",
@@ -645,7 +661,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "quotes",
     "accentColor": "#1d4ed8",
     "description": "A clean quote card with inline colour highlights: wrap a word in *asterisks* to make it stand out, or *[#hex]word* to give it its own colour — same markup as the Scripture overlays. A speaker name sits below.",
-    "sortOrder": 78
+    "sortOrder": 80
   },
   {
     "graphicId": "lt-pkg-sermon-portrait-card",
@@ -653,7 +669,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "quotes",
     "accentColor": "#3b2a24",
     "description": "Full-screen sermon quote: a warm card with the speaker's round photo on top, the quote with *emphasised* words in the highlight colour, and the name below.",
-    "sortOrder": 79
+    "sortOrder": 81
   },
   {
     "graphicId": "lt-pkg-sermon-clean-panel",
@@ -661,7 +677,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "quotes",
     "accentColor": "#0f2470",
     "description": "Full-screen sermon quote on a white panel over a colour field, with an optional round photo and social handle. *Asterisk* words use the highlight colour.",
-    "sortOrder": 80
+    "sortOrder": 82
   },
   {
     "graphicId": "lt-pkg-sermon-scripture-highlight",
@@ -669,7 +685,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "quotes",
     "accentColor": "#b3221d",
     "description": "Full-screen sermon quote in a black box with a white frame, a name plate underneath and an optional round photo. *Asterisk* words use the highlight colour.",
-    "sortOrder": 81
+    "sortOrder": 83
   },
   {
     "graphicId": "lt-pkg-sermon-split-portrait",
@@ -677,7 +693,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "quotes",
     "accentColor": "#14161b",
     "description": "Full-screen sermon quote with a large photo on the left and bold type on the right. *Asterisk* words get a highlighted block in the highlight colour.",
-    "sortOrder": 82
+    "sortOrder": 84
   },
   {
     "graphicId": "lt-pkg-speaker-bar-strip",
@@ -685,7 +701,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "speaker",
     "accentColor": "#0f6e8c",
     "description": "Name on a solid bar with the title on a white strip below it. The bar wipes in from the left, the strip follows and each line slides into place",
-    "sortOrder": 83
+    "sortOrder": 85
   },
   {
     "graphicId": "lt-pkg-speaker-offset-strip",
@@ -693,7 +709,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "speaker",
     "accentColor": "#0f6e8c",
     "description": "Name bar with the title strip set off to the right underneath, like a step. The bar wipes in, then the strip wipes the other way",
-    "sortOrder": 84
+    "sortOrder": 86
   },
   {
     "graphicId": "lt-pkg-speaker-underline-duo",
@@ -701,7 +717,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "speaker",
     "accentColor": "#0f6e8c",
     "description": "First and last name in capitals over thin rules, the last name larger and stepped to the right. No box, just lines that draw across and letters that rise",
-    "sortOrder": 85
+    "sortOrder": 87
   },
   {
     "graphicId": "lt-pkg-speaker-solid-box",
@@ -709,7 +725,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "speaker",
     "accentColor": "#0f6e8c",
     "description": "Name in bold capitals with the title underneath, together in one solid box. The box wipes up and the words rise inside it",
-    "sortOrder": 86
+    "sortOrder": 88
   },
   {
     "graphicId": "lt-pkg-speaker-bold-outline",
@@ -717,7 +733,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "speaker",
     "accentColor": "#0f6e8c",
     "description": "A big name in capitals inside a white outline, the title tucked in at the bottom right. The frame opens from the middle and the name sweeps in",
-    "sortOrder": 87
+    "sortOrder": 89
   },
   {
     "graphicId": "lt-pkg-speaker-wide-box",
@@ -725,7 +741,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "speaker",
     "accentColor": "#0f6e8c",
     "description": "Name and title on one wide coloured box with generous room. The box stretches out from the left and both lines rise in",
-    "sortOrder": 88
+    "sortOrder": 90
   },
   {
     "graphicId": "lt-pkg-speaker-stacked-pair",
@@ -733,7 +749,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "speaker",
     "accentColor": "#0f6e8c",
     "description": "Name on a coloured bar stacked on a white title bar of the same width. The bars wipe in one after the other and the text rises",
-    "sortOrder": 89
+    "sortOrder": 91
   },
   {
     "graphicId": "lt-pkg-speaker-split-name",
@@ -741,7 +757,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "speaker",
     "accentColor": "#0f6e8c",
     "description": "First name on a coloured block, last name on a white block beside it, both in heavy capitals. The blocks wipe towards each other",
-    "sortOrder": 90
+    "sortOrder": 92
   },
   {
     "graphicId": "lt-pkg-speaker-thin-frame",
@@ -749,7 +765,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "speaker",
     "accentColor": "#0f6e8c",
     "description": "Name and title inside a thin white frame. A light, open look that suits busy pictures. The frame opens from the middle and the words slide in",
-    "sortOrder": 91
+    "sortOrder": 93
   },
   {
     "graphicId": "lt-pkg-speaker-clean-text",
@@ -757,7 +773,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "speaker",
     "accentColor": "#0f6e8c",
     "description": "Just the name and title, no box. Bold white type with a soft shadow so it reads over any picture. Each line rises out of a mask",
-    "sortOrder": 92
+    "sortOrder": 94
   },
   {
     "graphicId": "lt-pkg-speaker-spaced-caps",
@@ -765,7 +781,7 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "speaker",
     "accentColor": "#0f6e8c",
     "description": "Name in widely spaced capitals on a coloured bar with the title centred on a small white strip below. The letters settle into place as the bar opens from the middle",
-    "sortOrder": 93
+    "sortOrder": 95
   },
   {
     "graphicId": "lt-pkg-speaker-two-tone-tag",
@@ -773,6 +789,118 @@ export const BUILTIN_BROADCAST_GRAPHICS: BuiltinBroadcastGraphic[] = [
     "category": "speaker",
     "accentColor": "#0f6e8c",
     "description": "A large first name on a coloured block, the last name on a white block beside it and the title on a small coloured tag underneath. Each piece wipes in in turn",
-    "sortOrder": 94
+    "sortOrder": 96
+  },
+  {
+    "graphicId": "lt-pkg-subscribe-click",
+    "name": "Subscribe · Click Reminder",
+    "category": "subscribe",
+    "accentColor": "#0f0f0f",
+    "description": "A channel card rises in, a pointer clicks Subscribe and the button turns into Subscribed with a ringing bell, then the card drops away",
+    "sortOrder": 97
+  },
+  {
+    "graphicId": "lt-pkg-logo-block-intro",
+    "name": "Logo Intro · Block Wipe",
+    "category": "branding",
+    "accentColor": "#4a5578",
+    "description": "Full-screen logo sting: a colour panel wipes in with a stepped edge, the logo pops up with four light rays, then it all wipes away",
+    "sortOrder": 98
+  },
+  {
+    "graphicId": "lt-pkg-logo-retro-screen",
+    "name": "Logo Intro · Retro Screen",
+    "category": "branding",
+    "accentColor": "#0b0d12",
+    "description": "Full-screen logo sting like an old TV switching on: a bright line opens into a flash, the logo settles with scan lines and a soft flicker, then the screen switches off",
+    "sortOrder": 99
+  },
+  {
+    "graphicId": "lt-pkg-social-handles-row",
+    "name": "Social Handles Row",
+    "category": "social",
+    "accentColor": "#ffffff",
+    "description": "Up to four social icons with your handles in one clean row along the bottom. Each one springs up in turn and drops away the same way",
+    "sortOrder": 100
+  },
+  {
+    "graphicId": "lt-pkg-follow-photo-stack",
+    "name": "Follow Us · Photo Stack",
+    "category": "social",
+    "accentColor": "#f2f2f2",
+    "description": "Three photo cards fly in and pile up with your handle underneath. While it's on screen the top cards keep fanning apart and back together",
+    "sortOrder": 101
+  },
+  {
+    "graphicId": "lt-pkg-typewriter-title",
+    "name": "Typewriter Title",
+    "category": "announcements",
+    "accentColor": "#ffffff",
+    "description": "A title types itself out letter by letter behind a blinking cursor, then deletes itself when you take it off",
+    "sortOrder": 102
+  },
+  {
+    "graphicId": "lt-pkg-corner-logo-turn",
+    "name": "Corner Logo · Turning Badge",
+    "category": "branding",
+    "accentColor": "#1e3a8a",
+    "description": "Your logo on a small card in a corner of the screen. It turns like a sign and rests between turns, keeps turning, rotates round, or stays still",
+    "sortOrder": 103
+  },
+  {
+    "graphicId": "lt-pkg-border-text-loop",
+    "name": "Border Text Loop",
+    "category": "announcements",
+    "accentColor": "#ffffff",
+    "description": "Your words run all the way round the edge of the screen in a loop, with a moving dashed frame inside. Good for Starting soon, Welcome or Be right back",
+    "sortOrder": 104
+  },
+  {
+    "graphicId": "lt-pkg-social-icon-rotator",
+    "name": "Social Icon Rotator",
+    "category": "social",
+    "accentColor": "#141414",
+    "description": "A neat row of social icons. One at a time, each icon opens to show its handle, then closes for the next, round and round",
+    "sortOrder": 105
+  },
+  {
+    "graphicId": "lt-pkg-speaker-stripe-white-plate",
+    "name": "Speaker · Stripe White Plate",
+    "category": "speaker",
+    "accentColor": "#0b1cf5",
+    "description": "Name types onto a white plate that grows from a thin bar; underneath, a line splits into stripes, fills blue and the title types in",
+    "sortOrder": 106
+  },
+  {
+    "graphicId": "lt-pkg-speaker-stripe-underline-box",
+    "name": "Speaker · Stripe Underline Box",
+    "category": "speaker",
+    "accentColor": "#0b1cf5",
+    "description": "White name types in; a line draws under it, splits into stripes, fills blue and the title types into the box",
+    "sortOrder": 107
+  },
+  {
+    "graphicId": "lt-pkg-speaker-stripe-blue-plate",
+    "name": "Speaker · Stripe Blue Plate",
+    "category": "speaker",
+    "accentColor": "#0b1cf5",
+    "description": "A thin bar widens into a plate with a white edge running ahead of the blue; the name types onto it and the title types in below",
+    "sortOrder": 108
+  },
+  {
+    "graphicId": "lt-pkg-speaker-stripe-side-tag",
+    "name": "Speaker · Stripe Side Tag",
+    "category": "speaker",
+    "accentColor": "#0b1cf5",
+    "description": "Name types in, then a line draws out to its left, splits into stripes and becomes a small blue tag with the role",
+    "sortOrder": 109
+  },
+  {
+    "graphicId": "lt-pkg-speaker-stripe-split-name",
+    "name": "Speaker · Stripe Split Name",
+    "category": "speaker",
+    "accentColor": "#0b1cf5",
+    "description": "A line splits into stripes and fills into a blue box for the first name; the last name and the title type in underneath",
+    "sortOrder": 110
   }
 ];

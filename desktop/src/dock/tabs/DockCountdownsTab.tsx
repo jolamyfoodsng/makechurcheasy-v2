@@ -276,7 +276,7 @@ function CountdownCard({
   if (theme) loadTextThemeFont(theme);
   const timerFont = theme ? theme.fontFamily : "monospace";
   const timerWeight = theme ? theme.fontWeight : 700;
-  const timerColor = "var(--dock-text, #F8FAFC)";
+  const timerColor = "var(--dock-text, var(--text-primary))";
   const timerShadow = theme ? theme.timerShadow : "none";
 
   const startTitleEdit = () => {
@@ -319,8 +319,8 @@ function CountdownCard({
       onClick={onSelect}
       style={{
         borderRadius: isCompact ? 7 : 10,
-        border: `1px solid ${isLive ? "rgba(34,197,94,0.5)" : "var(--dock-border, rgba(255,255,255,0.08))"}`,
-        background: isLive ? "rgba(34,197,94,0.06)" : "var(--dock-surface, rgba(255,255,255,0.04))",
+        border: `1px solid ${isLive ? "rgba(34,197,94,0.5)" : "var(--dock-border, var(--border))"}`,
+        background: isLive ? "rgba(34,197,94,0.06)" : "var(--dock-surface, var(--surface))",
         cursor: "pointer",
         transition: "all 0.15s",
         padding: isCompact ? "6px 8px" : 12,
@@ -354,7 +354,7 @@ function CountdownCard({
                 }}
                 onClick={(e) => e.stopPropagation()}
                 aria-label={t("countdowns.editTitle", "Countdown title")}
-                style={{ flex: "1 1 120px", minWidth: 0, maxWidth: 170, height: 24, boxSizing: "border-box", background: "var(--dock-input-bg, rgba(0,0,0,0.3))", border: "1px solid var(--dock-accent, #3b82f6)", borderRadius: 5, padding: "3px 7px", color: "var(--dock-text)", fontSize: 11, outline: "none", textOverflow: "ellipsis" }}
+                style={{ flex: "1 1 120px", minWidth: 0, maxWidth: 170, height: 24, boxSizing: "border-box", background: "var(--dock-input-bg, var(--input-bg))", border: "1px solid var(--dock-accent, var(--primary))", borderRadius: 5, padding: "3px 7px", color: "var(--dock-text)", fontSize: 11, outline: "none", textOverflow: "ellipsis" }}
               />
               <button
                 type="button"
@@ -370,7 +370,7 @@ function CountdownCard({
                 onClick={(e) => { e.stopPropagation(); cancelTitleEdit(); }}
                 title={t("common.cancel", "Cancel")}
                 aria-label={t("common.cancel", "Cancel")}
-                style={{ width: 24, height: 24, background: "rgba(255,255,255,0.06)", border: "1px solid var(--dock-border, rgba(255,255,255,0.12))", borderRadius: 5, padding: 0, cursor: "pointer", color: "var(--dock-text-dim)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+                style={{ width: 24, height: 24, background: "rgba(255,255,255,0.06)", border: "1px solid var(--dock-border, var(--border))", borderRadius: 5, padding: 0, cursor: "pointer", color: "var(--dock-text-dim)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
               >
                 <Icon name="close" size={14} />
               </button>
@@ -425,7 +425,7 @@ function CountdownCard({
               <Icon name="more_vert" size={14} />
             </button>
             {menuOpen && (
-              <div style={{ position: "absolute", top: "100%", right: 0, zIndex: 20, background: "var(--dock-surface, #1e1e2e)", border: "1px solid var(--dock-border, rgba(255,255,255,0.1))", borderRadius: 8, padding: 4, minWidth: 130, boxShadow: "0 4px 16px rgba(0,0,0,0.4)" }}>
+              <div style={{ position: "absolute", top: "100%", right: 0, zIndex: 20, background: "var(--dock-surface, var(--surface))", border: "1px solid var(--dock-border, var(--border))", borderRadius: 8, padding: 4, minWidth: 130, boxShadow: "0 4px 16px rgba(0,0,0,0.4)" }}>
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); setMenuOpen(false); onEdit(); }}
@@ -476,7 +476,7 @@ function CountdownCard({
               }}
               onClick={(e) => e.stopPropagation()}
               aria-label={t("countdowns.editTime", "Edit countdown time")}
-              style={{ flex: "0 1 auto", width: cd.timer.showHours ? 142 : 112, maxWidth: "100%", height: isCompact ? 24 : 30, boxSizing: "border-box", fontSize: isCompact ? 16 : 20, fontFamily: timerFont, fontWeight: timerWeight, color: timerColor, background: "var(--dock-input-bg, rgba(0,0,0,0.3))", border: "1px solid var(--dock-accent, #3b82f6)", borderRadius: 5, padding: "2px 6px", letterSpacing: 1, lineHeight: 1, outline: "none" }}
+              style={{ flex: "0 1 auto", width: cd.timer.showHours ? 142 : 112, maxWidth: "100%", height: isCompact ? 24 : 30, boxSizing: "border-box", fontSize: isCompact ? 16 : 20, fontFamily: timerFont, fontWeight: timerWeight, color: timerColor, background: "var(--dock-input-bg, var(--input-bg))", border: "1px solid var(--dock-accent, var(--primary))", borderRadius: 5, padding: "2px 6px", letterSpacing: 1, lineHeight: 1, outline: "none" }}
             />
             <button
               type="button"
@@ -492,7 +492,7 @@ function CountdownCard({
               onClick={(e) => { e.stopPropagation(); cancelTimeEdit(); }}
               title={t("common.cancel", "Cancel")}
               aria-label={t("common.cancel", "Cancel")}
-              style={{ width: isCompact ? 22 : 26, height: isCompact ? 22 : 26, background: "rgba(255,255,255,0.06)", border: "1px solid var(--dock-border, rgba(255,255,255,0.12))", borderRadius: 5, padding: 0, cursor: "pointer", color: "var(--dock-text-dim)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+              style={{ width: isCompact ? 22 : 26, height: isCompact ? 22 : 26, background: "rgba(255,255,255,0.06)", border: "1px solid var(--dock-border, var(--border))", borderRadius: 5, padding: 0, cursor: "pointer", color: "var(--dock-text-dim)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
             >
               <Icon name="close" size={isCompact ? 12 : 15} />
             </button>
@@ -551,7 +551,7 @@ function CountdownCard({
       </div>
 
       {/* Auto Scene Switch */}
-      <div style={{ borderTop: "1px solid var(--dock-border, rgba(255,255,255,0.06))", marginTop: 6, paddingTop: 6 }}>
+      <div style={{ borderTop: "1px solid var(--dock-border, var(--border))", marginTop: 6, paddingTop: 6 }}>
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); setShowAutoSwitch(!showAutoSwitch); }}
@@ -575,7 +575,7 @@ function CountdownCard({
                 type="checkbox"
                 checked={cd.obs.autoSwitchEnabled ?? false}
                 onChange={(e) => onUpdateObs({ autoSwitchEnabled: e.target.checked })}
-                style={{ accentColor: "var(--dock-accent, #3b82f6)", width: 12, height: 12 }}
+                style={{ accentColor: "var(--dock-accent, var(--primary))", width: 12, height: 12 }}
               />
               <span style={{ fontSize: 10, color: "var(--dock-text)" }}>{t("countdowns.enableAutoSceneSwitch", "Enable")}</span>
             </label>
@@ -591,7 +591,7 @@ function CountdownCard({
                     step={1}
                     value={cd.obs.autoSwitchAtSeconds ?? 0}
                     onChange={(e) => onUpdateObs({ autoSwitchAtSeconds: parseInt(e.target.value, 10) || 0 })}
-                    style={{ background: "rgba(0,0,0,0.3)", border: "1px solid var(--dock-border, rgba(255,255,255,0.1))", borderRadius: 4, padding: "3px 6px", color: "var(--dock-text)", fontSize: 10, outline: "none", width: "100%" }}
+                    style={{ background: "rgba(0,0,0,0.3)", border: "1px solid var(--dock-border, var(--border))", borderRadius: 4, padding: "3px 6px", color: "var(--dock-text)", fontSize: 10, outline: "none", width: "100%" }}
                   />
                 </label>
                 <span style={{ fontSize: 7, color: "var(--dock-text-dim)", lineHeight: 1.2, marginTop: -4 }}>{t("countdowns.switchAtDesc", "Seconds remaining when the scene switch fires. 0 = at the very end.")}</span>
@@ -601,7 +601,7 @@ function CountdownCard({
                   <select
                     value={cd.obs.autoSwitchScene ?? ""}
                     onChange={(e) => onUpdateObs({ autoSwitchScene: e.target.value })}
-                    style={{ background: "rgba(0,0,0,0.3)", border: "1px solid var(--dock-border, rgba(255,255,255,0.1))", borderRadius: 4, padding: "3px 6px", color: "var(--dock-text)", fontSize: 10, outline: "none", width: "100%" }}
+                    style={{ background: "rgba(0,0,0,0.3)", border: "1px solid var(--dock-border, var(--border))", borderRadius: 4, padding: "3px 6px", color: "var(--dock-text)", fontSize: 10, outline: "none", width: "100%" }}
                   >
                     <option value="">{t("countdowns.selectScene", "Select scene...")}</option>
                     {obsScenes.map((s) => <option key={s} value={s}>{s}</option>)}
@@ -1160,9 +1160,9 @@ export default function DockCountdownsTab({
   return (
     <div className="dock-tab-content" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: isUltraCompactHeight ? "4px 8px" : "8px 12px", borderBottom: "1px solid var(--dock-border, rgba(255,255,255,0.08))", flexShrink: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: isUltraCompactHeight ? "4px 8px" : "8px 12px", borderBottom: "1px solid var(--dock-border, var(--border))", flexShrink: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <Icon name="hourglass" size={14} style={{ color: "var(--dock-accent, #3b82f6)" }} />
+          <Icon name="hourglass" size={14} style={{ color: "var(--dock-accent, var(--primary))" }} />
           <span style={{ fontSize: isUltraCompactHeight ? 11 : 12, fontWeight: 600, color: "var(--dock-text)" }}>{t("countdowns.myCountdowns")}</span>
           <span style={{ fontSize: 10, color: "var(--dock-text-dim)" }}>({countdowns.length})</span>
         </div>
@@ -1252,11 +1252,11 @@ export default function DockCountdownsTab({
       {editingCd && (
         <div style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 12, background: "rgba(3,7,18,0.72)", backdropFilter: "blur(4px)" }}
           onClick={() => setEditingCd(null)}>
-          <div style={{ background: "var(--dock-surface, #1e1e2e)", border: "1px solid var(--dock-border, rgba(255,255,255,0.14))", borderRadius: 14, width: "min(430px, 100%)", maxHeight: "min(720px, 92vh)", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 18px 60px rgba(0,0,0,0.45)" }}
+          <div style={{ background: "var(--dock-surface, var(--surface))", border: "1px solid var(--dock-border, var(--border))", borderRadius: 14, width: "min(430px, 100%)", maxHeight: "min(720px, 92vh)", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 18px 60px rgba(0,0,0,0.45)" }}
             onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "16px 18px", borderBottom: "1px solid var(--dock-border, rgba(255,255,255,0.08))" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "16px 18px", borderBottom: "1px solid var(--dock-border, var(--border))" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-                <div style={{ width: 34, height: 34, borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: "var(--dock-accent, #3b82f6)", background: "rgba(59,130,246,0.12)" }}>
+                <div style={{ width: 34, height: 34, borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: "var(--dock-accent, var(--primary))", background: "rgba(59,130,246,0.12)" }}>
                   <Icon name="edit" size={17} />
                 </div>
                 <div style={{ minWidth: 0 }}>
@@ -1271,7 +1271,7 @@ export default function DockCountdownsTab({
                 onClick={() => setEditingCd(null)}
                 aria-label={t("common.close", "Close")}
                 title={t("common.close", "Close")}
-                style={{ width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, border: "1px solid var(--dock-border, rgba(255,255,255,0.1))", borderRadius: 7, background: "transparent", color: "var(--dock-text-dim)", cursor: "pointer" }}
+                style={{ width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, border: "1px solid var(--dock-border, var(--border))", borderRadius: 7, background: "transparent", color: "var(--dock-text-dim)", cursor: "pointer" }}
               >
                 <Icon name="close" size={16} />
               </button>
@@ -1279,7 +1279,7 @@ export default function DockCountdownsTab({
 
             <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "16px 18px 20px", display: "flex", flexDirection: "column", gap: 16 }}>
               {/* Essentials */}
-              <div style={{ padding: 12, border: "1px solid var(--dock-border, rgba(255,255,255,0.1))", borderRadius: 10, background: "rgba(255,255,255,0.025)" }}>
+              <div style={{ padding: 12, border: "1px solid var(--dock-border, var(--border))", borderRadius: 10, background: "rgba(255,255,255,0.025)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 10 }}>
                   <Icon name="tune" size={15} />
                   <span style={{ fontSize: 11, fontWeight: 700, color: "var(--dock-text)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{t("countdowns.basics", "Basics")}</span>
@@ -1292,7 +1292,7 @@ export default function DockCountdownsTab({
                       value={editTitle}
                       onChange={(e) => setEditTitle(e.target.value)}
                       placeholder={t("countdowns.titlePlaceholder", "Countdown title")}
-                      style={{ background: "rgba(0,0,0,0.22)", border: "1px solid var(--dock-border, rgba(255,255,255,0.1))", borderRadius: 7, padding: "8px 9px", color: "var(--dock-text)", fontSize: 12, outline: "none", minWidth: 0 }}
+                      style={{ background: "rgba(0,0,0,0.22)", border: "1px solid var(--dock-border, var(--border))", borderRadius: 7, padding: "8px 9px", color: "var(--dock-text)", fontSize: 12, outline: "none", minWidth: 0 }}
                     />
                   </label>
                   <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -1303,7 +1303,7 @@ export default function DockCountdownsTab({
                       step={0.5}
                       value={editMinutes}
                       onChange={(e) => setEditMinutes(e.target.value)}
-                      style={{ background: "rgba(0,0,0,0.22)", border: "1px solid var(--dock-border, rgba(255,255,255,0.1))", borderRadius: 7, padding: "8px 9px", color: "var(--dock-text)", fontSize: 12, outline: "none", width: "100%", boxSizing: "border-box" }}
+                      style={{ background: "rgba(0,0,0,0.22)", border: "1px solid var(--dock-border, var(--border))", borderRadius: 7, padding: "8px 9px", color: "var(--dock-text)", fontSize: 12, outline: "none", width: "100%", boxSizing: "border-box" }}
                     />
                   </label>
                 </div>
@@ -1315,7 +1315,7 @@ export default function DockCountdownsTab({
                       value={editSubtitle}
                       onChange={(e) => setEditSubtitle(e.target.value)}
                       placeholder={t("countdowns.textBelowPlaceholder", "e.g. Until we begin")}
-                      style={{ background: "rgba(0,0,0,0.22)", border: "1px solid var(--dock-border, rgba(255,255,255,0.1))", borderRadius: 7, padding: "8px 9px", color: "var(--dock-text)", fontSize: 12, outline: "none", minWidth: 0 }}
+                      style={{ background: "rgba(0,0,0,0.22)", border: "1px solid var(--dock-border, var(--border))", borderRadius: 7, padding: "8px 9px", color: "var(--dock-text)", fontSize: 12, outline: "none", minWidth: 0 }}
                     />
                   </label>
                 )}
@@ -1323,7 +1323,7 @@ export default function DockCountdownsTab({
 
             {!isLayoutDesign(editingCd) && (<>
             {/* ── Background Section ─────────────────────────────── */}
-            <div style={{ padding: 12, border: "1px solid var(--dock-border, rgba(255,255,255,0.1))", borderRadius: 10, background: "rgba(255,255,255,0.025)" }}>
+            <div style={{ padding: 12, border: "1px solid var(--dock-border, var(--border))", borderRadius: 10, background: "rgba(255,255,255,0.025)" }}>
               <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 10 }}>
                 <Icon name="image" size={15} />
                 <div>
@@ -1336,7 +1336,7 @@ export default function DockCountdownsTab({
                   <div style={{ display: "flex", gap: 4 }}>
                     {(["solid", "gradient", "image", "video", "transparent"] as BackgroundType[]).map((bgType) => (
                       <button key={bgType} type="button" onClick={() => { setEditBgUploadError(""); setEditBg((prev) => ({ ...prev, type: bgType })); }}
-                        style={{ flex: 1, padding: "5px 0", borderRadius: 6, fontSize: 11, fontWeight: 500, border: `1px solid ${editBg.type === bgType ? "#6366f1" : "var(--dock-border, rgba(255,255,255,0.1))"}`, background: editBg.type === bgType ? "rgba(99,102,241,0.2)" : "transparent", color: editBg.type === bgType ? "var(--accent-blue)" : "var(--dock-text-dim)", cursor: "pointer", textTransform: "capitalize" }}>
+                        style={{ flex: 1, padding: "5px 0", borderRadius: 6, fontSize: 11, fontWeight: 500, border: `1px solid ${editBg.type === bgType ? "#6366f1" : "var(--dock-border, var(--border))"}`, background: editBg.type === bgType ? "rgba(99,102,241,0.2)" : "transparent", color: editBg.type === bgType ? "var(--accent-blue)" : "var(--dock-text-dim)", cursor: "pointer", textTransform: "capitalize" }}>
                         {t(`countdowns.backgroundType.${bgType}`, bgType)}
                       </button>
                     ))}
@@ -1346,9 +1346,9 @@ export default function DockCountdownsTab({
                   {editBg.type === "solid" && (
                     <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                       <input type="color" value={editBg.color} onChange={(e) => setEditBg((p) => ({ ...p, color: e.target.value }))}
-                        style={{ width: 34, height: 34, borderRadius: 6, border: "1px solid var(--dock-border, rgba(255,255,255,0.1))", cursor: "pointer", padding: 2, background: "transparent" }} />
+                        style={{ width: 34, height: 34, borderRadius: 6, border: "1px solid var(--dock-border, var(--border))", cursor: "pointer", padding: 2, background: "transparent" }} />
                       <input type="text" value={editBg.color} onChange={(e) => setEditBg((p) => ({ ...p, color: e.target.value }))}
-                        style={{ background: "rgba(0,0,0,0.3)", border: "1px solid var(--dock-border, rgba(255,255,255,0.1))", borderRadius: 6, padding: "6px 10px", color: "var(--dock-text)", fontSize: 12, outline: "none", fontFamily: "monospace", flex: 1 }} />
+                        style={{ background: "rgba(0,0,0,0.3)", border: "1px solid var(--dock-border, var(--border))", borderRadius: 6, padding: "6px 10px", color: "var(--dock-text)", fontSize: 12, outline: "none", fontFamily: "monospace", flex: 1 }} />
                     </div>
                   )}
 
@@ -1360,18 +1360,18 @@ export default function DockCountdownsTab({
                           <span style={{ fontSize: 10, color: "var(--dock-text-dim)" }}>{t("common.start", "Start")}</span>
                           <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
                             <input type="color" value={editBg.gradientStart} onChange={(e) => setEditBg((p) => ({ ...p, gradientStart: e.target.value }))}
-                              style={{ width: 28, height: 28, borderRadius: 4, border: "1px solid var(--dock-border, rgba(255,255,255,0.1))", cursor: "pointer", padding: 1, background: "transparent" }} />
+                              style={{ width: 28, height: 28, borderRadius: 4, border: "1px solid var(--dock-border, var(--border))", cursor: "pointer", padding: 1, background: "transparent" }} />
                             <input type="text" value={editBg.gradientStart} onChange={(e) => setEditBg((p) => ({ ...p, gradientStart: e.target.value }))}
-                              style={{ background: "rgba(0,0,0,0.3)", border: "1px solid var(--dock-border, rgba(255,255,255,0.1))", borderRadius: 4, padding: "4px 6px", color: "var(--dock-text)", fontSize: 10, outline: "none", fontFamily: "monospace", flex: 1 }} />
+                              style={{ background: "rgba(0,0,0,0.3)", border: "1px solid var(--dock-border, var(--border))", borderRadius: 4, padding: "4px 6px", color: "var(--dock-text)", fontSize: 10, outline: "none", fontFamily: "monospace", flex: 1 }} />
                           </div>
                         </div>
                         <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 2 }}>
                           <span style={{ fontSize: 10, color: "var(--dock-text-dim)" }}>{t("bgPicker.end", "End")}</span>
                           <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
                             <input type="color" value={editBg.gradientEnd} onChange={(e) => setEditBg((p) => ({ ...p, gradientEnd: e.target.value }))}
-                              style={{ width: 28, height: 28, borderRadius: 4, border: "1px solid var(--dock-border, rgba(255,255,255,0.1))", cursor: "pointer", padding: 1, background: "transparent" }} />
+                              style={{ width: 28, height: 28, borderRadius: 4, border: "1px solid var(--dock-border, var(--border))", cursor: "pointer", padding: 1, background: "transparent" }} />
                             <input type="text" value={editBg.gradientEnd} onChange={(e) => setEditBg((p) => ({ ...p, gradientEnd: e.target.value }))}
-                              style={{ background: "rgba(0,0,0,0.3)", border: "1px solid var(--dock-border, rgba(255,255,255,0.1))", borderRadius: 4, padding: "4px 6px", color: "var(--dock-text)", fontSize: 10, outline: "none", fontFamily: "monospace", flex: 1 }} />
+                              style={{ background: "rgba(0,0,0,0.3)", border: "1px solid var(--dock-border, var(--border))", borderRadius: 4, padding: "4px 6px", color: "var(--dock-text)", fontSize: 10, outline: "none", fontFamily: "monospace", flex: 1 }} />
                           </div>
                         </div>
                       </div>
@@ -1404,12 +1404,12 @@ export default function DockCountdownsTab({
                         <>
                           <div style={{ display: "flex", gap: 6 }}>
                             {editBgUploading ? (
-                              <div style={{ flex: 1, padding: "10px 0", borderRadius: 8, border: "1px dashed var(--dock-border, rgba(255,255,255,0.15))", background: "rgba(0,0,0,0.2)", color: "var(--dock-text-dim)", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                              <div style={{ flex: 1, padding: "10px 0", borderRadius: 8, border: "1px dashed var(--dock-border, var(--border))", background: "rgba(0,0,0,0.2)", color: "var(--dock-text-dim)", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
                                 {t("common.uploading", "Uploading…")}
                               </div>
                             ) : (
                               <button type="button" onClick={() => { setEditBgUploadError(""); editBgFileRef.current?.click(); }}
-                                style={{ flex: 1, padding: "10px 0", borderRadius: 8, border: "1px dashed var(--dock-border, rgba(255,255,255,0.15))", background: "rgba(0,0,0,0.2)", color: "var(--dock-text-dim)", fontSize: 12, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                                style={{ flex: 1, padding: "10px 0", borderRadius: 8, border: "1px dashed var(--dock-border, var(--border))", background: "rgba(0,0,0,0.2)", color: "var(--dock-text-dim)", fontSize: 12, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
                                 <Upload size={14} /> {t("common.upload", "Upload")}
                               </button>
                             )}
@@ -1423,7 +1423,7 @@ export default function DockCountdownsTab({
                               } catch { setEditMediaItems([]); }
                               setEditMediaLoading(false);
                             }}
-                              style={{ flex: 1, padding: "10px 0", borderRadius: 8, border: "1px dashed var(--dock-border, rgba(255,255,255,0.15))", background: "rgba(0,0,0,0.2)", color: "var(--dock-text-dim)", fontSize: 12, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                              style={{ flex: 1, padding: "10px 0", borderRadius: 8, border: "1px dashed var(--dock-border, var(--border))", background: "rgba(0,0,0,0.2)", color: "var(--dock-text-dim)", fontSize: 12, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
                               <Icon name="folder" size={14} /> {t("common.library", "Library")}
                             </button>
                           </div>
@@ -1436,7 +1436,7 @@ export default function DockCountdownsTab({
                       <div style={{ display: "flex", gap: 4 }}>
                         {(["cover", "contain", "stretch"] as ImageFit[]).map((fit) => (
                           <button key={fit} type="button" onClick={() => setEditBg((p) => ({ ...p, imageFit: fit }))}
-                            style={{ flex: 1, padding: "4px 0", borderRadius: 6, fontSize: 10, fontWeight: 500, border: `1px solid ${editBg.imageFit === fit ? "#6366f1" : "var(--dock-border, rgba(255,255,255,0.1))"}`, background: editBg.imageFit === fit ? "rgba(99,102,241,0.2)" : "transparent", color: editBg.imageFit === fit ? "var(--accent-blue)" : "var(--dock-text-dim)", cursor: "pointer", textTransform: "capitalize" }}>
+                            style={{ flex: 1, padding: "4px 0", borderRadius: 6, fontSize: 10, fontWeight: 500, border: `1px solid ${editBg.imageFit === fit ? "#6366f1" : "var(--dock-border, var(--border))"}`, background: editBg.imageFit === fit ? "rgba(99,102,241,0.2)" : "transparent", color: editBg.imageFit === fit ? "var(--accent-blue)" : "var(--dock-text-dim)", cursor: "pointer", textTransform: "capitalize" }}>
                             {t(`countdowns.imageFit.${fit}`, fit)}
                           </button>
                         ))}
@@ -1470,12 +1470,12 @@ export default function DockCountdownsTab({
                         <>
                           <div style={{ display: "flex", gap: 6 }}>
                             {editBgUploading ? (
-                              <div style={{ flex: 1, padding: "10px 0", borderRadius: 8, border: "1px dashed var(--dock-border, rgba(255,255,255,0.15))", background: "rgba(0,0,0,0.2)", color: "var(--dock-text-dim)", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                              <div style={{ flex: 1, padding: "10px 0", borderRadius: 8, border: "1px dashed var(--dock-border, var(--border))", background: "rgba(0,0,0,0.2)", color: "var(--dock-text-dim)", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
                                 {t("common.uploading", "Uploading…")}
                               </div>
                             ) : (
                               <button type="button" onClick={() => { setEditBgUploadError(""); editBgFileRef.current?.click(); }}
-                                style={{ flex: 1, padding: "10px 0", borderRadius: 8, border: "1px dashed var(--dock-border, rgba(255,255,255,0.15))", background: "rgba(0,0,0,0.2)", color: "var(--dock-text-dim)", fontSize: 12, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                                style={{ flex: 1, padding: "10px 0", borderRadius: 8, border: "1px dashed var(--dock-border, var(--border))", background: "rgba(0,0,0,0.2)", color: "var(--dock-text-dim)", fontSize: 12, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
                                 <Upload size={14} /> {t("common.upload", "Upload")}
                               </button>
                             )}
@@ -1489,7 +1489,7 @@ export default function DockCountdownsTab({
                               } catch { setEditMediaItems([]); }
                               setEditMediaLoading(false);
                             }}
-                              style={{ flex: 1, padding: "10px 0", borderRadius: 8, border: "1px dashed var(--dock-border, rgba(255,255,255,0.15))", background: "rgba(0,0,0,0.2)", color: "var(--dock-text-dim)", fontSize: 12, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                              style={{ flex: 1, padding: "10px 0", borderRadius: 8, border: "1px dashed var(--dock-border, var(--border))", background: "rgba(0,0,0,0.2)", color: "var(--dock-text-dim)", fontSize: 12, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
                               <Icon name="folder" size={14} /> {t("common.library", "Library")}
                             </button>
                           </div>
@@ -1551,14 +1551,14 @@ export default function DockCountdownsTab({
 
                   {/* Media library modal */}
                   {editBgMediaModal && (
-                    <div style={{ border: "1px solid var(--dock-border, rgba(255,255,255,0.1))", borderRadius: 8, padding: 10, background: "rgba(0,0,0,0.3)" }}>
+                    <div style={{ border: "1px solid var(--dock-border, var(--border))", borderRadius: 8, padding: 10, background: "rgba(0,0,0,0.3)" }}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
                         <span style={{ fontSize: 12, fontWeight: 600, color: "var(--dock-text)" }}>{t("common.chooseFromLibrary", "Choose from Library")}</span>
                         <button type="button" onClick={() => { setEditBgMediaModal(false); setEditMediaSearch(""); }}
                           style={{ background: "none", border: "none", color: "var(--dock-text-dim)", cursor: "pointer", fontSize: 16 }}>×</button>
                       </div>
                       <input type="text" placeholder={t("common.searchEllipsis", "Search...")} value={editMediaSearch} onChange={(e) => setEditMediaSearch(e.target.value)}
-                        style={{ background: "rgba(0,0,0,0.3)", border: "1px solid var(--dock-border, rgba(255,255,255,0.1))", borderRadius: 6, padding: "6px 10px", color: "var(--dock-text)", fontSize: 12, outline: "none", width: "100%", marginBottom: 8 }} />
+                        style={{ background: "rgba(0,0,0,0.3)", border: "1px solid var(--dock-border, var(--border))", borderRadius: 6, padding: "6px 10px", color: "var(--dock-text)", fontSize: 12, outline: "none", width: "100%", marginBottom: 8 }} />
                       <div style={{ maxHeight: 180, overflowY: "auto" }}>
                         {editMediaLoading ? (
                           <div style={{ padding: 16, textAlign: "center", color: "var(--dock-text-dim)", fontSize: 12 }}>{t("common.loading", "Loading…")}</div>
@@ -1600,7 +1600,7 @@ export default function DockCountdownsTab({
 
             </>)}
             {/* ── Message Section ────────────────────────────────── */}
-            <div style={{ padding: 12, border: "1px solid var(--dock-border, rgba(255,255,255,0.1))", borderRadius: 10, background: "rgba(255,255,255,0.025)" }}>
+            <div style={{ padding: 12, border: "1px solid var(--dock-border, var(--border))", borderRadius: 10, background: "rgba(255,255,255,0.025)" }}>
               <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 10 }}>
                 <Icon name="text_fields" size={15} />
                 <div>
@@ -1616,7 +1616,7 @@ export default function DockCountdownsTab({
                     value={editMessage.text}
                     onChange={(e) => setEditMessage((p) => ({ ...p, text: e.target.value }))}
                     placeholder={t("countdowns.messagePlaceholder", "e.g. Welcome to our service")}
-                    style={{ background: "rgba(0,0,0,0.22)", border: "1px solid var(--dock-border, rgba(255,255,255,0.1))", borderRadius: 7, padding: "8px 9px", color: "var(--dock-text)", fontSize: 12, outline: "none" }}
+                    style={{ background: "rgba(0,0,0,0.22)", border: "1px solid var(--dock-border, var(--border))", borderRadius: 7, padding: "8px 9px", color: "var(--dock-text)", fontSize: 12, outline: "none" }}
                   />
                 </label>
                 <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 10 }}>
@@ -1624,9 +1624,9 @@ export default function DockCountdownsTab({
                     <span style={{ fontSize: 10, color: "var(--dock-text-dim)" }}>{t("common.color", "Color")}</span>
                     <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                       <input type="color" value={editMessage.color} onChange={(e) => setEditMessage((p) => ({ ...p, color: e.target.value }))}
-                        style={{ width: 32, height: 32, borderRadius: 6, border: "1px solid var(--dock-border, rgba(255,255,255,0.1))", cursor: "pointer", padding: 1, background: "transparent" }} />
+                        style={{ width: 32, height: 32, borderRadius: 6, border: "1px solid var(--dock-border, var(--border))", cursor: "pointer", padding: 1, background: "transparent" }} />
                       <input type="text" value={editMessage.color} onChange={(e) => setEditMessage((p) => ({ ...p, color: e.target.value }))}
-                        style={{ background: "rgba(0,0,0,0.22)", border: "1px solid var(--dock-border, rgba(255,255,255,0.1))", borderRadius: 7, padding: "8px 7px", color: "var(--dock-text)", fontSize: 11, outline: "none", fontFamily: "monospace", flex: 1, minWidth: 0 }} />
+                        style={{ background: "rgba(0,0,0,0.22)", border: "1px solid var(--dock-border, var(--border))", borderRadius: 7, padding: "8px 7px", color: "var(--dock-text)", fontSize: 11, outline: "none", fontFamily: "monospace", flex: 1, minWidth: 0 }} />
                     </div>
                   </label>
                   <div>
@@ -1634,7 +1634,7 @@ export default function DockCountdownsTab({
                     <div style={{ display: "flex", gap: 4 }}>
                       {(["above", "below"] as const).map((pos) => (
                         <button key={pos} type="button" onClick={() => setEditMessage((p) => ({ ...p, position: pos }))}
-                          style={{ flex: 1, padding: "8px 4px", borderRadius: 7, border: "1px solid var(--dock-border, rgba(255,255,255,0.1))", background: editMessage.position === pos ? "rgba(59,130,246,0.18)" : "rgba(0,0,0,0.18)", color: editMessage.position === pos ? "var(--dock-accent, #60a5fa)" : "var(--dock-text-dim)", fontSize: 11, cursor: "pointer", textTransform: "capitalize" }}>
+                          style={{ flex: 1, padding: "8px 4px", borderRadius: 7, border: "1px solid var(--dock-border, var(--border))", background: editMessage.position === pos ? "rgba(59,130,246,0.18)" : "rgba(0,0,0,0.18)", color: editMessage.position === pos ? "var(--dock-accent, var(--primary))" : "var(--dock-text-dim)", fontSize: 11, cursor: "pointer", textTransform: "capitalize" }}>
                           {t(`countdowns.messagePosition.${pos}`, pos)}
                         </button>
                       ))}
@@ -1647,7 +1647,7 @@ export default function DockCountdownsTab({
             </div>
 
             {/* Actions stay visible while the editor content scrolls. */}
-            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "12px 18px", borderTop: "1px solid var(--dock-border, rgba(255,255,255,0.08))", background: "var(--dock-surface, #1e1e2e)", flexShrink: 0 }}>
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", padding: "12px 18px", borderTop: "1px solid var(--dock-border, var(--border))", background: "var(--dock-surface, var(--surface))", flexShrink: 0 }}>
               <button type="button" className="dock-btn dock-btn--small" onClick={() => setEditingCd(null)} style={{ fontSize: 11 }}>
                 {t("common.cancel", "Cancel")}
               </button>

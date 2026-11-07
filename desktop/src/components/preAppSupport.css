@@ -1,0 +1,95 @@
+/* Corner support card on the sign-in and onboarding screens. Theme tokens only. */
+.pre-app-support {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: calc(100vw - 32px);
+  padding: 12px 12px 12px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  color: var(--text-primary);
+}
+
+.pre-app-support__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pre-app-support__copy strong {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.pre-app-support__copy span {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.pre-app-support__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--success);
+  flex-shrink: 0;
+}
+
+.pre-app-support__actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.pre-app-support__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--control-height);
+  padding: 0 12px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.pre-app-support__btn:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-strong);
+}
+
+.pre-app-support__btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.pre-app-support__btn--primary {
+  color: #ffffff;
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.pre-app-support__btn--primary:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+@media (max-width: 640px) {
+  .pre-app-support__copy span {
+    display: none;
+  }
+}

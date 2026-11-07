@@ -20,6 +20,7 @@ const {
   getBlockedGraphicThemeIds,
   getGraphicAvailability,
   getPackageThemes,
+  getPackageTickers,
 } = await import("./broadcastGraphicsCatalog");
 const { BUNDLED_GRAPHIC_PACKAGES } = await import("../lowerthirds/bundledGraphicPackages");
 
@@ -48,6 +49,19 @@ describe("broadcastGraphicsCatalog", () => {
   beforeEach(() => {
     storageMap.clear();
     __resetBroadcastGraphicsCatalogForTests();
+  });
+
+  it("hides the News Ticker Bar lower third now that it is a ticker", () => {
+    expect(getGraphicAvailability("lt-stream-ticker", null)).toMatchObject({ visible: false, usable: false });
+  });
+
+  it("does not list an uploaded copy of the Sunrise ticker next to the bundled one", () => {
+    const tickerPkg = { format: "mce-ticker@1", name: "Sunrise Ticker", html: "<div>{{tickerText}}</div>" };
+    const tickers = getPackageTickers(catalog([
+      { graphicId: "starter-sunrise-ticker", kind: "ticker", source: "package", status: "active", tiers: { free: true, paid: true, ambassador: true }, package: tickerPkg },
+      { graphicId: "my-ticker", kind: "ticker", source: "package", status: "active", tiers: { free: true, paid: true, ambassador: true }, package: { ...tickerPkg, name: "Mine" } },
+    ]));
+    expect(tickers.map((t) => t.name)).toEqual(["Mine"]);
   });
 
   it("keeps every bundled graphic available before the first download", () => {

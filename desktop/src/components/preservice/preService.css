@@ -55,21 +55,21 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--success, #10b981);
+  background: var(--success);
   animation: soft-pulse 3s infinite ease-in-out;
 }
 
 .ps-health-badge.is-disconnected .ps-health-dot {
-  background: var(--error, #e74856);
+  background: var(--error);
   animation: none;
 }
 
 .ps-health-badge span:last-child {
-  color: var(--success, #10b981);
+  color: var(--success);
 }
 
 .ps-health-badge.is-disconnected span:last-child {
-  color: var(--error, #e74856);
+  color: var(--error);
 }
 
 @keyframes soft-pulse {
@@ -88,7 +88,7 @@
 .ps-sequence-countdown {
   margin: 12px 24px 0;
   padding: 12px 16px 8px;
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   background: rgba(var(--primary-rgb), 0.08);
   border: 1px solid rgba(var(--primary-rgb), 0.2);
   animation: countdown-slide-in 0.35s ease-out;
@@ -134,7 +134,7 @@
 }
 
 .ps-sequence-countdown.is-paused .ps-sequence-countdown-left {
-  color: rgba(255, 200, 50, 0.9);
+  color: var(--warning);
 }
 
 .ps-sequence-countdown-right {
@@ -163,7 +163,7 @@
   width: 100%;
   height: 4px;
   border-radius: 2px;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--surface-raised);
   overflow: hidden;
 }
 
@@ -180,7 +180,7 @@
 
 /* ── Streaming live text ── */
 .ps-obs-live-text {
-  color: #ef4444 !important;
+  color: var(--error) !important;
   font-weight: 700;
 }
 
@@ -221,7 +221,7 @@
    Step Cards
    ═══════════════════════════════════════════════════════ */
 .ps-step-card {
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--surface-dark);
   overflow: hidden;
@@ -286,25 +286,25 @@
 
 .ps-step-badge--media {
   background: rgba(106, 52, 222, 0.1);
-  color: rgb(96, 165, 250);
+  color: var(--accent-blue);
   border: 1px solid rgba(106, 52, 222, 0.2);
 }
 
 .ps-step-badge--image {
   background: rgba(168, 85, 247, 0.1);
-  color: rgb(192, 132, 252);
+  color: var(--primary);
   border: 1px solid rgba(168, 85, 247, 0.2);
 }
 
 .ps-step-badge--audio {
   background: rgba(249, 115, 22, 0.1);
-  color: rgb(251, 146, 60);
+  color: var(--warning);
   border: 1px solid rgba(249, 115, 22, 0.2);
 }
 
 .ps-step-badge--countdown {
   background: rgba(239, 68, 68, 0.1);
-  color: rgb(248, 113, 113);
+  color: var(--error);
   border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
@@ -316,7 +316,7 @@
 
 .ps-step-badge--go-live {
   background: rgba(16, 185, 129, 0.14);
-  color: #34d399;
+  color: var(--success);
   border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
@@ -428,7 +428,7 @@
 
 /* Expand/collapse chevron */
 .ps-step-expand-btn {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-raised);
   border: none;
   border-radius: 999px;
   width: 28px;
@@ -442,8 +442,8 @@
 }
 
 .ps-step-expand-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  background: var(--surface-hover);
+  color: var(--text-primary);
 }
 
 .ps-step-expand-btn.is-collapsed {
@@ -470,7 +470,7 @@
 }
 
 .ps-media-row:hover {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--surface-hover);
 }
 
 .ps-media-row:last-child {
@@ -660,21 +660,21 @@
 .ps-media-divider {
   width: 1px;
   height: 32px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-raised);
 }
 
 .ps-media-delete {
   background: none;
   border: none;
   padding: 6px;
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   color: var(--text-muted);
   cursor: pointer;
   transition: color 0.15s, background 0.15s;
 }
 
 .ps-media-delete:hover {
-  color: var(--error, #e74856);
+  color: var(--error);
   background: rgba(239, 68, 68, 0.1);
 }
 
@@ -714,7 +714,7 @@
   width: 100%;
   border-radius: 4px;
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--surface-raised);
   color: var(--text-primary);
   font-size: 10px;
   padding: 8px 10px;
@@ -749,7 +749,7 @@
   align-items: center;
   gap: 5px;
   padding: 6px 10px;
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   border: 1px solid rgba(var(--primary-rgb), 0.2);
   background: rgba(var(--primary-rgb), 0.1);
   color: var(--primary);
@@ -780,7 +780,7 @@
   align-items: center;
   gap: 6px;
   padding: 6px 10px;
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--surface-dark);
 }
@@ -796,7 +796,7 @@
 .ps-transition-divider {
   width: 1px;
   height: 12px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--surface-hover);
 }
 
 .ps-transition-select {
@@ -874,8 +874,8 @@
   font-variant-numeric: tabular-nums;
   letter-spacing: 2px;
   text-align: center;
-  color: #fff;
-  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  background: var(--surface-raised);
   border: 1.5px solid var(--border);
   border-radius: 4px;
   outline: none;
@@ -892,7 +892,7 @@
 
 .ps-countdown-edit-input:focus {
   border-color: var(--primary);
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--surface-hover);
 }
 
 .ps-countdown-edit-unit {
@@ -907,7 +907,7 @@
   font-size: 36px;
   font-family: monospace;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-muted);
   margin: 0 2px;
   align-self: flex-start;
   line-height: 56px;
@@ -941,8 +941,8 @@
   gap: 8px;
   width: 100%;
   padding: 14px;
-  border-radius: var(--radius, 4px);
-  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius);
+  border: 1px dashed var(--border-strong);
   background: var(--surface-dark);
   color: var(--text-muted);
   font-size: 13px;
@@ -953,7 +953,7 @@
 }
 
 .ps-add-step-btn:hover {
-  color: #fff;
+  color: var(--text-primary);
   border-color: rgba(var(--primary-rgb), 0.5);
 }
 
@@ -966,7 +966,7 @@
 .ps-add-step-btn:disabled:hover,
 .ps-add-step-btn.is-disabled-state:hover {
   color: var(--text-muted);
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: var(--border-strong);
   background: var(--surface-dark);
 }
 
@@ -979,7 +979,7 @@
    Sidebar Panels
    ═══════════════════════════════════════════════════════ */
 .ps-sidebar-panel {
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--surface-dark);
   padding: 18px;
@@ -1012,7 +1012,7 @@
 .ps-monitor-stat {
   position: relative;
   overflow: hidden;
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   background: var(--bg-dark);
   border: 1px solid var(--border);
   padding: 14px;
@@ -1085,7 +1085,7 @@
 
 /* ── Control Actions panel ── */
 .ps-control-panel {
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   background: var(--surface-dark);
   border: 1px solid var(--border);
   padding: 18px;
@@ -1116,7 +1116,7 @@
   justify-content: center;
   gap: 8px;
   padding: 14px 20px;
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   border: none;
   background: var(--primary);
   color: #fff;
@@ -1155,7 +1155,7 @@
   justify-content: center;
   gap: 8px;
   padding: 10px 20px;
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--surface-dark);
   color: var(--text-primary);
@@ -1167,8 +1167,8 @@
 }
 
 .ps-btn-stop:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--surface-hover);
+  border-color: var(--border-strong);
 }
 
 .ps-btn-stop:disabled {
@@ -1179,7 +1179,7 @@
 .ps-btn-stop svg {
   width: 18px;
   height: 18px;
-  color: rgb(248, 113, 113);
+  color: var(--error);
 }
 
 .ps-btn-secondary {
@@ -1189,7 +1189,7 @@
   justify-content: center;
   gap: 8px;
   padding: 10px 20px;
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--surface-dark);
   color: var(--text-primary);
@@ -1201,8 +1201,8 @@
 }
 
 .ps-btn-secondary:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--surface-hover);
+  border-color: var(--border-strong);
 }
 
 .ps-btn-secondary:disabled {
@@ -1225,7 +1225,7 @@
 
 /* ── OBS Status panel ── */
 .ps-obs-status {
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--surface-dark);
   padding: 18px;
@@ -1335,7 +1335,7 @@
   width: 100%;
   max-width: 180px;
   border: 1px solid var(--border);
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   background: var(--bg-dark);
   color: var(--text-primary);
   padding: 6px 8px;
@@ -1360,7 +1360,7 @@
 .ps-error-banner {
   border: 1px solid rgba(231, 72, 86, 0.35);
   background: rgba(231, 72, 86, 0.08);
-  color: #f19ba0;
+  color: var(--error);
   border-radius: 4px;
   padding: 10px 14px;
   font-size: 10px;
@@ -1370,7 +1370,7 @@
 .ps-warning-banner {
   border: 1px solid rgba(249, 168, 37, 0.32);
   background: rgba(249, 168, 37, 0.08);
-  color: #f9d27a;
+  color: var(--warning);
   border-radius: 4px;
   padding: 10px 14px;
   font-size: 10px;
@@ -1434,7 +1434,7 @@
 .pre-service-modal {
   width: min(980px, 100%);
   max-height: min(92dvh, 820px);
-  border-radius: var(--radius-lg, 6px);
+  border-radius: var(--radius-lg);
   border: 1px solid var(--border);
   background: var(--surface-raised);
   overflow: hidden;
@@ -1484,7 +1484,7 @@
   width: 34px;
   height: 34px;
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg, 6px);
+  border-radius: var(--radius-lg);
   background: var(--surface-hover);
   color: var(--text-secondary);
   cursor: pointer;
@@ -1528,7 +1528,7 @@
   gap: 10px;
   min-height: 170px;
   border: 1px solid var(--border);
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   background: var(--surface-dark);
   color: var(--text-secondary);
   cursor: pointer;
@@ -1638,7 +1638,7 @@
   border: 1px solid var(--border);
   background: var(--surface-hover);
   color: var(--text-primary);
-  border-radius: var(--radius-lg, 6px);
+  border-radius: var(--radius-lg);
   padding: 8px 14px;
   font-size: 10px;
   font-weight: 600;
@@ -1819,7 +1819,7 @@
 
 .cfg-media-card {
   position: relative;
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   border: 2px solid var(--border);
   overflow: hidden;
   cursor: pointer;
@@ -1958,7 +1958,7 @@
 .cfg-duration-inline-field {
   width: 48px;
   padding: 4px 6px;
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--bg-dark);
   color: var(--text-primary);
@@ -1970,7 +1970,7 @@
 
 .cfg-duration-inline-field:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(var(--primary-rgb, 99, 102, 241), 0.15);
+  box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.15);
 }
 
 .cfg-duration-inline-sep {
@@ -1987,7 +1987,7 @@
   letter-spacing: 0.06em;
   padding: 2px 6px;
   border-radius: 4px;
-  background: rgba(var(--primary-rgb, 99, 102, 241), 0.15);
+  background: rgba(var(--primary-rgb), 0.15);
   color: var(--primary);
 }
 
@@ -2319,7 +2319,7 @@
 .cfg-audio-table tbody tr {
   cursor: pointer;
   transition: background 0.12s;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .cfg-audio-table tbody tr:hover {
@@ -2426,7 +2426,7 @@
 }
 
 .cfg-template-card {
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   border: 1px solid var(--border);
   overflow: hidden;
   background: var(--surface-dark);
@@ -2553,7 +2553,7 @@
   padding: 20px 16px;
   margin: 12px 18px 0;
   border: 2px dashed var(--border);
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   background: var(--surface-dark);
   color: var(--text-muted);
   transition: border-color 0.2s, background 0.2s, color 0.2s;
@@ -2587,7 +2587,7 @@
   align-items: center;
   gap: 6px;
   padding: 7px 16px;
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   border: 1px solid var(--primary);
   background: var(--primary);
   color: #fff;
@@ -2613,7 +2613,7 @@
    ═══════════════════════════════════════════════════════ */
 .ps-confirm-modal {
   width: min(420px, 92vw);
-  border-radius: var(--radius-lg, 6px);
+  border-radius: var(--radius-lg);
   border: 1px solid var(--border);
   background: var(--surface-raised);
   padding: 28px 24px 22px;
@@ -2639,7 +2639,7 @@
 .ps-confirm-icon svg {
   width: 28px;
   height: 28px;
-  color: var(--error, #e74856);
+  color: var(--error);
 }
 
 .ps-confirm-title {
@@ -2692,8 +2692,8 @@
 }
 
 .ps-confirm-go {
-  border: 1px solid var(--error, #e74856);
-  background: var(--error, #e74856);
+  border: 1px solid var(--error);
+  background: var(--error);
   color: #fff;
 }
 
@@ -2815,11 +2815,6 @@
   background: var(--surface-raised);
 }
 
-:root.light .ps-step-expand-btn:hover {
-  background: var(--surface-hover);
-  color: var(--text-primary);
-}
-
 :root.light .ps-transition-row {
   border-color: var(--border);
 }
@@ -2858,11 +2853,6 @@
   color: var(--text-primary);
 }
 
-/* Media row hover */
-:root.light .ps-media-row:hover {
-  background: var(--surface-hover);
-}
-
 /* Drag step indicators */
 :root.light .ps-step-drag-handle {
   color: var(--text-muted);
@@ -2887,7 +2877,7 @@
   align-items: center;
   gap: 14px;
   padding: 14px 18px;
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   border: 1px solid var(--border);
   margin-bottom: 8px;
 }
@@ -2898,13 +2888,13 @@
 }
 
 .ps-status-banner--idle .ps-status-banner-icon svg {
-  color: var(--text-muted, #9E9E9E);
+  color: var(--text-muted);
   width: 28px;
   height: 28px;
 }
 
 .ps-status-banner--idle .ps-status-banner-label {
-  color: var(--text-muted, #9E9E9E);
+  color: var(--text-muted);
 }
 
 .ps-status-banner--running {
@@ -2913,14 +2903,14 @@
 }
 
 .ps-status-banner--running .ps-status-banner-icon svg {
-  color: #00E676;
+  color: var(--success);
   width: 28px;
   height: 28px;
   animation: ps-pulse 1.5s ease-in-out infinite;
 }
 
 .ps-status-banner--running .ps-status-banner-label {
-  color: #00E676;
+  color: var(--success);
 }
 
 .ps-status-banner--paused {
@@ -2929,13 +2919,13 @@
 }
 
 .ps-status-banner--paused .ps-status-banner-icon svg {
-  color: #FF9800;
+  color: var(--warning);
   width: 28px;
   height: 28px;
 }
 
 .ps-status-banner--paused .ps-status-banner-label {
-  color: #FF9800;
+  color: var(--warning);
 }
 
 .ps-status-banner--finished {
@@ -2950,7 +2940,7 @@
 }
 
 .ps-status-banner--finished .ps-status-banner-label {
-  color: #2962FF;
+  color: var(--accent-blue);
 }
 
 .ps-status-banner-text {
@@ -2968,7 +2958,7 @@
 
 .ps-status-banner-sub {
   font-size: 10px;
-  color: var(--text-muted, #9E9E9E);
+  color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

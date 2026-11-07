@@ -117,3 +117,76 @@
   border: 1px solid #b45309; background: color-mix(in srgb, #f59e0b 12%, transparent); color: var(--tc-on-surface, #e6e9f0);
   font-size: 12px; line-height: 1.45;
 }
+
+/* Advanced options: name, what a text shows, exact position and fine-tuning (closed by default). */
+.le-advanced { margin-top: 8px; border-top: 1px solid var(--tc-outline-variant); padding-top: 8px; }
+.le-advanced__summary {
+  display: flex; align-items: center; gap: 8px; padding: 4px 0; cursor: pointer; list-style: none;
+  font-size: 12px; font-weight: 600; color: var(--tc-on-surface); border-radius: var(--radius);
+}
+.le-advanced__summary::-webkit-details-marker { display: none; }
+.le-advanced__summary::before {
+  content: ""; width: 6px; height: 6px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg); transition: transform var(--transition);
+}
+.le-advanced[open] > .le-advanced__summary::before { transform: rotate(45deg); }
+.le-advanced__summary:hover { color: var(--tc-primary); }
+.le-advanced__summary:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.le-advanced__body { display: flex; flex-direction: column; gap: 8px; padding-top: 8px; }
+
+/* Compact icon toolbar (alignment, letter case, italic, shadow) instead of wide word buttons. */
+.le-iconbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.le-iconbar__group { display: inline-flex; border: 1px solid var(--tc-outline-variant); border-radius: var(--radius); overflow: hidden; }
+.le-iconbtn {
+  display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 28px; padding: 0;
+  border: 0; border-right: 1px solid var(--tc-outline-variant); background: transparent;
+  color: var(--tc-on-surface-dim); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer;
+  transition: background-color var(--transition), color var(--transition);
+}
+.le-iconbtn:last-child { border-right: 0; }
+.le-iconbtn:hover { background: var(--surface-hover); color: var(--tc-on-surface); }
+.le-iconbtn:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
+.le-iconbtn--on, .le-iconbtn--on:hover { background: var(--primary-soft); color: var(--tc-primary); }
+.le-iconbtn--glyph { letter-spacing: 0; }
+.le-iconbtn--shadow { text-shadow: 1px 2px 2px currentColor; }
+/* Colour fields can sit in a two-column row: let the hex box shrink. */
+.le-color .tc-input { min-width: 0; flex: 1; }
+
+/* Labels above each icon group ("Align", "Letters", "Style", "Across", "Up and down"). */
+.le-iconbar { align-items: flex-end; gap: 12px; }
+.le-iconbar__item { display: flex; flex-direction: column; gap: 4px; }
+.le-iconbar__label { font-size: 11px; color: var(--tc-on-surface-dim); }
+
+/* More room between fields so the panel reads easily (it was packed tight). */
+.le-panel { gap: 16px; }
+.le-section { gap: 12px; }
+.le-grid-2 { column-gap: 8px; row-gap: 12px; }
+.le-subtitle { margin-top: 12px; }
+.le-advanced__body { gap: 12px; }
+
+/* Several layers selected: one dashed frame around the group. */
+.le-group-frame { outline: 2px dashed var(--primary); outline-offset: 2px; }
+
+/* Right-click menu for layers (rendered on top of the Theme Creator). */
+.le-ctx {
+  position: fixed; z-index: 10050; min-width: 220px; padding: 4px;
+  display: flex; flex-direction: column;
+  background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius-lg);
+  box-shadow: var(--mce-modal-shadow); color: var(--text-primary); font-size: 13px;
+}
+.le-ctx__title {
+  padding: 6px 8px 4px; font-size: 11px; font-weight: 700; color: var(--text-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 280px;
+}
+.le-ctx__item {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 6px 8px; border: 0; border-radius: var(--radius); background: transparent;
+  color: inherit; font: inherit; text-align: left; cursor: pointer;
+  transition: background-color var(--transition);
+}
+.le-ctx__item:hover:not(:disabled), .le-ctx__item:focus-visible { background: var(--surface-hover); outline: none; }
+.le-ctx__item:disabled { color: var(--text-disabled); cursor: default; }
+.le-ctx__item--danger { color: var(--danger-text); }
+.le-ctx__hint { font: inherit; font-size: 11px; color: var(--text-muted); background: none; border: 0; padding: 0; }
+.le-ctx__sep { height: 1px; margin: 4px 0; background: var(--border-subtle); }
+.le-iconbtn--wide { width: auto; padding: 0 12px; }

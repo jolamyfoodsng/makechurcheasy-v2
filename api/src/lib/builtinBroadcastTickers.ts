@@ -19,6 +19,13 @@ export interface BuiltinBroadcastTicker {
   retired?: boolean;
 }
 
+/**
+ * Bundled graphics (lower thirds) taken out of newer apps because they moved to the Tickers
+ * section. Like a retired ticker they always stay "hidden" in the admin portal and the app.
+ * "lt-stream-ticker" (News Ticker Bar) is now the "ticker-news-bar" ticker.
+ */
+export const RETIRED_BUILTIN_GRAPHIC_IDS: ReadonlySet<string> = new Set(["lt-stream-ticker"]);
+
 export const BUILTIN_BROADCAST_TICKERS: BuiltinBroadcastTicker[] = [
   { graphicId: "ticker-sunrise", name: "Sunrise", accentColor: "#F97316", description: "Warm orange gradient bar with a cream pill heading and soft glow. The heading can show your text or the live time.", sortOrder: 0 },
   { graphicId: "ticker-sunrise-clock", name: "Sunrise Clock", accentColor: "#F97316", description: "The Sunrise pill bar with the live time in the heading instead of a title.", sortOrder: 1, retired: true },
@@ -26,9 +33,10 @@ export const BUILTIN_BROADCAST_TICKERS: BuiltinBroadcastTicker[] = [
   { graphicId: "ticker-royal", name: "Royal Glow", accentColor: "#A855F7", description: "Purple to magenta gradient with a gold pill heading.", sortOrder: 3 },
   { graphicId: "ticker-emerald", name: "Emerald Live", accentColor: "#10B981", description: "Fresh green gradient with a pulsing live dot in the heading.", sortOrder: 4 },
   { graphicId: "ticker-midnight-gold", name: "Midnight Gold", accentColor: "#D4A017", description: "Elegant dark bar with a thin gold border and classic serif heading.", sortOrder: 5 },
-  { graphicId: "ticker-fresh", name: "Fresh", accentColor: "#6366F1", description: "Clean modern ticker with rounded badge heading and smooth scroll", sortOrder: 6 },
-  { graphicId: "ticker-minimal", name: "Minimal", accentColor: "#10B981", description: "Ultra-clean white ticker with subtle accent line", sortOrder: 7 },
-  { graphicId: "ticker-glass", name: "Glass", accentColor: "#8B5CF6", description: "Frosted glass translucent bar with blur backdrop effect", sortOrder: 8 },
+  { graphicId: "ticker-fresh", name: "Clean Bar", accentColor: "#6366F1", description: "A solid bar with a rounded heading badge and smooth scrolling messages. Pick any colours.", sortOrder: 6 },
+  { graphicId: "ticker-minimal", name: "Minimal", accentColor: "#10B981", description: "Ultra-clean white ticker with subtle accent line", sortOrder: 7, retired: true },
+  { graphicId: "ticker-glass", name: "Glass", accentColor: "#8B5CF6", description: "Frosted glass translucent bar with blur backdrop effect", sortOrder: 8, retired: true },
   { graphicId: "ticker-rotating-logo", name: "Rotating Logo", accentColor: "#1D4ED8", description: "Church logo rotates in, the line opens, then text scrolls", sortOrder: 9, retired: true },
   { graphicId: "ticker-bottom", name: "Bottom Ticker", accentColor: "#2F4D8A", description: "Bottom ticker-style footer for website and contact details.", sortOrder: 10 },
+  { graphicId: "ticker-news-bar", name: "News Ticker Bar", accentColor: "#2FE0C3", description: "A slanted label tab and a full-width bar of messages that scroll across.", sortOrder: 11 },
 ];

@@ -8,17 +8,17 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: var(--bg-dark, #0d0e12);
-  color: var(--text-primary, #f1f3f9);
+  background: var(--bg-dark);
+  color: var(--text-primary);
   font-family: var(--font-user, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
   overflow-y: auto;
 }
 
 .mce-error-boundary-card {
   width: min(580px, 100%);
-  border-radius: var(--radius, 4px);
-  border: 1px solid var(--border-subtle, var(--border));
-  background: var(--surface-dark, #161820);
+  border-radius: var(--radius);
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-dark);
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
   overflow: hidden;
   animation: mceErrorBoundaryFadeIn 0.25s ease-out forwards;
@@ -40,8 +40,8 @@
   align-items: center;
   gap: 14px;
   padding: 20px 24px;
-  border-bottom: 1px solid var(--border-subtle, var(--border));
-  background: var(--surface-raised, rgba(255, 255, 255, 0.03));
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-raised);
 }
 
 .mce-error-boundary-icon {
@@ -49,7 +49,7 @@
   height: 46px;
   border-radius: 12px;
   background: rgba(239, 68, 68, 0.12);
-  color: #ef4444;
+  color: var(--error);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -66,13 +66,13 @@
   font-size: 15px;
   font-weight: 700;
   letter-spacing: -0.01em;
-  color: var(--text-primary, #ffffff);
+  color: var(--text-primary);
 }
 
 .mce-error-boundary-tag {
   font-size: 11px;
   font-weight: 500;
-  color: var(--text-muted, #8b92a5);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -88,14 +88,14 @@
   margin: 0;
   font-size: 20px;
   font-weight: 700;
-  color: var(--text-primary, #ffffff);
+  color: var(--text-primary);
   line-height: 1.25;
 }
 
 .mce-error-boundary-copy {
   margin: 0;
   font-size: 13.5px;
-  color: var(--text-secondary, #b0b7c9);
+  color: var(--text-secondary);
   line-height: 1.5;
 }
 
@@ -113,7 +113,7 @@
   gap: 8px;
   min-height: 38px;
   padding: 0 16px;
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -122,25 +122,25 @@
 }
 
 .mce-error-btn--primary {
-  background: var(--primary, #6366f1);
+  background: var(--primary);
   color: #ffffff;
 }
 
 .mce-error-btn--primary:hover {
-  background: var(--primary-hover, #4f46e5);
+  background: var(--primary-hover);
   transform: translateY(-1px);
 }
 
 .mce-error-btn--secondary {
-  background: var(--surface-raised, rgba(255, 255, 255, 0.06));
-  border-color: var(--border-subtle, var(--border));
-  color: var(--text-primary, #e2e8f0);
+  background: var(--surface-raised);
+  border-color: var(--border-subtle);
+  color: var(--text-primary);
 }
 
 .mce-error-btn--secondary:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
-  color: #ffffff;
+  background: var(--surface-hover);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
   transform: translateY(-1px);
 }
 
@@ -158,7 +158,7 @@
   background: none;
   border: none;
   padding: 0;
-  color: var(--text-muted, #8b92a5);
+  color: var(--text-muted);
   font-size: 11.5px;
   font-weight: 500;
   cursor: pointer;
@@ -167,12 +167,12 @@
 }
 
 .mce-error-details-toggle:hover {
-  color: var(--text-primary, #ffffff);
+  color: var(--text-primary);
 }
 
 .mce-error-details-box {
-  border-radius: var(--radius, 4px);
-  background: #090a0d;
+  border-radius: var(--radius);
+  background: var(--surface);
   border: 1px solid var(--border);
   overflow: hidden;
 }
@@ -182,14 +182,14 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--surface-raised);
   border-bottom: 1px solid var(--border);
 }
 
 .mce-error-details-label {
   font-size: 10.5px;
   font-weight: 600;
-  color: var(--text-muted, #717786);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -200,7 +200,7 @@
   gap: 5px;
   background: none;
   border: none;
-  color: var(--primary, #818cf8);
+  color: var(--primary);
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
@@ -220,7 +220,7 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 11px;
   line-height: 1.5;
-  color: #f87171;
+  color: var(--error);
   white-space: pre-wrap;
   word-break: break-word;
 }

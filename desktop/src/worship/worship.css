@@ -9,8 +9,8 @@
   flex-direction: column;
   height: 100dvh;
   width: 100%;
-  background: var(--b-bg, #121212);
-  color: var(--b-text-1, #E0E0E0);
+  background: var(--b-bg);
+  color: var(--b-text-1);
   font-family: var(--font-body, "Open Sans", system-ui, sans-serif);
   overflow: hidden;
   overscroll-behavior: none;
@@ -36,8 +36,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 16px;
-  background: var(--b-surface, #1E1E1E);
-  border-bottom: 1px solid var(--b-border, #2C2C2C);
+  background: var(--b-surface);
+  border-bottom: 1px solid var(--b-border);
   min-height: 48px;
   flex-shrink: 0;
 }
@@ -53,8 +53,8 @@
   align-items: center;
   gap: 6px;
   background: none;
-  border: 1px solid var(--b-border, #2C2C2C);
-  color: var(--b-text-2, #9E9E9E);
+  border: 1px solid var(--b-border);
+  color: var(--b-text-2);
   padding: 6px 12px;
   border-radius: var(--b-radius, 2px);
   cursor: pointer;
@@ -63,8 +63,8 @@
 }
 
 .worship-nav-btn:hover {
-  color: var(--b-text-1, #E0E0E0);
-  border-color: var(--b-text-3, #616161);
+  color: var(--b-text-1);
+  border-color: var(--b-text-3);
 }
 
 .worship-nav-btn svg {
@@ -75,7 +75,7 @@
 .worship-header-divider {
   width: 1px;
   height: 24px;
-  background: var(--b-border, #2C2C2C);
+  background: var(--b-border);
 }
 
 .worship-header-title {
@@ -84,13 +84,13 @@
   gap: 6px;
   font-weight: 700;
   font-size: 16px;
-  color: var(--b-text-1, #E0E0E0);
+  color: var(--b-text-1);
 }
 
 .worship-header-title svg {
   width: 20px;
   height: 20px;
-  color: var(--b-green, #00E676);
+  color: var(--b-green);
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -116,8 +116,8 @@
   min-width: 280px;
   display: flex;
   flex-direction: column;
-  background: var(--b-surface, #1E1E1E);
-  border-right: 1px solid var(--b-border, #2C2C2C);
+  background: var(--b-surface);
+  border-right: 1px solid var(--b-border);
 }
 
 .worship-sidebar-search {
@@ -125,20 +125,20 @@
   align-items: center;
   gap: 8px;
   padding: 12px;
-  border-bottom: 1px solid var(--b-border, #2C2C2C);
+  border-bottom: 1px solid var(--b-border);
 }
 
 .worship-sidebar-search svg {
   width: 18px;
   height: 18px;
-  color: var(--b-text-3, #616161);
+  color: var(--b-text-3);
 }
 
 .worship-sidebar-search input {
   flex: 1;
   background: none;
   border: none;
-  color: var(--b-text-1, #E0E0E0);
+  color: var(--b-text-1);
   font-size: 13px;
   outline: none;
 }
@@ -158,38 +158,38 @@
   border: 1px solid transparent;
   border-radius: 3px;
   background: transparent;
-  color: var(--b-text-3, #616161);
+  color: var(--b-text-3);
   cursor: pointer;
   padding: 0;
 }
 
 .worship-sidebar-search-clear:hover,
 .worship-sidebar-search-clear:focus-visible {
-  color: var(--b-text-1, #E0E0E0);
-  background: var(--b-surface-2, #242424);
-  border-color: var(--b-border, #2C2C2C);
+  color: var(--b-text-1);
+  background: var(--surface-raised);
+  border-color: var(--b-border);
 }
 
 .worship-lang-filter {
   padding: 6px 12px;
-  border-bottom: 1px solid var(--b-border, #2C2C2C);
+  border-bottom: 1px solid var(--b-border);
 }
 
 .worship-lang-filter select {
   width: 100%;
   height: 28px;
   padding: 0 6px;
-  border: 1px solid var(--b-border, #2C2C2C);
+  border: 1px solid var(--b-border);
   border-radius: 3px;
-  background: var(--b-surface-2, #242424);
-  color: var(--b-text-1, #E0E0E0);
+  background: var(--surface-raised);
+  color: var(--b-text-1);
   font-size: 11px;
   outline: none;
   cursor: pointer;
 }
 
 .worship-lang-filter select:focus {
-  border-color: var(--primary, #4ADE80);
+  border-color: var(--primary);
 }
 
 .worship-sidebar-section {
@@ -205,7 +205,7 @@
 }
 
 .worship-sidebar-section-label {
-  color: var(--b-text-2, #9E9E9E);
+  color: var(--b-text-2);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -213,7 +213,7 @@
 }
 
 .worship-sidebar-section-note {
-  color: var(--b-text-4, #4f4f4f);
+  color: var(--b-text-4);
   font-size: 10px;
 }
 
@@ -222,7 +222,7 @@
   display: flex;
   gap: 4px;
   padding: 0 10px 2px;
-  border-bottom: 1px solid var(--b-border, #2C2C2C);
+  border-bottom: 1px solid var(--b-border);
 }
 
 .worship-sidebar-tab {
@@ -231,7 +231,7 @@
   padding: 0 8px;
   background: none;
   border: none;
-  color: var(--tab-text-inactive, var(--b-text-3, #616161));
+  color: var(--tab-text-inactive, var(--b-text-3));
   font-size: 11px;
   font-weight: 500;
   text-transform: uppercase;
@@ -243,12 +243,12 @@
 }
 
 .worship-sidebar-tab:hover {
-  color: var(--tab-text-active, var(--b-text-2, #9E9E9E));
+  color: var(--tab-text-active, var(--b-text-2));
   background: var(--tab-hover-bg, var(--b-tile));
 }
 
 .worship-sidebar-tab.active {
-  color: var(--tab-text-active, var(--b-green, #00E676));
+  color: var(--tab-text-active, var(--b-green));
   font-weight: 700;
 }
 
@@ -266,7 +266,7 @@
 }
 
 .worship-sidebar-tab.active::after {
-  background: var(--tab-indicator, var(--b-green, #00E676));
+  background: var(--tab-indicator, var(--b-green));
   opacity: 1;
 }
 
@@ -277,8 +277,8 @@
   justify-content: space-between;
   padding: 4px 10px;
   font-size: 10px;
-  color: var(--b-text-3, #616161);
-  border-bottom: 1px solid var(--b-border, #2C2C2C);
+  color: var(--b-text-3);
+  border-bottom: 1px solid var(--b-border);
 }
 
 .worship-sidebar-usage-text {
@@ -316,12 +316,12 @@ button.worship-online-action.at-limit {
 }
 
 .worship-song-item:hover {
-  background: var(--b-tile, #262626);
+  background: var(--b-tile);
 }
 
 .worship-song-item.active {
-  background: var(--b-tile, #262626);
-  border-left-color: var(--b-green, #00E676);
+  background: var(--b-tile);
+  border-left-color: var(--b-green);
 }
 
 .worship-online-item {
@@ -329,7 +329,7 @@ button.worship-online-action.at-limit {
   flex-direction: column;
   gap: 6px;
   padding: 10px 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.03);
+  border-top: 1px solid var(--border-subtle);
 }
 
 .worship-online-item-head {
@@ -345,7 +345,7 @@ button.worship-online-action.at-limit {
 
 .worship-online-item-info h3 {
   margin: 0;
-  color: var(--b-text-1, #E0E0E0);
+  color: var(--b-text-1);
   font-size: 10px;
   font-weight: 600;
   line-height: 1.35;
@@ -356,7 +356,7 @@ button.worship-online-action.at-limit {
   flex-wrap: wrap;
   gap: 6px;
   margin-top: 3px;
-  color: var(--b-text-3, #616161);
+  color: var(--b-text-3);
   font-size: 10px;
 }
 
@@ -364,15 +364,15 @@ button.worship-online-action.at-limit {
   display: inline-flex;
   align-items: center;
   padding: 1px 5px;
-  border: 1px solid var(--b-border, #2C2C2C);
+  border: 1px solid var(--b-border);
   border-radius: 3px;
-  color: var(--b-text-2, #9E9E9E);
-  background: rgba(255, 255, 255, 0.02);
+  color: var(--b-text-2);
+  background: var(--surface-raised);
 }
 
 .worship-online-preview {
   margin: 0;
-  color: var(--b-text-3, #616161);
+  color: var(--b-text-3);
   font-size: 11px;
   line-height: 1.45;
 }
@@ -381,10 +381,10 @@ button.worship-online-action.at-limit {
   flex-shrink: 0;
   min-width: 58px;
   padding: 6px 8px;
-  border: 1px solid var(--b-border, #2C2C2C);
+  border: 1px solid var(--b-border);
   border-radius: 3px;
   background: transparent;
-  color: var(--b-text-2, #9E9E9E);
+  color: var(--b-text-2);
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
@@ -392,9 +392,9 @@ button.worship-online-action.at-limit {
 }
 
 .worship-online-action:hover:not(:disabled) {
-  color: var(--b-text-1, #E0E0E0);
-  border-color: rgba(0, 230, 118, 0.45);
-  background: rgba(0, 230, 118, 0.08);
+  color: var(--b-text-1);
+  border-color: rgba(var(--primary-rgb), 0.45);
+  background: var(--primary-soft);
 }
 
 .worship-online-action:disabled {
@@ -404,24 +404,24 @@ button.worship-online-action.at-limit {
 
 .worship-online-status {
   padding: 6px 12px 10px;
-  color: var(--b-text-3, #616161);
+  color: var(--b-text-3);
   font-size: 11px;
 }
 
 .worship-online-status.error {
-  color: var(--b-red, #e74856);
+  color: var(--b-red);
 }
 
 .worship-song-item-info h3 {
   font-size: 13px;
   font-weight: 600;
   margin: 0;
-  color: var(--b-text-1, #E0E0E0);
+  color: var(--b-text-1);
 }
 
 .worship-song-item-artist {
   font-size: 11px;
-  color: var(--b-text-3, #616161);
+  color: var(--b-text-3);
 }
 
 .worship-song-item-meta-row {
@@ -440,7 +440,7 @@ button.worship-online-action.at-limit {
   border: 1px solid rgba(34, 197, 94, 0.3);
   border-radius: 3px;
   background: rgba(34, 197, 94, 0.08);
-  color: #86efac;
+  color: var(--success);
   font-size: 10px;
   font-weight: 700;
   line-height: 1;
@@ -466,7 +466,7 @@ button.worship-online-action.at-limit {
 .worship-lang-badge.english {
   border: 1px solid rgba(34, 197, 94, 0.3);
   background: rgba(34, 197, 94, 0.08);
-  color: #86efac;
+  color: var(--success);
 }
 
 .worship-lang-badge.bilingual {
@@ -477,7 +477,7 @@ button.worship-online-action.at-limit {
 
 .worship-song-item-playing {
   font-size: 18px;
-  color: var(--b-green, #00E676);
+  color: var(--b-green);
   animation: pulse-icon 1.2s ease-in-out infinite;
 }
 
@@ -498,7 +498,7 @@ button.worship-online-action.at-limit {
   display: flex;
   gap: 8px;
   padding: 10px 12px;
-  border-top: 1px solid var(--b-border, #2C2C2C);
+  border-top: 1px solid var(--b-border);
 }
 
 .worship-sidebar-action {
@@ -508,10 +508,10 @@ button.worship-online-action.at-limit {
   justify-content: center;
   gap: 6px;
   padding: 8px;
-  border: 1px solid var(--b-border, #2C2C2C);
+  border: 1px solid var(--b-border);
   border-radius: var(--b-radius, 2px);
   background: none;
-  color: var(--b-text-2, #9E9E9E);
+  color: var(--b-text-2);
   font-size: 10px;
   font-weight: 600;
   cursor: pointer;
@@ -519,13 +519,13 @@ button.worship-online-action.at-limit {
 }
 
 .worship-sidebar-action:hover {
-  background: var(--b-tile, #262626);
-  color: var(--b-text-1, #E0E0E0);
+  background: var(--b-tile);
+  color: var(--b-text-1);
 }
 
 .worship-sidebar-action.primary {
-  background: var(--b-green, #00E676);
-  border-color: var(--b-green, #00E676);
+  background: var(--b-green);
+  border-color: var(--b-green);
   color: #fff;
 }
 
@@ -555,7 +555,7 @@ button.worship-online-action.at-limit {
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  border-bottom: 1px solid var(--b-border, #2C2C2C);
+  border-bottom: 1px solid var(--b-border);
 }
 
 .worship-center-head-info {
@@ -567,7 +567,7 @@ button.worship-online-action.at-limit {
 .worship-center-head-accent {
   width: 4px;
   height: 36px;
-  background: var(--b-green, #00E676);
+  background: var(--b-green);
   border-radius: 2px;
 }
 
@@ -588,7 +588,7 @@ button.worship-online-action.at-limit {
   align-items: center;
   gap: 4px;
   font-size: 11px;
-  color: var(--b-text-3, #616161);
+  color: var(--b-text-3);
 }
 
 .worship-center-head-meta svg {
@@ -604,8 +604,8 @@ button.worship-online-action.at-limit {
 
 .worship-center-head-tools button {
   background: none;
-  border: 1px solid var(--b-border, #2C2C2C);
-  color: var(--b-text-3, #616161);
+  border: 1px solid var(--b-border);
+  color: var(--b-text-3);
   border-radius: var(--b-radius, 2px);
   padding: 6px;
   cursor: pointer;
@@ -615,8 +615,8 @@ button.worship-online-action.at-limit {
 }
 
 .worship-center-head-tools button:hover {
-  color: var(--b-text-1, #E0E0E0);
-  border-color: var(--b-text-3, #616161);
+  color: var(--b-text-1);
+  border-color: var(--b-text-3);
 }
 
 .worship-center-head-tools svg {
@@ -627,7 +627,7 @@ button.worship-online-action.at-limit {
 .worship-toolbar-sep {
   width: 1px;
   height: 24px;
-  background: var(--b-border, #2C2C2C);
+  background: var(--b-border);
   margin: 0 4px;
 }
 
@@ -661,16 +661,16 @@ button.worship-online-action.at-limit {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #FFFFFF;
+  color: var(--b-text-1);
   padding: 3px 8px;
-  border: 1px solid var(--b-border, #2C2C2C);
+  border: 1px solid var(--b-border);
   border-radius: var(--b-radius, 2px);
 }
 
 .worship-slide-tag.live {
-  color: var(--b-green, #00E676);
-  border-color: var(--b-green, #00E676);
-  background: rgba(0, 230, 118, 0.08);
+  color: var(--b-green);
+  border-color: var(--b-green);
+  background: var(--primary-soft);
 }
 
 .worship-slide-block {
@@ -678,8 +678,8 @@ button.worship-online-action.at-limit {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  background: var(--b-surface, #1E1E1E);
-  border: 1px solid var(--b-border, #2C2C2C);
+  background: var(--b-surface);
+  border: 1px solid var(--b-border);
   border-radius: var(--b-radius, 2px);
   padding: 12px 16px;
   cursor: pointer;
@@ -688,12 +688,12 @@ button.worship-online-action.at-limit {
 }
 
 .worship-slide-block:hover {
-  border-color: var(--b-text-3, #616161);
+  border-color: var(--b-text-3);
 }
 
 .worship-slide-block.live {
-  border-color: var(--b-green, #00E676);
-  background: rgba(0, 230, 118, 0.04);
+  border-color: var(--b-green);
+  background: var(--primary-soft);
 }
 
 .worship-slide-live-badge {
@@ -704,7 +704,7 @@ button.worship-online-action.at-limit {
   font-weight: 800;
   letter-spacing: 0.1em;
   color: #fff;
-  background: var(--b-green, #00E676);
+  background: var(--b-green);
   padding: 2px 8px;
   border-radius: var(--b-radius, 2px);
 }
@@ -713,7 +713,7 @@ button.worship-online-action.at-limit {
   margin: 0;
   font-size: 14px;
   line-height: 1.65;
-  color: #FFFFFF;
+  color: var(--b-text-1);
   white-space: pre-line;
 }
 
@@ -722,7 +722,7 @@ button.worship-online-action.at-limit {
   flex-wrap: wrap;
   gap: 6px;
   padding: 0 16px 10px;
-  border-bottom: 1px solid var(--b-border, #2C2C2C);
+  border-bottom: 1px solid var(--b-border);
 }
 
 .worship-section-jump {
@@ -731,24 +731,24 @@ button.worship-online-action.at-limit {
   gap: 6px;
   min-height: 28px;
   padding: 4px 8px;
-  border: 1px solid var(--b-border, #2C2C2C);
+  border: 1px solid var(--b-border);
   border-radius: var(--b-radius, 2px);
-  background: var(--b-surface, #1E1E1E);
-  color: var(--b-text-2, #9E9E9E);
+  background: var(--b-surface);
+  color: var(--b-text-2);
   cursor: pointer;
   font: inherit;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
 .worship-section-jump:hover {
-  border-color: var(--b-text-3, #616161);
-  color: var(--b-text-1, #E0E0E0);
+  border-color: var(--b-text-3);
+  color: var(--b-text-1);
 }
 
 .worship-section-jump.active {
-  border-color: var(--b-green, #00E676);
-  background: rgba(0, 230, 118, 0.08);
-  color: var(--b-text-1, #E0E0E0);
+  border-color: var(--b-green);
+  background: var(--primary-soft);
+  color: var(--b-text-1);
 }
 
 .worship-section-jump-short {
@@ -757,7 +757,7 @@ button.worship-online-action.at-limit {
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--b-green, #00E676);
+  color: var(--b-green);
 }
 
 .worship-section-jump-label {
@@ -792,8 +792,8 @@ button.worship-online-action.at-limit {
   flex-direction: column;
   gap: 12px;
   padding: 12px;
-  background: var(--b-surface, #1E1E1E);
-  border-left: 1px solid var(--b-border, #2C2C2C);
+  background: var(--b-surface);
+  border-left: 1px solid var(--b-border);
   overflow-y: auto;
   overscroll-behavior: contain;
 }
@@ -815,11 +815,11 @@ button.worship-online-action.at-limit {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--b-text-3, #616161);
+  color: var(--b-text-3);
 }
 
 .worship-preview-label.live {
-  color: var(--b-green, #00E676);
+  color: var(--b-green);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -829,27 +829,27 @@ button.worship-online-action.at-limit {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--b-green, #00E676);
+  background: var(--b-green);
   animation: pulse-icon 1.2s ease-in-out infinite;
 }
 
 .worship-preview-tag {
   font-size: 10px;
   font-weight: 600;
-  color: var(--b-text-3, #616161);
+  color: var(--b-text-3);
   padding: 2px 6px;
-  border: 1px solid var(--b-border, #2C2C2C);
+  border: 1px solid var(--b-border);
   border-radius: var(--b-radius, 2px);
 }
 
 .worship-preview-res {
   font-size: 10px;
-  color: var(--b-text-4, #424242);
+  color: var(--b-text-4);
 }
 
 .worship-preview-box {
-  background: var(--b-bg, #121212);
-  border: 1px solid var(--b-border, #2C2C2C);
+  background: var(--b-bg);
+  border: 1px solid var(--b-border);
   border-radius: var(--b-radius, 2px);
   padding: 16px;
   aspect-ratio: 16 / 9;
@@ -863,16 +863,16 @@ button.worship-online-action.at-limit {
   margin: 0;
   font-size: 10px;
   line-height: 1.6;
-  color: var(--b-text-2, #9E9E9E);
+  color: var(--b-text-2);
   white-space: pre-line;
 }
 
 .worship-preview-box.live {
-  border-color: var(--b-green, #00E676);
+  border-color: var(--b-green);
 }
 
 .worship-preview-box.live p {
-  color: var(--b-text-1, #E0E0E0);
+  color: var(--b-text-1);
 }
 
 .worship-preview-box.preview {
@@ -893,10 +893,10 @@ button.worship-online-action.at-limit {
   justify-content: center;
   gap: 6px;
   padding: 10px;
-  background: var(--b-tile, #262626);
-  border: 1px solid var(--b-border, #2C2C2C);
+  background: var(--b-tile);
+  border: 1px solid var(--b-border);
   border-radius: var(--b-radius, 2px);
-  color: var(--b-text-2, #9E9E9E);
+  color: var(--b-text-2);
   font-size: 10px;
   font-weight: 600;
   cursor: pointer;
@@ -904,8 +904,8 @@ button.worship-online-action.at-limit {
 }
 
 .worship-control-btn:hover {
-  background: var(--b-border, #2C2C2C);
-  color: var(--b-text-1, #E0E0E0);
+  background: var(--b-border);
+  color: var(--b-text-1);
 }
 
 .worship-control-btn:disabled {
@@ -914,8 +914,8 @@ button.worship-online-action.at-limit {
 }
 
 .worship-control-btn.primary {
-  background: var(--b-green, #00E676);
-  border-color: var(--b-green, #00E676);
+  background: var(--b-green);
+  border-color: var(--b-green);
   color: #fff;
 }
 
@@ -925,8 +925,8 @@ button.worship-online-action.at-limit {
 }
 
 .worship-control-btn.danger:hover {
-  background: var(--b-red, #e74856);
-  border-color: var(--b-red, #e74856);
+  background: var(--b-red);
+  border-color: var(--b-red);
   color: #fff;
 }
 
@@ -941,7 +941,7 @@ button.worship-online-action.at-limit {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--b-text-3, #616161);
+  color: var(--b-text-3);
 }
 
 .worship-layout-header {
@@ -953,7 +953,7 @@ button.worship-online-action.at-limit {
 .worship-layout-header svg {
   width: 15px;
   height: 15px;
-  color: var(--b-text-3, #616161);
+  color: var(--b-text-3);
 }
 
 .worship-layout-header-label {
@@ -961,7 +961,7 @@ button.worship-online-action.at-limit {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--b-text-3, #616161);
+  color: var(--b-text-3);
 }
 
 .worship-layout-modes {
@@ -976,10 +976,10 @@ button.worship-online-action.at-limit {
   justify-content: center;
   gap: 6px;
   padding: 9px 10px;
-  background: var(--b-tile, #262626);
-  border: 1px solid var(--b-border, #2C2C2C);
+  background: var(--b-tile);
+  border: 1px solid var(--b-border);
   border-radius: var(--b-radius, 2px);
-  color: var(--b-text-2, #9E9E9E);
+  color: var(--b-text-2);
   font-size: 10px;
   font-weight: 700;
   cursor: pointer;
@@ -992,14 +992,14 @@ button.worship-online-action.at-limit {
 }
 
 .worship-layout-mode-btn:hover {
-  color: var(--b-text-1, #E0E0E0);
-  border-color: var(--b-text-3, #616161);
+  color: var(--b-text-1);
+  border-color: var(--b-text-3);
 }
 
 .worship-layout-mode-btn.active {
-  border-color: rgba(0, 230, 118, 0.38);
-  background: rgba(0, 230, 118, 0.1);
-  color: var(--b-green, #00E676);
+  border-color: rgba(var(--primary-rgb), 0.38);
+  background: rgba(var(--primary-rgb), 0.1);
+  color: var(--b-green);
 }
 
 .worship-lt-theme-head {
@@ -1014,10 +1014,10 @@ button.worship-online-action.at-limit {
   align-items: center;
   gap: 4px;
   padding: 5px 8px;
-  border: 1px solid var(--b-border, #2C2C2C);
+  border: 1px solid var(--b-border);
   border-radius: var(--b-radius, 2px);
-  background: var(--b-tile, #262626);
-  color: var(--b-text-2, #9E9E9E);
+  background: var(--b-tile);
+  color: var(--b-text-2);
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
@@ -1031,16 +1031,16 @@ button.worship-online-action.at-limit {
 }
 
 .worship-theme-picker-btn:hover {
-  color: var(--b-text-1, #E0E0E0);
-  border-color: var(--b-text-3, #616161);
+  color: var(--b-text-1);
+  border-color: var(--b-text-3);
 }
 
 .worship-lt-theme-card {
   width: 100%;
-  border: 1px solid var(--b-border, #2C2C2C);
+  border: 1px solid var(--b-border);
   border-radius: 4px;
-  background: var(--b-tile, #262626);
-  color: var(--b-text-1, #E0E0E0);
+  background: var(--b-tile);
+  color: var(--b-text-1);
   padding: 8px;
   display: flex;
   flex-direction: column;
@@ -1051,13 +1051,13 @@ button.worship-online-action.at-limit {
 }
 
 .worship-lt-theme-card:hover {
-  border-color: rgba(0, 230, 118, 0.38);
-  background: rgba(0, 230, 118, 0.06);
+  border-color: rgba(var(--primary-rgb), 0.38);
+  background: rgba(var(--primary-rgb), 0.06);
 }
 
 .worship-lt-theme-card-preview {
   width: 100%;
-  border: 1px solid var(--b-border, #2C2C2C);
+  border: 1px solid var(--b-border);
   border-radius: 6px;
   overflow: hidden;
   height: 90px;
@@ -1076,7 +1076,7 @@ button.worship-online-action.at-limit {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--b-text-3, #616161);
+  color: var(--b-text-3);
 }
 
 .worship-lt-theme-card-content {
@@ -1089,13 +1089,13 @@ button.worship-online-action.at-limit {
 .worship-lt-theme-card-name {
   font-size: 10px;
   font-weight: 700;
-  color: var(--b-text-1, #E0E0E0);
+  color: var(--b-text-1);
   line-height: 1.2;
 }
 
 .worship-lt-theme-card-kicker {
   font-size: 10px;
-  color: var(--b-green, #00E676);
+  color: var(--b-green);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-weight: 700;
@@ -1103,16 +1103,16 @@ button.worship-online-action.at-limit {
 
 .worship-lt-theme-card-line {
   font-size: 10px;
-  color: var(--b-text-2, #9E9E9E);
+  color: var(--b-text-2);
   line-height: 1.3;
 }
 
 .worship-inline-select {
   width: 100%;
-  background: var(--b-bg, #121212);
-  border: 1px solid var(--b-border, #2C2C2C);
+  background: var(--b-bg);
+  border: 1px solid var(--b-border);
   border-radius: var(--b-radius, 2px);
-  color: var(--b-text-1, #E0E0E0);
+  color: var(--b-text-1);
   padding: 8px 10px;
   font-size: 10px;
   font-family: inherit;
@@ -1120,12 +1120,12 @@ button.worship-online-action.at-limit {
 }
 
 .worship-inline-select:focus {
-  border-color: var(--b-green, #00E676);
+  border-color: var(--b-green);
 }
 
 .worship-inline-hint {
   font-size: 10px;
-  color: var(--b-text-4, #424242);
+  color: var(--b-text-4);
   line-height: 1.45;
 }
 
@@ -1142,16 +1142,16 @@ button.worship-online-action.at-limit {
   justify-content: center;
   width: 24px;
   height: 24px;
-  background: var(--b-tile, #262626);
-  border: 1px solid var(--b-border, #2C2C2C);
-  color: var(--b-text-2, #9E9E9E);
+  background: var(--b-tile);
+  border: 1px solid var(--b-border);
+  color: var(--b-text-2);
   border-radius: var(--b-radius, 2px);
   cursor: pointer;
 }
 
 .worship-scenes-refresh:hover:not(:disabled) {
-  color: var(--b-text-1, #E0E0E0);
-  border-color: var(--b-text-3, #616161);
+  color: var(--b-text-1);
+  border-color: var(--b-text-3);
 }
 
 .worship-scenes-refresh:disabled {
@@ -1162,14 +1162,14 @@ button.worship-online-action.at-limit {
 .worship-scene-help {
   margin: 0;
   font-size: 11px;
-  color: var(--b-text-3, #616161);
+  color: var(--b-text-3);
   line-height: 1.45;
 }
 
 .worship-scene-empty {
   margin: 0;
   font-size: 11px;
-  color: var(--b-text-3, #616161);
+  color: var(--b-text-3);
 }
 
 .worship-scene-list {
@@ -1185,16 +1185,16 @@ button.worship-online-action.at-limit {
   align-items: center;
   gap: 6px;
   padding: 6px 8px;
-  border: 1px solid var(--b-border, #2C2C2C);
+  border: 1px solid var(--b-border);
   border-radius: var(--b-radius, 2px);
-  background: var(--b-tile, #262626);
+  background: var(--b-tile);
 }
 
 .worship-scene-name {
   flex: 1;
   min-width: 0;
   font-size: 11px;
-  color: var(--b-text-1, #E0E0E0);
+  color: var(--b-text-1);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1207,33 +1207,33 @@ button.worship-online-action.at-limit {
   letter-spacing: 0.05em;
   padding: 2px 6px;
   border-radius: 999px;
-  background: rgba(0, 230, 118, 0.16);
-  color: #00E676;
+  background: var(--success-bg);
+  color: var(--success);
 }
 
 .worship-scene-badge.live {
-  background: rgba(232, 72, 86, 0.18);
-  color: #ff7d88;
+  background: var(--error-bg);
+  color: var(--error);
 }
 
 .worship-scene-badge.active {
-  background: rgba(41, 98, 255, 0.2);
-  color: #7aa2ff;
+  background: var(--primary-soft);
+  color: var(--accent-blue);
 }
 
 .worship-scene-send-btn {
   padding: 4px 8px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid var(--b-border, #2C2C2C);
+  background: var(--surface-raised);
+  border: 1px solid var(--b-border);
   border-radius: var(--b-radius, 2px);
-  color: var(--b-text-1, #E0E0E0);
+  color: var(--b-text-1);
   font-size: 10px;
   font-weight: 700;
   cursor: pointer;
 }
 
 .worship-scene-send-btn:hover:not(:disabled) {
-  border-color: rgba(0, 230, 118, 0.4);
+  border-color: rgba(var(--primary-rgb), 0.4);
   color: #00E676;
 }
 
@@ -1261,8 +1261,8 @@ button.worship-online-action.at-limit {
   display: flex;
   flex-direction: column;
   border-radius: var(--radius-lg, 6px);
-  border: 1px solid var(--b-border, #2C2C2C);
-  background: var(--b-surface, #1E1E1E);
+  border: 1px solid var(--b-border);
+  background: var(--b-surface);
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
 }
 
@@ -1271,7 +1271,7 @@ button.worship-online-action.at-limit {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  border-bottom: 1px solid var(--b-border, #2C2C2C);
+  border-bottom: 1px solid var(--b-border);
   padding: 12px 14px;
 }
 
@@ -1279,14 +1279,14 @@ button.worship-online-action.at-limit {
   margin: 0;
   font-size: 15px;
   font-weight: 700;
-  color: var(--b-text-1, #E0E0E0);
+  color: var(--b-text-1);
 }
 
 .worship-theme-modal-close {
-  border: 1px solid var(--b-border, #2C2C2C);
+  border: 1px solid var(--b-border);
   border-radius: 4px;
-  background: var(--b-tile, #262626);
-  color: var(--b-text-2, #9E9E9E);
+  background: var(--b-tile);
+  color: var(--b-text-2);
   width: 30px;
   height: 30px;
   display: inline-flex;
@@ -1296,7 +1296,7 @@ button.worship-online-action.at-limit {
 }
 
 .worship-theme-modal-close:hover {
-  color: var(--b-text-1, #E0E0E0);
+  color: var(--b-text-1);
 }
 
 .worship-theme-modal-close svg {
@@ -1306,15 +1306,15 @@ button.worship-online-action.at-limit {
 
 .worship-theme-modal-search-wrap {
   padding: 10px 14px;
-  border-bottom: 1px solid var(--b-border, #2C2C2C);
+  border-bottom: 1px solid var(--b-border);
 }
 
 .worship-theme-modal-search {
   width: 100%;
-  border: 1px solid var(--b-border, #2C2C2C);
+  border: 1px solid var(--b-border);
   border-radius: 4px;
-  background: var(--b-bg, #121212);
-  color: var(--b-text-1, #E0E0E0);
+  background: var(--b-bg);
+  color: var(--b-text-1);
   padding: 8px 10px;
   font-size: 13px;
   font-family: inherit;
@@ -1322,11 +1322,11 @@ button.worship-online-action.at-limit {
 
 .worship-theme-modal-search:focus {
   outline: none;
-  border-color: rgba(0, 230, 118, 0.38);
+  border-color: rgba(var(--primary-rgb), 0.38);
 }
 
 .worship-theme-modal-search::placeholder {
-  color: var(--b-text-3, #616161);
+  color: var(--b-text-3);
 }
 
 .worship-theme-modal-body {
@@ -1343,10 +1343,10 @@ button.worship-online-action.at-limit {
 }
 
 .worship-theme-modal-card {
-  border: 1px solid var(--b-border, #2C2C2C);
+  border: 1px solid var(--b-border);
   border-radius: 4px;
-  background: var(--b-tile, #262626);
-  color: var(--b-text-1, #E0E0E0);
+  background: var(--b-tile);
+  color: var(--b-text-1);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -1356,19 +1356,19 @@ button.worship-online-action.at-limit {
 }
 
 .worship-theme-modal-card:hover {
-  border-color: rgba(0, 230, 118, 0.38);
+  border-color: rgba(var(--primary-rgb), 0.38);
 }
 
 .worship-theme-modal-card.is-selected {
-  border-color: var(--b-green, #00E676);
-  background: rgba(0, 230, 118, 0.08);
+  border-color: var(--b-green);
+  background: var(--primary-soft);
 }
 
 .worship-theme-modal-preview {
   height: 128px;
   border-radius: 4px;
   overflow: hidden;
-  border: 1px solid var(--b-border, #2C2C2C);
+  border: 1px solid var(--b-border);
   background: #111;
 }
 
@@ -1384,7 +1384,7 @@ button.worship-online-action.at-limit {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--b-text-3, #616161);
+  color: var(--b-text-3);
 }
 
 .worship-theme-modal-name {
@@ -1400,13 +1400,13 @@ button.worship-online-action.at-limit {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--b-text-3, #616161);
+  color: var(--b-text-3);
 }
 
 .worship-theme-modal-empty {
   margin: 4px 0;
   font-size: 10px;
-  color: var(--b-text-3, #616161);
+  color: var(--b-text-3);
 }
 
 .worship-theme-selector {
@@ -1414,15 +1414,15 @@ button.worship-online-action.at-limit {
   align-items: center;
   gap: 10px;
   padding: 8px 12px;
-  background: var(--b-tile, #262626);
-  border: 1px solid var(--b-border, #2C2C2C);
+  background: var(--b-tile);
+  border: 1px solid var(--b-border);
   border-radius: var(--b-radius, 2px);
   cursor: pointer;
   transition: border-color 0.15s;
 }
 
 .worship-theme-selector:hover {
-  border-color: var(--b-text-3, #616161);
+  border-color: var(--b-text-3);
 }
 
 .worship-theme-preview-thumb {
@@ -1430,20 +1430,20 @@ button.worship-online-action.at-limit {
   height: 18px;
   border-radius: var(--b-radius, 2px);
   background: #1a237e;
-  border: 1px solid var(--b-border, #2C2C2C);
+  border: 1px solid var(--b-border);
 }
 
 .worship-theme-name {
   flex: 1;
   font-size: 10px;
   font-weight: 500;
-  color: var(--b-text-1, #E0E0E0);
+  color: var(--b-text-1);
 }
 
 .worship-theme-selector svg {
   width: 18px;
   height: 18px;
-  color: var(--b-text-3, #616161);
+  color: var(--b-text-3);
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -1456,8 +1456,8 @@ button.worship-online-action.at-limit {
   align-items: center;
   justify-content: space-between;
   padding: 12px 20px;
-  background: var(--b-surface, #1E1E1E);
-  border-bottom: 1px solid var(--b-border, #2C2C2C);
+  background: var(--b-surface);
+  border-bottom: 1px solid var(--b-border);
   flex-shrink: 0;
 }
 
@@ -1470,7 +1470,7 @@ button.worship-online-action.at-limit {
 .worship-import-subtitle {
   margin: 2px 0 0;
   font-size: 10px;
-  color: var(--b-text-3, #616161);
+  color: var(--b-text-3);
 }
 
 .worship-import-meta {
@@ -1496,7 +1496,7 @@ button.worship-online-action.at-limit {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--b-text-3, #616161);
+  color: var(--b-text-3);
 }
 
 .worship-import-field__tag {
@@ -1504,9 +1504,9 @@ button.worship-online-action.at-limit {
   align-items: center;
   min-height: 16px;
   padding: 0 6px;
-  border: 1px solid var(--b-border, #2C2C2C);
+  border: 1px solid var(--b-border);
   border-radius: 2px;
-  color: var(--b-text-2, #9E9E9E);
+  color: var(--b-text-2);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -1514,24 +1514,24 @@ button.worship-online-action.at-limit {
 }
 
 .worship-import-field__tag--required {
-  border-color: color-mix(in srgb, var(--b-green, #00E676) 36%, var(--b-border, #2C2C2C));
-  color: var(--b-green, #00E676);
+  border-color: color-mix(in srgb, var(--b-green) 36%, var(--b-border));
+  color: var(--b-green);
 }
 
 .worship-import-field input {
-  background: var(--b-bg, #121212);
-  border: 1px solid var(--b-border, #2C2C2C);
+  background: var(--b-bg);
+  border: 1px solid var(--b-border);
   border-radius: var(--b-radius, 2px);
   padding: 6px 10px;
   font-size: 13px;
-  color: var(--b-text-1, #E0E0E0);
+  color: var(--b-text-1);
   outline: none;
   width: 100%;
   transition: border-color 0.15s;
 }
 
 .worship-import-field input:focus {
-  border-color: var(--b-green, #00E676);
+  border-color: var(--b-green);
 }
 
 /* Toolbar */
@@ -1540,8 +1540,8 @@ button.worship-online-action.at-limit {
   align-items: center;
   gap: 24px;
   padding: 8px 20px;
-  background: var(--b-surface, #1E1E1E);
-  border-bottom: 1px solid var(--b-border, #2C2C2C);
+  background: var(--b-surface);
+  border-bottom: 1px solid var(--b-border);
   flex-shrink: 0;
 }
 
@@ -1554,7 +1554,7 @@ button.worship-online-action.at-limit {
 .worship-toolbar-group>svg {
   width: 20px;
   height: 20px;
-  color: var(--b-text-3, #616161);
+  color: var(--b-text-3);
 }
 
 .worship-toolbar-control {
@@ -1568,7 +1568,7 @@ button.worship-online-action.at-limit {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--b-text-3, #616161);
+  color: var(--b-text-3);
 }
 
 .worship-toolbar-slider {
@@ -1580,13 +1580,13 @@ button.worship-online-action.at-limit {
 .worship-toolbar-val {
   font-size: 13px;
   font-weight: 600;
-  color: var(--b-text-3, #616161);
+  color: var(--b-text-3);
   min-width: 16px;
   text-align: center;
 }
 
 .worship-toolbar-val.highlight {
-  color: var(--b-green, #00E676);
+  color: var(--b-green);
 }
 
 .worship-toolbar-slider input[type="range"] {
@@ -1594,7 +1594,7 @@ button.worship-online-action.at-limit {
   appearance: none;
   width: 120px;
   height: 4px;
-  background: var(--b-border, #2C2C2C);
+  background: var(--b-border);
   border-radius: 2px;
   outline: none;
 }
@@ -1605,7 +1605,7 @@ button.worship-online-action.at-limit {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: var(--b-green, #00E676);
+  background: var(--b-green);
   cursor: pointer;
 }
 
@@ -1628,8 +1628,8 @@ button.worship-online-action.at-limit {
   width: 32px;
   height: 18px;
   border-radius: 9px;
-  background: var(--b-text-4, #424242);
-  border: 1px solid var(--b-border, #2C2C2C);
+  background: var(--b-text-4);
+  border: 1px solid var(--b-border);
   position: relative;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
   transition: background 0.2s, border-color 0.2s;
@@ -1643,25 +1643,25 @@ button.worship-online-action.at-limit {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: var(--b-surface, #1E1E1E);
-  border: 1px solid var(--b-text-2, #9E9E9E);
+  background: var(--b-surface);
+  border: 1px solid var(--b-text-2);
   transition: transform 0.2s, background 0.2s, border-color 0.2s;
 }
 
 .worship-toggle input:checked+.worship-toggle-track {
-  background: var(--b-green, #00E676);
-  border-color: var(--b-green, #00E676);
+  background: var(--b-green);
+  border-color: var(--b-green);
 }
 
 .worship-toggle input:checked+.worship-toggle-track::after {
   transform: translateX(14px);
   background: #fff;
-  border-color: rgba(0, 230, 118, 0.75);
+  border-color: rgba(var(--primary-rgb), 0.75);
 }
 
 .worship-toggle-text {
   font-size: 10px;
-  color: var(--b-text-2, #9E9E9E);
+  color: var(--b-text-2);
 }
 
 /* Import body — lyrics editor + slides preview */
@@ -1678,7 +1678,7 @@ button.worship-online-action.at-limit {
   min-width: 420px;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid var(--b-border, #2C2C2C);
+  border-right: 1px solid var(--b-border);
 }
 
 .worship-section-head {
@@ -1686,13 +1686,13 @@ button.worship-online-action.at-limit {
   align-items: center;
   gap: 8px;
   padding: 10px 16px;
-  border-bottom: 1px solid var(--b-border, #2C2C2C);
+  border-bottom: 1px solid var(--b-border);
 }
 
 .worship-section-head svg {
   width: 18px;
   height: 18px;
-  color: var(--b-text-3, #616161);
+  color: var(--b-text-3);
 }
 
 .worship-section-head h3 {
@@ -1704,16 +1704,16 @@ button.worship-online-action.at-limit {
 
 .worship-section-meta {
   font-size: 11px;
-  color: var(--b-text-3, #616161);
+  color: var(--b-text-3);
 }
 
 .worship-lyrics-textarea {
   flex: 1;
   resize: none;
   padding: 16px;
-  background: var(--b-bg, #121212);
+  background: var(--b-bg);
   border: none;
-  color: var(--b-text-1, #E0E0E0);
+  color: var(--b-text-1);
   font-family: "Charis SIL", "JetBrains Mono", "Noto Sans Mono", "Fira Code", monospace;
   font-size: 13px;
   line-height: 1.8;
@@ -1740,19 +1740,19 @@ button.worship-online-action.at-limit {
 }
 
 .worship-slide-card {
-  background: var(--b-surface, #1E1E1E);
-  border: 1px solid var(--b-border, #2C2C2C);
+  background: var(--b-surface);
+  border: 1px solid var(--b-border);
   border-radius: var(--b-radius, 2px);
   overflow: hidden;
   transition: border-color 0.15s;
 }
 
 .worship-slide-card:hover {
-  border-color: var(--b-text-3, #616161);
+  border-color: var(--b-text-3);
 }
 
 .worship-slide-card.cont {
-  border-left: 3px solid var(--b-blue, #2962FF);
+  border-left: 3px solid var(--b-blue);
 }
 
 .worship-slide-card-head {
@@ -1760,7 +1760,7 @@ button.worship-online-action.at-limit {
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px;
-  border-bottom: 1px solid var(--b-border, #2C2C2C);
+  border-bottom: 1px solid var(--b-border);
 }
 
 .worship-slide-label {
@@ -1768,14 +1768,14 @@ button.worship-online-action.at-limit {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--b-text-3, #616161);
+  color: var(--b-text-3);
   padding: 2px 8px;
-  border: 1px solid var(--b-border, #2C2C2C);
+  border: 1px solid var(--b-border);
   border-radius: var(--b-radius, 2px);
 }
 
 .worship-slide-label.cont {
-  color: var(--b-blue, #2962FF);
+  color: var(--b-blue);
   border-color: rgba(41, 98, 255, 0.3);
 }
 
@@ -1787,7 +1787,7 @@ button.worship-online-action.at-limit {
 .worship-slide-card-actions button {
   background: none;
   border: none;
-  color: var(--b-text-4, #424242);
+  color: var(--b-text-4);
   cursor: pointer;
   padding: 2px;
   border-radius: var(--b-radius, 2px);
@@ -1796,7 +1796,7 @@ button.worship-online-action.at-limit {
 }
 
 .worship-slide-card-actions button:hover {
-  color: var(--b-text-1, #E0E0E0);
+  color: var(--b-text-1);
 }
 
 .worship-slide-card-actions svg {
@@ -1812,15 +1812,15 @@ button.worship-online-action.at-limit {
   margin: 0;
   font-size: 13px;
   line-height: 1.6;
-  color: var(--b-text-1, #E0E0E0);
+  color: var(--b-text-1);
   white-space: pre-line;
 }
 
 .worship-slide-card-foot {
   padding: 6px 12px;
-  border-top: 1px solid var(--b-border, #2C2C2C);
+  border-top: 1px solid var(--b-border);
   font-size: 10px;
-  color: var(--b-text-4, #424242);
+  color: var(--b-text-4);
   text-align: right;
 }
 
@@ -1832,16 +1832,16 @@ button.worship-online-action.at-limit {
   gap: 8px;
   min-height: 120px;
   background: none;
-  border: 2px dashed var(--b-border, #2C2C2C);
+  border: 2px dashed var(--b-border);
   border-radius: var(--b-radius, 2px);
-  color: var(--b-text-3, #616161);
+  color: var(--b-text-3);
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s;
 }
 
 .worship-slide-add:hover {
-  border-color: var(--b-green, #00E676);
-  color: var(--b-green, #00E676);
+  border-color: var(--b-green);
+  color: var(--b-green);
 }
 
 .worship-slide-add svg {
@@ -1860,8 +1860,8 @@ button.worship-online-action.at-limit {
   align-items: center;
   justify-content: space-between;
   padding: 10px 20px;
-  background: var(--b-surface, #1E1E1E);
-  border-top: 1px solid var(--b-border, #2C2C2C);
+  background: var(--b-surface);
+  border-top: 1px solid var(--b-border);
   flex-shrink: 0;
 }
 
@@ -1873,7 +1873,7 @@ button.worship-online-action.at-limit {
 
 .worship-autosave-label {
   font-size: 11px;
-  color: var(--b-text-3, #616161);
+  color: var(--b-text-3);
 }
 
 /* Shared buttons */
@@ -1883,9 +1883,9 @@ button.worship-online-action.at-limit {
   gap: 6px;
   padding: 8px 16px;
   background: none;
-  border: 1px solid var(--b-border, #2C2C2C);
+  border: 1px solid var(--b-border);
   border-radius: var(--b-radius, 2px);
-  color: var(--b-text-2, #9E9E9E);
+  color: var(--b-text-2);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -1893,8 +1893,8 @@ button.worship-online-action.at-limit {
 }
 
 .worship-btn-secondary:hover {
-  color: var(--b-text-1, #E0E0E0);
-  border-color: var(--b-text-3, #616161);
+  color: var(--b-text-1);
+  border-color: var(--b-text-3);
 }
 
 .worship-btn-secondary svg {
@@ -1907,8 +1907,8 @@ button.worship-online-action.at-limit {
   align-items: center;
   gap: 6px;
   padding: 8px 16px;
-  background: var(--primary, #4f46e5);
-  border: 1px solid var(--primary, #4f46e5);
+  background: var(--primary);
+  border: 1px solid var(--primary);
   border-radius: var(--b-radius, 6px);
   color: #fff;
   font-size: 13px;
@@ -1933,27 +1933,27 @@ button.worship-online-action.at-limit {
   gap: 6px;
   font-size: 11px;
   font-weight: 600;
-  color: var(--b-text-3, #616161);
+  color: var(--b-text-3);
   padding: 4px 10px;
-  border: 1px solid var(--b-border, #2C2C2C);
+  border: 1px solid var(--b-border);
   border-radius: var(--b-radius, 2px);
-  background: var(--b-tile, #262626);
+  background: var(--b-tile);
 }
 
 .worship-obs-badge.on {
-  color: var(--b-green, #00E676);
-  border-color: rgba(0, 230, 118, 0.25);
+  color: var(--b-green);
+  border-color: rgba(var(--primary-rgb), 0.25);
 }
 
 .worship-obs-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--b-text-4, #424242);
+  background: var(--b-text-4);
 }
 
 .worship-obs-badge.on .worship-obs-dot {
-  background: var(--b-green, #00E676);
+  background: var(--b-green);
   animation: pulse-icon 1.2s ease-in-out infinite;
 }
 
@@ -1967,13 +1967,13 @@ button.worship-online-action.at-limit {
 /* ── Center head artist ── */
 .worship-center-head-artist {
   font-size: 10px;
-  color: var(--b-text-3, #616161);
+  color: var(--b-text-3);
   margin-top: 2px;
 }
 
 /* ── Slide selected state ── */
 .worship-slide-block.selected {
-  border-color: var(--b-blue, #2962FF);
+  border-color: var(--b-blue);
   background: rgba(41, 98, 255, 0.04);
 }
 
@@ -1982,7 +1982,7 @@ button.worship-online-action.at-limit {
   position: absolute;
   top: 8px;
   right: 40px;
-  background: var(--b-green, #00E676);
+  background: var(--b-green);
   border: none;
   color: #fff;
   border-radius: var(--b-radius, 2px);
@@ -2013,14 +2013,14 @@ button.worship-online-action.at-limit {
   width: 100%;
   min-height: 60px;
   resize: vertical;
-  background: var(--b-bg, #121212);
-  border: 1px solid var(--b-green, #00E676);
+  background: var(--b-bg);
+  border: 1px solid var(--b-green);
   border-radius: var(--b-radius, 2px);
   padding: 8px;
   font-family: "Charis SIL", "JetBrains Mono", "Noto Sans Mono", "Fira Code", monospace;
   font-size: 13px;
   line-height: 1.6;
-  color: var(--b-text-1, #E0E0E0);
+  color: var(--b-text-1);
   outline: none;
 }
 
@@ -2028,8 +2028,8 @@ button.worship-online-action.at-limit {
 .worship-theme-dropdown {
   display: flex;
   flex-direction: column;
-  background: var(--b-tile, #262626);
-  border: 1px solid var(--b-border, #2C2C2C);
+  background: var(--b-tile);
+  border: 1px solid var(--b-border);
   border-radius: var(--b-radius, 2px);
   overflow: hidden;
 }
@@ -2041,7 +2041,7 @@ button.worship-online-action.at-limit {
   padding: 8px 12px;
   background: none;
   border: none;
-  border-bottom: 1px solid var(--b-border, #2C2C2C);
+  border-bottom: 1px solid var(--b-border);
   cursor: pointer;
   text-align: left;
   transition: background 0.15s;
@@ -2052,18 +2052,18 @@ button.worship-online-action.at-limit {
 }
 
 .worship-theme-option:hover {
-  background: var(--b-border, #2C2C2C);
+  background: var(--b-border);
 }
 
 .worship-theme-option.active {
-  background: rgba(0, 230, 118, 0.06);
+  background: rgba(var(--primary-rgb), 0.06);
 }
 
 .worship-theme-option-thumb {
   width: 28px;
   height: 16px;
   border-radius: var(--b-radius, 2px);
-  border: 1px solid var(--b-border, #2C2C2C);
+  border: 1px solid var(--b-border);
   flex-shrink: 0;
 }
 
@@ -2077,17 +2077,17 @@ button.worship-online-action.at-limit {
 .worship-theme-option-name {
   font-size: 10px;
   font-weight: 600;
-  color: var(--b-text-1, #E0E0E0);
+  color: var(--b-text-1);
 }
 
 .worship-theme-option-desc {
   font-size: 10px;
-  color: var(--b-text-3, #616161);
+  color: var(--b-text-3);
 }
 
 .worship-theme-check {
   font-size: 16px;
-  color: var(--b-green, #00E676);
+  color: var(--b-green);
 }
 
 /* ── Shortcuts hint bar ── */
@@ -2096,24 +2096,24 @@ button.worship-online-action.at-limit {
   flex-wrap: wrap;
   gap: 6px;
   padding: 8px 0 0;
-  border-top: 1px solid var(--b-border, #2C2C2C);
+  border-top: 1px solid var(--b-border);
   margin-top: auto;
 }
 
 .worship-shortcuts-hint span {
   font-size: 10px;
   font-weight: 600;
-  color: var(--b-text-4, #424242);
+  color: var(--b-text-4);
   padding: 2px 6px;
-  background: var(--b-tile, #262626);
-  border: 1px solid var(--b-border, #2C2C2C);
+  background: var(--b-tile);
+  border: 1px solid var(--b-border);
   border-radius: var(--b-radius, 2px);
 }
 
 /* ── Live slide strip (shows when worship output is live) ── */
 .worship-live-strip {
   flex-shrink: 0;
-  border-top: 1px solid var(--b-border, #2C2C2C);
+  border-top: 1px solid var(--b-border);
   background: var(--bg);
   padding: 10px 12px 12px;
   display: flex;
@@ -2134,7 +2134,7 @@ button.worship-online-action.at-limit {
   gap: 6px;
   font-size: 11px;
   font-weight: 700;
-  color: var(--b-text-1, #E0E0E0);
+  color: var(--b-text-1);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -2142,7 +2142,7 @@ button.worship-online-action.at-limit {
 .worship-live-strip-title svg {
   width: 15px;
   height: 15px;
-  color: var(--b-green, #00E676);
+  color: var(--b-green);
 }
 
 .worship-live-strip-shortcuts {
@@ -2154,7 +2154,7 @@ button.worship-online-action.at-limit {
 
 .worship-live-strip-shortcuts span {
   font-size: 10px;
-  color: var(--b-text-3, #616161);
+  color: var(--b-text-3);
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -2164,9 +2164,9 @@ button.worship-online-action.at-limit {
   font-family: inherit;
   font-size: 10px;
   font-weight: 700;
-  color: var(--b-text-2, #9E9E9E);
-  border: 1px solid var(--b-border, #2C2C2C);
-  background: var(--b-tile, #262626);
+  color: var(--b-text-2);
+  border: 1px solid var(--b-border);
+  background: var(--b-tile);
   border-radius: 4px;
   padding: 1px 5px;
 }
@@ -2181,8 +2181,8 @@ button.worship-online-action.at-limit {
 }
 
 .worship-live-strip-slide {
-  border: 1px solid var(--b-border, #2C2C2C);
-  background: var(--b-surface, #1E1E1E);
+  border: 1px solid var(--b-border);
+  background: var(--b-surface);
   border-radius: 4px;
   padding: 8px 9px;
   text-align: left;
@@ -2194,18 +2194,18 @@ button.worship-online-action.at-limit {
 }
 
 .worship-live-strip-slide:hover {
-  border-color: rgba(0, 230, 118, 0.35);
+  border-color: rgba(var(--primary-rgb), 0.35);
 }
 
 .worship-live-strip-slide.active {
-  border-color: var(--b-green, #00E676);
-  box-shadow: 0 0 0 1px rgba(0, 230, 118, 0.2);
+  border-color: var(--b-green);
+  box-shadow: 0 0 0 1px rgba(var(--primary-rgb), 0.2);
 }
 
 .worship-live-strip-slide-label {
   font-size: 10px;
   font-weight: 700;
-  color: var(--b-green, #00E676);
+  color: var(--b-green);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -2213,7 +2213,7 @@ button.worship-online-action.at-limit {
 .worship-live-strip-slide-text {
   font-size: 11px;
   line-height: 1.35;
-  color: var(--b-text-1, #E0E0E0);
+  color: var(--b-text-1);
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
@@ -2243,7 +2243,7 @@ button.worship-online-action.at-limit {
 .worship-song-delete-btn {
   background: none;
   border: none;
-  color: var(--b-text-4, #424242);
+  color: var(--b-text-4);
   cursor: pointer;
   padding: 2px;
   display: flex;
@@ -2257,7 +2257,7 @@ button.worship-online-action.at-limit {
 }
 
 .worship-song-delete-btn:hover {
-  color: var(--b-red, #e74856);
+  color: var(--b-red);
 }
 
 .worship-song-delete-btn svg {
@@ -2267,19 +2267,19 @@ button.worship-online-action.at-limit {
 
 /* ── Blanked preview box ── */
 .worship-preview-box.blanked {
-  border-color: var(--b-red, #e74856);
+  border-color: var(--b-red);
 }
 
 .worship-preview-box.blanked p {
-  color: var(--b-red, #e74856);
+  color: var(--b-red);
   font-weight: 700;
   letter-spacing: 0.1em;
 }
 
 /* ── Blackout active warning state ── */
 .worship-control-btn.active-warn {
-  background: var(--b-red, #e74856);
-  border-color: var(--b-red, #e74856);
+  background: var(--b-red);
+  border-color: var(--b-red);
   color: #fff;
 }
 
@@ -2294,7 +2294,7 @@ button.worship-online-action.at-limit {
   justify-content: center;
   gap: 8px;
   padding: 40px 20px;
-  color: var(--b-text-3, #616161);
+  color: var(--b-text-3);
   text-align: center;
 }
 
@@ -2317,7 +2317,7 @@ button.worship-online-action.at-limit {
 .worship-loading-state {
   min-height: 100%;
   font-weight: 600;
-  color: var(--b-text-3, #616161);
+  color: var(--b-text-3);
 }
 
 /* Disabled primary button */
@@ -2338,12 +2338,12 @@ button.worship-online-action.at-limit {
 }
 
 .worship-home ::-webkit-scrollbar-thumb {
-  background: var(--b-border, #2C2C2C);
+  background: var(--b-border);
   border-radius: 3px;
 }
 
 .worship-home ::-webkit-scrollbar-thumb:hover {
-  background: var(--b-text-3, #616161);
+  background: var(--b-text-3);
 }
 
 @media (max-height: 900px) {
@@ -2405,10 +2405,6 @@ button.worship-online-action.at-limit {
 /* ════════════════════════════════════════════════════════
    LIGHT MODE  —  Worship overrides
    ════════════════════════════════════════════════════════ */
-:root.light .worship-scene-send-btn {
-  background: rgba(0, 0, 0, 0.05);
-}
-
 :root.light .worship-slide-btn:hover {
   background: rgba(0, 0, 0, 0.06);
 }

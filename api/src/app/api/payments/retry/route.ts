@@ -14,6 +14,7 @@ import { createFlutterwavePayment, FlutterwaveError, isFlutterwaveConfigured } f
 import { rateLimit } from "@/lib/rateLimit";
 import clientPromise from "@/lib/mongodb";
 import crypto from "node:crypto";
+import { reportPaymentToTelegram } from "@/lib/paymentTelegramNotifications";
 
 const limiter = rateLimit({ windowMs: 60_000, max: 10 });
 const RETRYABLE_TYPES = ["subscription_purchase", "subscription_renewal", "plan_upgrade"];
@@ -175,6 +176,20 @@ export async function POST(req: NextRequest) {
         { _id: reference },
         { $set: { status: "FAILED", failureReason: error instanceof Error ? error.message : "Flutterwave retry failed", updatedAt: new Date().toISOString() } },
       );
+      reportPaymentToTelegram({
+        outcome: "failed",
+        provider: "flutterwave",
+        reference,
+        userId,
+        name: authUser.mongoUser.name,
+        email,
+        plan,
+        billingCycle,
+        amount,
+        currency: checkoutPricing.currency,
+        failureReason: error instanceof Error ? error.message : "Flutterwave retry failed",
+        source: "Checkout retry",
+      });
       throw error;
     }
   } catch (error) {

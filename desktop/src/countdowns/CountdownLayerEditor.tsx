@@ -10,8 +10,8 @@ import { Link2, Pause, Play, Redo2, Save, Send, Undo2 } from "../components/icon
 import ThemeLayoutPreview from "../themes/layout/ThemeLayoutPreview";
 import LayerPanel from "../themes/layout/editor/LayerPanel";
 import LayerCanvasOverlay from "../themes/layout/editor/LayerCanvasOverlay";
-import { getLayer, nudgeLayer, removeLayer, updateLayer } from "../themes/layout/editor/layoutOps";
-import type { ThemeLayer, ThemeLayout } from "../themes/layout/types";
+import { applyLayerPatches, getLayer, nudgeLayer, removeLayer, updateLayer } from "../themes/layout/editor/layoutOps";
+import type { ThemeLayout } from "../themes/layout/types";
 import { getAllMedia } from "../library/libraryDb";
 import type { MediaItem } from "../library/libraryTypes";
 import { getOverlayBaseUrl, resolveOverlayAssetUrl } from "../services/overlayUrl";
@@ -30,9 +30,9 @@ interface Props {
 
 type Tab = "design" | "timer";
 
-const field: React.CSSProperties = { display: "flex", flexDirection: "column", gap: 4, marginBottom: 12, fontSize: 12, color: "#a1a1aa" };
-const input: React.CSSProperties = { height: 34, padding: "0 10px", background: "#171b28", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, fontSize: 13, color: "#fff", outline: "none", width: "100%" };
-const btn: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 8, fontSize: 13, fontWeight: 600, border: "1px solid rgba(255,255,255,0.12)", background: "#1e293b", color: "#f8fafc", cursor: "pointer" };
+const field: React.CSSProperties = { display: "flex", flexDirection: "column", gap: 4, marginBottom: 12, fontSize: 12, color: "var(--text-muted)" };
+const input: React.CSSProperties = { height: 34, padding: "0 10px", background: "var(--input-bg)", border: "1px solid var(--input-border)", borderRadius: 8, fontSize: 13, color: "var(--text-primary)", outline: "none", width: "100%" };
+const btn: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 12px", borderRadius: 8, fontSize: 13, fontWeight: 600, border: "1px solid var(--border)", background: "var(--surface-raised)", color: "var(--text-primary)", cursor: "pointer" };
 
 function mediaSrc(item: MediaItem): string {
   if (item.url) return item.url;
@@ -271,7 +271,7 @@ export default function CountdownLayerEditor({ design, onChange }: Props) {
             value={design.title}
             onChange={(e) => onChange({ title: e.target.value })}
             placeholder="Countdown name…"
-            style={{ background: "transparent", border: "none", fontSize: 15, fontWeight: 700, color: "#fff", outline: "none", minWidth: 160, flex: "1 1 160px" }}
+            style={{ background: "transparent", border: "none", fontSize: 15, fontWeight: 700, color: "var(--text-primary)", outline: "none", minWidth: 160, flex: "1 1 160px" }}
           />
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
             <button type="button" style={{ ...btn, opacity: undoStack.length ? 1 : 0.4 }} disabled={!undoStack.length} onClick={undo} title="Undo"><Undo2 size={14} /></button>
@@ -279,7 +279,7 @@ export default function CountdownLayerEditor({ design, onChange }: Props) {
             <button type="button" style={btn} onClick={handleSave}><Save size={14} /> {saved ? "Saved" : "Save"}</button>
             <button type="button" style={btn} onClick={handleCopyLink} title="Copy a link to paste into an OBS Browser source"><Link2 size={14} /> Copy OBS link</button>
             <button type="button" style={btn} onClick={() => handleObs(false)} title="Add to the OBS Preview scene"><Send size={14} /> To OBS Preview</button>
-            <button type="button" style={{ ...btn, background: "var(--primary, #3b82f6)", border: "none" }} onClick={() => handleObs(true)} title="Add to the live OBS Program scene"><Send size={14} /> To OBS Program</button>
+            <button type="button" style={{ ...btn, background: "var(--primary)", border: "none", color: "#fff" }} onClick={() => handleObs(true)} title="Add to the live OBS Program scene"><Send size={14} /> To OBS Program</button>
           </div>
         </div>
 
@@ -306,11 +306,11 @@ export default function CountdownLayerEditor({ design, onChange }: Props) {
                 canvasRef={canvasRef}
                 layout={previewLayout}
                 scale={scale}
-                selectedId={selectedId}
+                selectedIds={selectedId ? [selectedId] : []}
                 contentKey={`${design.id}-${kind}`}
-                onSelect={setSelectedId}
-                onDraft={(id: string, change: Partial<ThemeLayer>) => setDraft(updateLayer(layout, id, change))}
-                onCommit={(id: string, change: Partial<ThemeLayer>) => commit(updateLayer(layout, id, change))}
+                onSelect={(id) => setSelectedId(id)}
+                onDraft={(patches) => setDraft(applyLayerPatches(layout, patches))}
+                onCommit={(patches) => commit(applyLayerPatches(layout, patches))}
               />
             </div>
           </div>
@@ -321,7 +321,7 @@ export default function CountdownLayerEditor({ design, onChange }: Props) {
           <button type="button" style={btn} onClick={() => setPlaying((p) => !p)}>{playing ? <><Pause size={14} /> Pause</> : <><Play size={14} /> Preview</>}</button>
           <div style={{ display: "flex", gap: 4 }}>
             {([["countdown", "Countdown"], ["countup", "Count up"], ["timeofday", "Clock"]] as Array<[RundownTimerKind, string]>).map(([k, label]) => (
-              <button key={k} type="button" onClick={() => setKind(k)} style={{ ...btn, padding: "6px 10px", background: kind === k ? "var(--primary-soft, rgba(59,130,246,0.2))" : "transparent", borderColor: kind === k ? "var(--primary, #3b82f6)" : "rgba(255,255,255,0.12)" }}>{label}</button>
+              <button key={k} type="button" onClick={() => setKind(k)} style={{ ...btn, padding: "6px 10px", background: kind === k ? "var(--primary-soft)" : "transparent", borderColor: kind === k ? "var(--primary)" : "var(--border)" }}>{label}</button>
             ))}
           </div>
           {kind !== "timeofday" && (
@@ -352,7 +352,7 @@ export default function CountdownLayerEditor({ design, onChange }: Props) {
         <div style={{ display: "flex", gap: 3, padding: 8, borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
           {([["design", "Design"], ["timer", "Timer & text"]] as Array<[Tab, string]>).map(([k, label]) => (
             <button key={k} type="button" onClick={() => setTab(k)}
-              style={{ flex: 1, padding: "8px 0", borderRadius: 6, fontSize: 12, fontWeight: 600, border: "none", cursor: "pointer", background: tab === k ? "var(--surface-raised)" : "transparent", color: tab === k ? "#fff" : "var(--text-muted)" }}>
+              style={{ flex: 1, padding: "8px 0", borderRadius: 6, fontSize: 12, fontWeight: 600, border: "none", cursor: "pointer", background: tab === k ? "var(--surface-raised)" : "transparent", color: tab === k ? "var(--text-primary)" : "var(--text-muted)" }}>
               {label}
             </button>
           ))}
@@ -394,7 +394,7 @@ export default function CountdownLayerEditor({ design, onChange }: Props) {
               <div style={{ marginBottom: 12 }}>
                 <DurationInput allowZero value={red} onCommit={(s) => onChange({ warnRedSeconds: s })} />
               </div>
-              <p style={{ fontSize: 12, color: "#8b93a7", lineHeight: 1.5, marginBottom: 14 }}>
+              <p style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5, marginBottom: 14 }}>
                 Parts of the design change colour at these times when “Follows timer level” is on for that layer (Design tab).
               </p>
               <label style={field}>

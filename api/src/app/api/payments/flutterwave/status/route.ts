@@ -8,6 +8,7 @@ import {
   verifyFlutterwaveTransaction,
 } from "@/lib/flutterwave";
 import { rateLimit } from "@/lib/rateLimit";
+import { paymentDetailsFromIntent, reportPaymentToTelegram } from "@/lib/paymentTelegramNotifications";
 
 const limiter = rateLimit({ windowMs: 60_000, max: 60 });
 
@@ -29,6 +30,16 @@ function failureResponse(reference: string, error: string, status = 402) {
     status: "FAILED",
     error,
   }, { status });
+}
+
+function reportFailure(intent: Record<string, any>, reference: string, failureReason: string) {
+  reportPaymentToTelegram(paymentDetailsFromIntent(intent, {
+    outcome: "failed",
+    provider: "flutterwave",
+    reference,
+    failureReason,
+    source: "Flutterwave status check",
+  }));
 }
 
 function amountMatchesExpected(actualValue: unknown, expectedValue: unknown) {
@@ -82,6 +93,7 @@ export async function GET(req: NextRequest) {
         { _id: reference, userId, status: { $in: ["PENDING", "CREATING"] } },
         { $set: { status: "FAILED", failureReason: "Payment session expired.", updatedAt: new Date().toISOString() } },
       );
+      reportFailure(intent, reference, "Payment session expired.");
       return failureResponse(reference, "The Flutterwave payment session expired. Please start again.");
     }
     if (providerStatus === "failed" || providerStatus === "cancelled" || providerStatus === "canceled") {
@@ -96,6 +108,7 @@ export async function GET(req: NextRequest) {
           },
         },
       );
+      reportFailure(intent, reference, `Flutterwave payment ${providerStatus} before completion.`);
       return failureResponse(reference, "The Flutterwave payment was not completed.");
     }
     if (!transactionId) {
@@ -110,17 +123,21 @@ export async function GET(req: NextRequest) {
     const expectedCurrency = intent.expectedCurrency || intent.currency;
     if (String(provider.status || "").toLowerCase() !== "success" || status !== "successful") {
       if (status === "failed" || status === "cancelled") {
+        reportFailure(intent, reference, `Flutterwave reported the payment as ${status}.`);
         return failureResponse(reference, "The Flutterwave payment was not completed.");
       }
       return pendingResponse(reference, "Flutterwave is still confirming the payment.");
     }
     if (String(data?.tx_ref || data?.reference || "").trim() !== expectedReference) {
+      reportFailure(intent, reference, "Payment reference could not be verified.");
       return failureResponse(reference, "Payment reference could not be verified.", 502);
     }
     if (!amountMatchesExpected(data?.amount, expectedAmount)) {
+      reportFailure(intent, reference, "Payment amount could not be verified.");
       return failureResponse(reference, "Payment amount could not be verified.", 502);
     }
     if (!currencyMatches(data?.currency, expectedCurrency)) {
+      reportFailure(intent, reference, "Payment currency could not be verified.");
       return failureResponse(reference, "Payment currency could not be verified.", 502);
     }
 

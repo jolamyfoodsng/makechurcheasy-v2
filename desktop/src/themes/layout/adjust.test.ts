@@ -93,6 +93,35 @@ describe("layout backdrop (Dock background for full-screen layer themes)", () =>
     const out = applyLayoutAdjust(FS, { backgroundType: "off", layoutBackdropDarkness: 50 });
     expect(out.layers.length).toBe(FS.layers.length);
     expect(out.layers.find((l) => l.id === "bg")!.hidden).toBe(true);
+    // Smaller decorative boxes are part of the background too: only the words are left.
+    expect(out.layers.find((l) => l.id === "glow")!.hidden).toBe(true);
+    expect(out.layers.find((l) => l.id === "verse")!.hidden).toBeUndefined();
+  });
+
+  it("Off also removes inset cards and panels, keeping the words inside them", () => {
+    const CARD: ThemeLayout = {
+      version: 1,
+      format: "fullscreen",
+      swap: "content",
+      layers: [
+        { id: "card", name: "Card", type: "box", anchor: "center", x: 960, y: 540, w: 1640, h: 880, style: { fill: "#ffffff", backdropBlur: 12, shadow: "0 10px 30px #000", borderWidth: 2 }, ...anim },
+        { id: "frame", name: "Frame", type: "box", anchor: "center", x: 960, y: 540, w: 1715, h: 956, style: { fill: "#f4f2ec" }, ...anim },
+        { id: "logo", name: "Logo", type: "image", anchor: "top-left", x: 40, y: 40, w: 200, h: 100, style: { src: "/uploads/logo.png" }, ...anim },
+        { id: "verse", name: "Verse", type: "text", parentId: "card", content: "{text}", anchor: "center", x: 820, y: 440, w: 1400, h: 600, style: { fontSize: 80 }, ...anim },
+      ],
+    };
+    const out = applyLayoutAdjust(CARD, { backgroundType: "off" });
+    const by = (id: string) => out.layers.find((l) => l.id === id)!;
+    expect(by("frame").hidden).toBe(true);
+    expect(by("logo").hidden).toBe(true);
+    expect(by("card").hidden).toBeUndefined();
+    expect(by("card").style.fill).toBe("transparent");
+    expect(by("card").style.backdropBlur).toBeUndefined();
+    expect(by("card").style.shadow).toBeUndefined();
+    expect(by("card").style.borderWidth).toBeUndefined();
+    expect(by("verse").hidden).toBeUndefined();
+    // With a background picked, the card stays as the theme drew it.
+    expect(applyLayoutAdjust(CARD, { backgroundType: "theme" })).toBe(CARD);
   });
 
   it("darkness sits right above the theme's own background, below the rest", () => {
@@ -252,7 +281,8 @@ describe("layout adjust: verse box growth", () => {
   it("keeps a finite place for the verse when the line spacing grows it", () => {
     const verse = applyLayoutAdjust(FULL, { layoutLineHeight: 105 }).layers.find((l) => l.id === "verse")!;
     expect(verse.y).toBe(346);
-    expect(verse.h).toBe(588);
+    // 105% spacing wraps onto more lines, so the box grows by about factor² (560 → 617), not linearly.
+    expect(verse.h).toBe(617);
   });
 
   it("leaves the verse where it was rather than giving it no place", () => {

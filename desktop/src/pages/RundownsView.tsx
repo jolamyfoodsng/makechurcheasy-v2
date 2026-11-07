@@ -40,11 +40,11 @@ import { getInAppPreviewBaseUrlSync, getOverlayBaseUrlSync, useLanDockBaseUrl } 
 const inputStyle: React.CSSProperties = {
   width: "100%",
   boxSizing: "border-box",
-  background: "#0f1320",
-  border: "1px solid var(--border)",
+  background: "var(--input-bg)",
+  border: "1px solid var(--input-border)",
   borderRadius: 3,
   padding: "6px 8px",
-  color: "#fff",
+  color: "var(--text-primary)",
   fontSize: 13,
   outline: "none",
 };
@@ -55,7 +55,7 @@ const labelStyle: React.CSSProperties = {
   fontWeight: 700,
   letterSpacing: "0.06em",
   textTransform: "uppercase",
-  color: "#a1a1aa",
+  color: "var(--text-muted)",
   marginBottom: 4,
 };
 
@@ -68,7 +68,7 @@ const iconBtn: React.CSSProperties = {
   borderRadius: 3,
   border: "1px solid var(--border)",
   background: "transparent",
-  color: "#cbd5e1",
+  color: "var(--text-secondary)",
   cursor: "pointer",
   padding: 0,
 };
@@ -235,7 +235,7 @@ function TimerCard({
       onClick={onSelect}
       style={{
         border: `1px solid ${selected ? "var(--primary)" : "var(--border)"}`,
-        background: selected ? "rgba(99,102,241,0.07)" : "var(--surface)",
+        background: selected ? "var(--primary-soft)" : "var(--surface)",
         borderRadius: 3,
         padding: 6,
         display: "flex",
@@ -263,7 +263,7 @@ function TimerCard({
         <div style={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
           <button type="button" title="Move up" aria-label="Move timer up" disabled={index === 0} onClick={(e) => { e.stopPropagation(); onMove(-1); }} style={{ ...iconBtn, border: "none", opacity: index === 0 ? 0.3 : 1 }}><ChevronUp size={14} /></button>
           <button type="button" title="Move down" aria-label="Move timer down" disabled={index === count - 1} onClick={(e) => { e.stopPropagation(); onMove(1); }} style={{ ...iconBtn, border: "none", opacity: index === count - 1 ? 0.3 : 1 }}><ChevronDown size={14} /></button>
-          <button type="button" title="Delete timer" aria-label="Delete timer" onClick={(e) => { e.stopPropagation(); onDelete(); }} style={{ ...iconBtn, border: "none", color: "#f87171" }}><Trash2 size={13} /></button>
+          <button type="button" title="Delete timer" aria-label="Delete timer" onClick={(e) => { e.stopPropagation(); onDelete(); }} style={{ ...iconBtn, border: "none", color: "var(--error)" }}><Trash2 size={13} /></button>
         </div>
       </div>
 
@@ -307,14 +307,14 @@ function PresenterLink() {
 
   return (
     <div style={{ maxWidth: PREVIEW_W, border: "1px solid var(--border)", background: "var(--surface)", borderRadius: 10, padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
-      <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>Presenter screen</div>
+      <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>Presenter screen</div>
       <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: 0, lineHeight: 1.45 }}>
         Open this link on a monitor, tablet or phone on the same Wi-Fi. The speaker sees the running timer, the next timer and your messages.
       </p>
       <input readOnly value={url} onFocus={(e) => e.currentTarget.select()} aria-label="Presenter link" style={{ ...inputStyle, fontSize: 12 }} />
       <div style={{ display: "flex", gap: 8 }}>
-        <button type="button" onClick={() => void copy()} style={{ ...iconBtn, width: "auto", padding: "0 12px", gap: 6, fontSize: 12.5, color: "#fff" }}><Copy size={13} /> {copied ? "Copied" : "Copy link"}</button>
-        <button type="button" onClick={() => void open()} style={{ ...iconBtn, width: "auto", padding: "0 12px", fontSize: 12.5, color: "#fff" }}>Open</button>
+        <button type="button" onClick={() => void copy()} style={{ ...iconBtn, width: "auto", padding: "0 12px", gap: 6, fontSize: 12.5, color: "var(--text-primary)" }}><Copy size={13} /> {copied ? "Copied" : "Copy link"}</button>
+        <button type="button" onClick={() => void open()} style={{ ...iconBtn, width: "auto", padding: "0 12px", fontSize: 12.5, color: "var(--text-primary)" }}>Open</button>
       </div>
     </div>
   );
@@ -447,7 +447,7 @@ export default function RundownsView() {
       {/* ── Sidebar ── */}
       <div style={{ width: 260, flexShrink: 0, borderRight: "1px solid var(--border)", background: "var(--surface)", display: "flex", flexDirection: "column" }}>
         <div style={{ padding: 18, borderBottom: "1px solid var(--border)" }}>
-          <h3 style={{ fontSize: 16, fontWeight: 750, color: "#ffffff", marginBottom: 12 }}>My Rundowns</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 750, color: "var(--text-primary)", marginBottom: 12 }}>My Rundowns</h3>
           <button onClick={handleNewRundown} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "10px 0", background: "var(--primary)", color: "#fff", borderRadius: 8, fontSize: 14, fontWeight: 600, border: "none", cursor: "pointer" }}>
             <Plus size={16} /> New Rundown
           </button>
@@ -457,16 +457,16 @@ export default function RundownsView() {
             <div
               key={rd.id}
               onClick={() => { setActiveId(rd.id); setSelectedTimerId(null); }}
-              style={{ padding: "10px 12px", borderRadius: 8, cursor: "pointer", border: `1px solid ${rd.id === activeId ? "var(--primary)" : "transparent"}`, background: rd.id === activeId ? "rgba(99,102,241,0.1)" : "transparent" }}
+              style={{ padding: "10px 12px", borderRadius: 8, cursor: "pointer", border: `1px solid ${rd.id === activeId ? "var(--primary)" : "transparent"}`, background: rd.id === activeId ? "var(--primary-soft)" : "transparent" }}
             >
-              <div style={{ fontSize: 13.5, fontWeight: 600, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{rd.name || "Untitled"}</div>
+              <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{rd.name || "Untitled"}</div>
               <div style={{ fontSize: 11.5, color: "var(--text-muted)", marginTop: 2 }}>
                 {rd.timers.length} timer{rd.timers.length === 1 ? "" : "s"} · {formatDuration(rd.timers.reduce((sum, t) => sum + (t.kind === "countdown" ? t.durationSeconds : 0), 0))} total
               </div>
               {rd.id === activeId && (
                 <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
                   <button type="button" onClick={(e) => { e.stopPropagation(); handleDuplicate(rd); }} style={{ ...iconBtn, width: "auto", padding: "0 8px", gap: 5, fontSize: 11.5 }}><Copy size={12} /> Duplicate</button>
-                  <button type="button" onClick={(e) => { e.stopPropagation(); handleDelete(rd); }} style={{ ...iconBtn, width: "auto", padding: "0 8px", gap: 5, fontSize: 11.5, color: "#f87171" }}><Trash2 size={12} /> Delete</button>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); handleDelete(rd); }} style={{ ...iconBtn, width: "auto", padding: "0 8px", gap: 5, fontSize: 11.5, color: "var(--error)" }}><Trash2 size={12} /> Delete</button>
                 </div>
               )}
             </div>
@@ -498,8 +498,8 @@ export default function RundownsView() {
 
               <section>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                  <h4 style={{ margin: 0, fontSize: 14, fontWeight: 750, color: "#fff" }}>Timers</h4>
-                  <button type="button" onClick={() => { const t = createTimer({ name: `Timer ${active.timers.length + 1}` }); patchActive({ timers: [...active.timers, t] }); setSelectedTimerId(t.id); }} style={{ ...iconBtn, width: "auto", padding: "0 12px", gap: 6, fontSize: 12.5, color: "#fff" }}><Plus size={14} /> Add timer</button>
+                  <h4 style={{ margin: 0, fontSize: 14, fontWeight: 750, color: "var(--text-primary)" }}>Timers</h4>
+                  <button type="button" onClick={() => { const t = createTimer({ name: `Timer ${active.timers.length + 1}` }); patchActive({ timers: [...active.timers, t] }); setSelectedTimerId(t.id); }} style={{ ...iconBtn, width: "auto", padding: "0 12px", gap: 6, fontSize: 12.5, color: "var(--text-primary)" }}><Plus size={14} /> Add timer</button>
                 </div>
                 {active.timers.length > 0 && <TimerHeader />}
                 <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -523,19 +523,19 @@ export default function RundownsView() {
 
               <section>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                  <h4 style={{ margin: 0, fontSize: 14, fontWeight: 750, color: "#fff" }}>Messages</h4>
-                  <button type="button" onClick={() => patchActive({ messages: [...active.messages, createMessage()] })} style={{ ...iconBtn, width: "auto", padding: "0 12px", gap: 6, fontSize: 12.5, color: "#fff" }}><Plus size={14} /> Add message</button>
+                  <h4 style={{ margin: 0, fontSize: 14, fontWeight: 750, color: "var(--text-primary)" }}>Messages</h4>
+                  <button type="button" onClick={() => patchActive({ messages: [...active.messages, createMessage()] })} style={{ ...iconBtn, width: "auto", padding: "0 12px", gap: 6, fontSize: 12.5, color: "var(--text-primary)" }}><Plus size={14} /> Add message</button>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {active.messages.map((m) => (
                     <div key={m.id} onClick={() => setPreviewMessageId(previewMessageId === m.id ? null : m.id)} style={{ display: "flex", alignItems: "center", gap: 8, padding: 8, borderRadius: 9, border: `1px solid ${previewMessageId === m.id ? "var(--primary)" : "var(--border)"}`, background: "var(--surface)" }}>
                       <input aria-label="Message text" value={m.text} onClick={(e) => e.stopPropagation()} onChange={(e) => patchMessage(m.id, { text: e.target.value })} style={{ ...inputStyle, flex: 1, color: MESSAGE_SWATCH[m.color], fontWeight: m.bold ? 800 : 500 }} />
                       {(Object.keys(MESSAGE_SWATCH) as RundownMessageColor[]).map((c) => (
-                        <button key={c} type="button" title={c} aria-label={`${c} text`} onClick={(e) => { e.stopPropagation(); patchMessage(m.id, { color: c }); }} style={{ width: 22, height: 22, borderRadius: 11, background: MESSAGE_SWATCH[c], border: m.color === c ? "2px solid var(--primary)" : "2px solid transparent", outline: "1px solid rgba(255,255,255,0.25)", cursor: "pointer", padding: 0, flexShrink: 0 }} />
+                        <button key={c} type="button" title={c} aria-label={`${c} text`} onClick={(e) => { e.stopPropagation(); patchMessage(m.id, { color: c }); }} style={{ width: 22, height: 22, borderRadius: 11, background: MESSAGE_SWATCH[c], border: m.color === c ? "2px solid var(--primary)" : "2px solid transparent", outline: "1px solid var(--border-strong)", cursor: "pointer", padding: 0, flexShrink: 0 }} />
                       ))}
-                      <button type="button" title="Bold" aria-label="Bold" onClick={(e) => { e.stopPropagation(); patchMessage(m.id, { bold: !m.bold }); }} style={{ ...iconBtn, background: m.bold ? "var(--primary)" : "transparent", color: "#fff" }}><Bold size={14} /></button>
-                      <button type="button" title="Flash" aria-label="Flash" onClick={(e) => { e.stopPropagation(); patchMessage(m.id, { flash: !m.flash }); }} style={{ ...iconBtn, background: m.flash ? "var(--primary)" : "transparent", color: "#fff" }}><Zap size={14} /></button>
-                      <button type="button" title="Delete message" aria-label="Delete message" onClick={(e) => { e.stopPropagation(); patchActive({ messages: active.messages.filter((x) => x.id !== m.id) }); }} style={{ ...iconBtn, color: "#f87171" }}><Trash2 size={14} /></button>
+                      <button type="button" title="Bold" aria-label="Bold" onClick={(e) => { e.stopPropagation(); patchMessage(m.id, { bold: !m.bold }); }} style={{ ...iconBtn, background: m.bold ? "var(--primary)" : "transparent", color: m.bold ? "#fff" : "var(--text-primary)" }}><Bold size={14} /></button>
+                      <button type="button" title="Flash" aria-label="Flash" onClick={(e) => { e.stopPropagation(); patchMessage(m.id, { flash: !m.flash }); }} style={{ ...iconBtn, background: m.flash ? "var(--primary)" : "transparent", color: m.flash ? "#fff" : "var(--text-primary)" }}><Zap size={14} /></button>
+                      <button type="button" title="Delete message" aria-label="Delete message" onClick={(e) => { e.stopPropagation(); patchActive({ messages: active.messages.filter((x) => x.id !== m.id) }); }} style={{ ...iconBtn, color: "var(--error)" }}><Trash2 size={14} /></button>
                     </div>
                   ))}
                   {active.messages.length === 0 && <div style={{ fontSize: 13, color: "var(--text-secondary)" }}>No messages yet. Messages are quick notes you can show to the speaker from the Dock.</div>}
@@ -549,7 +549,7 @@ export default function RundownsView() {
               <RundownPreview timer={selectedTimer} design={previewDesign} rundown={active} level={previewLevel} message={previewMessage} />
               <div style={{ display: "flex", gap: 6 }}>
                 {(["green", "yellow", "red"] as const).map((lv) => (
-                  <button key={lv} type="button" onClick={() => setPreviewLevel(lv)} style={{ ...iconBtn, width: "auto", padding: "0 12px", fontSize: 12, textTransform: "capitalize", color: "#fff", background: previewLevel === lv ? { green: "#15803d", yellow: "#a16207", red: "#b91c1c" }[lv] : "transparent" }}>{lv}</button>
+                  <button key={lv} type="button" onClick={() => setPreviewLevel(lv)} style={{ ...iconBtn, width: "auto", padding: "0 12px", fontSize: 12, textTransform: "capitalize", color: previewLevel === lv ? "#fff" : "var(--text-primary)", background: previewLevel === lv ? { green: "#15803d", yellow: "#a16207", red: "#b91c1c" }[lv] : "transparent" }}>{lv}</button>
                 ))}
               </div>
               <p style={{ fontSize: 11.5, color: "var(--text-secondary)", margin: 0, maxWidth: PREVIEW_W }}>Click a timer to preview it. Click a message to preview it on screen.</p>

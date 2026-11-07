@@ -14,7 +14,7 @@ import { COLLECTIONS, ensureIndexes } from "./db";
 import { getAuthUserFromRequest } from "./auth";
 import { getEffectivePlan } from "./trial";
 import { BUILTIN_BROADCAST_GRAPHICS } from "./builtinBroadcastGraphics";
-import { BUILTIN_BROADCAST_TICKERS } from "./builtinBroadcastTickers";
+import { BUILTIN_BROADCAST_TICKERS, RETIRED_BUILTIN_GRAPHIC_IDS } from "./builtinBroadcastTickers";
 
 export const PACKAGE_FORMAT = "mce-graphic@1";
 export const TICKER_PACKAGE_FORMAT = "mce-ticker@1";
@@ -341,7 +341,7 @@ function builtinDefaults(graphicId: string): BroadcastGraphicDocument | null {
     description: b.description,
     category: b.category,
     accentColor: b.accentColor,
-    status: "active",
+    status: RETIRED_BUILTIN_GRAPHIC_IDS.has(b.graphicId) ? "hidden" : "active",
     tiers: { ...ALL_TIERS },
     sortOrder: b.sortOrder,
     version: 0,
@@ -360,8 +360,9 @@ export async function listBroadcastGraphics(): Promise<BroadcastGraphicDocument[
   const builtins = [...BUILTIN_BROADCAST_GRAPHICS, ...BUILTIN_BROADCAST_TICKERS].map((b) => {
     const base = builtinDefaults(b.graphicId)!;
     const saved = byId.get(b.graphicId);
-    // A retired ticker (removed from newer apps) stays hidden whatever was saved for it.
-    const retired = BUILTIN_BROADCAST_TICKERS.some((t) => t.graphicId === b.graphicId && t.retired);
+    // A retired ticker or graphic (removed from newer apps) stays hidden whatever was saved for it.
+    const retired = BUILTIN_BROADCAST_TICKERS.some((t) => t.graphicId === b.graphicId && t.retired)
+      || RETIRED_BUILTIN_GRAPHIC_IDS.has(b.graphicId);
     return saved && saved.source === "builtin" && !retired
       ? { ...base, status: saved.status, tiers: saved.tiers, sortOrder: saved.sortOrder ?? base.sortOrder, updatedAt: saved.updatedAt, updatedBy: saved.updatedBy }
       : base;

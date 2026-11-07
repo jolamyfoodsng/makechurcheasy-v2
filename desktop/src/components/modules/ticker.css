@@ -95,7 +95,7 @@
   padding: 10px 12px;
   background: rgba(var(--primary-rgb), 0.08);
   border: 1px solid rgba(var(--primary-rgb), 0.28);
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
 }
 
 .ticker-now-showing-left {
@@ -166,7 +166,7 @@
   width: 90px;
   height: 6px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--surface-raised);
   overflow: hidden;
 }
 
@@ -215,12 +215,12 @@
 
 .ticker-now-showing-btn--clear {
   border-color: rgba(239, 83, 80, 0.25);
-  color: #ef9a9a;
+  color: var(--error);
 }
 
 .ticker-now-showing-btn--clear:hover:not(:disabled) {
   border-color: rgba(239, 83, 80, 0.45);
-  color: #ef5350;
+  color: var(--error);
 }
 
 .ticker-live-preview-top {
@@ -257,7 +257,7 @@
 .ticker-input-card {
   background: var(--surface-dark);
   border: 1px solid var(--border);
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   padding: 14px;
   transition: border-color 0.2s;
 }
@@ -297,7 +297,7 @@
   background: transparent;
   border: 1px solid var(--border);
   border-radius: 3px;
-  color: var(--text-secondary, var(--text-muted));
+  color: var(--text-secondary);
   font-size: 11px;
   font-weight: 600;
   font-family: inherit;
@@ -330,7 +330,7 @@
 }
 
 .ticker-char-count--full {
-  color: var(--error, #ef4444);
+  color: var(--error);
   font-weight: 600;
 }
 
@@ -347,14 +347,14 @@
   gap: 6px;
   background: none;
   border: none;
-  color: var(--text-secondary, #aaa);
+  color: var(--text-secondary);
   font-size: 12px;
   cursor: pointer;
   padding: 4px 0;
 }
 
 .ticker-templates__toggle:hover {
-  color: var(--text-primary, #fff);
+  color: var(--text-primary);
 }
 
 .ticker-templates__body {
@@ -369,24 +369,24 @@
 
 .ticker-templates__label-input {
   flex: 1;
-  background: var(--surface, #0F172A);
-  border: 1px solid var(--border, var(--border));
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 4px;
   padding: 4px 8px;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary);
   font-size: 12px;
   outline: none;
 }
 
 .ticker-templates__label-input:focus {
-  border-color: var(--primary, #6366f1);
+  border-color: var(--primary);
 }
 
 .ticker-templates__save-btn {
   display: flex;
   align-items: center;
   gap: 4px;
-  background: var(--primary, #6366f1);
+  background: var(--primary);
   border: none;
   border-radius: 4px;
   padding: 4px 10px;
@@ -402,7 +402,7 @@
 }
 
 .ticker-templates__empty {
-  color: var(--text-muted, #666);
+  color: var(--text-muted);
   font-size: 11px;
   margin: 0;
 }
@@ -419,19 +419,19 @@
   gap: 8px;
   padding: 4px 6px;
   border-radius: 4px;
-  background: var(--surface, #0F172A);
+  background: var(--surface);
 }
 
 .ticker-templates__item-label {
   font-size: 11px;
   font-weight: 600;
-  color: var(--text-primary, #fff);
+  color: var(--text-primary);
   min-width: 60px;
 }
 
 .ticker-templates__item-text {
   font-size: 11px;
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -447,18 +447,18 @@
 .ticker-templates__delete-btn {
   background: none;
   border: none;
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
   cursor: pointer;
   padding: 2px;
   border-radius: 3px;
 }
 
 .ticker-templates__use-btn:hover {
-  color: var(--primary, #6366f1);
+  color: var(--primary);
 }
 
 .ticker-templates__delete-btn:hover {
-  color: var(--error, #ef4444);
+  color: var(--error);
 }
 
 .ticker-add-btn {
@@ -542,7 +542,7 @@
   align-items: flex-start;
   gap: 10px;
   padding: 12px 14px;
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   background: var(--surface-dark);
   border: 1px solid var(--border);
   transition: background 0.15s, border-color 0.15s;
@@ -596,7 +596,7 @@
   width: 100%;
   background: var(--surface-hover);
   border: 1px solid var(--border);
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   color: var(--text-primary);
   font-size: 13px;
   font-family: inherit;
@@ -650,7 +650,7 @@
   justify-content: center;
   width: 30px;
   height: 30px;
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   border: none;
   background: transparent;
   color: var(--text-secondary);
@@ -754,7 +754,7 @@
   border: 1px solid var(--border);
   background: var(--bg-dark);
   color: var(--text-secondary);
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   width: 26px;
   height: 26px;
   display: inline-flex;
@@ -859,7 +859,7 @@
 
 .ticker-scene-badge.live {
   border-color: rgba(231, 72, 86, 0.55);
-  color: #e74856;
+  color: var(--error);
 }
 
 .ticker-scene-badge.active {
@@ -1053,7 +1053,7 @@
   flex: 1;
   padding: 8px 12px;
   border: none;
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   background: transparent;
   color: var(--text-secondary);
   font-size: 10px;
@@ -1158,7 +1158,7 @@
 
 .ticker-live-control--inline {
   border: 1px solid var(--border);
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   background: var(--surface-dark);
   padding: 12px;
   margin-top: 0;
@@ -1235,19 +1235,19 @@
   gap: 10px;
   padding: 14px 24px;
   border: none;
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   font-size: 16px;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
   font-family: inherit;
-  background: var(--primary, #4f46e5);
+  background: var(--primary);
   color: #ffffff;
   box-shadow: 0 0 20px rgba(var(--primary-rgb), 0.2);
 }
 
 .ticker-start-btn:hover {
-  background: var(--primary-hover, #4338ca);
+  background: var(--primary-hover);
   box-shadow: 0 0 30px rgba(var(--primary-rgb), 0.4);
   transform: translateY(-1px);
 }
@@ -1307,7 +1307,7 @@
   gap: 10px;
   border: 1px solid var(--border);
   background: var(--bg-dark);
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   padding: 8px 10px;
   cursor: pointer;
 }
@@ -1332,7 +1332,7 @@
 .ticker-theme-dropdown {
   margin-top: 8px;
   border: 1px solid var(--border);
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   overflow: hidden;
   background: var(--surface-dark);
 }
@@ -1480,7 +1480,7 @@
   width: 28px;
   height: 28px;
   border: 2px solid var(--border);
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   cursor: pointer;
   padding: 0;
   background: transparent;
@@ -1520,7 +1520,7 @@
   flex: 1;
   min-width: 0;
   padding: 6px 10px;
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--bg-dark);
   color: var(--text-primary);
@@ -1578,7 +1578,7 @@
   align-items: center;
   gap: 6px;
   padding: 4px 6px;
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   background: var(--surface-hover);
 }
 
@@ -1605,7 +1605,7 @@
   gap: 4px;
   width: 100%;
   padding: 6px;
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   border: 1px dashed var(--border);
   background: transparent;
   color: var(--text-muted);

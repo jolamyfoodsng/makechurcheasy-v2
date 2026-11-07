@@ -145,7 +145,7 @@ describe("Dock Schedule Shared Space & Card Redesign", () => {
 
     // Bigger schedule icon
     expect(dockScheduleDrawerSource).toContain('<Icon name="event_note" size={16} />');
-    expect(dockScheduleDrawerSource).toContain('<Icon name="playlist_play" size={21} />');
+    expect(dockScheduleDrawerSource).toContain('<Icon name="event_note" size={21} />');
 
     // Bottom close button on schedule panel
     expect(dockScheduleDrawerSource).toContain("dock-schedule-panel__bottom-close-btn");

@@ -6,6 +6,7 @@ import {
   readNativeDockSetting,
   writeNativeDockSetting,
 } from "../../services/localDockSettings";
+import { fitPopover } from "../useKeepInViewport";
 
 export interface DockAutoAdvanceItem {
   id: string;
@@ -675,7 +676,7 @@ export default function DockAutoAdvanceControl({
 
       {isOpen && typeof document !== "undefined" && createPortal(
         <div
-          ref={popoverRef}
+          ref={(el) => { popoverRef.current = el; fitPopover(el); }}
           className="dock-auto-advance__popover"
           data-dock-keep-overflow-open="true"
           role="dialog"

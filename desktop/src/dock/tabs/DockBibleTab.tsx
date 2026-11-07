@@ -181,6 +181,8 @@ import { layoutVerseStyle, LAYOUT_SCALE_MAX, LAYOUT_SCALE_MIN, pickLayoutAdjust,
 import { parseVerseSplitMode, splitVerseText, verseSplitModeId, type VerseSplitMode } from "../verseSplit";
 import { HIGHLIGHT_COLORS, addHighlight, applyHighlights, cleanHighlightText, type VerseHighlight } from "../verseHighlight";
 import HighlightedVerseText from "../HighlightedVerseText";
+import { fitPopover } from "../useKeepInViewport";
+import { useDockWideLayout } from "../useDockWideLayout";
 import "./DockBibleVerseSplit.css";
 
 const DOCK_CACHED_TRANSLATIONS_KEY = "__mce_dock_cached_translations_v1";
@@ -1840,6 +1842,11 @@ function DockBibleTab({
 
   // Floating Book & Chapter Dropdown state
   const [showChapterPicker, setShowChapterPicker] = useState(false);
+  // Wide dock: books and chapters stay listed beside the reader. `wideNavBook` is the book whose
+  // chapters are shown; it follows the reader and changes on a book click without leaving the chapter.
+  const wideLayout = useDockWideLayout();
+  const [wideNavBook, setWideNavBook] = useState<string | null>(initialBook);
+  const wideNavBooksRef = useRef<HTMLDivElement>(null);
   const [chapterPickerSearch, setChapterPickerSearch] = useState("");
   const [previewPickerBook, setPreviewPickerBook] = useState<string>(initialBook || "Genesis");
   const chapterPickerRef = useRef<HTMLDivElement>(null);
@@ -2113,6 +2120,27 @@ function DockBibleTab({
   }, [showBibleHistory]);
   const [pickerTab, setPickerTab] = useState<"book" | "chapter">("book");
   const [verseContextMenu, setVerseContextMenu] = useState<{ x: number; y: number; verse: number; text: string; selection: string } | null>(null);
+  const verseContextMenuRef = useRef<HTMLDivElement>(null);
+  // The menu is inside the zoomed Dock (auto-fit / font size; on Windows often not 1), so its real
+  // size differs from the guess it opened with. Measure it and pull it back inside the window.
+  useLayoutEffect(() => {
+    const menu = verseContextMenuRef.current;
+    if (!verseContextMenu || !menu) return;
+    const rect = menu.getBoundingClientRect();
+    // Screen pixels per CSS pixel of the menu's own left / top.
+    const scale = menu.offsetWidth > 0 ? rect.width / menu.offsetWidth : 1;
+    const margin = 8;
+    const overRight = rect.right - (window.innerWidth - margin);
+    const overBottom = rect.bottom - (window.innerHeight - margin);
+    const dx = overRight > 0 ? Math.min(overRight, rect.left - margin) : 0;
+    const dy = overBottom > 0 ? Math.min(overBottom, rect.top - margin) : 0;
+    if (dx <= 0.5 && dy <= 0.5) return;
+    setVerseContextMenu((current) => current && {
+      ...current,
+      x: current.x - Math.max(0, dx) / (scale || 1),
+      y: current.y - Math.max(0, dy) / (scale || 1),
+    });
+  }, [verseContextMenu]);
   // Words coloured in verses, kept on this computer. The ref lets the "go live" code read the newest list.
   const [verseHighlights, setVerseHighlights] = useState<Record<string, VerseHighlight[]>>(loadVerseHighlights);
   // Where the mouse button went down: a click that ends far from there was a drag (selecting words), not a click.
@@ -7449,6 +7477,16 @@ function DockBibleTab({
     persistDockBiblePreferencesNow({ selectedBook: book, selectedChapter: chapter });
   }, [persistDockBiblePreferencesNow]);
 
+  useEffect(() => {
+    setWideNavBook(selectedBook);
+  }, [selectedBook]);
+
+  useEffect(() => {
+    if (!wideLayout) return;
+    const current = wideNavBooksRef.current?.querySelector<HTMLElement>(".dock-bible-wide-nav__book--current");
+    current?.scrollIntoView({ block: "nearest" });
+  }, [selectedBook, wideLayout]);
+
   const handleBookJump = useCallback((delta: -1 | 1) => {
     if (!selectedBook) return;
     const currentBookIndex = BIBLE_BOOK_ORDER.indexOf(selectedBook);
@@ -7830,7 +7868,7 @@ function DockBibleTab({
     if (!showComparePopover || typeof document === "undefined") return null;
     return createPortal(
       <div
-        ref={comparePopoverPanelRef}
+        ref={(el) => { comparePopoverPanelRef.current = el; fitPopover(el); }}
         className="dock-bible-compare-popover"
         data-dock-keep-overflow-open="true"
         style={comparePopoverStyle}
@@ -7971,6 +8009,52 @@ function DockBibleTab({
         )}
       </div>,
       document.body,
+    );
+  };
+
+  const renderWideBookNav = () => {
+    const navBook = wideNavBook && BOOK_CHAPTERS[wideNavBook] ? wideNavBook : (selectedBook || "Genesis");
+    const renderBook = (book: string) => (
+      <button
+        key={book}
+        type="button"
+        className={`dock-bible-wide-nav__book${book === navBook ? " dock-bible-wide-nav__book--open" : ""}${book === selectedBook ? " dock-bible-wide-nav__book--current" : ""}`}
+        aria-pressed={book === navBook}
+        onClick={() => setWideNavBook(book)}
+        title={book}
+      >
+        {book}
+      </button>
+    );
+    return (
+      <nav className="dock-bible-wide-nav" aria-label={t("bible.selectBookAndChapter", "Select book and chapter")}>
+        <div className="dock-bible-wide-nav__books" ref={wideNavBooksRef}>
+          <div className="dock-bible-wide-nav__heading">{t("bible.oldTestament", "Old Testament")}</div>
+          {OT_BOOKS.map(renderBook)}
+          <div className="dock-bible-wide-nav__heading">{t("bible.newTestament", "New Testament")}</div>
+          {NT_BOOKS.map(renderBook)}
+        </div>
+        <div className="dock-bible-wide-nav__chapters">
+          <div className="dock-bible-wide-nav__heading">{navBook}</div>
+          <div className="dock-bible-wide-nav__chapter-grid">
+            {Array.from({ length: BOOK_CHAPTERS[navBook] ?? 1 }, (_, i) => i + 1).map((ch) => {
+              const isCurrent = navBook === selectedBook && ch === selectedChapter;
+              return (
+                <button
+                  key={ch}
+                  type="button"
+                  className={`dock-bible-wide-nav__chapter${isCurrent ? " dock-bible-wide-nav__chapter--current" : ""}`}
+                  aria-current={isCurrent ? "page" : undefined}
+                  onClick={() => handlePickerSelectChapter(navBook, ch)}
+                  title={`${navBook} ${ch}`}
+                >
+                  {ch}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </nav>
     );
   };
 
@@ -8529,7 +8613,7 @@ function DockBibleTab({
                           )}
                         </span>
                         {result.kind === "translation-directive" && (
-                          <span className="dock-search-dropdown__snippet" style={{ color: "var(--dock-text-muted, #94a3b8)" }}>
+                          <span className="dock-search-dropdown__snippet" style={{ color: "var(--dock-text-muted, var(--text-muted))" }}>
                             {result.fullTitle || result.name}{result.language ? ` (${result.language})` : ""}
                           </span>
                         )}
@@ -8658,6 +8742,8 @@ function DockBibleTab({
       }
       children={(bottomSearchPanel, _bottomToolbarActions, _bottomPanelToggle) => (
         <>
+          <div className={`dock-wide-split${wideLayout ? "" : " dock-wide-split--off"}`}>
+          {wideLayout && renderWideBookNav()}
           <section
             ref={quickActionsContainerRef}
             className="dock-console-panel dock-console-panel--workspace"
@@ -8932,6 +9018,7 @@ function DockBibleTab({
                       onContextMenu={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
+                        // A first guess; once open, the menu measures itself and moves back inside the window.
                         const menuWidth = 190;
                         const menuHeight = 430;
                         const viewportW = window.innerWidth || 800;
@@ -9041,6 +9128,7 @@ function DockBibleTab({
                   }}
                 />
                 <div
+                  ref={verseContextMenuRef}
                   className="dock-bible-context-menu"
                   style={{
                     position: "fixed",
@@ -9049,6 +9137,8 @@ function DockBibleTab({
                     zIndex: 100000,
                     // Opening the word picker makes the menu taller: scroll inside the window instead of running off it.
                     maxHeight: `${Math.max(240, (typeof window !== "undefined" ? window.innerHeight : 800) - verseContextMenu.y - 8)}px`,
+                    // Its own width: near the right edge a fixed box would otherwise squeeze into the room left.
+                    width: "max-content",
                     overflowY: "auto",
                   }}
                   onMouseDown={(e) => e.stopPropagation()}
@@ -9434,6 +9524,7 @@ function DockBibleTab({
             {/* ── Footer actions ── */}
 
           </section>
+          </div>
 
           {
             keywordActionResult && (

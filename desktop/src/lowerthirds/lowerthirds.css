@@ -379,12 +379,12 @@
 }
 
 .lt-btn--primary {
-  background: var(--primary, #4f46e5);
+  background: var(--primary);
   color: #fff;
 }
 
 .lt-btn--primary:hover:not(:disabled) {
-  background: var(--primary-hover, #4338ca);
+  background: var(--primary-hover);
 }
 
 .lt-btn--secondary {
@@ -394,8 +394,8 @@
 }
 
 .lt-btn--secondary:hover:not(:disabled) {
-  background: #334155;
-  color: #ffffff;
+  background: var(--surface-hover);
+  color: var(--text-primary);
 }
 
 .lt-btn--danger {
@@ -719,7 +719,7 @@
   align-items: flex-end;
   gap: 4px;
   padding: 4px 10px 0;
-  border-bottom: 1px solid var(--border-subtle, var(--border));
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .lt-page-cat-tab {
@@ -769,7 +769,7 @@
 }
 
 .lt-page-cat-tab:focus-visible {
-  outline: 2px solid var(--focus-ring, var(--primary));
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
@@ -1154,7 +1154,7 @@
   align-items: center;
   gap: 10px;
   padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--surface-raised);
   border: 1px solid var(--border);
   border-radius: var(--radius, 4px);
   cursor: pointer;
@@ -1231,7 +1231,7 @@
 }
 
 .lt-page-theme-option:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--surface-hover);
 }
 
 .lt-page-theme-option.active {
@@ -1292,7 +1292,7 @@
 }
 
 .lt-page-form-main {
-  background: rgba(255, 255, 255, 0.015);
+  background: var(--surface);
   border: 1px solid var(--border-subtle);
   border-radius: 4px;
   padding: 10px;
@@ -1301,7 +1301,7 @@
 .lt-page-theme-panel {
   border: 1px solid var(--border-subtle);
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.015);
+  background: var(--surface);
   padding: 10px;
   margin-bottom: 10px;
 }
@@ -1319,7 +1319,7 @@
   border-top: none;
   border: 1px solid var(--border-subtle);
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.015);
+  background: var(--surface);
   padding: 10px;
 }
 
@@ -1416,12 +1416,12 @@
 }
 
 .lt-page-btn--primary {
-  background: var(--primary, #4f46e5);
+  background: var(--primary);
   color: #fff;
 }
 
 .lt-page-btn--primary:hover:not(:disabled) {
-  background: var(--primary-hover, #4338ca);
+  background: var(--primary-hover);
 }
 
 .lt-page-btn--secondary {
@@ -1431,8 +1431,8 @@
 }
 
 .lt-page-btn--secondary:hover:not(:disabled) {
-  background: #334155;
-  color: #ffffff;
+  background: var(--surface-hover);
+  color: var(--text-primary);
 }
 
 .lt-page-btn--danger {
@@ -1452,7 +1452,7 @@
 
 .lt-page-btn--visibility.is-visible {
   background: rgba(16, 185, 129, 0.16);
-  color: #d9ffea;
+  color: var(--success);
   border-color: rgba(16, 185, 129, 0.35);
 }
 
@@ -1462,7 +1462,7 @@
 
 .lt-page-btn--visibility.is-hidden {
   background: rgba(245, 158, 11, 0.16);
-  color: #ffe7b0;
+  color: var(--warning);
   border-color: rgba(245, 158, 11, 0.35);
 }
 
@@ -2279,8 +2279,8 @@
 }
 
 .lt-modal {
-  background: var(--b-surface, #1E1E1E);
-  border: 1px solid var(--b-border, #2C2C2C);
+  background: var(--b-surface);
+  border: 1px solid var(--b-border);
   border-radius: var(--radius-lg, 6px);
   width: 90%;
   display: flex;
@@ -2293,13 +2293,13 @@
   align-items: center;
   justify-content: space-between;
   padding: 14px 16px;
-  border-bottom: 1px solid var(--b-border, #2C2C2C);
+  border-bottom: 1px solid var(--b-border);
 }
 
 .lt-modal-header h3 {
   font-size: 12px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -2307,15 +2307,15 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-muted);
   display: flex;
   padding: 4px;
   border-radius: 4px;
 }
 
 .lt-modal-close:hover {
-  color: rgba(255, 255, 255, 0.8);
-  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+  background: var(--surface-hover);
 }
 
 .lt-modal-close svg {
@@ -2329,7 +2329,7 @@
 
 .lt-modal-footer {
   padding: 12px 16px;
-  border-top: 1px solid var(--b-border, #2C2C2C);
+  border-top: 1px solid var(--b-border);
 }
 
 .lt-theme-picker-grid {
@@ -2343,9 +2343,9 @@
   width: 100%;
   padding: 10px;
   border-radius: var(--radius, 4px);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  background: rgba(255, 255, 255, 0.02);
-  color: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+  color: var(--text-primary);
   text-align: left;
   cursor: pointer;
   transition: border-color 0.15s, transform 0.12s, background 0.15s;
@@ -2354,7 +2354,7 @@
 
 .lt-theme-picker-card:hover {
   border-color: var(--border);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-hover);
   transform: translateY(-1px);
 }
 
@@ -2395,13 +2395,13 @@
   font-size: 13px;
   font-weight: 700;
   line-height: 1.15;
-  color: rgba(255, 255, 255, 0.96);
+  color: var(--text-primary);
 }
 
 .lt-theme-picker-card-sub {
   font-size: 10px;
   line-height: 1.35;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-secondary);
 }
 
 .lt-theme-picker-card-info {
@@ -2413,12 +2413,12 @@
 .lt-theme-picker-card-name {
   font-size: 10px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--text-primary);
 }
 
 .lt-theme-picker-card-desc {
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.42);
+  color: var(--text-muted);
   line-height: 1.35;
 }
 
@@ -2482,8 +2482,8 @@
   letter-spacing: 0.05em;
   padding: 2px 6px;
   border-radius: 3px;
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.4);
+  background: var(--surface-hover);
+  color: var(--text-muted);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -2516,7 +2516,7 @@
 .lt-now-showing-label {
   font-size: 11px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2524,7 +2524,7 @@
 
 .lt-now-showing-sub {
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--text-disabled);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2550,7 +2550,7 @@
 .lt-now-showing-progress {
   width: 60px;
   height: 4px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--surface-hover);
   border-radius: 2px;
   overflow: hidden;
 }
@@ -2564,7 +2564,7 @@
 
 .lt-now-showing-pinned {
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--text-muted);
   display: flex;
   align-items: center;
   gap: 3px;
@@ -2579,10 +2579,10 @@
 }
 
 .lt-now-showing-btn {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--surface-raised);
   border: 1px solid var(--border);
   border-radius: 4px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-muted);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -2594,8 +2594,8 @@
 }
 
 .lt-now-showing-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.8);
+  background: var(--surface-hover);
+  color: var(--text-secondary);
 }
 
 .lt-now-showing-btn--clear {
@@ -2617,10 +2617,10 @@
   gap: 5px;
   width: 100%;
   padding: 6px 12px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--surface-raised);
   border: 1px dashed var(--border);
   border-radius: var(--radius, 4px);
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--text-muted);
   cursor: pointer;
   font-size: 11px;
   font-weight: 500;
@@ -2629,9 +2629,9 @@
 }
 
 .lt-reshow-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.7);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--surface-hover);
+  color: var(--text-secondary);
+  border-color: var(--border-strong);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -2640,7 +2640,7 @@
 
 .lt-duration-section {
   padding: 12px;
-  border-top: 1px solid var(--b-border, #2C2C2C);
+  border-top: 1px solid var(--b-border);
   margin-top: 8px;
 }
 
@@ -2654,7 +2654,7 @@
 .lt-duration-header h4 {
   font-size: 10px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
   gap: 5px;
@@ -2666,7 +2666,7 @@
   align-items: center;
   gap: 5px;
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--text-muted);
   cursor: pointer;
   user-select: none;
 }
@@ -2688,7 +2688,7 @@
 .lt-duration-label {
   font-size: 11px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-muted);
   width: 52px;
   flex-shrink: 0;
 }
@@ -2702,10 +2702,10 @@
 }
 
 .lt-duration-chip {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-raised);
   border: 1px solid var(--border);
   border-radius: 4px;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--text-muted);
   font-size: 10px;
   font-weight: 500;
   padding: 3px 7px;
@@ -2715,8 +2715,8 @@
 }
 
 .lt-duration-chip:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.8);
+  background: var(--surface-hover);
+  color: var(--text-secondary);
 }
 
 .lt-duration-chip--active {
@@ -2740,10 +2740,10 @@
 .lt-duration-input {
   width: 44px;
   padding: 3px 4px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--surface-raised);
   border: 1px solid var(--border);
   border-radius: 4px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-secondary);
   font-size: 10px;
   text-align: center;
   outline: none;
@@ -2769,16 +2769,16 @@
 .lt-duration-select {
   flex: 1;
   padding: 4px 8px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--surface-raised);
   border: 1px solid var(--border);
   border-radius: 4px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-secondary);
   font-size: 11px;
   outline: none;
   cursor: pointer;
   -webkit-appearance: none;
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='rgba(255,255,255,0.3)' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%238E8E93' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 8px center;
   padding-right: 24px;
@@ -2801,7 +2801,7 @@
   background: none;
   border: 1px solid var(--border);
   border-radius: var(--radius, 4px);
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-muted);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -2812,8 +2812,8 @@
 }
 
 .lt-version-btn:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.8);
+  background: var(--surface-hover);
+  color: var(--text-secondary);
   border-color: var(--border);
 }
 
@@ -2830,7 +2830,7 @@
   left: 0;
   bottom: 0;
   width: 100%;
-  background: #161616;
+  background: var(--surface);
   border-right: 1px solid var(--border);
   z-index: 20;
   display: flex;
@@ -2862,7 +2862,7 @@
 .lt-version-panel-head h4 {
   font-size: 10px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-secondary);
   margin: 0;
   flex: 1;
   display: flex;
@@ -2874,7 +2874,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--text-disabled);
   display: flex;
   padding: 2px;
   border-radius: 4px;
@@ -2882,7 +2882,7 @@
 }
 
 .lt-version-panel-close:hover {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-secondary);
 }
 
 .lt-version-panel-body {
@@ -2897,7 +2897,7 @@
   align-items: center;
   gap: 8px;
   padding: 32px 16px;
-  color: rgba(255, 255, 255, 0.25);
+  color: var(--text-disabled);
   text-align: center;
   font-size: 10px;
 }
@@ -2908,7 +2908,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--text-disabled);
   padding: 8px 14px 4px;
   margin: 0;
 }
@@ -2929,7 +2929,7 @@
 }
 
 .lt-version-entry:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--surface-hover);
 }
 
 .lt-version-entry.is-previewing {
@@ -2955,7 +2955,7 @@
 .lt-version-entry-theme {
   font-size: 11px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2963,7 +2963,7 @@
 
 .lt-version-entry-preview {
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--text-disabled);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2971,7 +2971,7 @@
 
 .lt-version-entry-time {
   font-size: 9px;
-  color: rgba(255, 255, 255, 0.2);
+  color: var(--text-disabled);
   white-space: nowrap;
 }
 
@@ -3007,7 +3007,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: rgba(255, 255, 255, 0.15);
+  color: var(--text-disabled);
   display: flex;
   padding: 2px;
   border-radius: 3px;
@@ -3030,7 +3030,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: rgba(255, 255, 255, 0.25);
+  color: var(--text-disabled);
   font-size: 10px;
   padding: 4px 8px;
   border-radius: 4px;
@@ -3063,18 +3063,18 @@
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--surface-raised);
   border: 1px solid var(--border);
   border-radius: var(--radius, 4px);
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s, transform 0.12s;
   text-align: left;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--text-primary);
   position: relative;
 }
 
 .lt-preset-picker-tile:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--surface-hover);
   border-color: var(--tile-color, var(--border));
   transform: translateY(-1px);
 }
@@ -3104,13 +3104,13 @@
 .lt-preset-picker-tile-label {
   font-size: 10px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
   line-height: 1.2;
 }
 
 .lt-preset-picker-tile-desc {
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--text-disabled);
   line-height: 1.3;
   white-space: nowrap;
   overflow: hidden;
@@ -3119,12 +3119,12 @@
 
 .lt-preset-picker-tile-arrow {
   font-size: 12px !important;
-  color: rgba(255, 255, 255, 0.15);
+  color: var(--text-disabled);
   transition: color 0.15s, transform 0.15s;
 }
 
 .lt-preset-picker-tile:hover .lt-preset-picker-tile-arrow {
-  color: var(--tile-color, rgba(255, 255, 255, 0.4));
+  color: var(--tile-color, var(--text-muted));
   transform: translateX(2px);
 }
 
@@ -3152,22 +3152,22 @@
   align-items: center;
   gap: 4px;
   padding: 10px 4px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--surface-raised);
   border: 1px solid var(--border);
   border-radius: 4px;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
   position: relative;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-muted);
 }
 
 .lt-platform-tile:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--surface-hover);
 }
 
 .lt-platform-tile--active {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: var(--plat-color, rgba(255, 255, 255, 0.2));
+  background: var(--surface-hover);
+  border-color: var(--plat-color, var(--border-strong));
 }
 
 .lt-platform-tile-label {
@@ -3198,29 +3198,29 @@
   align-items: center;
   gap: 4px;
   padding: 10px 8px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--surface-raised);
   border: 1px solid var(--border);
   border-radius: 4px;
   cursor: pointer;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-muted);
   font-size: 11px;
   font-weight: 500;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
 .lt-giving-mode-btn:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.7);
+  background: var(--surface-hover);
+  color: var(--text-secondary);
 }
 
 .lt-giving-mode-btn--active {
   background: rgba(16, 185, 129, 0.08);
   border-color: rgba(16, 185, 129, 0.3);
-  color: #10B981;
+  color: var(--success);
 }
 
 .lt-giving-mode-btn--active svg {
-  color: #10B981;
+  color: var(--success);
 }
 
 
@@ -3228,141 +3228,15 @@
    LIGHT MODE  —  Lower Thirds overrides
    ════════════════════════════════════════════════════════ */
 
-/* Form panels */
-:root.light .lt-page-form-main,
-:root.light .lt-page-theme-panel {
-  background: rgba(0, 0, 0, 0.015);
-}
-
 :root.light .lt-page-form-sidebar-section {
   background: rgba(0, 0, 0, 0.015);
 }
 
-/* Visibility button */
 :root.light .lt-page-btn--visibility {
   border-color: rgba(0, 0, 0, 0.15);
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.04);
 }
 
-/* Modal */
 :root.light .lt-modal-backdrop {
   background: rgba(0, 0, 0, 0.35);
-}
-
-:root.light .lt-modal-header h3 {
-  color: var(--text-primary);
-}
-
-:root.light .lt-modal-close {
-  color: var(--text-muted);
-}
-
-:root.light .lt-modal-close:hover {
-  color: var(--text-primary);
-  background: rgba(0, 0, 0, 0.06);
-}
-
-/* Theme picker cards */
-:root.light .lt-theme-picker-card {
-  border-color: rgba(0, 0, 0, 0.1);
-  background: rgba(0, 0, 0, 0.02);
-  color: var(--text-primary);
-}
-
-:root.light .lt-theme-picker-card:hover {
-  border-color: rgba(0, 0, 0, 0.18);
-  background: rgba(0, 0, 0, 0.04);
-}
-
-:root.light .lt-theme-picker-card-title {
-  color: var(--text-primary);
-}
-
-:root.light .lt-theme-picker-card-sub {
-  color: var(--text-secondary);
-}
-
-:root.light .lt-theme-picker-card-name {
-  color: var(--text-primary);
-}
-
-:root.light .lt-theme-picker-card-desc {
-  color: var(--text-muted);
-}
-
-/* Now showing bar */
-:root.light .lt-now-showing-badge {
-  background: rgba(0, 0, 0, 0.06);
-  color: var(--text-muted);
-}
-
-:root.light .lt-now-showing-label {
-  color: var(--text-primary);
-}
-
-:root.light .lt-now-showing-sub {
-  color: var(--text-muted);
-}
-
-:root.light .lt-now-showing-progress {
-  background: rgba(0, 0, 0, 0.08);
-}
-
-:root.light .lt-now-showing-pinned {
-  color: var(--text-muted);
-}
-
-:root.light .lt-now-showing-btn {
-  background: rgba(0, 0, 0, 0.04);
-  border-color: rgba(0, 0, 0, 0.1);
-  color: var(--text-muted);
-}
-
-:root.light .lt-now-showing-btn:hover {
-  background: rgba(0, 0, 0, 0.08);
-  color: var(--text-primary);
-}
-
-/* Reshow button */
-:root.light .lt-reshow-btn {
-  background: rgba(0, 0, 0, 0.02);
-  border-color: rgba(0, 0, 0, 0.1);
-  color: var(--text-muted);
-}
-
-:root.light .lt-reshow-btn:hover {
-  background: rgba(0, 0, 0, 0.06);
-  color: var(--text-secondary);
-  border-color: rgba(0, 0, 0, 0.18);
-}
-
-/* Duration controls */
-:root.light .lt-duration-header h4 {
-  color: var(--text-secondary);
-}
-
-:root.light .lt-duration-defaults-toggle {
-  color: var(--text-muted);
-}
-
-:root.light .lt-duration-label {
-  color: var(--text-muted);
-}
-
-:root.light .lt-duration-chip {
-  background: rgba(0, 0, 0, 0.03);
-  border-color: rgba(0, 0, 0, 0.08);
-  color: var(--text-muted);
-}
-
-/* Giving mode button */
-:root.light .lt-giving-mode-btn {
-  background: rgba(0, 0, 0, 0.02);
-  border-color: rgba(0, 0, 0, 0.08);
-  color: var(--text-muted);
-}
-
-:root.light .lt-giving-mode-btn:hover {
-  background: rgba(0, 0, 0, 0.05);
-  color: var(--text-secondary);
 }

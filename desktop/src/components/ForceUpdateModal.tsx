@@ -17,7 +17,9 @@ import {
 } from "../services/updateService";
 import { getReleaseHighlights } from "../services/releaseNotesService";
 import type { Update } from "@tauri-apps/plugin-updater";
-import Icon from "./Icon";
+import ModalDialog, { ModalProgress, type ModalAction } from "./ModalDialog";
+import UpdateReleaseNotes from "./UpdateReleaseNotes";
+import { AlertTriangle, Download, Lock, RefreshCw } from "./icons/NativeIcons";
 
 interface ForceUpdateModalProps {
   result: UpdateCheckResult;
@@ -31,7 +33,7 @@ type UpdateStatus = "prompt" | "downloading" | "installing" | "relaunching" | "e
 function formatCountdown(daysOld: number): string {
   const remaining = Math.max(0, 21 - daysOld);
   if (remaining === 0) return "App is locked";
-  return `${remaining} day${remaining === 1 ? "" : "s"} until lockout`;
+  return `${remaining} day${remaining === 1 ? "" : "s"} until the app locks`;
 }
 
 function formatBytes(bytes: number): string {
@@ -113,125 +115,73 @@ export default function ForceUpdateModal({ result, daysOld, locked }: ForceUpdat
     setErrorMsg("");
   }, []);
 
-  const statusConfig: Record<UpdateStatus, { icon: string; label: string }> = {
-    prompt: { icon: "system_update", label: "Update Required" },
-    downloading: { icon: "downloading", label: "Downloading..." },
-    installing: { icon: "refresh", label: "Installing..." },
-    relaunching: { icon: "restart_alt", label: "Relaunching..." },
-    error: { icon: "error_outline", label: "Update Failed" },
-  };
-
-  const { icon, label } = statusConfig[status];
   const isBusy = status === "downloading" || status === "installing" || status === "relaunching";
+  const outOfDate = `Your version is ${daysOld} day${daysOld === 1 ? "" : "s"} out of date.`;
+  const versionLine = result.version
+    ? `MakeChurchEazy ${result.version} is available${result.currentVersion ? ` (you have ${result.currentVersion})` : ""}.`
+    : "A new version of MakeChurchEazy is available.";
 
+  const title =
+    status === "downloading" ? "Downloading update"
+      : status === "installing" ? "Installing update"
+        : status === "relaunching" ? "Restarting MakeChurchEazy"
+          : status === "error" ? "Update failed"
+            : "Update required";
+
+  const icon =
+    status === "error" ? <AlertTriangle size={26} />
+      : status === "prompt" ? (locked ? <Lock size={26} /> : <Download size={26} />)
+        : <RefreshCw size={26} />;
+
+  const body =
+    status === "prompt" ? (
+      <>
+        <p>{versionLine} Update to keep using the app.</p>
+        <p>{outOfDate}</p>
+      </>
+    ) : status === "error" ? (
+      <p>{errorMsg}</p>
+    ) : status === "relaunching" ? (
+      <p>MakeChurchEazy will open again in a moment.</p>
+    ) : (
+      <p>Keep MakeChurchEazy open until this finishes.</p>
+    );
+
+  const extra =
+    status === "prompt" && (highlights.length > 0 || result.notes) ? (
+      <UpdateReleaseNotes version={result.version} notes={result.notes} maxItems={3} maxHeight={180} />
+    ) : status === "downloading" ? (
+      <ModalProgress
+        label={result.version ? `MakeChurchEazy ${result.version}` : "Update"}
+        value={`${percentComplete}% · ${formatBytes(progress.downloaded)} / ${formatBytes(progress.contentLength)}`}
+        percent={percentComplete}
+      />
+    ) : status === "installing" ? (
+      <ModalProgress label="Installing" value="Almost done" percent={100} />
+    ) : undefined;
+
+  const actions: ModalAction[] =
+    status === "prompt"
+      ? [{ label: "Update now", variant: "primary", autoFocus: true, icon: <Download size={14} />, onClick: () => void handleUpdate() }]
+      : status === "error"
+        ? [{ label: "Try again", variant: "primary", autoFocus: true, icon: <RefreshCw size={14} />, onClick: handleRetry }]
+        : [];
+
+  // Blocking: no close button, Esc or backdrop. The countdown says how long the app keeps working.
   return (
-    <div className="force-update-overlay" onClick={locked ? undefined : undefined}>
-      <div className="force-update-modal">
-        {/* Urgency banner */}
-        <div className={`force-update-banner ${locked ? "force-update-banner--locked" : ""}`}>
-          <Icon name={locked ? "lock" : "warning"} size={16} />
-          <span>{locked ? "App Locked" : formatCountdown(daysOld)}</span>
-        </div>
-
-        {/* Header */}
-        <div className="force-update-header">
-          <Icon name={icon} size={24} className={isBusy ? "force-update-icon--spin" : ""} />
-          <div>
-            <h2 className="force-update-title">{label}</h2>
-            <p className="force-update-subtitle">
-              Your version is {daysOld} day{daysOld === 1 ? "" : "s"} out of date
-            </p>
-          </div>
-        </div>
-
-        {/* Body */}
-        <div className="force-update-body">
-          {status === "prompt" && (
-            <>
-              <p className="force-update-message">
-                {result.version
-                  ? `MakeChurchEazy v${result.version} is available. Please update to continue using the app.`
-                  : `A new version of MakeChurchEazy is available. Please update to continue using the app.`}
-              </p>
-
-              {result.version && (
-                <div className="force-update-versions">
-                  <span className="force-update-version-current">v{result.currentVersion ?? "current"}</span>
-                  <span className="force-update-arrow">→</span>
-                  <span className="force-update-version-new">v{result.version}</span>
-                </div>
-              )}
-
-              {highlights.length > 0 ? (
-                <div className="force-update-changelog">
-                  <p className="force-update-changelog-label">What's New</p>
-                  <ul className="force-update-changelog-list" style={{ margin: "6px 0 0", paddingLeft: 16, fontSize: 12, lineHeight: 1.45, color: "#cbd5e1" }}>
-                    {highlights.slice(0, 3).map((h) => (
-                      <li key={h.id} style={{ marginBottom: 4 }}>
-                        <strong style={{ color: "#fff" }}>{h.title}: </strong>
-                        <span>{h.points[0]?.text ?? h.summary ?? ""}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : result.notes ? (
-                <div className="force-update-changelog">
-                  <p className="force-update-changelog-label">What's New</p>
-                  <p className="force-update-changelog-text">{result.notes.slice(0, 300)}</p>
-                </div>
-              ) : null}
-            </>
-          )}
-
-          {status === "downloading" && (
-            <div className="force-update-progress">
-              <div className="force-update-progress-track">
-                <div className="force-update-progress-fill" style={{ width: `${percentComplete}%` }} />
-              </div>
-              <span className="force-update-progress-text">
-                {percentComplete}% — {formatBytes(progress.downloaded)} / {formatBytes(progress.contentLength)}
-              </span>
-            </div>
-          )}
-
-          {status === "installing" && (
-            <div className="force-update-progress">
-              <div className="force-update-progress-track">
-                <div className="force-update-progress-fill force-update-progress-fill--pulse" style={{ width: "100%" }} />
-              </div>
-              <span className="force-update-progress-text">Installing update...</span>
-            </div>
-          )}
-
-          {status === "relaunching" && (
-            <p className="force-update-progress-text">Restarting MakeChurchEazy...</p>
-          )}
-
-          {status === "error" && (
-            <div className="force-update-error">
-              <Icon name="error_outline" size={16} />
-              <p>{errorMsg}</p>
-            </div>
-          )}
-        </div>
-
-        {/* Actions */}
-        <div className="force-update-actions">
-          {status === "prompt" && (
-            <button className="force-update-btn force-update-btn--primary" onClick={handleUpdate} title="Update now">
-              <Icon name="system_update" size={14} />
-              <span>Update Now</span>
-            </button>
-          )}
-
-          {status === "error" && (
-            <button className="force-update-btn force-update-btn--primary" onClick={handleRetry} title="Refresh">
-              <Icon name="refresh" size={14} />
-              <span>Try Again</span>
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
+    <ModalDialog
+      tone={status === "error" || locked ? "danger" : "warning"}
+      role="alertdialog"
+      icon={icon}
+      iconBusy={isBusy}
+      eyebrow={locked ? "App is locked" : formatCountdown(daysOld)}
+      title={title}
+      extra={extra}
+      actions={actions}
+      width={460}
+      zIndex={99999}
+    >
+      {body}
+    </ModalDialog>
   );
 }

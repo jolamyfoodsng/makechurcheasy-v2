@@ -51,11 +51,11 @@ function applyToDOM(effective: "dark" | "light") {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
   if (!root) return;
-  if (effective === "light") {
-    root.classList.add("light");
-  } else {
-    root.classList.remove("light");
-  }
+  // `mv-theme-light` is the older name many stylesheets (App.css, library, Multi-View, dashboard)
+  // still write their light-mode rules against; keep both in step so every page follows one theme.
+  root.classList.toggle("light", effective === "light");
+  root.classList.toggle("mv-theme-light", effective === "light");
+  root.classList.toggle("mv-theme-dark", effective !== "light");
 }
 
 /** Immediately apply on module load (prevents flash) */

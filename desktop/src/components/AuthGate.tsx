@@ -1,6 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import LoginPage from "@/pages/LoginPage";
 import LoadingScreen from "./LoadingScreen";
+import PreAppSupport from "./PreAppSupport";
 
 /**
  * Wraps children and only renders them if the user is authenticated.
@@ -16,7 +17,12 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
   }
 
   if (!authenticated) {
-    return <LoginPage />;
+    return (
+      <>
+        <LoginPage />
+        <PreAppSupport />
+      </>
+    );
   }
 
   return <>{children}</>;

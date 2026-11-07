@@ -1,13 +1,13 @@
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ChevronDown, Globe2 } from "./icons/NativeIcons";
+import { Globe2 } from "./icons/NativeIcons";
+import ModalDialog from "./ModalDialog";
 import { INTERFACE_LOCALES } from "../i18n/localeCatalog";
 import {
   applyInterfaceLanguagePreference,
   getResolvedInterfaceLanguage,
   getStoredInterfaceLanguage,
 } from "../services/interfaceLanguage";
-import "./InterfaceLanguagePrompt.css";
 
 const PROMPT_SEEN_KEY = "mce_interface_language_prompt_seen";
 
@@ -29,6 +29,7 @@ function markPromptSeen(): void {
 
 export function InterfaceLanguagePrompt() {
   const { t } = useTranslation();
+  const selectId = useId();
   const [visible, setVisible] = useState(() => !getStoredInterfaceLanguage() && !hasSeenPrompt());
   const [selectedLanguage, setSelectedLanguage] = useState(() => getResolvedInterfaceLanguage());
   const selectedLocale = useMemo(
@@ -38,48 +39,42 @@ export function InterfaceLanguagePrompt() {
 
   if (!visible) return null;
 
+  const handleContinue = () => {
+    void applyInterfaceLanguagePreference(selectedLocale.code, { broadcast: true }).finally(() => {
+      markPromptSeen();
+      setVisible(false);
+    });
+  };
+
   return (
-    <div className="interface-language-prompt" role="dialog" aria-modal="true" aria-labelledby="interface-language-title">
-      <div className="interface-language-prompt__panel">
-        <div className="interface-language-prompt__icon" aria-hidden="true">
-          <Globe2 size={18} />
+    <ModalDialog
+      tone="brand"
+      icon={<Globe2 size={26} />}
+      title={t("interfaceLanguagePrompt.title")}
+      zIndex={100000}
+      width={420}
+      extra={
+        <div className="obs-field">
+          <label htmlFor={selectId}>{t("interfaceLanguagePrompt.label")}</label>
+          <select
+            id={selectId}
+            value={selectedLanguage}
+            onChange={(event) => setSelectedLanguage(event.target.value)}
+            style={{ width: "100%" }}
+            autoFocus
+          >
+            {INTERFACE_LOCALES.map((locale) => (
+              <option key={locale.code} value={locale.code}>
+                {locale.nativeName}
+              </option>
+            ))}
+          </select>
         </div>
-        <div className="interface-language-prompt__content">
-          <h2 id="interface-language-title">{t("interfaceLanguagePrompt.title")}</h2>
-          <p>{t("interfaceLanguagePrompt.description")}</p>
-          <label className="interface-language-prompt__field">
-            <span>{t("interfaceLanguagePrompt.label")}</span>
-            <span className="interface-language-prompt__select-wrap">
-              <select
-                value={selectedLanguage}
-                onChange={(event) => setSelectedLanguage(event.target.value)}
-                autoFocus
-              >
-                {INTERFACE_LOCALES.map((locale) => (
-                  <option key={locale.code} value={locale.code}>
-                    {locale.nativeName}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown size={16} aria-hidden="true" />
-            </span>
-          </label>
-          <div className="interface-language-prompt__footer">
-            <span>{t("interfaceLanguagePrompt.helper")}</span>
-            <button
-              type="button"
-              onClick={() => {
-                void applyInterfaceLanguagePreference(selectedLocale.code, { broadcast: true }).finally(() => {
-                  markPromptSeen();
-                  setVisible(false);
-                });
-              }}
-            >
-              {t("interfaceLanguagePrompt.continue")}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+      }
+      hint={t("interfaceLanguagePrompt.helper")}
+      actions={[{ label: t("interfaceLanguagePrompt.continue"), variant: "primary", onClick: handleContinue }]}
+    >
+      {t("interfaceLanguagePrompt.description")}
+    </ModalDialog>
   );
 }

@@ -1,9 +1,9 @@
 import { useMemo, useState, useEffect } from "react";
-import Icon from "./Icon";
+import { Lock } from "./icons/NativeIcons";
+import ModalDialog, { ModalPanel } from "./ModalDialog";
 import { useAuth } from "../contexts/AuthContext";
 import { getEffectivePlan, isTrialExpired } from "../services/licenseService";
 import { openDashboardSubscriptionPlans } from "../services/subscriptionNavigation";
-import "./TrialExpiredUpgradeModal.css";
 const DISMISS_SESSION_KEY = "trial_expired_dismissed";
 
 async function openCheckout() {
@@ -36,69 +36,28 @@ export default function TrialExpiredUpgradeModal() {
   const handleDismiss = () => setDismissed(true);
 
   return (
-    <div
-      className="trial-expired-upgrade"
+    <ModalDialog
       role="status"
-      aria-labelledby="trial-expired-upgrade-title"
-      onClick={handleDismiss}
-    >
-      <div className="trial-expired-upgrade__card" onClick={(e) => e.stopPropagation()}>
-        <button
-          type="button"
-          className="trial-expired-upgrade__close"
-          onClick={handleDismiss}
-          aria-label="Close trial ended notice"
-        >
-          <Icon name="close" size={18} />
-        </button>
-        <div className="trial-expired-upgrade__header">
-          <div className="trial-expired-upgrade__badge">
-            <Icon name="lock" size={14} />
-            Free trial ended
-          </div>
-          <h2
-            id="trial-expired-upgrade-title"
-            className="trial-expired-upgrade__title"
-          >
-            Your trial has ended. You are now on the Free plan.
-          </h2>
-          <p className="trial-expired-upgrade__copy">
-            Your account remains available with Free plan limits. Upgrade when
-            you need more presentation, broadcast, library, or team capacity.
+      tone="warning"
+      icon={<Lock size={26} />}
+      eyebrow="Free trial ended"
+      title="Your trial has ended. You are now on the Free plan."
+      onClose={handleDismiss}
+      closeLabel="Close trial ended notice"
+      extra={
+        <ModalPanel heading="Growth plan">
+          <p>
+            The dashboard opens the secure Paystack checkout. Desktop access updates after payment is confirmed.
           </p>
-        </div>
-
-        <div className="trial-expired-upgrade__body">
-          <div className="trial-expired-upgrade__plan">
-            <div className="trial-expired-upgrade__plan-icon">
-              <Icon name="auto_awesome" size={22} />
-            </div>
-            <div>
-              <p className="trial-expired-upgrade__plan-title">Growth plan</p>
-              <p className="trial-expired-upgrade__plan-copy">
-                The dashboard opens the secure Paystack checkout. Desktop access
-                updates after payment is confirmed.
-              </p>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            className="trial-expired-upgrade__button"
-            onClick={() => void openCheckout()}
-          >
-            View upgrade plans
-            <Icon name="arrow_forward" size={18} />
-          </button>
-          <button
-            type="button"
-            className="trial-expired-upgrade__dismiss"
-            onClick={handleDismiss}
-          >
-            Continue with Free plan
-          </button>
-        </div>
-      </div>
-    </div>
+        </ModalPanel>
+      }
+      actions={[
+        { label: "Continue with Free plan", variant: "ghost", onClick: handleDismiss },
+        { label: "View upgrade plans", variant: "primary", onClick: () => void openCheckout() },
+      ]}
+    >
+      Your account remains available with Free plan limits. Upgrade when you need more presentation, broadcast,
+      library, or team capacity.
+    </ModalDialog>
   );
 }

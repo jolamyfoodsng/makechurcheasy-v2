@@ -26,6 +26,7 @@ import {
   type RemoteProductionTheme,
 } from "../../services/remoteProductionThemes";
 import {
+  canonicalDockTickerThemeId,
   DEFAULT_DOCK_TICKER_THEME_OPTION,
   getAllDockTickerThemeOptions,
   renderDockTickerThemeHtml,
@@ -698,7 +699,7 @@ export function TickerModule({ isActive = true }: TickerModuleProps) {
     const activeMessages = messages.filter((m) => m.active).map((m) => m.text);
     if (activeMessages.length === 0) return false;
 
-    const theme = availableTickerThemes.find((t) => t.id === settings.themeId) ?? availableTickerThemes[0] ?? DEFAULT_DOCK_TICKER_THEME_OPTION;
+    const theme = availableTickerThemes.find((t) => t.id === canonicalDockTickerThemeId(settings.themeId)) ?? availableTickerThemes[0] ?? DEFAULT_DOCK_TICKER_THEME_OPTION;
     const branding = getTickerBranding();
     const html = renderDockTickerThemeHtml({
       option: theme,
@@ -878,7 +879,7 @@ export function TickerModule({ isActive = true }: TickerModuleProps) {
     const activeMessages = messages.filter((m) => m.active).map((m) => m.text);
     if (activeMessages.length === 0) return;
 
-    const theme = availableTickerThemes.find((t) => t.id === settings.themeId) ?? availableTickerThemes[0] ?? DEFAULT_DOCK_TICKER_THEME_OPTION;
+    const theme = availableTickerThemes.find((t) => t.id === canonicalDockTickerThemeId(settings.themeId)) ?? availableTickerThemes[0] ?? DEFAULT_DOCK_TICKER_THEME_OPTION;
     const branding = getTickerBranding();
     const html = renderDockTickerThemeHtml({
       option: theme,
@@ -939,7 +940,7 @@ export function TickerModule({ isActive = true }: TickerModuleProps) {
 
   // ── Theme helpers ──
   const activeTheme: DockTickerThemeOption =
-    availableTickerThemes.find((t) => t.id === settings.themeId) ?? availableTickerThemes[0] ?? DEFAULT_DOCK_TICKER_THEME_OPTION;
+    availableTickerThemes.find((t) => t.id === canonicalDockTickerThemeId(settings.themeId)) ?? availableTickerThemes[0] ?? DEFAULT_DOCK_TICKER_THEME_OPTION;
   const activeThemeColors = getTickerOptionColors(activeTheme);
   const activeThemeFontFamily = getTickerOptionFontFamily(activeTheme);
 

@@ -73,7 +73,7 @@ input {
 .makechatgpt-pet:focus-visible,
 .makechatgpt-panel button:focus-visible,
 .makechatgpt-panel input:focus-visible {
-  outline: 2px solid #93c5fd;
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 
@@ -93,9 +93,9 @@ input {
   min-width: 190px;
   gap: 3px;
   padding: 6px;
-  border: 1px solid rgba(148, 163, 184, 0.3);
+  border: 1px solid var(--border);
   border-radius: var(--radius, 4px);
-  background: rgba(15, 23, 42, 0.98);
+  background: var(--surface);
   box-shadow: 0 16px 34px rgba(2, 6, 23, 0.45);
   pointer-events: auto;
 }
@@ -113,8 +113,8 @@ input {
 
 .makechatgpt-context-menu button:hover,
 .makechatgpt-context-menu button:focus-visible {
-  color: #fff;
-  background: rgba(59, 130, 246, 0.26);
+  color: var(--text-primary);
+  background: var(--primary-soft);
 }
 
 .makechatgpt-panel {
@@ -174,7 +174,7 @@ input {
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 8px;
   color: #ffffff;
-  background: #4f46e5;
+  background: var(--primary);
 }
 
 .makechatgpt-panel__actions {

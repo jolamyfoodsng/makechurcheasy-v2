@@ -158,9 +158,9 @@ export default function DockBibleMacrosModal({
               onSubmit={handleAddMacro}
               style={{
                 padding: "12px",
-                background: "var(--dock-surface-panel, rgba(30, 41, 59, 0.5))",
+                background: "var(--dock-surface-panel, var(--surface))",
                 borderRadius: "var(--radius)",
-                border: "1px solid var(--dock-border-subtle, rgba(255, 255, 255, 0.1))",
+                border: "1px solid var(--dock-border-subtle, var(--border-subtle))",
                 marginBottom: "16px",
               }}
             >

@@ -106,7 +106,7 @@ function ThemePickerModal({
               Search Results ({filtered.length})
             </div>
             {filtered.length > 0 ? renderGrid(filtered) : (
-              <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, padding: 8 }}>
+              <p style={{ color: "var(--text-muted)", fontSize: 13, padding: 8 }}>
                 No themes match "{search}"
               </p>
             )}
@@ -185,7 +185,7 @@ function VariableInputs({
                 {v.required && <span className="lt-required">*</span>}
               </label>
               {v.type === "toggle" ? (
-                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--text, #fff)", cursor: "pointer" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--text-primary)", cursor: "pointer" }}>
                   <input
                     type="checkbox"
                     checked={values[v.key] === "true"}
@@ -426,7 +426,7 @@ export function LowerThirdPanel() {
           }}
         >
           <Icon name="chevron_right" size={20} />
-          <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
             OBS Sources ({state.obsSources.length})
           </span>
           {state.isRefreshing && (
@@ -441,13 +441,13 @@ export function LowerThirdPanel() {
             ) : (
               state.obsSources.map((s) => (
                 <div key={s.inputName} className="lt-source-item">
-                  <Icon name={s.isOcsManaged ? "tv" : "grid_view"} size={16} style={{ color: "rgba(255, 255, 255, 0.4)" }} />
+                  <Icon name={s.isOcsManaged ? "tv" : "grid_view"} size={16} style={{ color: "var(--text-muted)" }} />
                   <span className="lt-source-item-name">{s.inputName}</span>
                   <span className={`lt-source-item-badge ${s.isOcsManaged ? "lt-source-item-badge--ocs" : "lt-source-item-badge--mv"}`}>
                     {s.isOcsManaged ? "VC" : "MV"}
                   </span>
                   {s.themeId && (
-                    <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>
+                    <span style={{ fontSize: 10, color: "var(--text-disabled)" }}>
                       {s.themeId.replace("lt-", "").replace(/-/g, " ")}
                     </span>
                   )}

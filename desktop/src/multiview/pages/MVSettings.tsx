@@ -43,6 +43,7 @@ import { isProUnlocked } from "../../services/proLicense";
 import { clearAllSongs } from "../../worship/worshipDb";
 import { refreshTheme } from "../components/MVThemeProvider";
 import { AutomationSettingsPanel } from "../components/AutomationSettingsPanel";
+import { VmixSettingsPanel } from "../components/VmixSettingsPanel";
 import * as db from "../mvStore";
 import { copyTextToClipboard } from "../../dock/bibleClipboard";
 import {
@@ -88,6 +89,7 @@ import {
   Palette,
   Printer,
   Radio,
+  MonitorPlay,
   RefreshCw,
   RotateCcw,
   Save,
@@ -116,7 +118,7 @@ const FALLBACK_TRANSLATIONS: { value: string; label: string }[] = [
   { value: "KJV", label: "King James Version (KJV)" },
 ];
 
-export type SettingsTab = "general" | "appearance" | "bible" | "branding" | "obs" | "broadcast" | "mobile" | "automation" | "usage" | "storage" | "audio";
+export type SettingsTab = "general" | "appearance" | "bible" | "branding" | "obs" | "vmix" | "broadcast" | "mobile" | "automation" | "usage" | "storage" | "audio";
 
 export interface SettingsNavCategory {
   group: string;
@@ -145,6 +147,7 @@ export const SETTINGS_CATEGORIES: SettingsNavCategory[] = [
       { id: "broadcast", label: "Live Broadcast", icon: Radio, description: "Manage speaker profiles, stream keys, and social broadcast destinations." },
       { id: "branding", label: "Church & Branding", icon: Paintbrush, description: "Church identity, logo assets, lower-thirds, and speakers." },
       { id: "obs", label: "OBS Studio", icon: Radio, description: "WebSocket connection, credentials, and live status." },
+      { id: "vmix", label: "vMix", icon: MonitorPlay, description: "Web Controller connection, overlay channel and output." },
       { id: "audio", label: "Audio & Voice AI", icon: Mic, description: "Microphone input, gain boost, and speech-to-scripture settings." },
       { id: "automation", label: "Automations", icon: Zap, description: "Create and manage desktop automations for OBS." },
     ],
@@ -244,7 +247,7 @@ function formatUpdateBytes(bytes: number): string {
 export function MVSettings() {
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
-  const validTabs: SettingsTab[] = ["general", "appearance", "bible", "branding", "obs", "broadcast", "mobile", "automation", "usage", "storage", "audio"];
+  const validTabs: SettingsTab[] = ["general", "appearance", "bible", "branding", "obs", "vmix", "broadcast", "mobile", "automation", "usage", "storage", "audio"];
   const initialTab = searchParams.get("tab");
   const [activeTab, setActiveTab] = useState<SettingsTab>(
     initialTab && validTabs.includes(initialTab as SettingsTab) && !COMING_SOON_TABS.has(initialTab as SettingsTab)
@@ -742,10 +745,12 @@ export function MVSettings() {
   }, [bDefaultTranslation, bibleSettingsDirty, bibleState.translation]);
 
   useEffect(() => {
-    const check = () => setObsStatus(obsService.isConnected ? "connected" : "disconnected");
+    const check = () => setObsStatus(obsService.isConnected ? "connected" : obsService.status === "connecting" ? "connecting" : "disconnected");
     check();
+    // Follow the live connection right away (auto-reconnect, the Dock, other pages), with a slow poll as a backstop.
+    const unsubscribe = obsService.onStatusChange(check);
     const iv = setInterval(check, 2000);
-    return () => clearInterval(iv);
+    return () => { unsubscribe(); clearInterval(iv); };
   }, []);
 
   useEffect(() => {
@@ -1024,21 +1029,31 @@ export function MVSettings() {
     triggerToast(t("mvSettings.toast.appearanceResetToDefaults"), "success");
   }, [update, triggerToast, t]);
 
-  const handleReconnectNow = useCallback(() => {
+  const handleReconnectNow = useCallback(async () => {
     triggerToast(t("mvSettings.toast.reconnectingToObs"), "accent");
-    const ts = new Date().toLocaleTimeString();
-    setObsLogs((prev) => [...prev, { id: Date.now() + 10, timestamp: ts, message: "Manual reconnection triggered.", source: "System" }]);
-    setTimeout(() => {
+    const log = (message: string, source: string) =>
+      setObsLogs((prev) => [...prev, { id: Date.now() + Math.random(), timestamp: new Date().toLocaleTimeString(), message, source }]);
+    log("Manual reconnection triggered.", "System");
+    setObsStatus("connecting");
+    try {
+      // Really reconnect with the saved address and password; only report success once OBS answers.
+      await obsService.connect(normalizeOBSWebSocketUrl(settings.obsUrl), obsPasswordDraft || undefined);
+      setObsStatus("connected");
       triggerToast(t("mvSettings.toast.obsReconnected"), "success");
-      setObsLogs((prev) => [...prev, { id: Date.now() + 20, timestamp: new Date().toLocaleTimeString(), message: "Handshake restored.", source: "Network" }]);
-    }, 1500);
-  }, [triggerToast]);
+      log("Handshake restored.", "Network");
+    } catch (err: any) {
+      setObsStatus(obsService.isConnected ? "connected" : "disconnected");
+      triggerToast(t("mvSettings.toast.obsConnectionFailed"), "accent");
+      log(`Reconnection failed: ${err?.message || "OBS did not answer"}`, "Network");
+    }
+  }, [triggerToast, t, settings.obsUrl, obsPasswordDraft]);
 
   /* ── Tab descriptions ── */
   const tabDescription = useMemo(() => {
     switch (activeTab) {
       case "general": return t("mvSettings.tabDesc.general");
       case "obs": return t("mvSettings.tabDesc.obs");
+      case "vmix": return "Connect MakeChurchEazy to vMix and choose how things appear there.";
       case "broadcast": return "Configure speaker profiles, tied social destinations (YouTube, Facebook, etc.), and OBS stream settings.";
       case "mobile": return t("mvSettings.tabDesc.mobile");
       case "automation": return "Create, run, and store desktop automations for OBS.";
@@ -2231,6 +2246,7 @@ export function MVSettings() {
 
               {/* ══════════════ AUTOMATION TAB ══════════════ */}
               {activeTab === "automation" && <AutomationSettingsPanel />}
+              {activeTab === "vmix" && <VmixSettingsPanel isFreePlan={effectivePlan === "free"} />}
 
               {/* ══════════════ APPEARANCE TAB ══════════════ */}
               {activeTab === "appearance" && (
@@ -2452,7 +2468,7 @@ export function MVSettings() {
                   </div>
 
                   {/* Sync status bar */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, padding: "8px 12px", borderRadius: 8, backgroundColor: syncStatus ? "var(--surface-secondary, rgba(255,255,255,0.04))" : "transparent", border: syncStatus ? "1px solid var(--border-color)" : "none" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, padding: "8px 12px", borderRadius: 8, backgroundColor: syncStatus ? "var(--surface-raised)" : "transparent", border: syncStatus ? "1px solid var(--border-color)" : "none" }}>
                     {syncing && (
                       <>
                         <RefreshCw size={14} className="spin" style={{ animation: "spin 1s linear infinite" }} />

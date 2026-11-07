@@ -18,13 +18,13 @@
 .dock-scene-routing-popover__title {
   font-size: 13px;
   font-weight: 700;
-  color: var(--dock-text, #F8FAFC);
+  color: var(--dock-text, var(--text-primary));
 }
 
 .dock-scene-routing-popover__sub {
   margin-top: 2px;
   font-size: 11px;
-  color: var(--dock-text-dim, #94A3B8);
+  color: var(--dock-text-dim, var(--text-muted));
 }
 
 .dock-scene-routing-popover__head .dock-scene-routing-popover__refresh {
@@ -39,7 +39,7 @@
   width: 16px;
   height: 16px;
   margin: 1px 0 0;
-  accent-color: var(--dock-accent, #2563EB);
+  accent-color: var(--dock-accent, var(--primary));
   cursor: pointer;
 }
 
@@ -49,15 +49,15 @@
   align-items: flex-start;
   gap: 10px;
   padding: 9px 10px;
-  border: 1px solid var(--dock-border, #334155);
+  border: 1px solid var(--dock-border, var(--border));
   border-radius: 8px;
-  background: var(--dock-surface-alt, #1F2937);
+  background: var(--dock-surface-alt, var(--surface-raised));
   cursor: pointer;
 }
 
 .dock-scene-routing-control__toggle:hover,
 .dock-scene-routing-control__sync:hover {
-  border-color: color-mix(in srgb, var(--dock-accent, #2563EB) 40%, var(--dock-border, #334155));
+  border-color: color-mix(in srgb, var(--dock-accent, var(--primary)) 40%, var(--dock-border, var(--border)));
 }
 
 .dock-scene-routing-control__toggle.is-on {
@@ -73,14 +73,14 @@
 }
 
 .dock-scene-routing-control__label {
-  color: var(--dock-text, #F8FAFC);
+  color: var(--dock-text, var(--text-primary));
   font-size: 12px;
   font-weight: 650;
 }
 
 .dock-scene-routing-control__toggle-copy small,
 .dock-scene-routing-control__hint {
-  color: var(--dock-text-dim, #94A3B8);
+  color: var(--dock-text-dim, var(--text-muted));
   font-size: 10.5px;
   line-height: 1.35;
 }
@@ -96,7 +96,7 @@
   justify-content: space-between;
   gap: 8px;
   margin-bottom: 6px;
-  color: var(--dock-text-dim, #94A3B8);
+  color: var(--dock-text-dim, var(--text-muted));
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -110,10 +110,10 @@
   min-width: 18px;
   height: 18px;
   padding: 0 5px;
-  border: 1px solid var(--dock-border, #334155);
+  border: 1px solid var(--dock-border, var(--border));
   border-radius: 999px;
-  background: var(--dock-surface-alt, #1F2937);
-  color: var(--dock-text, #F8FAFC);
+  background: var(--dock-surface-alt, var(--surface-raised));
+  color: var(--dock-text, var(--text-primary));
   font-size: 10px;
   letter-spacing: 0;
 }
@@ -121,9 +121,9 @@
 .dock-scene-routing-control__scene-list {
   max-height: 204px;
   overflow-y: auto;
-  border: 1px solid var(--dock-border, #334155);
+  border: 1px solid var(--dock-border, var(--border));
   border-radius: var(--radius, 4px);
-  background: var(--dock-bg, #0F172A);
+  background: var(--dock-bg, var(--bg));
 }
 
 .dock-scene-routing-control__scene-row {
@@ -132,7 +132,7 @@
   gap: 8px;
   min-height: 36px;
   padding: 4px 10px;
-  border-bottom: 1px solid var(--dock-border, #334155);
+  border-bottom: 1px solid var(--dock-border, var(--border));
 }
 
 .dock-scene-routing-control__scene-row:last-child {
@@ -150,7 +150,7 @@
   min-width: 0;
   flex: 1 1 auto;
   align-self: stretch;
-  color: var(--dock-text, #F8FAFC);
+  color: var(--dock-text, var(--text-primary));
   cursor: pointer;
   font-size: 12px;
 }
@@ -173,8 +173,8 @@
   padding: 2px 5px;
   border: 1px solid var(--dock-input-border, #334155);
   border-radius: 5px;
-  background: var(--dock-surface-alt, #1F2937);
-  color: var(--dock-text, #F8FAFC);
+  background: var(--dock-surface-alt, var(--surface-raised));
+  color: var(--dock-text, var(--text-primary));
   font: inherit;
   font-size: 10.5px;
   outline: none;
@@ -187,7 +187,7 @@
 
 .dock-scene-routing-control__empty {
   padding: 14px 10px;
-  color: var(--dock-text-dim, #94A3B8);
+  color: var(--dock-text-dim, var(--text-muted));
   font-size: 11px;
   text-align: center;
 }
@@ -203,7 +203,7 @@
   gap: 8px;
   justify-content: flex-end;
   padding-top: 10px;
-  border-top: 1px solid var(--dock-border, #334155);
+  border-top: 1px solid var(--dock-border, var(--border));
 }
 
 .dock-scene-routing-popover__footer .dock-btn {

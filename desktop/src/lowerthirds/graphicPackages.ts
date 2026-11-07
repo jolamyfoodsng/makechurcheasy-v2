@@ -41,6 +41,10 @@ export interface GraphicPackage {
   css?: string;
   animation?: Record<string, unknown>;
   updatedAt?: string;
+  /** Extra search words for the library (shown nowhere else). */
+  tags?: string[];
+  /** Day the graphic joined the library (YYYY-MM-DD); recent ones are listed first and marked New. */
+  addedAt?: string;
 }
 
 /** Same lists the runtime uses for `"options": "icons"` / `"brands"`. */
@@ -97,7 +101,10 @@ export function looksLikeLongTextField(key: string, label: string): boolean {
   return /\b(text|body|message|prayer|answer|question|quote|description|content|notes?|verse|scripture|announcement|details)\b/.test(name);
 }
 
-export function packageToTheme(pkg: GraphicPackage, extra: { tags?: string[] } = {}): LowerThirdTheme & { graphicCategory?: string } {
+export function packageToTheme(
+  pkg: GraphicPackage,
+  extra: { tags?: string[] } = {},
+): LowerThirdTheme & { graphicCategory?: string; addedAt?: string } {
   const fields = (pkg.fields || [])
     .map((f) => ({ ...f, key: cleanKey(f.key) }))
     .filter((f) => f.key && !f.key.startsWith("kx"));
@@ -146,9 +153,14 @@ export function packageToTheme(pkg: GraphicPackage, extra: { tags?: string[] } =
     description: pkg.description || "Broadcast graphic from Make Church Eazy.",
     category: category === "speaker" ? "speaker" : "general",
     graphicCategory: category,
+    addedAt: typeof pkg.addedAt === "string" ? pkg.addedAt : undefined,
     icon: "campaign",
     accentColor: pkg.color || "#2563eb",
-    tags: ["Church", "Graphics", "Motion", "Animated", "Admin", ...(extra.tags || [])],
+    tags: [
+      "Church", "Graphics", "Motion", "Animated", "Admin",
+      ...(Array.isArray(pkg.tags) ? pkg.tags.filter((t): t is string => typeof t === "string") : []),
+      ...(extra.tags || []),
+    ],
     usesTailwind: false,
     fontImports: ["/fonts/google/google-fonts.css"],
     variables: [
@@ -160,5 +172,5 @@ export function packageToTheme(pkg: GraphicPackage, extra: { tags?: string[] } =
     ],
     html,
     css: KINETIC_THEME_CSS,
-  } as LowerThirdTheme & { graphicCategory?: string };
+  } as LowerThirdTheme & { graphicCategory?: string; addedAt?: string };
 }

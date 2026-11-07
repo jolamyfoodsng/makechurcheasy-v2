@@ -33,15 +33,42 @@ function useCopy(): [string | null, (id: string, text: string) => void] {
   return [copied, copy];
 }
 
-function Step({ n, done, title, children }: { n: number; done?: boolean; title: string; children: React.ReactNode }) {
+/** One numbered step: a short title, one line of instruction, and its button on the right. */
+function Step({
+  n,
+  done,
+  title,
+  action,
+  children,
+}: {
+  n: number;
+  done?: boolean;
+  title: string;
+  action?: React.ReactNode;
+  children?: React.ReactNode;
+}) {
   return (
     <li className={`setup-step${done ? " setup-step--done" : ""}`}>
-      <span className="setup-step__mark" aria-hidden="true">{done ? <Check size={12} /> : n}</span>
+      <span className="setup-step__mark" aria-hidden="true">{done ? <Check size={14} /> : n}</span>
       <div className="setup-step__body">
         <h3 className="setup-step__title">{title}</h3>
         {children}
       </div>
+      {action ? <div className="setup-step__action">{action}</div> : null}
     </li>
+  );
+}
+
+/** Read-only link with a Copy button. */
+function CopyLink({ id, label, value, copied, onCopy }: { id: string; label: string; value: string; copied: string | null; onCopy: (id: string, text: string) => void }) {
+  return (
+    <div className="setup-link">
+      <input readOnly value={value || "Getting the link…"} aria-label={label} onFocus={(e) => e.currentTarget.select()} />
+      <button type="button" className="app-btn" onClick={() => onCopy(id, value)} disabled={!value}>
+        {copied === id ? <Check size={14} /> : <Copy size={14} />}
+        {copied === id ? "Copied" : "Copy"}
+      </button>
+    </div>
   );
 }
 
@@ -74,49 +101,37 @@ function VmixFreeSetup() {
       <div className="app-surface__header">
         <div>
           <h2 id="setup-vmix-title" className="app-surface__title">Set up vMix</h2>
-          <p className="setup-panel__lead">
-            On the free plan you add the presentation link to vMix yourself. MakeChurchEazy doesn&apos;t create or
-            change anything in vMix.
-          </p>
+          <p className="setup-panel__lead">4 steps, once. On the free plan you add the link to vMix yourself.</p>
         </div>
       </div>
       <div className="app-surface__body">
         <div className="app-banner app-banner--warning setup-panel__banner">
           <div className="app-banner__content">
             <AlertCircle size={16} />
-            <span>
-              Setting up vMix in one click, with vMix titles that update instantly, is part of the paid plans.
-            </span>
+            <span>One-click vMix setup with instant vMix titles is on the paid plans.</span>
           </div>
         </div>
         <ol className="setup-steps">
-          <Step n={1} title="Copy your presentation link">
-            <p>Everything you show from the Dock appears on this page.</p>
-            <div className="setup-link">
-              <input readOnly value={link || "Getting the link…"} aria-label="Presentation link" />
-              <button type="button" className="app-btn" onClick={() => copy("vmix-link", link)} disabled={!link}>
-                {copied === "vmix-link" ? <Check size={14} /> : <Copy size={14} />}
-                {copied === "vmix-link" ? "Copied" : "Copy"}
-              </button>
-            </div>
+          <Step n={1} title="Copy the presentation link">
+            <CopyLink id="vmix-link" label="Presentation link" value={link} copied={copied} onCopy={copy} />
           </Step>
           <Step n={2} title="Add it to vMix">
-            <p>
-              In vMix choose <strong>Add Input → Web Browser</strong>, paste the link and click OK. Then put that input
-              on an overlay, for example Overlay 1.
-            </p>
+            <p>In vMix: <strong>Add Input → Web Browser</strong>, paste the link, click OK. Put it on Overlay 1.</p>
           </Step>
-          <Step n={3} title="Open the Dock">
-            <p>The Dock opens in its own window. Put it beside vMix.</p>
-            <div className="setup-actions">
+          <Step
+            n={3}
+            title="Open the Dock"
+            action={
               <button type="button" className="app-btn app-btn--primary" onClick={openDock}>
                 <Tv size={16} /> Open Dock
               </button>
-            </div>
+            }
+          >
+            <p>It opens in its own window, beside vMix.</p>
             {error && <p className="obs-error" role="alert">{error}</p>}
           </Step>
-          <Step n={4} title="Present from the Dock">
-            <p>Click a verse, song or note and it shows on the presentation link in vMix.</p>
+          <Step n={4} title="Present">
+            <p>Click a verse, song or note in the Dock.</p>
           </Step>
         </ol>
       </div>
@@ -162,53 +177,40 @@ function VmixSetup() {
       <div className="app-surface__header">
         <div>
           <h2 id="setup-vmix-title" className="app-surface__title">Set up vMix</h2>
-          <p className="setup-panel__lead">
-            Do this once. After that, every verse, song or name you click appears over your vMix cameras.
-          </p>
+          <p className="setup-panel__lead">4 steps, once. Then everything you click shows over your vMix cameras.</p>
         </div>
       </div>
       <div className="app-surface__body">
         <ol className="setup-steps">
-          <Step n={1} done={Boolean(vmixVersion)} title="Turn on vMix's Web Controller">
-            <p>In vMix, open <strong>Settings → Web Controller</strong>, tick <strong>Enable</strong> and keep the port at {settings.port}.</p>
+          <Step n={1} done={Boolean(vmixVersion)} title="Turn on vMix Web Controller">
+            <p>In vMix: <strong>Settings → Web Controller</strong>, tick <strong>Enable</strong>, port {settings.port}.</p>
             <p className={`setup-status${vmixVersion ? " setup-status--ok" : ""}`} role="status">
               <span className="setup-status__dot" aria-hidden="true" />
               {vmixVersion ? `vMix found (version ${vmixVersion})` : `Waiting for vMix at ${settings.host}:${settings.port}…`}
             </p>
           </Step>
-          <Step n={2} title="Open the Dock">
-            <p>The Dock opens in its own window. Put it beside vMix.</p>
-            <div className="setup-actions">
+          <Step
+            n={2}
+            title="Open the Dock"
+            action={
               <button type="button" className="app-btn app-btn--primary" onClick={openDock}>
                 <Tv size={16} /> Open Dock
               </button>
-              <label className="setup-check">
-                <input type="checkbox" checked={pinned} onChange={(e) => togglePinned(e.target.checked)} />
-                <span>Keep the Dock on top of vMix</span>
-              </label>
-            </div>
+            }
+          >
+            <p>It opens in its own window, beside vMix.</p>
+            <label className="setup-check">
+              <input type="checkbox" checked={pinned} onChange={(e) => togglePinned(e.target.checked)} />
+              <span>Keep the Dock on top of vMix</span>
+            </label>
             {error && <p className="obs-error" role="alert">{error}</p>}
           </Step>
           <Step n={3} title="Click “Set up vMix” in the Dock">
-            <p>
-              It adds one input to vMix, <strong>MCE Presentation</strong>, on Overlay 1. It&apos;s a vMix title that vMix
-              draws itself, so it updates instantly and barely uses the computer. Your own inputs are not changed.
-            </p>
-            <p className="setup-note">
-              Already have your own vMix titles, or prefer vMix&apos;s built-in Scripture and Songs titles? Pick them in the
-              Dock&apos;s vMix card for Bible verses, songs or names; MakeChurchEazy fills them in and leaves their design
-              alone.
-            </p>
-            <p className="setup-note">
-              Want MakeChurchEazy&apos;s full themes instead? In the Dock&apos;s vMix settings choose “Full themes” under
-              Output. It looks richer but uses more CPU.
-            </p>
+            <p>It adds one title, <strong>MCE Presentation</strong>, on Overlay 1. Your own inputs stay as they are.</p>
+            <p className="setup-note">Using your own vMix titles? Pick them in the Dock&apos;s vMix card.</p>
           </Step>
-          <Step n={4} title="Present from the Dock">
-            <p>
-              Click a verse, song or note and it comes in over your live camera. Hide takes it out. You never have to
-              type a verse into vMix.
-            </p>
+          <Step n={4} title="Present">
+            <p>Click a verse, song or note in the Dock. <strong>Hide</strong> takes it off.</p>
           </Step>
         </ol>
       </div>
@@ -246,47 +248,32 @@ function ObsSetup() {
       <div className="app-surface__header">
         <div>
           <h2 id="setup-obs-title" className="app-surface__title">Set up OBS Studio</h2>
-          <p className="setup-panel__lead">
-            Do this once. The Dock then lives inside OBS and puts verses, lyrics and lower thirds into your scenes.
-          </p>
+          <p className="setup-panel__lead">3 steps, once. Then you present from the Dock inside OBS.</p>
         </div>
       </div>
       <div className="app-surface__body">
         <ol className="setup-steps">
-          <Step n={1} done={connected} title="Connect to OBS">
-            <p>In OBS, open <strong>Tools → WebSocket Server Settings</strong> and tick <strong>Enable WebSocket server</strong>. Then connect.</p>
-            <div className="setup-actions">
+          <Step
+            n={1}
+            done={connected}
+            title="Connect to OBS"
+            action={
               <button type="button" className="app-btn app-btn--primary" onClick={() => void connect()} disabled={connected}>
                 {connected ? <Check size={16} /> : <Monitor size={16} />}
-                {connected ? "OBS connected" : "Connect to OBS"}
+                {connected ? "Connected" : "Connect to OBS"}
               </button>
-            </div>
+            }
+          >
+            <p>In OBS: <strong>Tools → WebSocket Server Settings</strong>, tick <strong>Enable WebSocket server</strong>.</p>
           </Step>
           <Step n={2} title="Add the Dock to OBS">
-            <p>
-              In OBS choose <strong>Docks → Custom Browser Docks</strong>, name it “MakeChurchEazy”, paste this link and click Apply.
-            </p>
-            <div className="setup-link">
-              <input readOnly value={dockUrl} aria-label="Dock link" />
-              <button type="button" className="app-btn" onClick={() => copy("dock", dockUrl)}>
-                {copied === "dock" ? <Check size={14} /> : <Copy size={14} />}
-                {copied === "dock" ? "Copied" : "Copy"}
-              </button>
-            </div>
-            <p className="setup-note">
-              Optional: add the Scripture Assistant the same way. It shows Bible references as the preacher speaks.
-            </p>
-            <div className="setup-link">
-              <input readOnly value={assistantUrl} aria-label="Scripture Assistant link" />
-              <button type="button" className="app-btn" onClick={() => copy("assistant", assistantUrl)}>
-                {copied === "assistant" ? <Check size={14} /> : <Copy size={14} />}
-                {copied === "assistant" ? "Copied" : "Copy"}
-              </button>
-            </div>
-            <p className="setup-note">These are Dock links, not Browser Sources. Don't add them under Sources.</p>
+            <p>In OBS: <strong>Docks → Custom Browser Docks</strong>. Name it MakeChurchEazy, paste this link, click <strong>Apply</strong>.</p>
+            <CopyLink id="dock" label="Dock link" value={dockUrl} copied={copied} onCopy={copy} />
+            <p className="setup-note">Optional, same way: Scripture Assistant (finds verses as the preacher speaks).</p>
+            <CopyLink id="assistant" label="Scripture Assistant link" value={assistantUrl} copied={copied} onCopy={copy} />
           </Step>
-          <Step n={3} title="Present from the Dock">
-            <p>Click a verse, song or note in the Dock inside OBS. MakeChurchEazy creates its scenes and sources for you.</p>
+          <Step n={3} title="Present">
+            <p>Click a verse, song or note in the Dock. Scenes are made for you.</p>
           </Step>
         </ol>
       </div>
@@ -300,8 +287,8 @@ export default function ProductionSetupPage() {
   const [software, setSoftware] = useState<Software>(() => (getPreferredWorkspace() === "vmix" ? "vmix" : "obs"));
 
   const options: Array<{ id: Software; title: string; desc: string }> = [
-    { id: "obs", title: "OBS Studio", desc: "The Dock sits inside OBS and builds your scenes." },
-    { id: "vmix", title: "vMix", desc: "The Dock sits beside vMix and drives its overlays." },
+    { id: "obs", title: "OBS Studio", desc: "The Dock goes inside OBS." },
+    { id: "vmix", title: "vMix", desc: "The Dock sits beside vMix." },
   ];
 
   return (
@@ -312,7 +299,7 @@ export default function ProductionSetupPage() {
             <p className="app-page__eyebrow">Setup</p>
             <h1 className="app-page__title">OBS &amp; vMix setup</h1>
             <p className="app-page__subtitle">
-              What do you stream with? Pick it, follow the steps once, then present everything from the Dock.
+              Pick what you stream with and follow the steps once.
             </p>
           </div>
         </header>

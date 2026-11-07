@@ -105,7 +105,7 @@ export function MultistreamStatusPanel({
     padding: compact ? "5px 10px" : "6px 12px",
     fontSize: compact ? 11.5 : 12.5,
     fontWeight: 600,
-    background: "#6366F1",
+    background: "var(--primary)",
     color: "#FFFFFF",
     cursor: applying ? "wait" : "pointer",
     opacity: applying ? 0.7 : 1,

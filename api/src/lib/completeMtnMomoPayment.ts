@@ -13,6 +13,7 @@ import { markReferralPaidForUser } from "@/lib/referrals";
 import { stopActiveTrialForPaidPlan } from "@/lib/trialRecords";
 import { recordActivationEvent } from "@/lib/activation";
 import { resetMonthlyIncludedSeconds } from "@/lib/transcriptionCredits";
+import { reportPaymentToTelegram } from "@/lib/paymentTelegramNotifications";
 import { CreditTransactionType, type BillingCycle, type PlanTier } from "@/types/schemas";
 
 const VALID_PLANS: PlanTier[] = ["free", "basic", "growth"];
@@ -334,6 +335,20 @@ export async function completeMtnMomoPayment(input: CompleteMtnMomoPaymentInput)
     reference: input.providerReference,
   }, now).catch(() => { });
   notifySubscriptionActivated(input.userId, PLAN_NAMES[plan] || plan).catch(() => { });
+  reportPaymentToTelegram({
+    outcome: "success",
+    provider: paymentProvider,
+    reference: input.providerReference,
+    userId: input.userId,
+    email: input.email,
+    plan,
+    billingCycle,
+    credits: planCredits,
+    amount: input.amount,
+    currency,
+    source: completionSource,
+    occurredAt: now,
+  });
 
   let userName = "there";
   try {

@@ -6,6 +6,17 @@ import {
   isNowPaymentsConfigured,
   verifyNowPaymentsSignature,
 } from "@/lib/nowPayments";
+import { paymentDetailsFromIntent, reportPaymentToTelegram } from "@/lib/paymentTelegramNotifications";
+
+function reportFailure(intent: Record<string, any>, reference: string, failureReason: string) {
+  reportPaymentToTelegram(paymentDetailsFromIntent(intent, {
+    outcome: "failed",
+    provider: "nowpayments",
+    reference,
+    failureReason,
+    source: "NOWPayments webhook",
+  }));
+}
 
 const FINAL_FAILURE_STATUSES = new Set([
   "failed",
@@ -105,6 +116,7 @@ export async function POST(req: NextRequest) {
           },
         },
       );
+      reportFailure(intent, String(intent._id), `NOWPayments payment ${providerStatus.replaceAll("_", " ")}.`);
       return received(orderId || invoiceId, providerStatus);
     }
     if (providerStatus !== "finished") return received(orderId || invoiceId, providerStatus || "pending");
@@ -114,6 +126,7 @@ export async function POST(req: NextRequest) {
         { _id: intent._id, status: "PENDING" },
         { $set: { status: "FAILED", failureReason: "Payment amount mismatch.", updatedAt: now } },
       );
+      reportFailure(intent, String(intent._id), "Payment amount mismatch.");
       return received(orderId || invoiceId, "failed");
     }
     if (
@@ -124,6 +137,7 @@ export async function POST(req: NextRequest) {
         { _id: intent._id, status: "PENDING" },
         { $set: { status: "FAILED", failureReason: "Payment currency mismatch.", updatedAt: now } },
       );
+      reportFailure(intent, String(intent._id), "Payment currency mismatch.");
       return received(orderId || invoiceId, "failed");
     }
 

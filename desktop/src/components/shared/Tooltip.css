@@ -13,7 +13,7 @@
   position: absolute;
   z-index: 9999;
   padding: 6px 10px;
-  border-radius: var(--radius, 4px);
+  border-radius: var(--radius);
   background: #1a1a2e;
   color: #f0f0f0;
   font-size: 12px;

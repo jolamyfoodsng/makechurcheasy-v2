@@ -41,7 +41,6 @@ describe("DockBibleTab reference display", () => {
     expect(dockBibleTabSource).toContain("handleBrowserVerseLineCountChange");
     expect(dockBibleTabSource).toContain("Bible output controls");
     expect(quickMenuSource).toContain("Lines per verse");
-    expect(quickMenuSource).toContain("Update Immediately");
     expect(quickMenuSource).not.toContain("bible.bibleVerse");
     expect(quickMenuSource).not.toContain("bible.reference");
     expect(quickMenuSource).not.toContain("referenceBackgroundEnabled");
@@ -54,9 +53,8 @@ describe("DockBibleTab reference display", () => {
     expect(dockBibleTabSource).toContain("const isFitTextMode = true;");
     expect(dockBibleTabSource).not.toContain("onClick={() => onApplyPatch({ autoFontScale: !settings.autoFontScale })}");
     expect(dockBibleTabSource).toContain("{isFitTextMode && (");
-    expect(dockBibleTabSource).toContain("Update Immediately");
     expect(dockBibleTabSource).toContain("hasPendingBrowserQuickChanges");
-    expect(dockBibleTabSource).toContain('<Icon name="compare_arrows" size={12} />');
+    expect(dockBibleTabSource).toContain('<Icon name="compare_arrows" size={20} />');
     expect(dockBibleTabSource).toContain("compareVerseFontSizeLeft: nextVerseSize");
     expect(dockBibleTabSource).toContain("compareVerseFontSizeRight: nextVerseSize");
     expect(dockBibleTabSource).toContain("compareReferenceFontSizeLeft: nextReferenceSize");

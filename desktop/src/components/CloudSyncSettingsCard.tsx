@@ -132,7 +132,7 @@ export function CloudSyncSettingsCard({ onOpenUpgrade }: CloudSyncSettingsCardPr
         className="settings-card fields-rows-stack"
         style={{
           marginBottom: "20px",
-          background: "#18181c",
+          background: "var(--surface)",
           border: "1px solid var(--border)",
           borderRadius: "var(--radius)",
           position: "relative",
@@ -156,7 +156,7 @@ export function CloudSyncSettingsCard({ onOpenUpgrade }: CloudSyncSettingsCardPr
               >
                 <Cloud size={18} />
               </div>
-              <span className="switch-title" style={{ color: "#ffffff", fontSize: "1.05rem", fontWeight: 700 }}>
+              <span className="switch-title" style={{ color: "var(--text-primary)", fontSize: "1.05rem", fontWeight: 700 }}>
                 {t("cloudSync.lockedTitle", "Make Church Eazy Cloud Backup & Sync")}
               </span>
               <span
@@ -227,7 +227,7 @@ export function CloudSyncSettingsCard({ onOpenUpgrade }: CloudSyncSettingsCardPr
           marginBottom: "20px",
           border: "1px solid var(--border)",
           borderRadius: "var(--radius)",
-          background: "#18181c",
+          background: "var(--surface)",
         }}
       >
         {/* Card Header & Status */}
@@ -261,7 +261,7 @@ export function CloudSyncSettingsCard({ onOpenUpgrade }: CloudSyncSettingsCardPr
             </div>
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <h4 style={{ margin: 0, fontSize: "1rem", fontWeight: 700, color: "#ffffff" }}>
+                <h4 style={{ margin: 0, fontSize: "1rem", fontWeight: 700, color: "var(--text-primary)" }}>
                   {t("cloudSync.headerTitle", "Cloud Backup & Multi-Laptop Sync")}
                 </h4>
                 <span
@@ -270,7 +270,7 @@ export function CloudSyncSettingsCard({ onOpenUpgrade }: CloudSyncSettingsCardPr
                     alignItems: "center",
                     gap: "4px",
                     background: "rgba(34, 197, 94, 0.12)",
-                    color: "#4ade80",
+                    color: "var(--success)",
                     fontSize: "11px",
                     fontWeight: 600,
                     padding: "2px 8px",
@@ -300,7 +300,7 @@ export function CloudSyncSettingsCard({ onOpenUpgrade }: CloudSyncSettingsCardPr
               className="action-btn"
               onClick={() => setShowRestoreModal(true)}
               style={{
-                background: "rgba(255, 255, 255, 0.05)",
+                background: "var(--surface-raised)",
                 border: "1px solid var(--border)",
                 color: "var(--text-primary)",
                 fontSize: "0.85rem",
@@ -367,7 +367,7 @@ export function CloudSyncSettingsCard({ onOpenUpgrade }: CloudSyncSettingsCardPr
               background: "rgba(34, 197, 94, 0.12)",
               border: "1px solid rgba(34, 197, 94, 0.3)",
               borderRadius: 8,
-              color: "#4ade80",
+              color: "var(--success)",
               fontSize: "0.85rem",
               display: "flex",
               alignItems: "center",
@@ -386,7 +386,7 @@ export function CloudSyncSettingsCard({ onOpenUpgrade }: CloudSyncSettingsCardPr
               background: "rgba(239, 68, 68, 0.12)",
               border: "1px solid rgba(239, 68, 68, 0.3)",
               borderRadius: 8,
-              color: "#f87171",
+              color: "var(--error)",
               fontSize: "0.85rem",
               display: "flex",
               alignItems: "center",
@@ -417,10 +417,10 @@ export function CloudSyncSettingsCard({ onOpenUpgrade }: CloudSyncSettingsCardPr
               value={frequency}
               onChange={(e) => handleFrequency(e.target.value as BackupFrequency)}
               style={{
-                background: "rgba(0,0,0,0.3)",
-                border: "1px solid rgba(255,255,255,0.2)",
+                background: "var(--input-bg)",
+                border: "1px solid var(--border-strong)",
                 borderRadius: 6,
-                color: "#fff",
+                color: "var(--text-primary)",
                 padding: "6px 10px",
                 fontSize: "0.85rem",
               }}
@@ -470,7 +470,7 @@ export function CloudSyncSettingsCard({ onOpenUpgrade }: CloudSyncSettingsCardPr
               <span>{t("cloudSync.storageTitle", "Cloud storage")}</span>
               <span>{formatSize(usedBytes)} / {formatSize(limitBytes)}</span>
             </div>
-            <div style={{ height: 8, borderRadius: 9999, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+            <div style={{ height: 8, borderRadius: 9999, background: "var(--surface-raised)", overflow: "hidden" }}>
               <div
                 style={{
                   width: `${percent}%`,
@@ -505,10 +505,10 @@ export function CloudSyncSettingsCard({ onOpenUpgrade }: CloudSyncSettingsCardPr
                     value={deviceName}
                     onChange={(e) => setDeviceName(e.target.value)}
                     style={{
-                      background: "rgba(0,0,0,0.3)",
-                      border: "1px solid rgba(255,255,255,0.2)",
+                      background: "var(--input-bg)",
+                      border: "1px solid var(--border-strong)",
                       borderRadius: 6,
-                      color: "#fff",
+                      color: "var(--text-primary)",
                       padding: "4px 10px",
                       fontSize: "0.85rem",
                     }}
@@ -531,7 +531,7 @@ export function CloudSyncSettingsCard({ onOpenUpgrade }: CloudSyncSettingsCardPr
                       gap: "6px",
                       fontSize: "0.85rem",
                       color: "var(--text-primary)",
-                      background: "rgba(255, 255, 255, 0.05)",
+                      background: "var(--surface-raised)",
                       padding: "4px 10px",
                       borderRadius: 6,
                     }}

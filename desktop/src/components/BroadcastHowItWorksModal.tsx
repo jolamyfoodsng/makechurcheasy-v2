@@ -1,7 +1,14 @@
-import { X } from "./icons/NativeIcons";
+/**
+ * BroadcastHowItWorksModal.tsx — the Multi-Stream "How it works" guide.
+ *
+ * Built on the app's one dialog (ModalDialog) so it follows dark / light mode and the accent
+ * colour like every other dialog: five numbered steps in a panel, one "Got it" button.
+ */
+import ModalDialog, { ModalPanel } from "./ModalDialog";
+import { Radio } from "./icons/NativeIcons";
 import type { MultistreamPlanAllocation } from "../services/broadcastSettingsService";
-
 import { getMultistreamPlanAllocation } from "../services/broadcastSettingsService";
+import "./BroadcastHowItWorksModal.css";
 
 function getPlanContinuationText(allocation: MultistreamPlanAllocation): string {
   if (allocation.plan === "growth") {
@@ -19,6 +26,14 @@ function getPlanContinuationText(allocation: MultistreamPlanAllocation): string 
   return "You have access to 1 channel on the Free Plan. Upgrade for multi-platform streaming.";
 }
 
+const STEPS: Array<{ title: string; text: string }> = [
+  { title: "Create Profiles", text: "One profile per account: Church Account, First Lady’s Account, Youth Ministry Account." },
+  { title: "Add Channels", text: "Save YouTube and Facebook streaming details to each profile once." },
+  { title: "Select a Profile", text: "Choose which setup you want to use for the current service." },
+  { title: "Sync with OBS", text: "Church Eazy loads that profile's streaming setup into OBS in one click." },
+  { title: "Go Live", text: "Start streaming from OBS. It goes live to the selected profile's channels." },
+];
+
 export interface BroadcastHowItWorksModalProps {
   open: boolean;
   onClose: () => void;
@@ -30,599 +45,39 @@ export function BroadcastHowItWorksModal({
   open,
   onClose,
   allocation: passedAllocation,
-  onOpenUpgrade: _onOpenUpgrade,
 }: BroadcastHowItWorksModalProps) {
   if (!open) return null;
   const allocation = passedAllocation || getMultistreamPlanAllocation("free");
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0, 0, 0, 0.75)",
-        backdropFilter: "blur(4px)",
-        zIndex: 10000,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "16px",
-      }}
-      onClick={onClose}
+    <ModalDialog
+      tone="brand"
+      icon={<Radio size={26} />}
+      eyebrow="Multi-Stream"
+      title="How it works"
+      width={520}
+      zIndex={10000}
+      onClose={onClose}
+      hint={getPlanContinuationText(allocation)}
+      extra={
+        <ModalPanel heading="Set it up once, then switch and stream without copying stream keys every time.">
+          <ol className="broadcast-how-steps">
+            {STEPS.map((step, index) => (
+              <li key={step.title} className="broadcast-how-steps__item">
+                <span className="broadcast-how-steps__number" aria-hidden="true">{index + 1}</span>
+                <span className="broadcast-how-steps__copy">
+                  <strong>{step.title}</strong>
+                  <span>{step.text}</span>
+                </span>
+              </li>
+            ))}
+          </ol>
+        </ModalPanel>
+      }
+      actions={[{ label: "Got it", variant: "primary", autoFocus: true, onClick: onClose }]}
     >
-      <div
-        style={{
-          background: "var(--surface)",
-          border: "1px solid var(--border)",
-          borderRadius: "var(--radius)",
-          padding: "18px 22px",
-          maxWidth: "600px",
-          width: "100%",
-          maxHeight: "92vh",
-          overflowY: "auto",
-          display: "flex",
-          flexDirection: "column",
-          gap: "12px",
-          boxShadow: "0 24px 48px rgba(0, 0, 0, 0.65)",
-          fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-          color: "#f4f4f5",
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            justifyContent: "space-between",
-            gap: "12px",
-            borderBottom: "1px solid var(--border)",
-            paddingBottom: "10px",
-          }}
-        >
-          <div>
-            <h2
-              style={{
-                margin: 0,
-                fontSize: "18px",
-                fontWeight: 700,
-                color: "#ffffff",
-                letterSpacing: "-0.01em",
-              }}
-            >
-              How it works
-            </h2>
-            <p
-              style={{
-                margin: "4px 0 0",
-                fontSize: "13.5px",
-                color: "var(--text-muted)",
-                lineHeight: 1.4,
-              }}
-            >
-              Set up once, then switch and stream with one click.
-            </p>
-            <p
-              style={{
-                margin: "4px 0 0",
-                fontSize: "13px",
-                color: "#d4d4d8",
-                lineHeight: 1.4,
-              }}
-            >
-              {getPlanContinuationText(allocation)}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            style={{
-              background: "rgba(255, 255, 255, 0.06)",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--radius)",
-              color: "var(--text-muted)",
-              cursor: "pointer",
-              padding: "6px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              transition: "all 0.15s ease",
-            }}
-            title="Close"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        {/* Key Takeaway Highlight */}
-        <div
-          style={{
-            padding: "7px 12px",
-            background: "rgba(99, 102, 241, 0.12)",
-            border: "1px solid rgba(99, 102, 241, 0.28)",
-            borderRadius: "var(--radius)",
-            fontSize: "12.5px",
-            fontWeight: 600,
-            color: "#c7d2fe",
-            textAlign: "center",
-          }}
-        >
-          Set it up once, then switch and stream without copying stream keys every time.
-        </div>
-
-        {/* 5 Steps List */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-          {/* Step 1: Create Profiles */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-              background: "rgba(255, 255, 255, 0.03)",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--radius)",
-              padding: "8px 12px",
-            }}
-          >
-            <div
-              style={{
-                width: "24px",
-                height: "24px",
-                borderRadius: "50%",
-                background: "var(--primary)",
-                color: "#ffffff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "13px",
-                fontWeight: 700,
-                flexShrink: 0,
-              }}
-            >
-              1
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: "13.5px", fontWeight: 700, color: "#ffffff" }}>
-                Create Profiles
-              </div>
-              <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "1px", lineHeight: 1.35 }}>
-                One profile per account: Church Account, First Lady’s Account, Youth Ministry Account.
-              </div>
-            </div>
-            {/* Visual illustration: mini profiles list */}
-            <div
-              style={{
-                width: "120px",
-                zoom: 0.82,
-                background: "#121215",
-                border: "1px solid var(--border)",
-                borderRadius: "var(--radius)",
-                padding: "6px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "4px",
-                flexShrink: 0,
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: "8px", fontWeight: 700, color: "var(--text-muted)" }}>PROFILES</span>
-                <span
-                  style={{
-                    fontSize: "8px",
-                    background: "var(--primary)",
-                    color: "#fff",
-                    padding: "1px 4px",
-                    borderRadius: "3px",
-                    fontWeight: 600,
-                  }}
-                >
-                  + Add
-                </span>
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "4px",
-                  background: "rgba(99, 102, 241, 0.15)",
-                  borderRadius: "3px",
-                  padding: "2px 4px",
-                  border: "1px solid rgba(99, 102, 241, 0.4)",
-                }}
-              >
-                <div
-                  style={{
-                    width: "12px",
-                    height: "12px",
-                    borderRadius: "50%",
-                    background: "#ef4444",
-                    color: "#fff",
-                    fontSize: "6px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontWeight: 700,
-                  }}
-                >
-                  CH
-                </div>
-                <span style={{ fontSize: "7.5px", color: "#fff", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  Church Main
-                </span>
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "4px",
-                  padding: "2px 4px",
-                }}
-              >
-                <div
-                  style={{
-                    width: "12px",
-                    height: "12px",
-                    borderRadius: "50%",
-                    background: "#10b981",
-                    color: "#fff",
-                    fontSize: "6px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontWeight: 700,
-                  }}
-                >
-                  SS
-                </div>
-                <span style={{ fontSize: "7.5px", color: "var(--text-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  Sunday Service
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Step 2: Add Channels */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-              background: "rgba(255, 255, 255, 0.03)",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--radius)",
-              padding: "8px 12px",
-            }}
-          >
-            <div
-              style={{
-                width: "24px",
-                height: "24px",
-                borderRadius: "50%",
-                background: "var(--primary)",
-                color: "#ffffff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "13px",
-                fontWeight: 700,
-                flexShrink: 0,
-              }}
-            >
-              2
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: "13.5px", fontWeight: 700, color: "#ffffff" }}>
-                Add Channels
-              </div>
-              <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "1px", lineHeight: 1.35 }}>
-                Save YouTube and Facebook streaming details to each profile once.
-              </div>
-            </div>
-            {/* Visual illustration: Add buttons */}
-            <div
-              style={{
-                width: "120px",
-                zoom: 0.82,
-                background: "#121215",
-                border: "1px solid var(--border)",
-                borderRadius: "var(--radius)",
-                padding: "6px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "4px",
-                alignItems: "stretch",
-                flexShrink: 0,
-              }}
-            >
-              <div
-                style={{
-                  background: "#ef4444",
-                  borderRadius: "4px",
-                  padding: "3px 4px",
-                  color: "#fff",
-                  fontSize: "8px",
-                  fontWeight: 600,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "3px",
-                }}
-              >
-                <span>▶ YouTube</span>
-              </div>
-              <div
-                style={{
-                  background: "#1877f2",
-                  borderRadius: "4px",
-                  padding: "3px 4px",
-                  color: "#fff",
-                  fontSize: "8px",
-                  fontWeight: 600,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "3px",
-                }}
-              >
-                <span>f Facebook</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Step 3: Select a Profile */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-              background: "rgba(255, 255, 255, 0.03)",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--radius)",
-              padding: "8px 12px",
-            }}
-          >
-            <div
-              style={{
-                width: "24px",
-                height: "24px",
-                borderRadius: "50%",
-                background: "var(--primary)",
-                color: "#ffffff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "13px",
-                fontWeight: 700,
-                flexShrink: 0,
-              }}
-            >
-              3
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: "13.5px", fontWeight: 700, color: "#ffffff" }}>
-                Select a Profile
-              </div>
-              <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "1px", lineHeight: 1.35 }}>
-                Choose which setup you want to use for the current service.
-              </div>
-            </div>
-            {/* Visual illustration: Active profile badge */}
-            <div
-              style={{
-                width: "120px",
-                zoom: 0.82,
-                background: "#121215",
-                border: "1px solid rgba(99, 102, 241, 0.4)",
-                borderRadius: "var(--radius)",
-                padding: "8px 6px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-              }}
-            >
-              <span style={{ fontSize: "8.5px", fontWeight: 700, color: "var(--accent-blue)" }}>
-                ✓ Church Main Active
-              </span>
-            </div>
-          </div>
-
-          {/* Step 4: Sync with OBS */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-              background: "rgba(255, 255, 255, 0.03)",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--radius)",
-              padding: "8px 12px",
-            }}
-          >
-            <div
-              style={{
-                width: "24px",
-                height: "24px",
-                borderRadius: "50%",
-                background: "var(--primary)",
-                color: "#ffffff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "13px",
-                fontWeight: 700,
-                flexShrink: 0,
-              }}
-            >
-              4
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: "13.5px", fontWeight: 700, color: "#ffffff" }}>
-                Sync with OBS
-              </div>
-              <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "1px", lineHeight: 1.35 }}>
-                Church Eazy loads that profile&apos;s streaming setup into OBS in one click.
-              </div>
-            </div>
-            {/* Visual illustration: Sync button with cursor */}
-            <div
-              style={{
-                width: "120px",
-                zoom: 0.82,
-                background: "#121215",
-                border: "1px solid var(--border)",
-                borderRadius: "var(--radius)",
-                padding: "8px 6px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                position: "relative",
-                flexShrink: 0,
-              }}
-            >
-              <div
-                style={{
-                  background: "var(--primary)",
-                  borderRadius: "4px",
-                  padding: "4px 8px",
-                  color: "#fff",
-                  fontSize: "8.5px",
-                  fontWeight: 700,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "4px",
-                }}
-              >
-                <span>↻ Sync with OBS</span>
-              </div>
-              {/* Pointer cursor */}
-              <div
-                style={{
-                  position: "absolute",
-                  bottom: "2px",
-                  right: "12px",
-                  width: "10px",
-                  height: "10px",
-                  pointerEvents: "none",
-                }}
-              >
-                <svg viewBox="0 0 16 16" fill="white">
-                  <path d="M1 1l4.5 12 2.5-4.5L13 7 1 1z" stroke="#000" strokeWidth="0.8" />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          {/* Step 5: Go Live */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-              background: "rgba(255, 255, 255, 0.03)",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--radius)",
-              padding: "8px 12px",
-            }}
-          >
-            <div
-              style={{
-                width: "24px",
-                height: "24px",
-                borderRadius: "50%",
-                background: "#10b981",
-                color: "#ffffff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "13px",
-                fontWeight: 700,
-                flexShrink: 0,
-              }}
-            >
-              5
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: "13.5px", fontWeight: 700, color: "#ffffff" }}>
-                Go Live
-              </div>
-              <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "1px", lineHeight: 1.35 }}>
-                Start streaming from OBS. It goes live to the selected profile&apos;s channels.
-              </div>
-            </div>
-            {/* Visual illustration: OBS controls */}
-            <div
-              style={{
-                width: "120px",
-                zoom: 0.82,
-                background: "#121215",
-                border: "1px solid var(--border)",
-                borderRadius: "var(--radius)",
-                padding: "6px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "3px",
-                flexShrink: 0,
-              }}
-            >
-              <div style={{ fontSize: "7px", color: "#71717a", fontWeight: 700 }}>OBS CONTROLS</div>
-              <div
-                style={{
-                  background: "var(--primary)",
-                  borderRadius: "3px",
-                  padding: "2px 4px",
-                  color: "#fff",
-                  fontSize: "7.5px",
-                  fontWeight: 700,
-                  textAlign: "center",
-                }}
-              >
-                Start Streaming
-              </div>
-              <div
-                style={{
-                  background: "#27272a",
-                  borderRadius: "3px",
-                  padding: "2px 4px",
-                  color: "var(--text-muted)",
-                  fontSize: "7px",
-                  textAlign: "center",
-                }}
-              >
-                Start Recording
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            paddingTop: "8px",
-            borderTop: "1px solid var(--border)",
-          }}
-        >
-          <button
-            type="button"
-            onClick={onClose}
-            style={{
-              padding: "8px 32px",
-              borderRadius: "var(--radius)",
-              background: "var(--primary)",
-              color: "#ffffff",
-              border: "none",
-              fontSize: "14px",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            Got it
-          </button>
-        </div>
-      </div>
-    </div>
+      Set up once, then switch and stream with one click.
+    </ModalDialog>
   );
 }
 

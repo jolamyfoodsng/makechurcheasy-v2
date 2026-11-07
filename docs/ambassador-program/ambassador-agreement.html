@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Make Church Eazy Ambassador Agreement</title>
+<style>
+  :root {
+    --primary: #0067C0;
+    --text: #1C1C1E;
+    --text-secondary: #48484A;
+    --text-muted: #636366;
+    --border: #D1D1D6;
+    --border-subtle: #E5E5EA;
+    --surface: #F7F7F8;
+    --primary-soft: #EAF2FA;
+  }
+  @page {
+    size: A4;
+    margin: 18mm 18mm 20mm 18mm;
+    @bottom-left   { content: "Make Church Eazy Ambassador Agreement"; font: 8pt Helvetica, Arial, sans-serif; color: #636366; }
+    @bottom-right  { content: "Page " counter(page) " of " counter(pages); font: 8pt Helvetica, Arial, sans-serif; color: #636366; }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    margin: 0;
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 9.3pt;
+    line-height: 1.42;
+    color: var(--text);
+    background: #fff;
+  }
+  h1, h2, h3, p, ul, ol { margin: 0; }
+  .header { display: flex; align-items: center; gap: 14px; padding-bottom: 14px; border-bottom: 2px solid var(--primary); margin-bottom: 18px; }
+  .header img { width: 54px; height: auto; }
+  .brand { font-size: 11pt; font-weight: 700; color: var(--primary); letter-spacing: 0.2px; }
+  .eyebrow { font-size: 7.5pt; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text-muted); }
+  h1 { font-size: 21pt; line-height: 1.15; font-weight: 700; margin-top: 2px; }
+  .lead { font-size: 10pt; color: var(--text-secondary); margin-bottom: 14px; }
+
+  .summary { border: 1px solid var(--border); background: var(--surface); border-radius: 4px; padding: 12px 14px; margin-bottom: 18px; break-inside: avoid; }
+  .summary h2 { font-size: 10pt; margin-bottom: 8px; color: var(--primary); text-transform: uppercase; letter-spacing: 0.8px; }
+  .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .stat { border-left: 3px solid var(--primary); padding-left: 8px; }
+  .stat b { display: block; font-size: 14pt; line-height: 1.1; }
+  .stat span { font-size: 8pt; color: var(--text-secondary); }
+
+  h2.sec { font-size: 11.5pt; font-weight: 700; margin: 13px 0 4px; padding-top: 2px; break-after: avoid; }
+  h2.sec .n { display: inline-block; min-width: 26px; color: var(--primary); }
+  h3 { font-size: 9.6pt; margin: 8px 0 2px; break-after: avoid; }
+  p { margin-bottom: 4px; }
+  ul, ol { padding-left: 18px; margin-bottom: 5px; }
+  li { margin-bottom: 2px; }
+  .clause { padding-left: 20px; }
+  .clause > p, .clause > ul { margin-bottom: 4px; }
+  .clause b.c { color: var(--text-secondary); }
+
+  .callout { border: 1px solid var(--primary); background: var(--primary-soft); border-radius: 4px; padding: 8px 12px; margin: 6px 0 8px 20px; break-inside: avoid; }
+  .callout b { color: var(--primary); }
+
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 10px; }
+  th, td { border: 1px solid var(--border); padding: 6px 8px; text-align: left; vertical-align: top; font-size: 9pt; }
+  th { background: var(--surface); font-size: 8pt; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-secondary); }
+  td.label { width: 32%; background: var(--surface); font-weight: 700; color: var(--text-secondary); font-size: 8.6pt; }
+  tr { break-inside: avoid; }
+  td.fill { height: 22px; }
+  .nowrap { white-space: nowrap; }
+
+  .line { display: inline-block; border-bottom: 1px solid var(--text-muted); min-width: 150px; height: 13px; vertical-align: bottom; }
+  .line.long { min-width: 300px; }
+  .box { display: inline-block; width: 11px; height: 11px; border: 1.2px solid var(--text-secondary); border-radius: 2px; vertical-align: -2px; margin-right: 6px; }
+
+  .page-break { break-before: page; }
+  .no-break { break-inside: avoid; }
+
+  .sign-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 10px; }
+  .sign-card { border: 1px solid var(--border); border-radius: 4px; padding: 14px; break-inside: avoid; }
+  .sign-card h3 { margin-top: 0; font-size: 10pt; color: var(--primary); text-transform: uppercase; letter-spacing: 0.8px; }
+  .sign-row { margin-top: 12px; }
+  .sign-row .rule { border-bottom: 1px solid var(--text); height: 22px; }
+  .sign-row small { display: block; font-size: 7.8pt; color: var(--text-muted); margin-top: 3px; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .card { border: 1px solid var(--border); border-radius: 4px; padding: 10px 12px; break-inside: avoid; }
+  .card h3 { margin-top: 0; font-size: 9.6pt; }
+  .card.do h3 { color: var(--primary); }
+  .card.dont h3 { color: #B3261E; }
+  .photo-box { width: 130px; height: 160px; border: 1.5px dashed var(--border); border-radius: 4px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 8pt; color: var(--text-muted); padding: 8px; }
+  .profile-grid { display: grid; grid-template-columns: 130px 1fr; gap: 16px; align-items: start; }
+  .note { font-size: 8.4pt; color: var(--text-muted); }
+  .tracker td { height: 30px; }
+</style>
+</head>
+<body>
+
+<!-- ============ PAGE 1 ============ -->
+<div class="header">
+  <img src="logo.png" alt="Make Church Eazy">
+  <div>
+    <div class="brand">Make Church Eazy</div>
+    <div class="eyebrow">Ambassador Programme</div>
+    <h1>Ambassador Agreement</h1>
+  </div>
+</div>
+
+<p class="lead">This agreement sets out what Make Church Eazy (“<b>MCE</b>”, “<b>we</b>”), operated by Tayoakosile Labs Ltd, and you (the “<b>Ambassador</b>”, “<b>you</b>”) will do together over the next six months. We have written it in plain language on purpose. Please read it fully before you sign.</p>
+
+<div class="summary">
+  <h2>The agreement at a glance</h2>
+  <div class="summary-grid">
+    <div class="stat"><b>6 months</b><span>Length of the programme from your start date</span></div>
+    <div class="stat"><b>2 posts</b><span>Minimum, every week, on your own channels</span></div>
+    <div class="stat"><b>8 posts</b><span>Minimum, every month, checked at the monthly review</span></div>
+    <div class="stat"><b>Every month</b><span>Review of your posts, shares and referrals</span></div>
+  </div>
+  <p style="margin-top:10px;margin-bottom:0;font-size:9pt;color:var(--text-secondary);">Your posts do <b>not</b> have to be tutorials. Using the app and posting about it, showing it at church, sharing a graphic with your own caption, telling friends and family: all of these count. We want real, honest sharing.</p>
+</div>
+
+<h2 class="sec"><span class="n">1.</span>Parties and purpose</h2>
+<div class="clause">
+  <p>This agreement is between <b>Tayoakosile Labs Ltd</b> (Company Registration No. 9723844, a private company limited by shares incorporated in the Federal Republic of Nigeria), which owns and operates <b>Make Church Eazy</b> (the church presentation, worship and live-stream software, the website at makechurcheazy.com and related services), and the Ambassador whose details are written in <b>Schedule A</b>. In this agreement “MCE” means Tayoakosile Labs Ltd and Make Church Eazy.</p>
+  <p>The purpose of the Make Church Eazy Ambassador Programme (the “<b>Programme</b>”) is to help more churches discover and use Make Church Eazy. You will do this by using the app, creating and posting content on your social media channels, sharing our graphics and announcements, and telling your friends, family and church community about it.</p>
+</div>
+
+<h2 class="sec"><span class="n">2.</span>Term (6 months)</h2>
+<div class="clause">
+  <p><b class="c">2.1</b> This agreement starts on the <b>Start Date</b> in Schedule A and runs for <b>six (6) months</b>. It then ends automatically unless both of us agree in writing to renew it. Email or a message from an official MCE address counts as writing.</p>
+  <p><b class="c">2.2</b> Either of us may end this agreement early by giving <b>7 days’ written notice</b>. We may end it immediately if the other side seriously breaks these terms (see clause 14).</p>
+</div>
+
+<h2 class="sec"><span class="n">3.</span>What you agree to do</h2>
+<div class="clause">
+  <h3>3.1 Create and post content, at least twice every week</h3>
+  <p>You will post at least <b>two (2) pieces of original content every week</b> on your own social media channels (for example Instagram, Facebook, TikTok, YouTube, X, LinkedIn, WhatsApp Status, Telegram). Each post must clearly feature Make Church Eazy. Examples of what counts:</p>
+  <ul>
+    <li>A short video or screen recording of you using the app (a service, a song, a Bible verse, a lower third, a live stream).</li>
+    <li>A photo or reel from church or rehearsal showing Make Church Eazy on the screens or on your laptop.</li>
+    <li>A tutorial, tip or “how I do it” video. This is welcome, but <b>not required</b>.</li>
+    <li>Your honest testimonial or review of the app, in your own words.</li>
+    <li>A post that shares an MCE graphic or announcement <b>with your own caption</b> (a repost with no personal caption does not count towards the two weekly posts).</li>
+  </ul>
+  <h3>3.2 Monthly minimum of 8 posts</h3>
+  <p>In every calendar month you will publish at least <b>eight (8) qualifying posts</b>. The monthly review in clause 4 is based on this number.</p>
+  <h3>3.3 Share our graphics and communications</h3>
+  <p>When MCE sends you a graphic, video, announcement or update (for example a new feature, a promotion or an event), you will share it on your <b>statuses and stories</b> (WhatsApp Status, Instagram and Facebook Stories) and, where it makes sense, on your feed and in your church, family and friends’ groups. Please share it <b>within 48 hours</b> of receiving it. These shares are <b>in addition</b> to the weekly posts in clause 3.1.</p>
+  <h3>3.4 Tell people about Make Church Eazy</h3>
+  <p>You will share Make Church Eazy with your friends, family, church leaders, media teams and other churches you know, using your personal referral link or code from Schedule A. Be helpful and respectful. Never spam people or add them to groups without their consent.</p>
+  <h3>3.5 Really use the app, and tell us what you think</h3>
+  <p>You will use Make Church Eazy for real, so that what you say about it is true. We also ask for honest feedback, bug reports and ideas for improvements. You will be invited to a short check-in each month.</p>
+  <h3>3.6 Keep your posts up</h3>
+  <p>Posts that count towards your commitments must stay publicly visible for at least <b>30 days</b> (Stories and Status posts expire naturally, so keep the proof described in clause 4.2). Please do not delete or hide posts during the term.</p>
+</div>
+
+<h2 class="sec"><span class="n">4.</span>Monthly review</h2>
+<div class="clause">
+  <p><b class="c">4.1</b> Your activity is reviewed <b>every month</b> to check that you reached the minimum of eight (8) posts, the sharing in clause 3.3, and that your content follows clause 5.</p>
+  <p><b class="c">4.2</b> By the <b>5th day of the following month</b> you will send MCE the links to your posts and, for Stories and Status posts, screenshots that show the date. Send them in the way MCE tells you (for example an Ambassador form, email or WhatsApp). The Monthly Tracker in Schedule B is a handy way to keep count.</p>
+  <p><b class="c">4.3</b> MCE will review what you send within <b>7 days</b> and tell you the result: <b>Goal met</b> or <b>Goal not met</b>, with a short explanation and tips.</p>
+  <p><b class="c">4.4</b> If a month is <b>Goal not met</b>, we will send a friendly written reminder and you will have <b>14 days</b> to make up the missing posts. Life happens: if you tell us in advance about travel, illness, exams, a church programme or other good reasons, we will adjust your target for that month.</p>
+  <p><b class="c">4.5</b> If you miss the monthly goal <b>two months in a row</b> (or three months in total) without an agreed reason, MCE may end this agreement and stop the benefits in Schedule A.</p>
+</div>
+
+<h2 class="sec"><span class="n">5.</span>Content standards</h2>
+<div class="clause">
+  <p>Everything you post about Make Church Eazy must follow these rules.</p>
+  <ul>
+    <li><b>Be honest and open about the relationship.</b> Make it clear that you are an MCE ambassador. Use <b>#MCEAmbassador</b> or the words “Make Church Eazy Ambassador” in your caption, and tag our official account <b>@makechurcheazy</b> on every platform where it is possible. You may not hide this relationship.</li>
+    <li><b>Be accurate.</b> Only describe features, prices and plans that really exist. Do not promise results, discounts, free access or future features that MCE has not confirmed to you in writing.</li>
+    <li><b>Be respectful.</b> Do not insult or attack other software, churches, ministers, denominations or individuals. Do not post anything hateful, indecent, political or misleading alongside our brand.</li>
+    <li><b>No piracy.</b> Do not encourage or show pirated software, or use music, images or video you have no right to use. Your content must be yours, or you must have permission.</li>
+    <li><b>No fake activity.</b> No fake accounts, bots, purchased followers, purchased likes or fake referrals. Do not sign yourself up repeatedly to earn rewards.</li>
+    <li><b>Respect people’s privacy.</b> Do not show another person’s face, message, church member list or private church data without their permission. Do not show your own or anyone’s login details.</li>
+    <li><b>Follow the platform rules</b> and the laws that apply where you live, including advertising and data protection laws.</li>
+  </ul>
+  <p>MCE may ask you to edit or remove a post that breaks these rules. You agree to do so promptly, usually within 48 hours.</p>
+</div>
+
+<h2 class="sec"><span class="n">6.</span>What MCE will do</h2>
+<div class="clause">
+  <ul>
+    <li>Give you the Ambassador plan, referral rewards and recognition written in <b>Schedule A</b>, for the whole term while you meet your commitments.</li>
+    <li>Send you official graphics, logos, talking points, screenshots and announcements to use.</li>
+    <li>Give you early information about new features, so you can talk about them with confidence.</li>
+    <li>Hold a monthly check-in, answer your questions and give honest feedback on your content.</li>
+    <li>Recognise our ambassadors, for example by featuring them on our channels and website (see clause 9).</li>
+  </ul>
+  <p>Unless Schedule A says otherwise, the Programme is not a job and you will not receive a salary, fee or commission. Any benefit not written in Schedule A is not promised.</p>
+</div>
+
+<h2 class="sec"><span class="n">7.</span>Referrals and rewards</h2>
+<div class="clause">
+  <p><b class="c">7.1</b> Referrals are tracked with your personal referral link or code. Any referral reward is set out in Schedule A and in MCE’s referral programme rules at the time.</p>
+  <p><b class="c">7.2</b> Referring yourself, your own accounts, or accounts created only to claim rewards does not count. MCE may withhold or cancel a reward it reasonably believes was earned through misuse, and will explain why.</p>
+  <p><b class="c">7.3</b> You are responsible for any tax that applies to benefits or payments you receive.</p>
+</div>
+
+<h2 class="sec"><span class="n">8.</span>Brand, graphics and ownership</h2>
+<div class="clause">
+  <p><b class="c">8.1 Our brand.</b> MCE owns the Make Church Eazy name, logo, graphics, software and materials. We give you a limited, non-exclusive, non-transferable, revocable permission to use them <b>only</b> for the Programme and only as provided. Do not change, redraw, recolour or stretch the logo, and do not create accounts, pages, groups or domain names that look like MCE’s official ones.</p>
+  <p><b class="c">8.2 Your accounts and your content.</b> Your social accounts and the content you create belong to you.</p>
+  <p><b class="c">8.3 Permission to reuse your content.</b> You give MCE a free, non-exclusive, worldwide permission to repost, share, quote, edit lightly (for example crop or add captions) and display the content you create for the Programme, on MCE’s website, social media, emails and promotional material, including paid advertising. For content published during the term, this permission continues after the term ends, but MCE will stop using it in <b>new</b> campaigns if you ask in writing.</p>
+</div>
+
+<h2 class="sec"><span class="n">9.</span>Your name, photo and likeness</h2>
+<div class="clause">
+  <p><b class="c">9.1</b> You agree that MCE may use your <b>name, photo, social media handle, church name and short bio</b>, as supplied in Schedule C, to create ambassador graphics, welcome posts, announcements, profile cards and website or social media features that present you as an MCE ambassador.</p>
+  <p><b class="c">9.2</b> MCE will use your photo and details only to promote Make Church Eazy and the Programme. We will not edit your image in a misleading or embarrassing way and will not suggest that you endorse anything other than Make Church Eazy.</p>
+  <p><b class="c">9.3</b> You may withdraw this permission at any time by written notice. MCE will stop using your image in new materials within <b>14 days</b> and will remove it from our own channels where we can. We cannot recall materials that others have already downloaded or shared, or printed items already distributed.</p>
+  <p><b class="c">9.4</b> You confirm that you own the photo you give us, or have permission to share it, and that you are at least 18 years old.</p>
+</div>
+
+<h2 class="sec"><span class="n">10.</span>Confidentiality and data</h2>
+<div class="clause">
+  <p><b class="c">10.1</b> Some things you may learn as an ambassador are not public yet, such as unreleased features, plans, pricing, partnerships, test builds and information about MCE users. Keep these private until MCE says you may share them. This duty continues for <b>12 months</b> after the term ends.</p>
+  <p><b class="c">10.2</b> Do not collect, store or sell personal details of the people you refer on MCE’s behalf, and never ask anyone to share their MCE password or payment details with you. Signing up and paying always happens directly on MCE’s official website or app.</p>
+</div>
+
+<h2 class="sec"><span class="n">11.</span>Your status</h2>
+<div class="clause">
+  <p>You are an independent volunteer ambassador. You are <b>not</b> an employee, agent, partner or legal representative of MCE. You may not sign contracts, accept money, give refunds or make promises on MCE’s behalf. This agreement is not exclusive: you may support other causes and products.</p>
+</div>
+
+<h2 class="sec"><span class="n">12.</span>Responsibility</h2>
+<div class="clause">
+  <p><b class="c">12.1</b> You are responsible for the content you post and for following clause 5. You will cover MCE’s reasonable losses if content you posted breaks someone else’s rights (for example by using copyrighted material without permission).</p>
+  <p><b class="c">12.2</b> The Programme and MCE’s materials are provided as they are. To the fullest extent the law allows, MCE is not liable for indirect or consequential loss, lost income or lost followers arising from the Programme. Nothing in this agreement limits liability that cannot lawfully be limited.</p>
+</div>
+
+<h2 class="sec"><span class="n">13.</span>Changes to the Programme</h2>
+<div class="clause">
+  <p>MCE may update Programme guidelines (for example the graphics pack or reporting method) by written notice. Changes to your targets, benefits or to the term only apply if you agree to them in writing.</p>
+</div>
+
+<h2 class="sec"><span class="n">14.</span>Ending the agreement</h2>
+<div class="clause">
+  <p><b class="c">14.1</b> MCE may end this agreement immediately by written notice if you seriously break clauses 5, 8, 10 or 11, behave in a way that harms MCE’s reputation, or commit fraud (for example fake referrals).</p>
+  <p><b class="c">14.2</b> When the agreement ends for any reason: you stop calling yourself an official MCE ambassador and remove that title from your bios; you stop using MCE’s logo and materials, except in posts that were already published and describe your past involvement truthfully; and MCE stops your benefits, except rewards already earned and confirmed under clause 7.</p>
+  <p><b class="c">14.3</b> Clauses 7.3, 8, 9.3, 10, 12, 14.2 and 15 continue after the agreement ends.</p>
+</div>
+
+<h2 class="sec"><span class="n">15.</span>Governing law and disagreements</h2>
+<div class="clause">
+  <p>If we disagree, we will first try to settle it in good faith by talking, within 14 days of either of us raising it in writing. This agreement is governed by the laws of the <b>Federal Republic of Nigeria</b>, and the courts of Nigeria will handle any dispute that cannot be settled.</p>
+</div>
+
+<h2 class="sec"><span class="n">16.</span>General</h2>
+<div class="clause">
+  <ul>
+    <li><b>Whole agreement.</b> This agreement, with Schedules A to D, is the full agreement about the Programme and replaces any earlier promises or messages about it.</li>
+    <li><b>Changes in writing.</b> Changes must be in writing and accepted by both of us (email is fine).</li>
+    <li><b>If part is invalid.</b> If any part is found unenforceable, the rest stays in effect.</li>
+    <li><b>No transfer.</b> You may not transfer your place in the Programme to someone else.</li>
+    <li><b>Notices.</b> Notices to MCE go to <b>support@makechurcheazy.com</b>. Notices to you go to the email address in Schedule A.</li>
+    <li><b>Signing.</b> This agreement may be signed on paper, electronically or in counterparts, and each copy counts as an original.</li>
+  </ul>
+</div>
+
+<!-- ============ SIGNATURES ============ -->
+<div class="page-break"></div>
+<h2 class="sec" style="margin-top:0"><span class="n">17.</span>Agreement and signatures</h2>
+<div class="clause">
+  <p>By signing below, the Ambassador confirms that they have read and understood this agreement and its Schedules, are at least 18 years old, and agree to be bound by it. MCE confirms it agrees to the Programme terms.</p>
+</div>
+
+<div class="sign-grid">
+  <div class="sign-card">
+    <h3>The Ambassador</h3>
+    <p class="note" style="margin:0">Details in Schedule A</p>
+    <div class="sign-row"><div class="rule"></div><small>Full name (print)</small></div>
+    <div class="sign-row"><div class="rule"></div><small>Signature</small></div>
+    <div class="sign-row"><div class="rule"></div><small>Date</small></div>
+  </div>
+  <div class="sign-card">
+    <h3>For Make Church Eazy</h3>
+    <p class="note" style="margin:0">Tayoakosile Labs Ltd (RC 9723844)</p>
+    <div class="sign-row"><div class="rule"></div><small>Name of authorised representative</small></div>
+    <div class="sign-row"><div class="rule"></div><small>Signature and title</small></div>
+    <div class="sign-row"><div class="rule"></div><small>Date</small></div>
+  </div>
+</div>
+
+<p class="note" style="margin-top:14px;">Optional witness: Name <span class="line" style="min-width:150px"></span> Signature <span class="line" style="min-width:110px"></span> Date <span class="line" style="min-width:80px"></span></p>
+
+<!-- ============ SCHEDULE A ============ -->
+<h2 class="sec" style="margin-top:16px;font-size:13pt;color:var(--primary)">Schedule A: Ambassador details and Programme terms</h2>
+<table>
+  <tr><td class="label">Ambassador full name</td><td class="fill"></td></tr>
+  <tr><td class="label">Email address</td><td class="fill"></td></tr>
+  <tr><td class="label">Phone / WhatsApp number</td><td class="fill"></td></tr>
+  <tr><td class="label">Church or ministry</td><td class="fill"></td></tr>
+  <tr><td class="label">City and country</td><td class="fill"></td></tr>
+  <tr><td class="label">Social media handles<br><span style="font-weight:400">(Instagram, Facebook, TikTok, YouTube, X, LinkedIn, other)</span></td><td class="fill" style="height:64px"></td></tr>
+  <tr><td class="label">Personal referral link or code</td><td class="fill"></td></tr>
+  <tr><td class="label">Start Date</td><td class="fill"></td></tr>
+  <tr><td class="label">End Date (6 months after the Start Date)</td><td class="fill"></td></tr>
+  <tr><td class="label">Content commitment</td><td>At least <b>2 original posts per week</b> and <b>8 qualifying posts per month</b>, plus sharing MCE graphics and announcements on statuses and stories within 48 hours (clause 3).</td></tr>
+  <tr><td class="label">Monthly review</td><td>Proof sent by the <b>5th</b> of each month; result within <b>7 days</b> (clause 4).</td></tr>
+  <tr><td class="label">Benefits for the 6 months</td>
+    <td>
+      <p style="margin-bottom:5px"><span class="box"></span><b>Ambassador plan, free</b> for the 6-month term (Growth-level features).</p>
+      <p style="margin-bottom:5px"><span class="box"></span><b>Referral rewards</b> under MCE’s referral programme, when people you refer sign up or subscribe.</p>
+      <p style="margin-bottom:5px"><span class="box"></span><b>Recognition:</b> features on MCE’s channels and website, early access to updates, and an ambassador certificate.</p>
+      <p style="margin-bottom:0"><span class="box"></span>Other: <span class="line" style="min-width:230px"></span></p>
+    </td></tr>
+</table>
+
+<!-- ============ SCHEDULE B ============ -->
+<div class="page-break"></div>
+<h2 class="sec" style="margin-top:0;font-size:13pt;color:var(--primary)">Schedule B: Monthly tracker</h2>
+<p>Use this to keep count. Send your links and screenshots by the 5th of the next month. MCE completes the last two columns.</p>
+<table class="tracker">
+  <tr><th style="width:13%">Month</th><th style="width:15%">Posts this month (goal: 8)</th><th style="width:16%">Stories / Status shares</th><th style="width:16%">Links and screenshots sent</th><th style="width:26%">Review result</th><th style="width:14%">MCE initials</th></tr>
+  <tr><td><b>Month 1</b></td><td></td><td></td><td><span class="box"></span>Yes</td><td><span class="nowrap"><span class="box"></span>Met &nbsp; <span class="box"></span>Not met</span></td><td></td></tr>
+  <tr><td><b>Month 2</b></td><td></td><td></td><td><span class="box"></span>Yes</td><td><span class="nowrap"><span class="box"></span>Met &nbsp; <span class="box"></span>Not met</span></td><td></td></tr>
+  <tr><td><b>Month 3</b></td><td></td><td></td><td><span class="box"></span>Yes</td><td><span class="nowrap"><span class="box"></span>Met &nbsp; <span class="box"></span>Not met</span></td><td></td></tr>
+  <tr><td><b>Month 4</b></td><td></td><td></td><td><span class="box"></span>Yes</td><td><span class="nowrap"><span class="box"></span>Met &nbsp; <span class="box"></span>Not met</span></td><td></td></tr>
+  <tr><td><b>Month 5</b></td><td></td><td></td><td><span class="box"></span>Yes</td><td><span class="nowrap"><span class="box"></span>Met &nbsp; <span class="box"></span>Not met</span></td><td></td></tr>
+  <tr><td><b>Month 6</b></td><td></td><td></td><td><span class="box"></span>Yes</td><td><span class="nowrap"><span class="box"></span>Met &nbsp; <span class="box"></span>Not met</span></td><td></td></tr>
+</table>
+
+<!-- ============ SCHEDULE C ============ -->
+<h2 class="sec" style="margin-top:22px;font-size:13pt;color:var(--primary)">Schedule C: Ambassador profile and photo consent</h2>
+<p>We will use this to create your ambassador graphics and to introduce you to the Make Church Eazy community.</p>
+<div class="profile-grid">
+  <div class="photo-box">Attach or send your photo here</div>
+  <table style="margin-top:0">
+    <tr><td class="label">Name to show on graphics</td><td class="fill"></td></tr>
+    <tr><td class="label">Church and city</td><td class="fill"></td></tr>
+    <tr><td class="label">Role (e.g. media team lead)</td><td class="fill"></td></tr>
+    <tr><td class="label">Short bio (max. 2 lines)</td><td class="fill" style="height:52px"></td></tr>
+  </table>
+</div>
+<p class="note" style="margin-top:6px"><b>Photo tips:</b> a clear, well-lit photo of you alone, face and shoulders visible, plain or tidy background, sharp (not blurry), taken with your phone camera at its highest quality. No filters, please.</p>
+<div class="no-break" style="margin-top:8px">
+  <p><span class="box"></span>I agree that Make Church Eazy may use my name, photo, handle, church name and bio as described in clause 9 of the Agreement.</p>
+  <p style="margin-top:12px">Ambassador signature <span class="line" style="min-width:210px"></span> Date <span class="line" style="min-width:100px"></span></p>
+</div>
+
+<!-- ============ SCHEDULE D ============ -->
+<div class="page-break"></div>
+<h2 class="sec" style="margin-top:0;font-size:13pt;color:var(--primary)">Schedule D: Ambassador quick guide</h2>
+<p>A short, friendly guide to help you stay on track. It is not extra rules; it explains clauses 3 and 5.</p>
+
+<h3>Content ideas for your 2 posts every week</h3>
+<div class="two-col" style="margin-bottom:10px">
+  <ul style="margin:0">
+    <li>“A day in my church media team” with Make Church Eazy on screen</li>
+    <li>Screen recording: putting a song on the screen in 30 seconds</li>
+    <li>Showing Bible verses and lower thirds during a service</li>
+    <li>Setting up the live stream from the church</li>
+    <li>“Before and after” of your church screens</li>
+  </ul>
+  <ul style="margin:0">
+    <li>A short testimonial: what changed for your team</li>
+    <li>Answering a common question from other church media teams</li>
+    <li>Sharing an MCE graphic with your own words</li>
+    <li>Sunday-morning story: setup, rehearsal, service</li>
+    <li>Celebrating a new feature you tried</li>
+  </ul>
+</div>
+
+<div class="two-col">
+  <div class="card do">
+    <h3>Do</h3>
+    <ul style="margin:0">
+      <li>Say that you are a Make Church Eazy Ambassador (#MCEAmbassador).</li>
+      <li>Keep screenshots of Stories and Status posts.</li>
+      <li>Share your referral link or code.</li>
+      <li>Ask us if you are unsure about a claim.</li>
+      <li>Tell us early if you will be busy or away.</li>
+    </ul>
+  </div>
+  <div class="card dont">
+    <h3>Don’t</h3>
+    <ul style="margin:0">
+      <li>Promise features, prices or free access we have not confirmed.</li>
+      <li>Post other people’s faces or church data without permission.</li>
+      <li>Insult other churches or software.</li>
+      <li>Buy followers or make fake referrals.</li>
+      <li>Change or recolour the MCE logo.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="callout" style="margin-left:0;margin-top:12px">
+  <b>Our official handle on every platform: @makechurcheazy.</b> Tag us in every post.<br><br><b>Suggested caption lines (use your own words):</b><br>
+  “I’m a #MCEAmbassador for Make Church Eazy. This is how our team runs the service screens.”<br>
+  “Our church media just got easier with @makechurcheazy. Try it with my link: [your link]. #MakeChurchEazy #MCEAmbassador”
+</div>
+
+<h3 style="margin-top:12px">Your monthly rhythm</h3>
+<table>
+  <tr><th style="width:22%">When</th><th>What happens</th></tr>
+  <tr><td>Every week</td><td>Post at least 2 times. Share MCE graphics on your status within 48 hours.</td></tr>
+  <tr><td>By the 5th</td><td>Send last month’s links and screenshots.</td></tr>
+  <tr><td>Within 7 days</td><td>MCE reviews and sends your result and tips.</td></tr>
+  <tr><td>If the goal is not met</td><td>You have 14 days to catch up. Talk to us early.</td></tr>
+</table>
+
+<p class="note" style="margin-top:10px">Questions? Email <b>support@makechurcheazy.com</b>. Thank you for helping more churches discover Make Church Eazy.</p>
+
+</body>
+</html>

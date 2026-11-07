@@ -68,7 +68,7 @@ export const DEFAULT_ADMIN_CONTROLS: AdminControls = {
     presentationLink: true,
   },
   speech: { model: "universal-streaming-english", dailyMinutesCap: 0 },
-  signup: { maxSignupsPerIpPerDay: 5, maxSignupsPerDevicePerDay: 2, blockDisposableEmails: true, blockedDomains: [] },
+  signup: { maxSignupsPerIpPerDay: 50, maxSignupsPerDevicePerDay: 2, blockDisposableEmails: true, blockedDomains: [] },
   support: DEFAULT_SUPPORT_CONTENT,
 };
 
@@ -192,6 +192,10 @@ export interface PlatformSettings {
   };
   notifications: {
     welcomeEmail: boolean;
+    /** Admin-written welcome subject; empty keeps the built-in subject. */
+    welcomeEmailSubject: string;
+    /** Admin-written welcome message ({{name}} = the user's name); empty keeps the built-in intro. */
+    welcomeEmailMessage: string;
     trialExpiryReminder: boolean;
     paymentReminder: boolean;
     securityAlerts: boolean;
@@ -388,6 +392,8 @@ const DEFAULTS: Omit<PlatformSettings, "_id" | "updatedAt" | "updatedBy"> = {
   },
   notifications: {
     welcomeEmail: true,
+    welcomeEmailSubject: "",
+    welcomeEmailMessage: "",
     trialExpiryReminder: true,
     paymentReminder: true,
     securityAlerts: true,

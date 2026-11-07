@@ -39,6 +39,7 @@ export type DockCommandType =
   | "worship:go-live"
   | "worship:clear-lyrics"
   | "worship:song-save"
+  | "worship:song-archive"
   | "worship:save-preferences"
   // Notes
   | "notes:append"

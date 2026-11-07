@@ -1,0 +1,113 @@
+name: Release Preflight (V2 only)
+
+on:
+  pull_request:
+    branches: [develop, main]
+    paths:
+      - ".github/workflows/release.yml"
+      - ".github/workflows/release-preflight.yml"
+      - "desktop/package.json"
+      - "desktop/package-lock.json"
+      - "desktop/release.md"
+      - "desktop/scripts/release.cjs"
+      - "desktop/scripts/normalize-update-json.cjs"
+      - "desktop/src-tauri/tauri.conf.json"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version to validate (must match desktop/package.json, e.g. 4.3.18)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    name: Validate release metadata
+    if: ${{ github.repository == 'jolamyfoodsng/makechurcheasy-v2' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout V2 release repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Validate release configuration
+        env:
+          RELEASE_REPOSITORY: ${{ github.repository }}
+          EVENT_KIND: ${{ github.event_name }}
+          REQUESTED_VERSION: ${{ inputs.version }}
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const { execFileSync } = require('node:child_process');
+
+          const expectedRepo = 'jolamyfoodsng/makechurcheasy-v2';
+          if (process.env.RELEASE_REPOSITORY !== expectedRepo) {
+            throw new Error(`Release preflight is restricted to ${expectedRepo}.`);
+          }
+
+          const pkg = JSON.parse(fs.readFileSync('desktop/package.json', 'utf8'));
+          const tauri = JSON.parse(fs.readFileSync('desktop/src-tauri/tauri.conf.json', 'utf8'));
+          const version = String(pkg.version || '');
+          if (!/^\d+\.\d+\.\d+$/.test(version)) {
+            throw new Error(`desktop/package.json has an invalid release version: ${version}`);
+          }
+          if (String(tauri.version || '') !== version) {
+            throw new Error(`Version mismatch: package.json=${version}, tauri.conf.json=${tauri.version}`);
+          }
+
+          const requested = String(process.env.REQUESTED_VERSION || '').replace(/^v/, '');
+          if (process.env.EVENT_KIND === 'workflow_dispatch' && !requested) {
+            throw new Error('Provide a release version when running this workflow manually.');
+          }
+          if (requested && requested !== version) {
+            throw new Error(`Requested ${requested}, but desktop/package.json is ${version}.`);
+          }
+
+          const notes = fs.readFileSync('desktop/release.md', 'utf8').trim();
+          if (!notes) throw new Error('desktop/release.md is empty.');
+          const notesVersion = notes.match(/^# .*Release Highlights \(v(\d+\.\d+\.\d+)\)/m)?.[1];
+          if (notesVersion && notesVersion !== version) {
+            console.log(`::warning::Release notes are labeled v${notesVersion}, while the package version is ${version}. Review desktop/release.md before publishing.`);
+          }
+
+          const endpoints = tauri.plugins?.updater?.endpoints || [];
+          const approved = new Set([
+            'https://github.com/jolamyfoodsng/makechurcheasy/releases/latest/download/latest.json',
+            'https://github.com/jolamyfoodsng/makechurcheasy-releases/releases/latest/download/latest.json',
+          ]);
+          if (!Array.isArray(endpoints) || endpoints.length === 0 || endpoints.some((url) => !approved.has(url))) {
+            throw new Error(`Updater endpoints must use an approved public source; found: ${JSON.stringify(endpoints)}`);
+          }
+
+          const releaseWorkflow = fs.readFileSync('.github/workflows/release.yml', 'utf8');
+          if (!releaseWorkflow.includes('repository: jolamyfoodsng/makechurcheasy-v2')) {
+            throw new Error('Release builds must check out jolamyfoodsng/makechurcheasy-v2.');
+          }
+          if (!releaseWorkflow.includes('required: true') || releaseWorkflow.includes("format('v{0}', 'latest')")) {
+            throw new Error('Manual release dispatch must require a version and must not fall back to a latest tag.');
+          }
+          if (!releaseWorkflow.includes('--target-repo "jolamyfoodsng/makechurcheasy"')) {
+            throw new Error('The updater manifest must publish to the approved primary repository.');
+          }
+
+          if (process.env.EVENT_KIND === 'workflow_dispatch') {
+            const tag = `v${version}`;
+            try {
+              const existing = execFileSync('git', ['ls-remote', '--exit-code', '--tags', 'origin', `refs/tags/${tag}`], { encoding: 'utf8' }).trim();
+              if (existing) throw new Error(`Tag ${tag} already exists in the release repository.`);
+            } catch (error) {
+              if (error.message.includes(`Tag ${tag} already exists`)) throw error;
+              if (error.status !== 2) throw new Error(`Could not verify whether ${tag} already exists: ${error.message}`);
+            }
+          }
+
+          console.log(`Release metadata is consistent for v${version} in ${expectedRepo}.`);
+          console.log(`Updater endpoint: ${endpoints[0]}`);
+          NODE

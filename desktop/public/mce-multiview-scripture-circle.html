@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Scripture Circle — Multi-View panel</title>
+<meta name="robots" content="noindex">
+<link href="/fonts/google/google-fonts.css" rel="stylesheet">
+<style>
+  /* This page is the OBS Browser source for the Scripture Circle Multi-View look. It is created at
+     1920x1080 (see scriptureCircleLook.ts), so there is no scaling: everything below is drawn at
+     its real canvas pixel size, same as mce-bible-overlay.html.
+
+     It is opaque everywhere except a transparent circle, which is what makes the camera scene
+     item underneath it read as a circle — see the comment at the top of scriptureCircleLook.ts
+     for why that needs no OBS mask filter. The circle's position/size and both colors come from
+     the query string, set by scriptureCircleLook.ts, so this one file draws every church's
+     version of the look. */
+  html, body { margin: 0; width: 1920px; height: 1080px; background: transparent; overflow: hidden; }
+  * { box-sizing: border-box; }
+  .stage { position: relative; width: 1920px; height: 1080px; font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif; }
+  /* Paper + wedge share one layer so a single mask cuts the camera hole through both. */
+  .bg { position: absolute; inset: 0; }
+  .paper { position: absolute; inset: 0; }
+  .wedge { position: absolute; inset: 0; } /* its slanted shape follows the window — set below */
+  .wedge::after { content: ""; position: absolute; inset: 0; background: linear-gradient(160deg, rgba(0,0,0,.06), rgba(255,255,255,.04) 45%, rgba(0,0,0,.08)); }
+  /* Fine paper grain over both colors, like printed card stock. */
+  .grain { position: absolute; inset: 0; opacity: .5; mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .38 0 0 0 0 .3 0 0 0 .22 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .ring { position: absolute; border-radius: 50%; border: 8px solid #F7F1E6; }
+  .live { position: absolute; left: 128px; top: 830px; padding: 12px 20px 12px 25px; border-radius: 3px;
+    color: #fff; font-size: 28px; font-weight: 700; letter-spacing: .22em; line-height: 1.1; }
+  .right { position: absolute; top: 0; height: 1080px; }
+  .eyebrow { position: absolute; left: 0; top: 164px; font-size: 29px; font-weight: 600; letter-spacing: .6em; line-height: 1; }
+  .verse { position: absolute; left: 0; top: 240px; width: 100%; line-height: 1.11; font-weight: 800; letter-spacing: -.028em;
+    transition: opacity .3s ease; }
+  .verse.swap { opacity: 0; }
+  .rule { position: absolute; left: 0; top: 863px; width: 172px; height: 9px; }
+  .ref { position: absolute; left: 0; top: 917px; display: flex; align-items: center; gap: 0; font-size: 46px; line-height: 1;
+    transition: opacity .3s ease; }
+  .ref.swap { opacity: 0; }
+  .ref b { font-weight: 800; letter-spacing: .3em; }
+  .ref i { display: block; width: 3px; height: 50px; margin: 0 44px 0 34px; }
+  .ref em { font-style: normal; font-weight: 500; letter-spacing: .3em; }
+  .verse-em { color: inherit; }
+
+  /* ---- "Animate in" (operator-chosen, see ?anim=) — plays on the verse/reference when they
+     swap to new content. .anim-noTransition suspends the plain cross-fade above so the two never
+     run at once; see the JS comment near playEntrance() for the sequence. ---- */
+  .verse.anim-noTransition, .ref.anim-noTransition { transition: none; }
+  .verse.anim-play, .ref.anim-play { animation-duration: .55s; animation-timing-function: cubic-bezier(.22,.9,.3,1); animation-fill-mode: both; }
+  .verse.anim-slide-left.anim-play, .ref.anim-slide-left.anim-play { animation-name: mceAnimSlideLeft; }
+  .verse.anim-slide-right.anim-play, .ref.anim-slide-right.anim-play { animation-name: mceAnimSlideRight; }
+  .verse.anim-slide-up.anim-play, .ref.anim-slide-up.anim-play { animation-name: mceAnimSlideUp; }
+  .verse.anim-slide-down.anim-play, .ref.anim-slide-down.anim-play { animation-name: mceAnimSlideDown; }
+  .verse.anim-fade-in.anim-play, .ref.anim-fade-in.anim-play { animation-name: mceAnimFadeIn; }
+  .verse.anim-fade-up.anim-play, .ref.anim-fade-up.anim-play { animation-name: mceAnimFadeUp; }
+  .verse.anim-fade-down.anim-play, .ref.anim-fade-down.anim-play { animation-name: mceAnimFadeDown; }
+  .verse.anim-zoom-in.anim-play, .ref.anim-zoom-in.anim-play { animation-name: mceAnimZoomIn; }
+  .verse.anim-bounce-in.anim-play, .ref.anim-bounce-in.anim-play { animation-name: mceAnimBounceIn; }
+  .verse.anim-flip-in.anim-play, .ref.anim-flip-in.anim-play { animation-name: mceAnimFlipIn; }
+  .verse.anim-blur-in.anim-play, .ref.anim-blur-in.anim-play { animation-name: mceAnimBlurIn; }
+  @keyframes mceAnimSlideLeft { 0% { transform: translateX(-110%); opacity: 0; } 60% { opacity: 1; } 100% { transform: translateX(0); opacity: 1; } }
+  @keyframes mceAnimSlideRight { 0% { transform: translateX(110%); opacity: 0; } 60% { opacity: 1; } 100% { transform: translateX(0); opacity: 1; } }
+  @keyframes mceAnimSlideUp { 0% { transform: translateY(60px); opacity: 0; } 60% { opacity: 1; } 100% { transform: translateY(0); opacity: 1; } }
+  @keyframes mceAnimSlideDown { 0% { transform: translateY(-60px); opacity: 0; } 60% { opacity: 1; } 100% { transform: translateY(0); opacity: 1; } }
+  @keyframes mceAnimFadeIn { 0% { opacity: 0; } 100% { opacity: 1; } }
+  @keyframes mceAnimFadeUp { 0% { opacity: 0; transform: translateY(30px); } 100% { opacity: 1; transform: translateY(0); } }
+  @keyframes mceAnimFadeDown { 0% { opacity: 0; transform: translateY(-30px); } 100% { opacity: 1; transform: translateY(0); } }
+  @keyframes mceAnimZoomIn { 0% { transform: scale(.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+  @keyframes mceAnimBounceIn { 0% { transform: scale(.3); opacity: 0; } 50% { transform: scale(1.08); opacity: 1; } 70% { transform: scale(.95); } 100% { transform: scale(1); opacity: 1; } }
+  @keyframes mceAnimFlipIn { 0% { transform: perspective(600px) rotateX(-90deg); opacity: 0; } 60% { transform: perspective(600px) rotateX(10deg); opacity: 1; } 100% { transform: perspective(600px) rotateX(0); opacity: 1; } }
+  @keyframes mceAnimBlurIn { 0% { filter: blur(12px); opacity: 0; } 100% { filter: blur(0); opacity: 1; } }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="bg" id="bg">
+    <div class="paper"></div>
+    <div class="wedge" id="wedge"></div>
+    <div class="grain"></div>
+  </div>
+  <div class="ring" id="ring"></div>
+  <div class="live" id="live">LIVE</div>
+  <div class="right" id="right">
+    <div class="eyebrow" id="eyebrow">SCRIPTURE</div>
+    <div class="verse" id="verse"></div>
+    <div class="rule" id="rule"></div>
+    <div class="ref" id="ref"><b id="refText"></b><i id="refBar"></i><em id="refVersion"></em></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  // ---- settings from the query string (written by scriptureCircleLook.ts) ----
+  var params = new URLSearchParams(location.search);
+  function hex(v, fallback) { return /^[0-9a-f]{6}$/i.test(v || "") ? "#" + v : fallback; }
+  function num(v, fallback) { var n = Number(v); return Number.isFinite(n) && n > 0 ? n : fallback; }
+  var wedgeColor = hex(params.get("wedge"), "#C4552E");
+  var paperColor = hex(params.get("paper"), "#F4EDE1");
+  var textColor = hex(params.get("text"), "#121212");
+  var isBox = params.get("shape") === "box";
+  var showLive = params.get("live") !== "0";
+  // How the verse/reference animate in when they change — the same style ids as the Lower
+  // Third's "Animate in" picker (see LTAnimationIn in src/lowerthirds/types.ts). The query
+  // string is never trusted blindly: anything outside this list falls back to "none".
+  var ANIM_IDS = ["slide-left", "slide-right", "slide-up", "slide-down", "fade-in", "fade-up", "fade-down", "zoom-in", "bounce-in", "flip-in", "blur-in", "none"];
+  var animParam = params.get("anim");
+  var animationIn = ANIM_IDS.indexOf(animParam) !== -1 ? animParam : "none";
+  // Corner rounding of the box window; the ring follows it.
+  var BOX_RADIUS = 18;
+  var circle = { x: num(params.get("cx"), 78), y: num(params.get("cy"), 104), d: num(params.get("cd"), 790) };
+  // The channel this page accepts packets on — the Bible module always broadcasts on "bible", the
+  // same channel mce-bible-overlay.html listens on. Letting it be overridden by ?tab= keeps this
+  // consistent with every other overlay page, in case a future look needs a different source.
+  var tabParam = params.get("tab") || "bible";
+  // Shown until the first live verse arrives, so the panel is never empty in OBS or in the editor.
+  var DEFAULT_SLIDE = {
+    text: "What advantage then hath the Jew? or what profit is there of circumcision?",
+    reference: "Romans 3:1 (KJV)",
+  };
+
+  // A slightly deeper shade of the wedge color for the LIVE tag, as in the original design.
+  function darken(color, amount) {
+    var n = parseInt(color.slice(1), 16);
+    var r = Math.round(((n >> 16) & 255) * (1 - amount));
+    var g = Math.round(((n >> 8) & 255) * (1 - amount));
+    var b = Math.round((n & 255) * (1 - amount));
+    return "rgb(" + r + "," + g + "," + b + ")";
+  }
+
+  document.querySelector(".paper").style.background = paperColor;
+  document.getElementById("wedge").style.background = wedgeColor;
+  document.getElementById("live").style.background = darken(wedgeColor, 0.1);
+  document.getElementById("eyebrow").style.color = wedgeColor;
+  document.getElementById("rule").style.background = wedgeColor;
+  document.getElementById("refBar").style.background = wedgeColor;
+  document.getElementById("verse").style.color = textColor;
+  document.getElementById("ref").style.color = textColor;
+
+  // The ring sits on the hole's edge (half over the paper, half over the camera) so the cut
+  // never shows a hairline seam.
+  var ring = document.getElementById("ring");
+  ring.style.left = (circle.x - 4) + "px";
+  ring.style.top = (circle.y - 4) + "px";
+  ring.style.width = (circle.d + 8) + "px";
+  ring.style.height = (circle.d + 8) + "px";
+  ring.style.borderRadius = isBox ? (BOX_RADIUS + 4) + "px" : "50%";
+
+  // The LIVE tag overlaps the bottom-left of the circle, wherever the circle is.
+  var live = document.getElementById("live");
+  if (!showLive) live.style.display = "none";
+  live.style.left = Math.max(24, circle.x + circle.d * 0.065) + "px";
+  live.style.top = Math.min(1080 - 72, circle.y + circle.d * 0.92) + "px";
+
+  // The text column starts a fixed gap to the right of the circle and runs to the right margin.
+  // The wedge and the text column follow the window. With the window on the left half (the
+  // original design) the wedge runs down the left edge and the verse sits to the right; dragged
+  // past the middle, the whole layout mirrors so the verse always has room.
+  var mirrored = circle.x + circle.d / 2 > 960;
+  var wedgeEl = document.getElementById("wedge");
+  if (mirrored) {
+    var top = circle.x + circle.d * 0.19, bottom = circle.x + circle.d * 0.56;
+    wedgeEl.style.clipPath = "polygon(" + top + "px 0, 1920px 0, 1920px 1080px, " + bottom + "px 1080px)";
+  } else {
+    var topR = circle.x + circle.d * 0.81, bottomR = circle.x + circle.d * 0.44;
+    wedgeEl.style.clipPath = "polygon(0 0, " + topR + "px 0, " + bottomR + "px 1080px, 0 1080px)";
+  }
+  var rightEl = document.getElementById("right");
+  var columnLeft = mirrored ? 80 : circle.x + circle.d + 73;
+  var columnRight = mirrored ? circle.x - 73 : 1920 - 30;
+  rightEl.style.left = columnLeft + "px";
+  rightEl.style.width = Math.max(200, columnRight - columnLeft) + "px";
+
+  // Cut the actual hole: an even-odd SVG mask on the background layer (paper + wedge + grain) —
+  // the whole canvas minus the window — so the body's transparency shows through in a clean
+  // circle or box no matter what colors are chosen.
+  var r = circle.d / 2;
+  var hole;
+  if (isBox) {
+    var k = BOX_RADIUS, x0 = circle.x, y0 = circle.y, x1 = circle.x + circle.d, y1 = circle.y + circle.d;
+    hole = "M" + (x0 + k) + " " + y0 + "H" + (x1 - k) + "A" + k + " " + k + " 0 0 1 " + x1 + " " + (y0 + k) +
+      "V" + (y1 - k) + "A" + k + " " + k + " 0 0 1 " + (x1 - k) + " " + y1 +
+      "H" + (x0 + k) + "A" + k + " " + k + " 0 0 1 " + x0 + " " + (y1 - k) +
+      "V" + (y0 + k) + "A" + k + " " + k + " 0 0 1 " + (x0 + k) + " " + y0 + "Z";
+  } else {
+    var cx = circle.x + r, cy = circle.y + r;
+    hole = "M" + (cx - r) + " " + cy + "A" + r + " " + r + " 0 1 0 " + (cx + r) + " " + cy +
+      "A" + r + " " + r + " 0 1 0 " + (cx - r) + " " + cy + "Z";
+  }
+  var maskSvg = "<svg xmlns='http://www.w3.org/2000/svg' width='1920' height='1080'><path fill='#000' fill-rule='evenodd' d='M0 0H1920V1080H0Z" + hole + "'/></svg>";
+  var holeMask = "url(\"data:image/svg+xml," + encodeURIComponent(maskSvg) + "\")";
+  var bg = document.getElementById("bg");
+  bg.style.webkitMaskImage = holeMask;
+  bg.style.maskImage = holeMask;
+  bg.style.webkitMaskSize = bg.style.maskSize = "1920px 1080px";
+
+  // ---- highlight markup, the same syntax and rules mce-bible-overlay.html uses: ----
+  // *words* = important words, bold; *[#facc15]words* = the same, in the colour picked in the
+  // Dock (hex only, so nothing else can get in). Escaped first so verse text can never inject HTML.
+  function escapeHtml(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+  function safeEmText(text) {
+    return escapeHtml(text).replace(/\*(?=\S)(?:\[(#[0-9a-fA-F]{3,8})\])?([^*\n]*?\S)\*/g, function (_m, color, words) {
+      return color
+        ? '<strong class="verse-em" style="color:' + color + '">' + words + '</strong>'
+        : '<strong class="verse-em">' + words + '</strong>';
+    });
+  }
+
+  // ---- fit the verse to its column, the same idea as the Bible overlay's own auto-shrink ----
+  var verseEl = document.getElementById("verse");
+  var lastVerseRawText = "";
+  function fitVerseText(text) {
+    lastVerseRawText = text;
+    verseEl.innerHTML = safeEmText(text);
+    var maxHeight = 600; // from the verse top down to just above the accent rule
+    var size = 106;
+    verseEl.style.fontSize = size + "px";
+    while (size > 34 && verseEl.scrollHeight > maxHeight) {
+      size -= 3;
+      verseEl.style.fontSize = size + "px";
+    }
+  }
+
+  // ---- reference parsing: "John 3:16 (KJV)" -> "JOHN 3:16" + "KJV" ----
+  function applyReference(reference) {
+    var m = /^(.*?)\s*\(([^)]+)\)\s*$/.exec(String(reference || "").trim());
+    document.getElementById("refText").textContent = (m ? m[1] : reference || "").toUpperCase();
+    document.getElementById("refVersion").textContent = m ? m[2].toUpperCase() : "";
+    document.getElementById("refBar").style.display = m ? "" : "none";
+  }
+
+  // ---- show: the panel always holds a verse. When the Bible tab clears or blanks, the last verse
+  // stays up rather than leaving a blank half of the screen on the stream. ----
+  var refEl = document.getElementById("ref");
+  var currentKey = "";
+  var swapTimer = null;
+  var entranceTimer = null;
+  function render(slide) {
+    fitVerseText(slide.text || "");
+    applyReference(slide.reference || "");
+  }
+  // Plays the chosen "animate in" style on the verse/reference. Runs instead of (not alongside)
+  // the plain cross-fade above: .anim-noTransition suspends that transition for the moment the
+  // keyframe animation plays, so the two never visibly double up.
+  function playEntrance() {
+    if (animationIn === "none") return;
+    clearTimeout(entranceTimer);
+    [verseEl, refEl].forEach(function (el) {
+      el.classList.remove("anim-play");
+      el.classList.add("anim-noTransition", "anim-" + animationIn);
+    });
+    // Force a reflow so re-adding "anim-play" on the same element restarts the animation.
+    void verseEl.offsetWidth;
+    [verseEl, refEl].forEach(function (el) { el.classList.add("anim-play"); });
+    entranceTimer = setTimeout(function () {
+      [verseEl, refEl].forEach(function (el) {
+        el.classList.remove("anim-noTransition", "anim-play", "anim-" + animationIn);
+      });
+    }, 600);
+  }
+  function show(slide) {
+    var key = (slide.text || "") + "|" + (slide.reference || "");
+    if (!slide.text || key === currentKey) return;
+    var first = !currentKey;
+    currentKey = key;
+    clearTimeout(swapTimer);
+    if (first) { render(slide); playEntrance(); return; }
+    verseEl.classList.add("swap");
+    refEl.classList.add("swap");
+    swapTimer = setTimeout(function () {
+      render(slide);
+      verseEl.classList.remove("swap");
+      refEl.classList.remove("swap");
+      playEntrance();
+    }, 300);
+  }
+  function hide() { /* keep the last verse on screen — see above */ }
+
+  // Fonts load asynchronously; re-fit once they are in so the size is measured with Inter itself.
+  show(DEFAULT_SLIDE);
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(function () { fitVerseText(lastVerseRawText); });
+  }
+
+  // ---- receiving verse data: the same transports mce-bible-overlay.html uses, trimmed to just
+  // what this simpler page needs (no theme packets, no lower-third/compare modes). "Newest wins"
+  // on the revision number, so a slow transport can never roll the verse back. ----
+  var lastRevision = 0;
+  function handlePacket(packet) {
+    if (!packet || typeof packet !== "object") return;
+    if (packet.channel && packet.channel !== tabParam) return;
+    var data = packet.data && typeof packet.data === "object" ? packet.data : packet;
+    var revision = Number(data.revision ?? data.timestamp ?? 0);
+    if (revision && revision < lastRevision) return;
+    if (revision) lastRevision = revision;
+    if (data.live && data.slide && !data.blanked) show(data.slide);
+    else hide();
+  }
+
+  function readFromLocalStorage() {
+    try {
+      var raw = localStorage.getItem("bible-overlay-data");
+      if (raw) handlePacket(JSON.parse(raw));
+    } catch (e) { /* storage may be unavailable inside OBS */ }
+  }
+
+  function readFromHash() {
+    try {
+      var hash = location.hash.replace(/^#/, "");
+      if (!hash.startsWith("data=")) return;
+      handlePacket(JSON.parse(decodeURIComponent(hash.slice(5))));
+    } catch (e) { /* malformed hash */ }
+  }
+
+  function connectRelay() {
+    if (!("WebSocket" in window)) return;
+    var attempts = 0, timer = null, disabledUntil = 0;
+    function schedule() {
+      if (timer) return;
+      if (attempts >= 3) {
+        disabledUntil = Date.now() + 60000;
+        attempts = 0;
+        timer = setTimeout(function () { timer = null; open(); }, 60000);
+        return;
+      }
+      var delay = Math.min(10000, 500 * Math.pow(2, attempts++));
+      timer = setTimeout(function () { timer = null; open(); }, delay);
+    }
+    function open() {
+      if (Date.now() < disabledUntil) return;
+      try {
+        var ws = new WebSocket("ws://127.0.0.1:17891");
+        ws.onopen = function () { attempts = 0; };
+        ws.onmessage = function (e) { try { handlePacket(JSON.parse(e.data)); } catch (err) { /* ignore */ } };
+        ws.onclose = schedule;
+        ws.onerror = function () { try { ws.close(); } catch (err) { /* already closing */ } };
+      } catch (e) { schedule(); }
+    }
+    open();
+  }
+
+  readFromHash();
+  window.addEventListener("hashchange", readFromHash);
+  // ?preview=1 is the in-app editor: it shows only the sample verse it passes in the hash and
+  // never listens for live verses.
+  if (params.get("preview")) return;
+  readFromLocalStorage();
+  connectRelay();
+  try {
+    var bc = new BroadcastChannel("obs-church-studio-bible-overlay");
+    bc.onmessage = function (e) { handlePacket(e.data); };
+  } catch (e) { /* BroadcastChannel unavailable in this OBS build */ }
+})();
+</script>
+</body>
+</html>

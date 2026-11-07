@@ -44,7 +44,7 @@ const COLORS = {
 // Component
 // ---------------------------------------------------------------------------
 
-export default function LiveStatusBar() {
+export default function LiveStatusBar({ inline = false }: { inline?: boolean } = {}) {
   const navigate = useNavigate();
 
   const [obsStatus, setObsStatus] = useState<ConnectionStatus>(obsService.status);
@@ -183,26 +183,29 @@ export default function LiveStatusBar() {
     return null;
   }
 
+  const pills = items.map((item) => (
+    <button
+      key={item.id}
+      className={`live-status-pill${item.animate === "pulse" ? " live-status-pill--pulse" : ""}${item.animate === "glow" ? " live-status-pill--glow" : ""}`}
+      style={{
+        color: item.color,
+        background: item.bgColor,
+        borderColor: item.borderColor,
+      }}
+      onClick={() => handlePillClick(item.navigateTo)}
+      title={item.label}
+    >
+      <Icon name={item.icon} size={14} className="live-status-pill__icon" />
+      <span className="live-status-pill__label">{item.label}</span>
+    </button>
+  ));
+
+  // Inline: just the pills, for the left side of the top status strip.
+  if (inline) return <div className="live-status-bar__inner live-status-bar__inner--inline">{pills}</div>;
+
   return (
     <div className="live-status-bar">
-      <div className="live-status-bar__inner">
-        {items.map((item) => (
-          <button
-            key={item.id}
-            className={`live-status-pill${item.animate === "pulse" ? " live-status-pill--pulse" : ""}${item.animate === "glow" ? " live-status-pill--glow" : ""}`}
-            style={{
-              color: item.color,
-              background: item.bgColor,
-              borderColor: item.borderColor,
-            }}
-            onClick={() => handlePillClick(item.navigateTo)}
-            title={item.label}
-          >
-            <Icon name={item.icon} size={14} className="live-status-pill__icon" />
-            <span className="live-status-pill__label">{item.label}</span>
-          </button>
-        ))}
-      </div>
+      <div className="live-status-bar__inner">{pills}</div>
     </div>
   );
 }

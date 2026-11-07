@@ -614,7 +614,7 @@
   <script src="/kinetic/kinetic-lower-thirds.js?v=6"></script>
   <script src="/kinetic/subscribe-lower-thirds.js?v=1"></script>
   <script src="/kinetic/church-lower-thirds.js?v=4"></script>
-  <script src="/kinetic/sunday-lower-thirds.js?v=2"></script>
+  <script src="/kinetic/sunday-lower-thirds.js?v=3"></script>
   <script src="/kinetic/stream-lower-thirds.js?v=2"></script>
   <script src="/kinetic/mce-graphic-packages.js?v=4"></script>
   <script>
@@ -772,16 +772,31 @@
       return css.join(";");
     }
 
+    // Same `*word*` / `*[#hex]word*` highlight markup the Scripture overlays use (e.g.
+    // mce-multiview-scripture-circle.html's safeEmText). Runs on already-escaped text only.
+    // Keep in step with applyHighlightMarkup in src/lowerthirds/textStyle.ts.
+    var HIGHLIGHT_MARKUP_KEYS = { quote: true };
+    function applyHighlightMarkup(escapedText) {
+      return escapedText.replace(/\*(?=\S)(?:\[(#[0-9a-fA-F]{3,8})\])?([^*\n]*?\S)\*/g, function (_m, color, words) {
+        return color
+          ? '<strong class="lt-em" style="color:' + color + '">' + words + '</strong>'
+          : '<strong class="lt-em">' + words + '</strong>';
+      });
+    }
+
     function substituteVariables(html, values) {
       if (!values || typeof values !== "object") return html;
       return html.replace(/\{\{(\w+)\}\}/g, (match, key, offset) => {
         if (!values.hasOwnProperty(key)) return match;
         if (/__style$/.test(key)) return escapeHtml(values[key]);
         const st = parseTextStyle(values[key + "__style"]);
-        const escaped = escapeHtml(applyTextCase(values[key], st.textCase));
+        // Inside a tag (an attribute such as data-v-name) only the letter case applies — real
+        // <strong> markup there would break the attribute's quoting.
+        const insideTag = html.lastIndexOf("<", offset) > html.lastIndexOf(">", offset);
+        let escaped = escapeHtml(applyTextCase(values[key], st.textCase));
+        if (!insideTag && HIGHLIGHT_MARKUP_KEYS[key]) escaped = applyHighlightMarkup(escaped);
         const css = textStyleCss(st);
-        // Inside a tag (an attribute such as data-v-name) only the letter case applies.
-        if (!css || html.lastIndexOf("<", offset) > html.lastIndexOf(">", offset)) return escaped;
+        if (!css || insideTag) return escaped;
         return '<span class="lt-ts" style="' + css + '">' + escaped + "</span>";
       });
     }

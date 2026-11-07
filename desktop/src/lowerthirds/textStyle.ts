@@ -143,6 +143,25 @@ function escapeHtml(value: string): string {
     .replace(/'/g, "&#39;");
 }
 
+/**
+ * The same `*word*` / `*[#hex]word*` highlight markup the Scripture overlays use (see
+ * mce-multiview-scripture-circle.html's `safeEmText`): bold, or bold in a chosen hex colour.
+ * Must run on text that is already HTML-escaped, so a quote can never inject markup.
+ * Keep in step with the copy in public/lower-third-overlay.html's `substituteVariables`.
+ */
+export function applyHighlightMarkup(escapedText: string): string {
+  return escapedText.replace(
+    /\*(?=\S)(?:\[(#[0-9a-fA-F]{3,8})\])?([^*\n]*?\S)\*/g,
+    (_m, color: string | undefined, words: string) =>
+      color
+        ? `<strong class="lt-em" style="color:${color}">${words}</strong>`
+        : `<strong class="lt-em">${words}</strong>`,
+  );
+}
+
+/** Field keys whose value may carry the `*word*` highlight markup above. */
+const HIGHLIGHT_MARKUP_KEYS = new Set(["quote"]);
+
 /** True when the placeholder at `index` sits inside a tag (an attribute value), not in text. */
 function isInsideTag(html: string, index: number): boolean {
   return html.lastIndexOf("<", index) > html.lastIndexOf(">", index);
@@ -158,9 +177,13 @@ export function substituteStyledVariables(html: string, values: Record<string, s
     const raw = String(values[key] ?? "");
     if (isTextStyleKey(key)) return escapeHtml(raw);
     const style = parseTextStyle(values[textStyleKey(key)]);
-    const escaped = escapeHtml(applyTextCase(raw, style.case));
+    const insideTag = isInsideTag(html, offset);
+    let escaped = escapeHtml(applyTextCase(raw, style.case));
+    // Only ever inserts real <strong> markup into text content, never into an attribute value
+    // (e.g. a kx-root's data-v-quote="{{quote}}") — that would break the attribute's quoting.
+    if (!insideTag && HIGHLIGHT_MARKUP_KEYS.has(key)) escaped = applyHighlightMarkup(escaped);
     const css = textStyleCss(style);
-    if (!css || isInsideTag(html, offset)) return escaped;
+    if (!css || insideTag) return escaped;
     return `<span class="lt-ts" style="${css}">${escaped}</span>`;
   });
 }

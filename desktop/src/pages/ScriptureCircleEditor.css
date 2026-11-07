@@ -1,0 +1,282 @@
+.scp {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: var(--surface-raised);
+}
+
+.scp__stage {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1920px;
+  height: 1080px;
+  transform-origin: 0 0;
+}
+
+.scp__camera {
+  position: absolute;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 40px;
+  text-align: center;
+}
+
+.scp__camera--box {
+  border-radius: 18px;
+}
+
+/* While dragging, the camera is lifted above the page so it follows the pointer. */
+.scp__camera--dragging {
+  z-index: 2;
+}
+
+/* The placeholder text ("Pick a camera scene" etc.) gets its own breathing room — padding used to
+   live on .scp__camera itself, which also inset the camera <img> below (a flex child sized at
+   100% of the padded content box), leaving visible bars down both sides instead of a full-bleed
+   fill. The image must always cover the window edge-to-edge, so it is positioned absolutely and
+   ignores the container's padding entirely. */
+.scp__camera > span {
+  padding: 0 80px;
+}
+
+.scp__camera img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.scp__handle {
+  position: absolute;
+  z-index: 3;
+  border-radius: 50%;
+  cursor: grab;
+  touch-action: none;
+}
+
+.scp__handle--box {
+  border-radius: 18px;
+}
+
+.scp__handle:hover,
+.scp__handle--dragging {
+  outline: 6px dashed var(--primary);
+  outline-offset: 6px;
+}
+
+.scp__handle--dragging {
+  cursor: grabbing;
+}
+
+.scp__page {
+  position: absolute;
+  inset: 0;
+  width: 1920px;
+  height: 1080px;
+  border: 0;
+  background: transparent;
+  pointer-events: none;
+  /* Match the page's own (light) scheme: when an iframe's scheme differs from the app's dark
+     one, Chromium/WebView2 paints an opaque backdrop and the camera hole turns white. */
+  color-scheme: light;
+}
+
+.sce__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 24px;
+  align-items: start;
+}
+
+.sce__main {
+  display: grid;
+  gap: 16px;
+}
+
+/* The preview stays in view while the controls below and beside it scroll. */
+.sce__preview {
+  position: sticky;
+  top: 16px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.sce__bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.sce__preview-note {
+  margin: 0;
+  padding: 12px 16px;
+  font-size: 12px;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+}
+
+.sce__side {
+  display: grid;
+  gap: 16px;
+}
+
+.sce__section {
+  display: grid;
+  gap: 16px;
+}
+
+.sce__field {
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.sce__field-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.sce__field-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.sce__field-row-select {
+  flex: 1;
+  min-width: 0;
+}
+
+.sce__reconnect-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.sce__value {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.sce__field input[type="range"] {
+  width: 100%;
+  accent-color: var(--primary);
+}
+
+.sce__swatches {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.sce__segmented {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+}
+
+.sce__segment {
+  height: 28px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color var(--transition), color var(--transition);
+}
+
+.sce__segment:hover {
+  background: var(--surface-hover);
+}
+
+.sce__segment:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+
+.sce__segment--active,
+.sce__segment--active:hover {
+  background: var(--primary-soft);
+  border-color: var(--primary-soft-border);
+  color: var(--text-primary);
+}
+
+.sce__check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.sce__check input {
+  accent-color: var(--primary);
+}
+
+.sce__swatch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.sce__swatch input[type="color"] {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--border);
+  background: none;
+  cursor: pointer;
+}
+
+.sce__swatch small {
+  display: block;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.sce__hint--pad {
+  padding: 0 16px 16px;
+}
+
+.sce__hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+@media (max-width: 1000px) {
+  .sce__body {
+    grid-template-columns: 1fr;
+  }
+
+  .sce__preview {
+    position: static;
+  }
+
+  .sce__bottom-grid {
+    grid-template-columns: 1fr;
+  }
+}

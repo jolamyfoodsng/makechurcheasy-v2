@@ -1,7 +1,7 @@
 "use client";
 
 import { Bell, Save } from "lucide-react";
-import { Card, CardHeader, Button, Toggle } from "@/components/ui";
+import { Card, CardHeader, Button, Toggle, Input, Textarea } from "@/components/ui";
 import { useTranslations } from "next-intl";
 import type { PlatformSettings } from "../types";
 
@@ -58,6 +58,26 @@ export function NotificationsSection({
               checked={data.welcomeEmail}
               onChange={(v) => update({ welcomeEmail: v })}
             />
+            {data.welcomeEmail && (
+              <div className="mt-4 space-y-3">
+                <Input
+                  label={t("welcomeEmailSubject")}
+                  value={data.welcomeEmailSubject ?? ""}
+                  maxLength={200}
+                  onChange={(e) => update({ welcomeEmailSubject: e.target.value })}
+                  placeholder="Welcome to MakeChurchEazy! 🎉"
+                />
+                <Textarea
+                  label={t("welcomeEmailMessage")}
+                  value={data.welcomeEmailMessage ?? ""}
+                  maxLength={5000}
+                  rows={6}
+                  onChange={(e) => update({ welcomeEmailMessage: e.target.value })}
+                  placeholder={t("welcomeEmailMessagePlaceholder")}
+                />
+                <p className="text-xs text-slate-400">{t("welcomeEmailMessageHint")}</p>
+              </div>
+            )}
           </div>
           <div className="px-6 py-4">
             <Toggle

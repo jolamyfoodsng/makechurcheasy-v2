@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Template 01 — how it is built in OBS</title>
+<style>
+  :root {
+    --bg: #18181B; --surface: #202023; --raised: #2C2C30; --border: #36363B;
+    --text: #F4F4F5; --text2: #D1D1D6; --muted: #A1A1AA;
+    --accent: #4DA3F0; --success: #3FB27F; --terra: #C14E29;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1600px; height: 1000px; background: var(--bg); color: var(--text);
+    font: 15px/1.45 -apple-system, "Segoe UI", system-ui, sans-serif; overflow: hidden; }
+  .wrap { padding: 26px 40px; height: 1000px; }
+  h1 { font-size: 27px; font-weight: 700; letter-spacing: -.01em; }
+  .sub { color: var(--muted); margin-top: 4px; font-size: 14.5px; }
+
+  .bandtitle { display: flex; align-items: center; gap: 12px; font-size: 12px; font-weight: 700;
+    letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin: 20px 0 12px; }
+  .bandtitle::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+  .bandtitle span { color: var(--muted); letter-spacing: 0; text-transform: none; font-weight: 500; font-size: 13px; }
+
+  .row { display: grid; grid-template-columns: 456px 56px 456px 56px 456px; align-items: start; }
+  .op { display: grid; place-items: center; height: 256px; font-size: 34px; font-weight: 300; color: var(--muted); }
+  .lay .f { position: relative; width: 456px; height: 256px; border: 1px solid var(--border);
+    border-radius: 5px; overflow: hidden;
+    background: repeating-conic-gradient(#303036 0 25%, #26262b 0 50%) 0 0/18px 18px; }
+  .lay.out .f { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(77,163,240,.22); }
+  .lay b { display: block; margin-top: 9px; font-size: 14.5px; }
+  .lay small { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .scene { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px;
+    transform: scale(.2375); transform-origin: 0 0; overflow: hidden; }
+  .camrect { position: absolute; outline: 2px dashed rgba(77,163,240,.9); outline-offset: -1px; }
+  .camlabel { position: absolute; background: var(--accent); color: #04223a; font-size: 11px;
+    font-weight: 700; padding: 2px 6px; border-radius: 2px; }
+
+  .cols { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  .card.warn { border-color: #5a4a22; background: #221d12; }
+  .card.warn h3 { color: #e8c877; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 14px 18px 16px; }
+  .card h3 { font-size: 15.5px; font-weight: 700; margin-bottom: 10px; }
+  .obs { border: 1px solid #3a3a40; border-radius: 4px; background: #1f1f23; font-size: 13.5px; overflow: hidden; }
+  .obs .t { background: #2a2a2f; padding: 5px 10px; font-weight: 600; color: var(--text2); font-size: 12px; }
+  .obs .i { display: flex; align-items: center; gap: 9px; padding: 6px 10px; border-top: 1px solid #2c2c31; }
+  .obs .i em { font-style: normal; color: var(--muted); font-size: 12px; margin-left: auto; }
+  .ico { width: 13px; height: 13px; border-radius: 3px; flex: none; }
+  .ico.b { background: #5b8def; } .ico.s { background: #3FB27F; } .ico.c { background: #94a3b8; }
+  .obs .i.hi { background: rgba(77,163,240,.16); }
+  ul { margin: 0; padding-left: 18px; }
+  li { color: var(--text2); font-size: 14px; margin-bottom: 7px; }
+  li b { color: var(--text); }
+  .no { display: inline-flex; align-items: center; gap: 7px; background: rgba(63,178,127,.16);
+    color: #7bdcad; border-radius: 3px; padding: 3px 9px; font-size: 12.5px; font-weight: 700; }
+
+  /* template art */
+  .paper { position: absolute; inset: 0; background: radial-gradient(120% 90% at 78% 18%, #F7F3EB, #EFE8DC 70%); }
+  .wedge { position: absolute; inset: 0; background: #C14E29; clip-path: polygon(0 0, 602px 0, 392px 1080px, 0 1080px); }
+  .hole { position: absolute; left: 102px; top: 94px; width: 720px; height: 720px; border-radius: 50%;
+    background: repeating-conic-gradient(#d8d8de 0 25%, #f2f2f6 0 50%) 0 0/40px 40px;
+    box-shadow: 0 0 0 11px #FFFFFF; }
+  .camcircle { position: absolute; left: 102px; top: 94px; width: 720px; height: 720px;
+    border-radius: 50%; overflow: hidden; box-shadow: 0 0 0 11px #FFFFFF; }
+  .abs { position: absolute; }
+  .live { position: absolute; left: 128px; top: 822px; background: #9E3C1C; color: #fff;
+    padding: 11px 22px 12px; border-radius: 5px; font: 700 27px/1 "Helvetica Neue", Arial, sans-serif; letter-spacing: .26em; }
+  .eyebrow { position: absolute; left: 920px; top: 150px; font: 700 31px/1 "Helvetica Neue", Arial, sans-serif;
+    letter-spacing: .36em; color: #C14E29; }
+  .verse { position: absolute; left: 920px; top: 216px; width: 912px;
+    font: 800 96px/1.16 "Helvetica Neue", Arial, sans-serif; letter-spacing: -.022em; color: #17171B; }
+  .rule { position: absolute; left: 922px; top: 846px; width: 168px; height: 8px; background: #C14E29; }
+  .ref { position: absolute; left: 920px; top: 892px; font: 700 43px/1 "Helvetica Neue", Arial, sans-serif;
+    letter-spacing: .15em; color: #17171B; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Template 01 · Scripture Circle — how OBS builds it</h1>
+  <div class="sub">The round camera needs no mask filter. The overlay sits on top and paints around the circle, so it hides the corners of the camera rectangle.</div>
+
+  <div class="bandtitle">The two layers <span>bottom to top, inside one scene</span></div>
+  <div class="row">
+    <div class="lay">
+      <div class="f">
+        <div class="scene" id="layerCam"></div>
+      </div>
+      <b>1 · Main Camera <span style="color:var(--muted);font-weight:400">(Scene source)</span></b>
+      <small>Your own camera scene, still a plain rectangle. Edit Transform puts the face over the circle.</small>
+    </div>
+
+    <div class="op">+</div>
+
+    <div class="lay">
+      <div class="f">
+        <div class="scene" id="layerArt"></div>
+      </div>
+      <b>2 · Verse panel <span style="color:var(--muted);font-weight:400">(Browser source)</span></b>
+      <small>Full 1920 × 1080, transparent. The checks are the hole — nothing is painted there.</small>
+    </div>
+
+    <div class="op">=</div>
+
+    <div class="lay out">
+      <div class="f">
+        <div class="scene" id="layerOut"></div>
+      </div>
+      <b>What goes out to your stream</b>
+      <small>The paint covers the camera's corners, so the camera reads as a circle.</small>
+    </div>
+  </div>
+
+  <div class="bandtitle">In OBS <span>Multi-View builds this on its own — MCE Presentation is not involved</span></div>
+  <div class="cols">
+    <div class="card">
+      <h3>One new scene, three items</h3>
+      <div class="obs">
+        <div class="t">Sources · MV: Scripture Circle</div>
+        <div class="i hi"><span class="ico b"></span>Verse panel <em>Browser · 1920 × 1080</em></div>
+        <div class="i"><span class="ico s"></span>Main Camera <em>Scene · 820 × 820 at 52, 44</em></div>
+        <div class="i"><span class="ico c"></span>Background <em>Color · #F2EDE4</em></div>
+      </div>
+      <ul style="margin-top:12px">
+        <li><b>You switch to this scene</b> in OBS like any other scene.</li>
+        <li><b>MCE Presentation stays as it is.</b> Multi-View does not touch it and does not nest it.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>When you click a Bible verse</h3>
+      <ul>
+        <li><b>Only the Verse panel changes.</b> The new verse animates in on the cream side.</li>
+        <li><b>The camera never moves.</b> It was placed once when you pressed Apply.</li>
+        <li><b>Clear</b> animates the verse out and leaves the camera and background on screen.</li>
+      </ul>
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+        <span class="no">✓ No mask filter</span>
+        <span class="no">✓ No new camera source</span>
+      </div>
+    </div>
+
+    <div class="card warn">
+      <h3>Still to work out</h3>
+      <ul>
+        <li><b>How the verse reaches this panel.</b> The Bible tab sends to MCE Presentation today. This panel needs its own address so it can be fed without going through that scene.</li>
+        <li><b>A new theme.</b> This look does not exist in the app yet, and the text has to re-flow to the cream column, not the full 1920.</li>
+        <li><b>The animation</b> for the verse coming in and going out.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script>
+  const person = `
+    <svg viewBox="0 0 720 720" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%;display:block">
+      <defs>
+        <linearGradient id="room" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3A2318"/><stop offset=".55" stop-color="#55331F"/><stop offset="1" stop-color="#241610"/></linearGradient>
+        <radialGradient id="warm" cx="26%" cy="22%" r="52%"><stop offset="0" stop-color="#F0B96E" stop-opacity=".75"/><stop offset="1" stop-color="#F0B96E" stop-opacity="0"/></radialGradient>
+      </defs>
+      <rect width="720" height="720" fill="url(#room)"/><rect width="720" height="720" fill="url(#warm)"/>
+      <circle cx="120" cy="330" r="62" fill="#F3C078" opacity=".34"/>
+      <circle cx="612" cy="250" r="48" fill="#E9A95E" opacity=".26"/>
+      <circle cx="528" cy="430" r="86" fill="#2F6B4A" opacity=".30"/>
+      <path d="M86 720 C104 556 206 492 360 492 C514 492 616 556 634 720 Z" fill="#1A1A1F"/>
+      <path d="M312 404 h96 v104 c0 26 -96 26 -96 0 Z" fill="#6A4229"/>
+      <ellipse cx="360" cy="296" rx="116" ry="142" fill="#7E4F33"/>
+      <path d="M252 300 C256 404 300 440 360 440 C420 440 464 404 468 300 C454 392 410 418 360 418 C310 418 266 392 252 300Z" fill="#412315" opacity=".85"/>
+      <path d="M244 272 C236 160 484 160 476 272 C462 206 414 182 360 182 C306 182 258 206 244 272Z" fill="#17110D"/>
+      <ellipse cx="318" cy="288" rx="15" ry="9" fill="#120C08"/><ellipse cx="402" cy="288" rx="15" ry="9" fill="#120C08"/>
+      <rect x="352" y="392" width="46" height="200" rx="23" transform="rotate(-12 375 492)" fill="#17171A"/>
+      <ellipse cx="366" cy="404" rx="30" ry="28" transform="rotate(-12 366 404)" fill="#2B2B31"/>
+    </svg>`;
+
+  // layer 1: the camera as the plain rectangle OBS really draws
+  document.getElementById('layerCam').innerHTML = `
+    <div class="abs" style="left:52px;top:44px;width:820px;height:820px;overflow:hidden">${person}</div>
+    <div class="camrect" style="left:52px;top:44px;width:820px;height:820px"></div>
+    <div class="camlabel" style="left:52px;top:-2px;transform:translateY(-100%)">Main Camera · 820 × 820</div>`;
+
+  const art = (hole) => `
+    <div class="paper"></div>
+    <div class="wedge"></div>
+    <div class="${hole ? 'hole' : 'camcircle'}">${hole ? '' : person}</div>
+    <div class="live">LIVE</div>
+    <div class="eyebrow">SCRIPTURE</div>
+    <div class="verse">What advantage then hath the Jew? or what profit is there of circumcision?</div>
+    <div class="rule"></div>
+    <div class="ref">ROMANS 3:1 &nbsp;|&nbsp; KJV</div>`;
+
+  document.getElementById('layerArt').innerHTML = art(true);
+  document.getElementById('layerOut').innerHTML = art(false);
+</script>
+</body>
+</html>

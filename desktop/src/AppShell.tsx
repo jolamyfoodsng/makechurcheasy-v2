@@ -30,7 +30,6 @@ import { ensureSavedBroadcastGraphicsLoaded } from "./services/broadcastGraphics
 import Icon from "./components/Icon";
 import DashboardSidebar from "./components/DashboardSidebar";
 import AppStatusStrip from "./components/AppStatusStrip";
-import LiveStatusBar from "./components/LiveStatusBar";
 import VoiceBibleResumeBanner from "./components/VoiceBibleResumeBanner";
 import EasyWorshipAnnouncementBanner from "./components/EasyWorshipAnnouncementBanner";
 import TrialUnavailableBanner from "./components/TrialUnavailableBanner";
@@ -256,7 +255,6 @@ export function AppShell() {
         tabIndex={-1}
         className={`app-main${sidebarCollapsed ? " app-main--collapsed" : ""}${isTranscriptDetailRoute ? " app-main--transcript-detail" : ""}${isFixedViewportRoute ? " app-main--fixed-viewport" : ""}`}>
         <AppStatusStrip />
-        <LiveStatusBar />
         <EasyWorshipAnnouncementBanner />
         <TrialUnavailableBanner />
         <CloudBackupPrompts />

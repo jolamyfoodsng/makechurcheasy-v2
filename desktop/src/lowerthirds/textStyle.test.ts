@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  applyHighlightMarkup,
   applyTextCase,
   parseTextStyle,
   serializeTextStyle,
@@ -38,5 +39,20 @@ describe("textStyle", () => {
     expect(textStyleCapabilityFor({ html: '<div class="kx-root" data-kx-pkg="abc">' })).toBe("full");
     expect(textStyleCapabilityFor({ html: '<div class="kx-root" data-kx="x">' })).toBe("case");
     expect(textStyleCapabilityFor({ html: "<div>{{name}}</div>" })).toBe("full");
+  });
+
+  it("turns *word* and *[#hex]word* into bold/coloured <strong> markup", () => {
+    expect(applyHighlightMarkup("grace and *truth*")).toBe('grace and <strong class="lt-em">truth</strong>');
+    expect(applyHighlightMarkup("he is *[#facc15]risen*!")).toBe('he is <strong class="lt-em" style="color:#facc15">risen</strong>!');
+    expect(applyHighlightMarkup("no markup here")).toBe("no markup here");
+  });
+
+  it("applies the *word* highlight markup to a quote field in text content, never inside an attribute", () => {
+    const html = '<div data-v-quote="{{quote}}"><p>{{quote}}</p></div>';
+    const out = substituteStyledVariables(html, { quote: "This is the day *the Lord* has made." });
+    // The attribute keeps the raw markup untouched — real <strong> tags there would break its quoting.
+    expect(out).toContain('data-v-quote="This is the day *the Lord* has made."');
+    // The text content gets the real, escaped-safe <strong> markup.
+    expect(out).toContain('<p>This is the day <strong class="lt-em">the Lord</strong> has made.</p>');
   });
 });

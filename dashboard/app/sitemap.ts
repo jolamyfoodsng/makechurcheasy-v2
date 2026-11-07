@@ -1,9 +1,23 @@
 import type { MetadataRoute } from "next";
-import { getDocPages } from "./docs/docs-source";
 import { presentationFeatures } from "./feature-content";
 
 const SITE = "https://makechurcheazy.com";
 const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:3004";
+// Keep this list aligned with dashboard/content/docs. The worker cannot read the
+// Markdown source directory when it regenerates the sitemap at runtime.
+const DOC_PATHS = [
+  "/docs",
+  "/docs/bible",
+  "/docs/graphics",
+  "/docs/media",
+  "/docs/mobile-remote",
+  "/docs/obs-setup",
+  "/docs/reference",
+  "/docs/studio-mode",
+  "/docs/troubleshooting",
+  "/docs/verse-ai",
+  "/docs/worship",
+];
 
 // Docs and features are known at build time; blog posts come from the API, so refresh hourly.
 export const revalidate = 3600;
@@ -45,7 +59,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     page("/features", 0.9, "monthly"),
     ...presentationFeatures.map((feature) => page(`/features/${feature.id}`, 0.8, "monthly")),
     page("/docs", 0.8, "monthly"),
-    ...getDocPages().filter((doc) => doc.href !== "/docs").map((doc) => page(doc.href, 0.7, "monthly")),
+    ...DOC_PATHS.filter((path) => path !== "/docs").map((path) => page(path, 0.7, "monthly")),
     page("/blog", 0.8, "weekly"),
     ...(await getBlogEntries()),
     page("/tutorials", 0.7, "monthly"),

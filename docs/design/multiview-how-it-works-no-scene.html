@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>How a look works, start to finish (design mockup)</title>
+<style>
+  :root {
+    --bg: #18181B; --surface: #202023; --raised: #2C2C30; --border: #36363B;
+    --text: #F4F4F5; --text2: #D1D1D6; --muted: #A1A1AA;
+    --accent: #4DA3F0; --primary: #0067C0; --success: #3FB27F; --gold: #D4A853;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1600px; height: 1000px; background: var(--bg); color: var(--text); font: 15px/1.4 -apple-system, "Segoe UI", system-ui, sans-serif; overflow: hidden; }
+  .wrap { padding: 28px 40px; height: 1000px; position: relative; }
+  h1 { font-size: 28px; font-weight: 700; letter-spacing: -.01em; }
+  .sub { color: var(--muted); margin-top: 4px; font-size: 15px; }
+
+  .band { margin-top: 18px; }
+  .bandtitle { display: flex; align-items: center; gap: 12px; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+  .bandtitle::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+  .bandtitle span { color: var(--muted); letter-spacing: 0; text-transform: none; font-weight: 500; font-size: 13px; }
+
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .step { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 16px 18px; height: 244px; position: relative; }
+  .num { position: absolute; left: -12px; top: -12px; width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: #04223a; font-weight: 800; display: grid; place-items: center; }
+  .step h3 { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+  .step p { color: var(--muted); font-size: 13.5px; margin-bottom: 12px; }
+
+  /* mini UI pieces */
+  .dd { border: 1px solid var(--border); border-radius: 4px; background: var(--raised); font-size: 13.5px; }
+  .dd div { padding: 7px 10px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; color: var(--text2); }
+  .dd div:last-child { border-bottom: 0; }
+  .dd .on { background: rgba(0,103,192,.25); color: #fff; font-weight: 600; }
+  .dd .head { background: #232326; color: var(--muted); font-size: 12px; }
+  .looks { display: flex; gap: 8px; }
+  .look { width: 138px; }
+  .look .f { position: relative; width: 138px; height: 78px; border: 2px solid var(--border); border-radius: 4px; overflow: hidden; background: #000; }
+  .look.on .f { border-color: var(--accent); }
+  .look small { display: block; margin-top: 4px; font-size: 12px; color: var(--text2); }
+  .scene { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; overflow: hidden; }
+
+  /* OBS sources panel */
+  .obs { border: 1px solid #3a3a40; border-radius: 4px; background: #1f1f23; font-size: 13px; overflow: hidden; }
+  .obs .t { background: #2a2a2f; padding: 5px 10px; font-weight: 600; color: var(--text2); font-size: 12px; display: flex; justify-content: space-between; }
+  .obs .i { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-top: 1px solid #2c2c31; color: var(--text); }
+  .obs .i em { font-style: normal; color: var(--muted); font-size: 11.5px; margin-left: auto; }
+  .ico { width: 14px; height: 14px; border-radius: 3px; flex: none; }
+  .ico.b { background: #5b8def; } .ico.s { background: #3FB27F; }
+  .obs .i.sel { background: rgba(77,163,240,.18); }
+  .tr { margin-top: 8px; font: 12.5px/1.5 ui-monospace, Menlo, monospace; color: var(--text2); background: #141416; border: 1px solid var(--border); border-radius: 4px; padding: 6px 10px; }
+  .tr b { color: var(--gold); font-weight: 600; }
+
+  /* live row */
+  .live { display: grid; grid-template-columns: 1fr 112px 1fr; gap: 0; align-items: center; margin-top: 4px; }
+  .state { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px 16px; }
+  .state h3 { font-size: 16px; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+  .pill { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 3px; background: var(--raised); color: var(--muted); letter-spacing: .06em; }
+  .pill.go { background: rgba(63,178,127,.2); color: #6fd8a8; }
+  .twocol { display: grid; grid-template-columns: 380px 1fr; gap: 16px; }
+  .prev { position: relative; width: 380px; height: 214px; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; background: #000; }
+  .arrow { text-align: center; color: var(--text2); font-size: 13px; padding: 0 8px; }
+  .arrow b { display: block; font-size: 13px; color: var(--text); margin-bottom: 4px; }
+  .arrow svg { display: block; margin: 8px auto; }
+
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 14px; }
+  .do { display: flex; gap: 14px; align-items: center; border: 1px dashed #4a4a52; border-radius: 6px; padding: 12px 16px; color: var(--text2); font-size: 14px; }
+  .do i { flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--raised); border: 1px solid var(--strong, #505057); display: grid; place-items: center; font-style: normal; font-weight: 800; color: var(--text); }
+  .do b { color: var(--text); }
+  .foot { position: absolute; left: 40px; right: 40px; bottom: 24px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .fchip { border: 1px solid var(--border); background: var(--surface); border-radius: 6px; padding: 12px 16px; display: flex; align-items: center; gap: 14px; }
+  .fchip big { font-size: 30px; font-weight: 800; color: var(--success); min-width: 34px; }
+  .fchip.last big { font-size: 22px; color: var(--gold); }
+  .fchip div { color: var(--text2); font-size: 13.5px; }
+  .fchip div b { display: block; color: var(--text); font-size: 14.5px; }
+
+  .cam { position: absolute; overflow: hidden; background: linear-gradient(160deg, #1d5a5a 0%, #0f3a3f 55%, #0a2530 100%); }
+  .cam svg { position: absolute; left: 0; bottom: 0; width: 100%; height: 100%; }
+  .abs { position: absolute; }
+  .serif { font-family: "Iowan Old Style", "Palatino", Georgia, serif; }
+  .eyebrow { position: absolute; display: flex; align-items: center; gap: 28px; font: 500 30px/1 -apple-system, system-ui, sans-serif; letter-spacing: .5em; }
+  .eyebrow u { display: block; width: 280px; height: 3px; background: #B8924A; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>How a look works, start to finish</h1>
+  <div class="sub">You choose your camera scene once, pick a look, and from then on it just works every time you project a verse.</div>
+
+  <div class="band">
+    <div class="bandtitle">Set up once <span>about a minute</span></div>
+    <div class="steps">
+      <div class="step"><div class="num">1</div>
+        <h3>Choose your camera scene</h3>
+        <p>Pick the OBS scene that has your camera in it.</p>
+        <div class="dd">
+          <div class="head"><span>Your OBS scenes</span><span>▼</span></div>
+          <div class="on"><span>Main Camera</span><span>✓</span></div>
+          <div><span>Wide Shot</span></div>
+          <div><span>Worship Band</span></div>
+        </div>
+      </div>
+      <div class="step"><div class="num">2</div>
+        <h3>Pick a look and place the camera</h3>
+        <p>Choose a design. Drag the camera window if you want it elsewhere.</p>
+        <div class="looks" id="looks"></div>
+      </div>
+      <div class="step"><div class="num">3</div>
+        <h3>Apply it</h3>
+        <p>The app makes sure MCE Presentation has these two items. That's all.</p>
+        <div class="obs">
+          <div class="t"><span>Sources · MCE Presentation</span></div>
+          <div class="i sel"><span class="ico b"></span>Bible - MCE Presentation <em>Browser</em></div>
+          <div class="i"><span class="ico s"></span>Main Camera <em>Scene</em></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="band">
+    <div class="bandtitle">Every time you project a verse <span>nothing for you to do in OBS</span></div>
+    <div class="live">
+      <div class="state">
+        <h3>Nothing projected <span class="pill">CAMERA FULL SCREEN</span></h3>
+        <div class="twocol">
+          <div class="prev"><div class="scene" id="s1" style="transform:scale(.1979)"></div></div>
+          <div>
+            <div class="obs">
+              <div class="t"><span>Sources · MCE Presentation</span></div>
+              <div class="i"><span class="ico b"></span>Bible - MCE Presentation <em>off</em></div>
+              <div class="i sel"><span class="ico s"></span>Main Camera <em>Scene</em></div>
+            </div>
+            <div class="tr">Main Camera · Edit Transform<br>Position <b>0, 0</b> &nbsp; Size <b>1920 × 1080</b></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="arrow">
+        <b>You press Enter on a verse</b>
+        <svg width="90" height="22" viewBox="0 0 90 22"><path d="M2 11h78M70 3l10 8-10 8" fill="none" stroke="#4DA3F0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg width="90" height="22" viewBox="0 0 90 22" style="margin-top:22px"><path d="M88 11H10M20 3L10 11l10 8" fill="none" stroke="#6b6b73" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <b style="color:var(--muted);margin-top:4px">You clear it</b>
+      </div>
+
+      <div class="state">
+        <h3>Verse projected <span class="pill go">LOOK APPLIED</span></h3>
+        <div class="twocol">
+          <div class="prev"><div class="scene" id="s2" style="transform:scale(.1979)"></div></div>
+          <div>
+            <div class="obs">
+              <div class="t"><span>Sources · MCE Presentation</span></div>
+              <div class="i sel"><span class="ico b"></span>Bible - MCE Presentation <em>design</em></div>
+              <div class="i"><span class="ico s"></span>Main Camera <em>moved</em></div>
+            </div>
+            <div class="tr">Main Camera · Edit Transform<br>Position <b>42, 64</b> &nbsp; Size <b>700 × 960</b></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="two">
+    <div class="do"><i>A</i><div><b>The Bible Browser source shows the design.</b> The camera area is see-through, and the overlay paints the rounded corners and gold frame around it.</div></div>
+    <div class="do"><i>B</i><div><b>The Main Camera item gets new Edit Transform values</b> so it sits exactly in that see-through area. Clear the verse and it goes back to full screen.</div></div>
+  </div>
+
+  <div class="foot">
+    <div class="fchip"><big>0</big><div><b>New scenes</b>Everything happens inside MCE Presentation.</div></div>
+    <div class="fchip"><big>0</big><div><b>New camera sources</b>Your Video Capture Device is not touched.</div></div>
+    <div class="fchip last"><big>2</big><div><b>Things that change when you project</b>The Browser source shows the design, and the Main Camera item moves and resizes.</div></div>
+  </div>
+</div>
+
+<script>
+  const cam = (x, y, w, h, r, frame) => `
+    <div class="cam" style="left:${x}px;top:${y}px;width:${w}px;height:${h}px;border-radius:${r}px;${frame || ''}">
+      <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMax slice">
+        <rect width="100" height="100" fill="none"/>
+        <path d="M14 100 C16 76 30 70 50 70 C70 70 84 76 86 100 Z" fill="#1e1e22"/>
+        <ellipse cx="50" cy="48" rx="13" ry="16" fill="#6b4a3a"/>
+        <path d="M37 44 C38 30 62 30 63 44 C58 38 42 38 37 44Z" fill="#141416"/>
+      </svg>
+    </div>`;
+  const gold = 'border:4px solid #D4A853;';
+  const grain = 'radial-gradient(rgba(255,255,255,.05) 1px, transparent 1.4px) 0 0/9px 9px';
+
+  const camFull = `<div class="cam" style="left:0;top:0;width:1920px;height:1080px"><svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%"><path d="M50 90 C52 66 66 60 80 60 C94 60 108 66 110 90 Z" fill="#1e1e22"/><ellipse cx="80" cy="40" rx="11" ry="14" fill="#6b4a3a"/><path d="M69 36 C70 24 90 24 91 36 C87 31 73 31 69 36Z" fill="#141416"/></svg></div>`;
+  const panel = `
+    <div class="abs" style="inset:0;background:${grain}, linear-gradient(135deg,#14503d,#0b2f25)"></div>
+    ${cam(42, 64, 700, 960, 14, gold)}
+    <div class="abs" style="left:780px;top:0;width:1140px;height:1080px;background:radial-gradient(120% 90% at 30% 20%,#f7f0de,#ebe0c6)"></div>
+    <div class="abs" style="left:762px;top:0;width:3px;height:1080px;background:#B8924A"></div>
+    <div class="eyebrow" style="left:840px;top:112px;color:#1b2a22">SCRIPTURE<u></u></div>
+    <div class="abs serif" style="left:820px;top:240px;width:1020px;font-size:96px;line-height:1.08;font-weight:700;color:#0e2a1d">What advantage then hath the Jew? or what profit is there of circumcision?</div>
+    <div class="abs" style="left:840px;top:830px;font:800 64px/1 -apple-system,system-ui,sans-serif;color:#0e2a1d">ROMANS 3:1</div>`;
+
+  document.getElementById('s1').innerHTML = camFull;
+  document.getElementById('s2').innerHTML = panel;
+
+  // step 2 thumbnails
+  const alt1 = `
+    <div class="abs" style="inset:0;background:${grain}, linear-gradient(160deg,#17264d,#0b132b)"></div>
+    ${cam(1170, 90, 700, 394, 10, gold)}
+    <div class="abs serif" style="left:90px;top:230px;width:980px;font-size:92px;line-height:1.1;font-weight:700;color:#fff">For God so loved the world, that he gave his only begotten Son.</div>`;
+  const alt2 = `
+    <div class="abs" style="inset:0;background:#17171a"></div>
+    ${cam(0, 0, 960, 1080, 0, '')}
+    <div class="abs" style="left:960px;top:0;width:6px;height:1080px;background:#0067C0"></div>
+    <div class="abs serif" style="left:1040px;top:260px;width:780px;font-size:84px;line-height:1.12;font-weight:700;color:#f4f4f5">And we know that all things work together for good.</div>`;
+  const looks = [['Scripture Panel', panel, true], ['Wide Verse', alt1, false], ['Split Dark', alt2, false]];
+  document.getElementById('looks').innerHTML = looks.map(l => `
+    <div class="look ${l[2] ? 'on' : ''}"><div class="f"><div class="scene" style="transform:scale(.0719)">${l[1]}</div></div><small>${l[0]}</small></div>`).join('');
+</script>
+</body>
+</html>

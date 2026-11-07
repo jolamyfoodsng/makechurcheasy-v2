@@ -69,7 +69,7 @@ import { getUserScopedKey } from "./services/userScopedStorage";
 import { obsService } from "./services/obsService";
 import { appStatusManager } from "./services/appStatusManager";
 import { serviceStore as svcStore } from "./services/serviceStore";
-import { getAllSongs, getSong, saveSong, syncSongsToDock } from "./worship/worshipDb";
+import { archiveSong, getAllSongs, getSong, saveSong, syncSongsToDock } from "./worship/worshipDb";
 import { generateSlides } from "./worship/slideEngine";
 import { DEFAULT_WORSHIP_LINES_PER_SLIDE } from "./worship/slideLayout";
 import { checkEntitlementSync } from "./services/entitlementClient";
@@ -978,6 +978,27 @@ function App() {
         }
       }
 
+      // The dock runs in OBS's own browser, so a removal there must be done in the app's library
+      // too, or the next song list the app sends brings the song back.
+      if (cmd.type === "worship:song-archive") {
+        try {
+          const songId = (cmd.payload as { id?: string } | undefined)?.id?.trim();
+          if (!songId) throw new Error("Missing song id.");
+          await archiveSong(songId);
+          await syncSongsToDock();
+          const songs = await getAllSongs();
+          const { limit: songLimit } = checkEntitlementSync("songs", getEffectivePlan(userRef.current));
+          const limitedSongs = (songLimit > 0 && songLimit < 9999) ? songs.slice(0, songLimit) : songs;
+          dockBridge.sendState({
+            type: "state:songs-data",
+            payload: limitedSongs,
+            timestamp: Date.now(),
+          });
+        } catch (err) {
+          console.warn("[App] Failed to remove dock Worship song:", err);
+        }
+      }
+
       if (cmd.type === "worship:save-preferences") {
         try {
           const payload = cmd.payload;
@@ -1267,6 +1288,11 @@ function App() {
     // Admin-controlled Broadcast Graphics: download the catalog when online, keep it for offline use.
     import("./services/broadcastGraphicsCatalog")
       .then(({ startBroadcastGraphicsCatalog }) => startBroadcastGraphicsCatalog())
+      .catch(() => { });
+
+    // Admin-uploaded Multi-View looks: same download-when-online, keep-for-offline pattern.
+    import("./multiview/customLookCatalog")
+      .then(({ startMultiviewLookCatalog }) => startMultiviewLookCatalog())
       .catch(() => { });
 
     // Preload the splash image itself + any critical resources

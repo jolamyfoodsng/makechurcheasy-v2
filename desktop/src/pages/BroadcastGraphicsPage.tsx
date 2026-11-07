@@ -244,6 +244,8 @@ function getTemplateCategory(theme: BroadcastTheme): GraphicCategory {
     return "social";
   if (tags.includes("scripture") || theme.category === "bible" || id.includes("prayer"))
     return "scripture";
+  if (tags.includes("quote") || name.includes("quote") || id.includes("quote"))
+    return "quotes";
   return "others";
 }
 

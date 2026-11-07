@@ -9,7 +9,8 @@ import crypto from "crypto";
 
 let warned = false;
 
-function secret(): string {
+/** The secret that signs links in our emails (unsubscribe, open and click tracking). */
+export function emailLinkSecret(): string {
   const value =
     process.env.EMAIL_UNSUBSCRIBE_SECRET || process.env.AUTH_SECRET || process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET;
   if (value) return value;
@@ -21,7 +22,7 @@ function secret(): string {
 }
 
 function sign(userId: string): string {
-  return crypto.createHmac("sha256", secret()).update(`unsubscribe:marketing:${userId}`).digest("hex").slice(0, 40);
+  return crypto.createHmac("sha256", emailLinkSecret()).update(`unsubscribe:marketing:${userId}`).digest("hex").slice(0, 40);
 }
 
 export function createUnsubscribeToken(userId: string): string {

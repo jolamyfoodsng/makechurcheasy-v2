@@ -72,6 +72,12 @@ function isFullFrameBackground(layer: ThemeLayer): boolean {
     && layer.h >= DESIGN_HEIGHT * 0.9;
 }
 
+/** Same layer, same picture / video: its media elements can be kept across a rebuild. */
+function mediaKey(layer: ThemeLayer): string {
+  const s = layer.style || {};
+  return [layer.id, layer.type, s.videoSrc || "", s.src || "", s.fit || ""].join("\u0001");
+}
+
 interface LayerNode {
   layer: ThemeLayer;
   pos: HTMLDivElement;
@@ -294,6 +300,8 @@ export class ThemeRenderer {
   private preload: Promise<void> = Promise.resolve();
   /** First frames of the background videos in the current layout. */
   private mediaReady: Promise<void>[] = [];
+  /** While a layout is rebuilt: the old layers' video / picture elements, by mediaKey. */
+  private reusableMedia: Map<string, HTMLElement[]> | null = null;
   private visibleState = false;
   private running: Animation[] = [];
   private queue: Promise<void> = Promise.resolve();
@@ -350,12 +358,21 @@ export class ThemeRenderer {
     if (this.pending?.kind === "switch") this.pending = null;
     this.cancelRunning();
     this.stopLoops();
+    // Keep playing videos and decoded pictures for layers that still use the same file: a new
+    // element would show the bare fill (or the scene behind) until it loads, which flickers on
+    // air when the Dock sends a slightly different layout. Moved back within this same task,
+    // so the browser never pauses them.
+    this.reusableMedia = this.collectMedia();
     this.stage.textContent = "";
     this.nodes = [];
     this.layout = layout;
     this.hash = nextHash;
     this.mediaReady = [];
-    this.build(layout);
+    try {
+      this.build(layout);
+    } finally {
+      this.reusableMedia = null;
+    }
     if (this.opts.fillViewport) this.rescale();
     this.preload = this.preloadAssets(layout);
     if (this.content) this.applyAllContent(this.content);
@@ -661,8 +678,26 @@ export class ThemeRenderer {
     }
   }
 
+  /** The media elements of the current layers, to hand to the next build. */
+  private collectMedia(): Map<string, HTMLElement[]> {
+    const found = new Map<string, HTMLElement[]>();
+    for (const n of this.nodes) {
+      if (n.layer.type !== "box" && n.layer.type !== "image") continue;
+      const media = Array.from(n.el.children).filter((c): c is HTMLElement => c.classList.contains("mtl-media"));
+      if (media.length) found.set(mediaKey(n.layer), media);
+    }
+    return found;
+  }
+
   /** Adds the layer's video (preferred) or picture. Returns false when neither URL is usable. */
-  private appendMedia(el: HTMLElement, s: ThemeLayer["style"]): boolean {
+  private appendMedia(el: HTMLElement, layer: ThemeLayer): boolean {
+    const s = layer.style || {};
+    const kept = this.reusableMedia?.get(mediaKey(layer));
+    if (kept) {
+      this.reusableMedia!.delete(mediaKey(layer));
+      for (const m of kept) el.appendChild(m);
+      return true;
+    }
     const d = this.doc;
     const resolve = (v: string) => safeUrl(v ? (this.opts.resolveAsset ? this.opts.resolveAsset(v) : v) : "");
     const videoSrc = resolve(s.videoSrc || "");
@@ -778,7 +813,7 @@ export class ThemeRenderer {
       el.appendChild(surface);
     }
     // Box layers can carry a picture or video over their fill (Theme Editor → Background).
-    if (layer.type === "box" && (s.src || s.videoSrc) && this.appendMedia(el, s)) {
+    if (layer.type === "box" && (s.src || s.videoSrc) && this.appendMedia(el, layer)) {
       es.overflow = "hidden";
     }
     if (layer.type === "box") this.appendDim(el, s);
@@ -790,7 +825,7 @@ export class ThemeRenderer {
 
     let text: HTMLDivElement | null = null;
     if (layer.type === "image") {
-      this.appendMedia(el, s);
+      this.appendMedia(el, layer);
       this.appendDim(el, s);
     } else if (layer.type === "text") {
       text = d.createElement("div");

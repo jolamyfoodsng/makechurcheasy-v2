@@ -170,24 +170,28 @@ describe("layout adjust: verse box grows with bigger text", () => {
     expect(verseOf(applyLayoutAdjust(GROW, { layoutLineHeight: 100 }))).toBe(verseOf(GROW));
   });
 
-  it("grows the box by the size change while there is room", () => {
+  it("grows into the free space but never over a showing reference or translation", () => {
     const v = verseOf(applyLayoutAdjust(GROW, { layoutTextScale: 125 }));
-    expect(v.h).toBe(500);
-    // Only 16px of room above (reference ends at 260, keeps 24px clear); the rest goes below.
+    // Wants 400 * (1.5625 - 1) = 225px; only 16 above and 176 below are free of the heading text.
     expect(v.y).toBe(284);
+    expect(v.h).toBe(592);
     expect(v.x).toBe(960);
     expect(v.w).toBe(1400);
   });
 
-  it("stops at the reference and translation, and spills to the free side", () => {
-    const v = verseOf(applyLayoutAdjust(GROW, { layoutTextScale: 200 }));
-    // Top stops 24px under the reference (260 + 24); bottom 24px above the translation (900 - 24).
-    expect(v.y).toBe(284);
-    expect(v.y + (v.h as number)).toBe(876);
+  it("with the title off, grows up to the screen edge", () => {
+    const v = verseOf(applyLayoutAdjust(GROW, { layoutTextScale: 200, layoutShowTitle: false }));
+    expect(v.y).toBe(40);
+    expect(v.y + (v.h as number)).toBe(1040);
   });
 
   it("counts bigger line spacing too", () => {
-    expect(verseOf(applyLayoutAdjust(GROW, { layoutLineHeight: 125 })).h).toBe(500);
+    expect(verseOf(applyLayoutAdjust(GROW, { layoutLineHeight: 125 })).h).toBe(592);
+  });
+
+  it("raises a line cap with the text so it is not shrunk back", () => {
+    const capped = { ...GROW, layers: GROW.layers.map((l) => (l.id === "verse" ? { ...l, h: "auto" as const, style: { ...l.style, maxLines: 4 } } : l)) };
+    expect(verseOf(applyLayoutAdjust(capped, { layoutTextScale: 150 })).style.maxLines).toBe(6);
   });
 
   it("stays inside its card in a lower third", () => {

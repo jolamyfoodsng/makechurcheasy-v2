@@ -16,7 +16,6 @@ import {
   Mail,
   MailOpen,
   Megaphone,
-  Palette,
   UploadCloud,
   X,
   Gift,
@@ -30,6 +29,8 @@ import {
   Newspaper,
   Radio,
   MonitorPlay,
+  Send,
+  LayoutGrid,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -57,9 +58,11 @@ const broadcastReachItems: NavItem[] = [
   { path: "/admin/communications", label: "Communications", icon: Mail },
   { path: "/admin/email-previews", label: "Email Previews", icon: MailOpen },
   { path: "/admin/announcements", label: "Announcements", icon: Megaphone },
+  { path: "/admin/broadcast-email", label: "Broadcast Email", icon: Send },
+  { path: "/admin/settings?tab=notifications", label: "Welcome Email", icon: MailOpen },
   { path: "/admin/multistream", label: "Multi-Stream Usage", icon: Radio },
   { path: "/admin/broadcast-graphics", label: "Broadcast Graphics", icon: MonitorPlay },
-  { path: "/admin/production-themes", label: "Production Themes", icon: Palette },
+  { path: "/admin/multiview-looks", label: "Multi-View Looks", icon: LayoutGrid },
   { path: "/admin/tutorials", label: "Tutorials", icon: GraduationCap },
   { path: "/admin/release-mirror", label: "Release Mirror", icon: UploadCloud },
 ];

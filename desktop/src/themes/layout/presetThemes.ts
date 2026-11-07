@@ -19,12 +19,16 @@ import {
 } from "./presetsSet2";
 import { SET3_PRESETS } from "./presetsSet3";
 import { SET4_PRESETS } from "./presetsSet4";
+import { SET5_PRESETS } from "./presetsSet5";
+import { SET6_PRESETS } from "./presetsSet6";
 import type { ThemeLayout } from "./types";
 
 const PRESET_DATE = "2026-10-08T00:00:00.000Z";
 const SET2_DATE = "2026-10-12T00:00:00.000Z";
 const SET3_DATE = "2026-10-13T00:00:00.000Z";
 const SET4_DATE = "2026-10-25T00:00:00.000Z";
+const SET5_DATE = "2026-10-28T00:00:00.000Z";
+const SET6_DATE = "2026-10-30T00:00:00.000Z";
 
 function layoutTheme(
   id: string,
@@ -72,6 +76,16 @@ function presetTheme({ id, name, layout }: { id: string; name: string; layout: T
 /** Fourth reference set: Prayer Point (lower third; its full screen comes from companions.ts). */
 const SET4_THEMES: BibleTheme[] = SET4_PRESETS.map((p) => presetTheme(p, SET4_DATE));
 
+/** Fifth reference set: Blue Paint Banner (lower third plus its hand-made paint full screen). */
+const SET5_THEMES: BibleTheme[] = SET5_PRESETS.map(({ id, name, layout, companion }) =>
+  layoutTheme(id, name, "lower-third", companion, layout, SET5_DATE),
+);
+
+/** Sixth reference set: Red Ember Frame (hand-made full screen plus its matching lower third). */
+const SET6_THEMES: BibleTheme[] = SET6_PRESETS.map(({ id, name, layout, companion }) =>
+  layoutTheme(id, name, "fullscreen", layout, companion, SET6_DATE),
+);
+
 /** Ready-made themes promoted to starters (same ids as before, so saved picks keep working). */
 const PRESET_STARTER_IDS = ["preset-caption-rule", "preset-broadcast-caption", "preset-chapter-number"];
 const PRESET_STARTERS: BibleTheme[] = PRESET_STARTER_IDS.map((id) => presetTheme(THEME_PRESETS.find((p) => p.id === id)!));
@@ -104,7 +118,7 @@ export const STARTER_THEMES: BibleTheme[] = [
 ];
 
 /** Every ready-made layer theme: starters, then the newest sets, then the first set. */
-const ALL_LAYOUT_THEMES: BibleTheme[] = [...STARTER_THEMES, ...SET4_THEMES, ...SET3_THEMES, ...SET2_THEMES, ...FIRST_SET_THEMES];
+const ALL_LAYOUT_THEMES: BibleTheme[] = [...STARTER_THEMES, ...SET6_THEMES, ...SET5_THEMES, ...SET4_THEMES, ...SET3_THEMES, ...SET2_THEMES, ...FIRST_SET_THEMES];
 
 /** The new-account themes lead (so they are also the plan's open themes), then the rest. */
 export const LAYOUT_PRESET_THEMES: BibleTheme[] = [

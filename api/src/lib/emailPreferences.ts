@@ -45,6 +45,7 @@ const TEMPLATE_CATEGORIES: Record<string, EmailCategory> = {
   // Marketing
   welcome: "marketing",
   plan_upgrade: "marketing",
+  admin_broadcast: "marketing",
 
   // Product updates
   trial_started: "product_updates",

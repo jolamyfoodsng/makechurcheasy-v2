@@ -4185,6 +4185,150 @@ export const BUNDLED_GRAPHIC_PACKAGES: GraphicPackage[] = [
   },
   {
     "format": "mce-graphic@1",
+    "version": 1,
+    "category": "quotes",
+    "hold": 0,
+    "placement": {
+      "x": 120,
+      "y": 760,
+      "scale": 1
+    },
+    "id": "quote-highlight-card",
+    "name": "Quote · Highlight Card",
+    "color": "#1d4ed8",
+    "description": "A clean quote card with inline colour highlights: wrap a word in *asterisks* to make it stand out, or *[#hex]word* to give it its own colour — same markup as the Scripture overlays. A speaker name sits below.",
+    "fields": [
+      {
+        "key": "quote",
+        "label": "Quote (wrap words in *asterisks*, or *[#hex]word* for a colour; Enter = new line)",
+        "type": "text",
+        "default": "This is the day *the Lord* has made; let us *rejoice* and be glad in it.",
+        "multiline": true
+      },
+      {
+        "key": "speaker",
+        "label": "Speaker",
+        "type": "text",
+        "default": "Pastor Firstname Lastname"
+      },
+      {
+        "key": "accent",
+        "label": "Accent colour",
+        "type": "color",
+        "default": "#1d4ed8",
+        "shades": true
+      },
+      {
+        "key": "t",
+        "label": "Quote colour",
+        "type": "color",
+        "default": "#ffffff"
+      },
+      {
+        "key": "sp",
+        "label": "Speaker colour",
+        "type": "color",
+        "default": "#ffffff"
+      },
+      {
+        "key": "layout",
+        "label": "Layout",
+        "type": "select",
+        "default": "lower",
+        "options": [
+          {
+            "value": "full",
+            "label": "Full screen (centred)"
+          },
+          {
+            "value": "lower",
+            "label": "Lower third"
+          }
+        ]
+      },
+      {
+        "key": "fit",
+        "label": "Size (full screen)",
+        "type": "select",
+        "default": "0.76",
+        "options": [
+          {
+            "value": "0.6",
+            "label": "Medium"
+          },
+          {
+            "value": "0.76",
+            "label": "Large"
+          },
+          {
+            "value": "0.9",
+            "label": "Extra large"
+          }
+        ]
+      }
+    ],
+    "html": "\n<div class=\"qh\" data-pkg-layout=\"{{layout}}\" data-pkg-fit=\"{{fit}}\">\n  <i class=\"qh-bar\"></i>\n  <div class=\"qh-body\">\n    <div class=\"qh-mk\">&ldquo;</div>\n    <p class=\"qh-t\">{{quote|rich}}</p>\n    {{#speaker}}<div class=\"qh-sp\">{{speaker}}</div>{{/speaker}}\n  </div>\n</div>",
+    "css": "\n.qh{position:relative;display:flex;align-items:stretch;width:max-content;max-width:1200px;background:rgba(10,12,18,.72);border-radius:4px;overflow:hidden;box-shadow:0 16px 36px rgba(0,0,0,.4)}\n.qh-bar{flex:none;width:10px;background:linear-gradient(180deg,var(--accent-l,var(--accent)),var(--accent))}\n.qh-body{position:relative;padding:26px 36px 24px}\n.qh-mk{font:900 54px/.6 Montserrat,Arial,sans-serif;color:var(--accent);margin-bottom:10px}\n.qh-t{font:600 38px/1.32 Montserrat,Arial,sans-serif;color:var(--t);white-space:normal;max-width:1000px}\n.qh-t .hl{color:var(--accent);font-weight:800}\n.qh-sp{margin-top:14px;font:800 26px/1 Montserrat,Arial,sans-serif;color:var(--sp);text-transform:uppercase;letter-spacing:.04em}\n",
+    "animation": {
+      "in": [
+        [
+          ".qh-bar",
+          "slideUp",
+          0,
+          { "d": 0.4 }
+        ],
+        [
+          ".qh-mk",
+          "down",
+          0.1,
+          { "d": 0.4 }
+        ],
+        [
+          ".qh-t",
+          "up",
+          0.2,
+          { "d": 0.55 }
+        ],
+        [
+          ".qh-sp",
+          "up",
+          0.4,
+          { "d": 0.45 }
+        ]
+      ],
+      "out": [
+        {
+          "sel": ".qh-sp",
+          "to": { "y": -12, "opacity": 0 },
+          "at": 0,
+          "d": 0.25,
+          "e": "power2.in"
+        },
+        {
+          "sel": ".qh-t",
+          "to": { "y": -12, "opacity": 0 },
+          "at": 0.08,
+          "d": 0.28,
+          "e": "power2.in"
+        },
+        {
+          "sel": ".qh-mk",
+          "to": { "opacity": 0 },
+          "at": 0.2,
+          "d": 0.25
+        },
+        {
+          "sel": ".qh-bar",
+          "to": { "scaleY": 0 },
+          "at": 0.3,
+          "d": 0.3,
+          "e": "power2.in"
+        }
+      ]
+    }
+  },
+  {
+    "format": "mce-graphic@1",
     "id": "sermon-portrait-card",
     "version": 1,
     "name": "Sermon Quote · Portrait Card",

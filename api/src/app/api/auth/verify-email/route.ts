@@ -222,6 +222,7 @@ export async function POST(req: NextRequest) {
             userEmail: user.email,
             trialDays: trialForWelcome.durationDays,
             trialEndsAt: trialForWelcome.endsAt,
+            custom: platformSettings.notifications,
           })
         );
         await db.collection("users").updateOne(

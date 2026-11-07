@@ -80,6 +80,9 @@ export const COLLECTIONS = {
   USAGE_EVENTS: "usage_events",
   ANNOUNCEMENTS: "announcements",
   ANNOUNCEMENT_DELIVERIES: "announcement_deliveries",
+  BROADCAST_CAMPAIGNS: "broadcast_campaigns",
+  BROADCAST_EMAIL_TEMPLATES: "broadcast_email_templates",
+  BROADCAST_RECIPIENTS: "broadcast_email_recipients",
   DISCOUNT_REDEMPTIONS: "discount_redemptions",
   USER_OFFERS: "user_offers",
   OFFER_JOURNEYS: "offer_journeys",
@@ -89,6 +92,8 @@ export const COLLECTIONS = {
   NOWPAYMENTS_INTENTS: "nowpayments_payment_intents",
   FLUTTERWAVE_INTENTS: "flutterwave_payment_intents",
   BLOG_POSTS: "blog_posts",
+  /** Admin-uploaded Multi-View "complete look" packages (see lib/multiviewLooks.ts). */
+  MULTIVIEW_LOOK_PACKAGES: "multiview_look_packages",
 } as const;
 
 // ─── Index Initialization ────────────────────────────────────────────────────

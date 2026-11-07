@@ -69,7 +69,9 @@ export default function AdminSettingsPage() {
   };
 
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    // A link like /admin/settings?tab=notifications opens that tab; otherwise reopen the last one.
+    const requested = new URLSearchParams(window.location.search).get("tab");
+    const saved = requested && TABS.some((t) => t.id === requested) ? requested : localStorage.getItem(STORAGE_KEY);
     if (saved && TABS.some((t) => t.id === saved)) {
       setActiveTab(saved as TabId);
     }

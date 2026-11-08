@@ -94,7 +94,8 @@ function ForcedUpgradeScreen() {
 }
 
 export default function LicenseGuard({ children }: LicenseGuardProps) {
-  const { unlocked, lockReason, payload, verifying, daysOffline, offlineWarning, paidPausedOffline, offlineDaysRemaining } = useLicenseGuardState();
+  const { unlocked, lockReason, payload, verifying, daysOffline, offlineWarning, paidPausedOffline, offlineDaysRemaining, signInRequired } = useLicenseGuardState();
+  const { logout } = useAuth();
   const [showDowngradeBanner, setShowDowngradeBanner] = useState(false);
   const [showDeviceLimitPreview, setShowDeviceLimitPreview] = useState(false);
 
@@ -145,27 +146,40 @@ export default function LicenseGuard({ children }: LicenseGuardProps) {
     <>
       {children}
       <OfflineSyncPrompt />
-      {offlineWarning && unlocked && (
+      {(offlineWarning || signInRequired) && unlocked && (
         <div className="license-offline-warning-banner" role="alert">
           <div className="license-offline-warning-banner__icon" aria-hidden="true">
-            <Icon name="wifi_off" size={18} />
+            <Icon name={signInRequired ? "person" : "wifi_off"} size={18} />
           </div>
           <div className="license-offline-warning-banner__content">
             <p className="license-offline-warning-banner__title">
-              {paidPausedOffline ? "Paid features paused: sync needed" : "Connect to the internet to sync"}
+              {signInRequired
+                ? "Sign in again to sync"
+                : paidPausedOffline ? "Paid features paused: sync needed" : "Connect to the internet to sync"}
             </p>
             <p className="license-offline-warning-banner__description">
-              {paidPausedOffline
-                ? `Not online for ${daysOffline} days. The app runs as Free until it syncs with makechurcheazy.com.`
-                : `Not online for ${daysOffline} days. Sync once every 2 weeks; paid features pause in ${offlineDaysRemaining} day${offlineDaysRemaining === 1 ? "" : "s"}.`}
+              {signInRequired
+                ? `You're online, but makechurcheazy.com no longer recognises this computer, so it can't check your plan.${offlineWarning ? ` Last sync: ${daysOffline} days ago.` : ""} Sign out and sign back in to fix it.`
+                : paidPausedOffline
+                  ? `Not online for ${daysOffline} days. The app runs as Free until it syncs with makechurcheazy.com.`
+                  : `Not online for ${daysOffline} days. Sync once every 2 weeks; paid features pause in ${offlineDaysRemaining} day${offlineDaysRemaining === 1 ? "" : "s"}.`}
             </p>
           </div>
           <div className="license-offline-warning-banner__actions">
+            {signInRequired && (
+              <button
+                type="button"
+                onClick={() => void logout()}
+                className="license-offline-warning-banner__action"
+              >
+                Sign in again
+              </button>
+            )}
             <button
               type="button"
               onClick={handleRetry}
               disabled={verifying}
-              className="license-offline-warning-banner__action"
+              className={`license-offline-warning-banner__action${signInRequired ? " license-offline-warning-banner__action--secondary" : ""}`}
             >
               {verifying ? "Syncing…" : "Sync now"}
             </button>

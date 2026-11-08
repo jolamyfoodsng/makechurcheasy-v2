@@ -1474,10 +1474,10 @@ function App() {
     };
   }, [splashVisible, updateResult?.available, updateResult?.update, updateResult?.version, versionAge.forceUpdate, updateResult]);
 
-  // ── Update: remind later (hide temporarily, app continues) ──
-  const handleRemindLaterUpdate = useCallback(() => {
-    setUpdateResult(null);
-  }, []);
+  // ── Update: remind later ──
+  // Keep the result so the dialog stays mounted: the top bar's "Update
+  // available" chip reopens it until the user installs the update.
+  const handleRemindLaterUpdate = useCallback(() => {}, []);
 
   // ── Server-driven forced update / emergency lock check ──
   const refetchForcedUpdate = useCallback(() => {

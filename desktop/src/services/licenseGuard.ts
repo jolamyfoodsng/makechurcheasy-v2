@@ -154,7 +154,7 @@ export interface LicenseCache {
 
 type LicenseFetchResult =
   | { ok: true; payload: LicensePayload; sealed?: SealedLicense | null }
-  | { ok: false; lockReason: LockReason; transient: boolean };
+  | { ok: false; lockReason: LockReason; transient: boolean; deviceRejected?: boolean };
 
 export interface LicenseGuardState {
   unlocked: boolean;
@@ -173,6 +173,12 @@ export interface LicenseGuardState {
   entitlementEnded: boolean;
   /** When paid access ends (ms), null = no end date. */
   entitledUntilMs: number | null;
+  /**
+   * The server keeps refusing this computer's device sign-in (it answers
+   * "temporarily unavailable", which used to look like being offline).
+   * Signing out and back in pairs the computer again.
+   */
+  signInRequired: boolean;
 }
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -183,6 +189,9 @@ export const OFFLINE_LOCK_DAYS = PAID_PAUSE_DAYS;
 const LAST_ONLINE_KEY = "mce-last-online-at";
 const STORAGE_KEY = "ocs-license-cache";
 const DOWNGRADE_NOTIFIED_KEY = "ocs-downgrade-notified";
+const DEVICE_REJECTED_COUNT_KEY = "mce-license-device-rejected-count";
+/** Rejections in a row (across restarts) before asking the user to sign in again. */
+export const DEVICE_REJECTED_SIGN_IN_THRESHOLD = 3;
 const VISIBILITY_REVERIFY_MIN_INTERVAL_MS = 15 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const MAX_BACKGROUND_REVERIFY_INTERVAL_MS = 6 * 60 * 60 * 1000;
@@ -326,6 +335,13 @@ async function fetchLicenseFromBackend(): Promise<LicenseFetchResult> {
         if (res.status === 403 && /version/i.test(error)) {
           return { ok: false, lockReason: "forced_upgrade", transient: false };
         }
+        // The server answers 503 "Device verification is temporarily unavailable"
+        // when it doesn't recognise this computer's device id / secret. It is
+        // retryable on purpose (stale ids during updates), but if it keeps
+        // happening the computer is online and needs to be paired again.
+        if (res.status === 503 && /device verification/i.test(error)) {
+          return { ok: false, lockReason: "internet_required", transient: true, deviceRejected: true };
+        }
 
         return { ok: false, lockReason: "internet_required", transient: true };
       }
@@ -463,6 +479,36 @@ export function getStoredLastOnlineMs(): number {
   return 0;
 }
 
+function deviceRejectedKey(): string {
+  try {
+    return getUserScopedKey(DEVICE_REJECTED_COUNT_KEY);
+  } catch {
+    return DEVICE_REJECTED_COUNT_KEY;
+  }
+}
+
+function readDeviceRejectedCount(): number {
+  try {
+    const n = Number(localStorage.getItem(deviceRejectedKey()));
+    return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function writeDeviceRejectedCount(count: number): void {
+  try {
+    const key = deviceRejectedKey();
+    if (count > 0) localStorage.setItem(key, String(count));
+    else localStorage.removeItem(key);
+  } catch { /* storage unavailable */ }
+}
+
+/** Pure rule: has the server refused this computer often enough to ask for a new sign-in? */
+export function isSignInRequired(rejectedInARow: number): boolean {
+  return rejectedInARow >= DEVICE_REJECTED_SIGN_IN_THRESHOLD;
+}
+
 export function recordOnlineSuccess(): void {
   try {
     const now = Date.now();
@@ -567,6 +613,7 @@ export function getState(): LicenseGuardState {
     paidPausedOffline: offline.paidPaused,
     entitlementEnded: offline.entitlementEnded,
     entitledUntilMs: offline.entitledUntilMs,
+    signInRequired: isSignInRequired(readDeviceRejectedCount()),
   };
 }
 
@@ -799,6 +846,9 @@ export async function verify(): Promise<boolean> {
     let licenseResult = await fetchLicenseFromBackend();
     if (licenseResult.ok) licenseResult = await sealCheckFetched(licenseResult);
     if (!licenseResult.ok) {
+      if (licenseResult.deviceRejected) {
+        writeDeviceRejectedCount(readDeviceRejectedCount() + 1);
+      }
       if (!licenseResult.transient) {
         _lockReason = licenseResult.lockReason;
         emit();
@@ -828,6 +878,7 @@ export async function verify(): Promise<boolean> {
     };
     writeCache(_cache);
     recordOnlineSuccess();
+    writeDeviceRejectedCount(0);
     noteServerTime(normalizedPayload.serverTime);
     refreshSubscriptionCacheInBackground();
 

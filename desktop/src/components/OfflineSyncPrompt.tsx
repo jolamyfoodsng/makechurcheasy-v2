@@ -9,7 +9,8 @@
  * The pop-up closes by itself once a sync succeeds.
  */
 import { useEffect, useState } from "react";
-import { WifiOff, CalendarX } from "./icons/NativeIcons";
+import { WifiOff, CalendarX, LogIn } from "./icons/NativeIcons";
+import { useAuth } from "@/contexts/AuthContext";
 import ModalDialog from "./ModalDialog";
 import { retryVerification, useLicenseGuardState } from "@/services/licenseGuard";
 import { isSyncPromptSnoozed, snoozeSyncPrompt } from "@/services/offlineEntitlement";
@@ -26,8 +27,9 @@ function readDismissedEnd(): number {
 }
 
 export default function OfflineSyncPrompt() {
-  const { unlocked, verifying, daysOffline, offlineWarning, paidPausedOffline, entitlementEnded, entitledUntilMs, offlineDaysRemaining } =
+  const { unlocked, verifying, daysOffline, offlineWarning, paidPausedOffline, entitlementEnded, entitledUntilMs, offlineDaysRemaining, signInRequired } =
     useLicenseGuardState();
+  const { logout } = useAuth();
   const [snoozed, setSnoozed] = useState(isSyncPromptSnoozed);
   const [dismissedEnd, setDismissedEnd] = useState(readDismissedEnd);
   const [result, setResult] = useState<"" | "failed">("");
@@ -50,9 +52,28 @@ export default function OfflineSyncPrompt() {
     if (!ok) setResult("failed");
   };
 
-  const failedHint = result === "failed"
+  const failedHint = result === "failed" && !signInRequired
     ? "Still can't reach makechurcheazy.com. Check the Wi-Fi or network cable, then press Sync now again."
     : undefined;
+
+  // 0) Online, but the server keeps refusing this computer's sign-in.
+  if (offlineWarning && signInRequired && !snoozed) {
+    return (
+      <ModalDialog
+        tone="warning"
+        icon={<LogIn size={26} />}
+        title="Sign in again to sync"
+        onClose={() => { snoozeSyncPrompt(24); setSnoozed(true); }}
+        actions={[
+          { label: "Remind me tomorrow", variant: "ghost", onClick: () => { snoozeSyncPrompt(24); setSnoozed(true); } },
+          { label: verifying ? "Syncing…" : "Try again", variant: "ghost", disabled: verifying, onClick: () => void syncNow() },
+          { label: "Sign in again", variant: "primary", onClick: () => void logout() },
+        ]}
+      >
+        {`This computer is online, but makechurcheazy.com no longer recognises it, so the app hasn't been able to check your plan for ${daysOffline} days. Sign out and sign back in with your church account to fix it. ${paidPausedOffline ? "Paid features are paused until then; everything on the Free plan still works." : `Paid features pause in ${offlineDaysRemaining} day${offlineDaysRemaining === 1 ? "" : "s"} if it can't sync.`}`}
+      </ModalDialog>
+    );
+  }
 
   // 1) Offline 14+ days (21+ = paid features paused).
   if (offlineWarning && !snoozed) {

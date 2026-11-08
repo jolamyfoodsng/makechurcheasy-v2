@@ -5,12 +5,15 @@
  *          "Free plan · Upgrade"          (only while the user is on the Free plan)
  *   right: "Having any issues? Contact support · WhatsApp"   (always, quiet)
  *          "6 days left · Update now"     (only while a forced update is counting down)
+ *          "Update available · Update"    (an optional update the user put off; stays
+ *                                          until they install it, reopens the dialog)
  */
 
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import Icon from "./Icon";
 import LiveStatusBar from "./LiveStatusBar";
-import { HelpCircle, MessageCircle } from "./icons/NativeIcons";
+import { AlertTriangle, CheckCircle2, Download, HelpCircle, MessageCircle, RefreshCw } from "./icons/NativeIcons";
+import { updateDownloadManager, useUpdateDownload } from "../services/updateDownloadManager";
 import { useAdminControls } from "../hooks/useAdminControls";
 import { openSupportDialog } from "../services/supportDialog";
 import { supportChannelHref } from "./SupportDialog";
@@ -51,6 +54,7 @@ export default function AppStatusStrip() {
   const [phase, setPhase] = useState<InstallPhase>("idle");
   const [percent, setPercent] = useState(0);
 
+  const optional = useUpdateDownload();
   const [updateError, setUpdateError] = useState<string | null>(null);
   const whatsapp = useAdminControls().support.channels.find((c) => c.kind === "whatsapp" && c.enabled && c.value);
 
@@ -102,6 +106,20 @@ export default function AppStatusStrip() {
 
   const urgent = Boolean(live?.finalDay);
 
+  // Optional update reminder: shown whenever the dialog is closed, so putting
+  // it off never hides it completely.
+  const optionalStatus = optional.status;
+  const showOptional =
+    !showUpdate &&
+    !optional.isModalVisible &&
+    (optionalStatus === "available" ||
+      optionalStatus === "downloading" ||
+      optionalStatus === "ready" ||
+      optionalStatus === "installing" ||
+      optionalStatus === "relaunching" ||
+      optionalStatus === "error");
+  const optionalVersion = optional.version ? `v${optional.version.replace(/^v/i, "")}` : "";
+
   return (
     <div className={`app-status-strip${isFree ? " app-status-strip--free" : ""}`} role="status">
       <div className="app-status-strip__side app-status-strip__side--start">
@@ -150,6 +168,57 @@ export default function AppStatusStrip() {
             </a>
           )}
         </div>
+        {showOptional && (
+          <div
+            className={`app-status-strip__chip app-status-strip__chip--optional${
+              optionalStatus === "error" ? " app-status-strip__chip--optional-error" : ""
+            }`}
+          >
+            {optionalStatus === "error" ? (
+              <AlertTriangle size={13} aria-hidden="true" />
+            ) : optionalStatus === "ready" ? (
+              <CheckCircle2 size={13} aria-hidden="true" />
+            ) : optionalStatus === "available" ? (
+              <Download size={13} aria-hidden="true" />
+            ) : (
+              <RefreshCw size={13} aria-hidden="true" />
+            )}
+            <button
+              type="button"
+              className="app-status-strip__label app-status-strip__label--button"
+              onClick={() => updateDownloadManager.openModal()}
+              title="Show update details"
+            >
+              {optionalStatus === "available" && `Update available${optionalVersion ? ` · ${optionalVersion}` : ""}`}
+              {optionalStatus === "downloading" &&
+                (optional.progress.percent > 0
+                  ? `Downloading update ${optional.progress.percent}%`
+                  : "Downloading update…")}
+              {optionalStatus === "ready" && `${optionalVersion || "Update"} ready`}
+              {optionalStatus === "installing" && "Installing update…"}
+              {optionalStatus === "relaunching" && "Restarting…"}
+              {optionalStatus === "error" && "Update failed"}
+            </button>
+            {(optionalStatus === "available" || optionalStatus === "ready" || optionalStatus === "error") && (
+              <button
+                type="button"
+                className="app-status-strip__optional-btn"
+                onClick={() => {
+                  if (optionalStatus === "ready") void updateDownloadManager.installNow();
+                  else if (optionalStatus === "error") updateDownloadManager.retry();
+                  else updateDownloadManager.openModal();
+                }}
+                title={
+                  optionalStatus === "ready"
+                    ? "Restart MakeChurchEazy to finish updating"
+                    : `Update to ${optionalVersion || "the latest version"}`
+                }
+              >
+                {optionalStatus === "ready" ? "Restart" : optionalStatus === "error" ? "Try again" : "Update"}
+              </button>
+            )}
+          </div>
+        )}
         {showUpdate && live && live.hoursRemaining !== null && (
           <div
             className={`app-status-strip__chip ${

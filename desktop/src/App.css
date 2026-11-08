@@ -7565,6 +7565,21 @@ input[type="radio"] {
   background: var(--primary-hover);
 }
 
+.license-offline-warning-banner__action--secondary {
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+
+.license-offline-warning-banner__action--secondary:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
+.license-offline-warning-banner__action:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
 .license-downgrade-banner__action:hover:not(:disabled) {
   background: var(--primary-hover);
 }

@@ -435,27 +435,7 @@ export async function GET(req: NextRequest) {
     const tokenVersion = user.tokenVersion ?? 0;
     const jwt = await signSessionToken(user._id.toString(), tokenVersion);
 
-    let destination = returnUrl;
-    if (createdNewAccount && !referralApplied) {
-      // A new Google account is prompted for an optional referral code (the flag is cleared when a
-      // code is applied or the prompt is skipped, and the dashboard sends them here until then).
-      try {
-        await db.collection("users").updateOne({ _id: user._id }, { $set: { referralRequired: true } });
-      } catch (err) {
-        console.error("[google/callback] Could not flag referral as required:", err);
-      }
-      // Next page: ask for the referral code. `next` is the page they were headed to.
-      try {
-        const target = new URL(returnUrl);
-        const next = `${target.pathname}${target.search}`;
-        const page = new URL("/signup/referral", clientOrigin);
-        page.searchParams.set("next", next);
-        if (referralRejected) page.searchParams.set("invalid", "1");
-        destination = page.toString();
-      } catch {
-        destination = returnUrl;
-      }
-    }
+    const destination = returnUrl;
 
     const response = NextResponse.redirect(destination);
     response.cookies.set("session-token", jwt, {

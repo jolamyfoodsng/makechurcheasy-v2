@@ -210,7 +210,7 @@ export async function getReferralDashboard(userId: string): Promise<ReferralDash
   return {
     code,
     promptSkippedAt: user?.referralPromptSkippedAt || null,
-    referralRequired: Boolean(user?.referralRequired) && !user?.referredBy,
+    referralRequired: false,
     referredBy: user?.referredBy || null,
     stats: {
       totalSignups,

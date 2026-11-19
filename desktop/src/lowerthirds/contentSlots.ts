@@ -239,7 +239,107 @@ export function copyEditorSlots(themeId: string, fromEditorId: string, toEditorI
     const raw = localStorage.getItem(storageKey(themeId, fromEditorId));
     if (raw) localStorage.setItem(storageKey(themeId, toEditorId), raw);
     else localStorage.removeItem(storageKey(themeId, toEditorId));
+    const shared = localStorage.getItem(sharedStyleKey(themeId, fromEditorId));
+    if (shared) localStorage.setItem(sharedStyleKey(themeId, toEditorId), shared);
+    else localStorage.removeItem(sharedStyleKey(themeId, toEditorId));
     saveActiveSlotIndex(themeId, toEditorId, loadActiveSlotIndex(themeId, fromEditorId));
+  } catch { /* storage full or unavailable */ }
+}
+
+// ---------------------------------------------------------------------------
+// Shared style (Size, Duration, Speed, Position, colours) across memory slots
+// ---------------------------------------------------------------------------
+
+/** Where a style change goes: every memory slot of the graphic, or only the open one. */
+export type SlotStyleScope = "all" | "slot";
+
+/** Style settings copied between slots. Text content is never part of it. */
+export interface SlotStylePatch {
+  /** Style variables (kxScale, kxAutoOut, kxSpeed, colour fields…). */
+  values?: Record<string, string>;
+  position?: LTPosition;
+  customStyles?: Partial<LTCustomStyle>;
+}
+
+const STYLE_SCOPE_KEY = "mce-lt-style-scope";
+const SHARED_STYLE_PREFIX = "mce-lt-shared-style";
+
+function sharedStyleKey(themeId: string, editorId: string): string {
+  return `${SHARED_STYLE_PREFIX}-${themeId}-${editorId}`;
+}
+
+/** Style changes apply to every slot unless the user picked "This slot only". */
+export function loadSlotStyleScope(): SlotStyleScope {
+  try {
+    return localStorage.getItem(STYLE_SCOPE_KEY) === "slot" ? "slot" : "all";
+  } catch {
+    return "all";
+  }
+}
+
+export function saveSlotStyleScope(scope: SlotStyleScope): void {
+  try {
+    localStorage.setItem(STYLE_SCOPE_KEY, scope);
+  } catch { /* ignore */ }
+}
+
+/** The style every slot shares; empty slots start with it. */
+export function loadSharedSlotStyle(themeId: string, editorId: string): SlotStylePatch {
+  try {
+    const raw = localStorage.getItem(sharedStyleKey(themeId, editorId));
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? (parsed as SlotStylePatch) : {};
+  } catch {
+    return {};
+  }
+}
+
+function mergeStylePatch(base: SlotStylePatch, patch: SlotStylePatch): SlotStylePatch {
+  return {
+    values: patch.values ? { ...(base.values ?? {}), ...patch.values } : base.values,
+    position: patch.position ?? base.position,
+    customStyles: patch.customStyles ? { ...(base.customStyles ?? {}), ...patch.customStyles } : base.customStyles,
+  };
+}
+
+/** Lay a style patch over a slot state (text content is left alone). */
+export function applyStylePatchToState(state: SlotState, patch: SlotStylePatch): SlotState {
+  return {
+    ...state,
+    variableValues: patch.values ? { ...state.variableValues, ...patch.values } : state.variableValues,
+    position: patch.position ?? state.position,
+    customStyles: patch.customStyles ? { ...state.customStyles, ...patch.customStyles } : state.customStyles,
+  };
+}
+
+/**
+ * Copy a style change to every saved slot of this graphic (except `exceptIndex`, the
+ * open slot, which saves itself) and remember it so empty slots start with it too.
+ */
+export function applyStyleToAllSlots(
+  themeId: string,
+  editorId: string,
+  patch: SlotStylePatch,
+  exceptIndex: number | null = null,
+): void {
+  try {
+    const slots = loadSlots(themeId, editorId);
+    let changed = false;
+    const next = slots.map((slot) => {
+      if (!slot || slot.index === exceptIndex) return slot;
+      changed = true;
+      const state = applyStylePatchToState(resolveSlotState(slot), patch);
+      return {
+        ...slot,
+        state,
+        values: { ...state.variableValues },
+        updatedAt: Date.now(),
+      };
+    });
+    if (changed) localStorage.setItem(storageKey(themeId, editorId), JSON.stringify(next));
+    const shared = mergeStylePatch(loadSharedSlotStyle(themeId, editorId), patch);
+    localStorage.setItem(sharedStyleKey(themeId, editorId), JSON.stringify(shared));
   } catch { /* storage full or unavailable */ }
 }
 
@@ -251,7 +351,11 @@ export function deleteEditorSlots(editorId: string): void {
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (!key || !key.endsWith(suffix)) continue;
-      if (key.startsWith(`${STORAGE_PREFIX}-`) || key.startsWith(`${ACTIVE_SLOT_STORAGE_PREFIX}-`)) doomed.push(key);
+      if (
+        key.startsWith(`${STORAGE_PREFIX}-`) ||
+        key.startsWith(`${ACTIVE_SLOT_STORAGE_PREFIX}-`) ||
+        key.startsWith(`${SHARED_STYLE_PREFIX}-`)
+      ) doomed.push(key);
     }
     for (const key of doomed) localStorage.removeItem(key);
   } catch { /* ignore */ }

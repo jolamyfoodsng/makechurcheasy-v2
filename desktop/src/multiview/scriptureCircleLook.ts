@@ -605,3 +605,63 @@ export async function applyScriptureCircleLook(
 
   return { sceneName };
 }
+
+/** Camera framing for a single-camera look: zoom 1–3, focus in % (50/50 = centred). */
+export interface LookCameraFraming {
+  zoom: number;
+  focusX: number;
+  focusY: number;
+}
+
+export const DEFAULT_LOOK_CAMERA_FRAMING: LookCameraFraming = { zoom: 1, focusX: 50, focusY: 50 };
+
+/** Keep a framing inside its limits (zoom 1–3, focus 0–100). */
+export function normalizeLookCameraFraming(raw: Partial<LookCameraFraming> | null | undefined): LookCameraFraming {
+  return {
+    zoom: Math.round(clampRange(raw?.zoom, 1, CAMERA_ZOOM_MAX, 1) * 100) / 100,
+    focusX: Math.round(clampRange(raw?.focusX, 0, 100, 50)),
+    focusY: Math.round(clampRange(raw?.focusY, 0, 100, 50)),
+  };
+}
+
+/**
+ * Re-crop just the camera inside a look scene that is already in OBS: no background, panel or
+ * scene changes, so it is quick enough to follow a slider. `designRect` is the camera window on
+ * the 1920 × 1080 design. Returns false when the look has not been sent to OBS yet.
+ */
+export async function reframeLookCamera(
+  obs: ScriptureCircleObsClient,
+  sceneName: string,
+  cameraSceneName: string,
+  designRect: { x: number; y: number; width: number; height: number },
+  framing: LookCameraFraming,
+): Promise<boolean> {
+  if (!cameraSceneName) return false;
+  const camId = await findSceneItem(obs, sceneName, cameraSceneName);
+  if (camId === null) return false;
+  const canvas = await getCanvasScale(obs);
+  const camSize = await obs.call("GetSceneItemTransform", { sceneName, sceneItemId: camId })
+    .then((r) => r as { sceneItemTransform?: { sourceWidth?: number; sourceHeight?: number } })
+    .catch(() => null);
+  const sourceWidth = camSize?.sceneItemTransform?.sourceWidth || CANVAS_W;
+  const sourceHeight = camSize?.sceneItemTransform?.sourceHeight || CANVAS_H;
+  const target = {
+    x: designRect.x * canvas.scale,
+    y: designRect.y * canvas.scale,
+    width: designRect.width * canvas.scale,
+    height: designRect.height * canvas.scale,
+  };
+  const fit = calculateFillTransform(sourceWidth, sourceHeight, target, framing);
+  await obs.call("SetSceneItemTransform", {
+    sceneName,
+    sceneItemId: camId,
+    sceneItemTransform: {
+      positionX: fit.positionX, positionY: fit.positionY,
+      scaleX: fit.scaleX, scaleY: fit.scaleY,
+      cropLeft: Math.round(fit.cropLeft), cropRight: Math.round(fit.cropRight),
+      cropTop: Math.round(fit.cropTop), cropBottom: Math.round(fit.cropBottom),
+      boundsType: "OBS_BOUNDS_NONE", rotation: 0,
+    },
+  });
+  return true;
+}

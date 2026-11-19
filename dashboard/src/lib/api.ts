@@ -116,6 +116,8 @@ export interface ReferralListItem {
   paidAmount: number | null;
   paidCurrency: string | null;
   paidBillingReference: string | null;
+  /** When the referrer was paid their reward; null while still owed. */
+  payoutPaidAt?: string | null;
   referredUser: ReferralUserSummary | null;
   referrerUser?: ReferralUserSummary | null;
 }
@@ -163,6 +165,8 @@ export interface AdminReferralOverview {
     paidSignups: number;
     pendingSignups: number;
     referrers: number;
+    /** Paid referrals whose referrer has not been paid out yet. */
+    payoutsOwed?: number;
     conversionRate: number;
   };
   referrals: ReferralListItem[];
@@ -170,6 +174,16 @@ export interface AdminReferralOverview {
 
 export async function getAdminReferrals(limit = 500): Promise<AdminReferralOverview> {
   return request(`/api/admin/referrals?limit=${limit}`);
+}
+
+export async function setAdminReferralPayoutSent(
+  referralId: string,
+  payoutSent: boolean,
+): Promise<{ success: boolean; referralId: string; payoutPaidAt: string | null }> {
+  return request("/api/admin/referrals", {
+    method: "PATCH",
+    body: JSON.stringify({ referralId, payoutSent }),
+  });
 }
 
 export async function getAdminUserReferrals(userId: string): Promise<ReferralDashboardData & { referredByDetails?: ReferralListItem["referredUser"] | null }> {

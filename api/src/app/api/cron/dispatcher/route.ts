@@ -11,7 +11,7 @@
  *   - "30 3 * * *"             : Ambassador expiry (03:30 UTC)
  *   - "45 3 * * *"             : Temporary plan expiry (03:45 UTC)
  *   - "15 4 * * *"             : Refresh saved reactivation eligibility, then run win-back offer ladders (04:15 UTC)
- *   - "0 22 * * *"             : Daily Telegram signup report (22:00 UTC / 23:00 Lagos)
+ *   - "0 22 * * *"             : Daily Telegram signup report and referral payout digest (22:00 UTC / 23:00 Lagos)
  *
  * Protected by CRON_SECRET.
  */
@@ -175,6 +175,21 @@ async function handleDispatch(req: NextRequest) {
       } catch (err) {
         console.error("[Cron Dispatcher] Signup report failed:", err);
         results.signupReport = { error: err instanceof Error ? err.message : "Failed" };
+      }
+    }
+
+    // 7b. Daily Telegram list of referrers still owed a payout (0 22 * * *):
+    if (runAll || cronParam.includes("0 22 *")) {
+      try {
+        const { GET: runPayoutDigest } = await import("@/app/api/cron/referral-payout-digest/route");
+        const digestReq = new NextRequest(new URL("/api/cron/referral-payout-digest", req.url), {
+          headers: { authorization: `Bearer ${CRON_SECRET}` },
+        });
+        const digestRes = await runPayoutDigest(digestReq);
+        results.referralPayoutDigest = await digestRes.json().catch(() => ({ status: digestRes.status }));
+      } catch (err) {
+        console.error("[Cron Dispatcher] Referral payout digest failed:", err);
+        results.referralPayoutDigest = { error: err instanceof Error ? err.message : "Failed" };
       }
     }
 

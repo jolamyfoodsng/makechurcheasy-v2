@@ -351,3 +351,39 @@ describe("applyScriptureCircleLook", () => {
     expect(camTransform.positionY).toBe(94);
   });
 });
+
+describe("quick camera adjust", () => {
+  it("keeps framing within limits", async () => {
+    const { normalizeLookCameraFraming } = await import("./scriptureCircleLook");
+    expect(normalizeLookCameraFraming({ zoom: 9, focusX: -5, focusY: 140 })).toEqual({ zoom: 3, focusX: 0, focusY: 100 });
+    expect(normalizeLookCameraFraming(null)).toEqual({ zoom: 1, focusX: 50, focusY: 50 });
+  });
+
+  it("re-crops only the camera item in an existing look scene", async () => {
+    const { reframeLookCamera } = await import("./scriptureCircleLook");
+    const calls: Array<{ type: string; params?: Record<string, unknown> }> = [];
+    const obs = {
+      call: async (type: string, params?: Record<string, unknown>) => {
+        calls.push({ type, params });
+        if (type === "GetSceneItemList") return { sceneItems: [{ sourceName: "Main Camera", sceneItemId: 7 }] };
+        if (type === "GetVideoSettings") return { baseWidth: 1920, baseHeight: 1080 };
+        if (type === "GetSceneItemTransform") return { sceneItemTransform: { sourceWidth: 1920, sourceHeight: 1080 } };
+        return {};
+      },
+    };
+    const ok = await reframeLookCamera(obs, "MV: Scripture Circle", "Main Camera", { x: 100, y: 100, width: 500, height: 500 }, { zoom: 2, focusX: 0, focusY: 50 });
+    expect(ok).toBe(true);
+    const set = calls.find((c) => c.type === "SetSceneItemTransform");
+    expect(set?.params?.sceneItemId).toBe(7);
+    const tf = set?.params?.sceneItemTransform as Record<string, number>;
+    expect(tf.cropLeft).toBe(0);
+    expect(tf.cropRight).toBeGreaterThan(0);
+    expect(calls.some((c) => c.type === "CreateInput" || c.type === "CreateSceneItem")).toBe(false);
+  });
+
+  it("does nothing before the look is in OBS", async () => {
+    const { reframeLookCamera } = await import("./scriptureCircleLook");
+    const obs = { call: async (type: string) => (type === "GetSceneItemList" ? { sceneItems: [] } : {}) };
+    expect(await reframeLookCamera(obs, "MV: Scripture Circle", "Main Camera", { x: 0, y: 0, width: 10, height: 10 }, { zoom: 1, focusX: 50, focusY: 50 })).toBe(false);
+  });
+});

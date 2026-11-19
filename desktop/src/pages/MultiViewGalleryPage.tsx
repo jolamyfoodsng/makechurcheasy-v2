@@ -676,6 +676,12 @@ export default function MultiViewGalleryPage() {
             <p className="app-page__subtitle">
               {t("gallery.subtitle")}
             </p>
+            <ol className="mvg-steps">
+              <li>{t("gallery.howTo1", "Find a layout you like. Click Preview to see it full size.")}</li>
+              <li>{t("gallery.howTo2", "Click Add to OBS. The layout is saved to the Multi-View tab in the Dock inside OBS.")}</li>
+              <li>{t("gallery.howTo3", "In the Dock, open Multi-View and pick the layout. Fill each box with what you want there: an OBS scene (such as a camera), Scripture, a picture, a video or an overlay.")}</li>
+              <li>{t("gallery.howTo4", "Send it to OBS. You can change what is in each box at any time.")}</li>
+            </ol>
           </div>
         </header>
 
@@ -694,14 +700,6 @@ export default function MultiViewGalleryPage() {
               <Icon name="close" size={14} />
             </button>
           )}
-        </div>
-
-        <div className="mvg-guidance" role="note">
-          <Icon name="view_quilt" size={18} className="mvg-guidance-icon" />
-          <div className="mvg-guidance-copy">
-            <strong>Layout only</strong>
-            <span>Choose the arrangement here, then assign your own OBS scenes, Scripture, media, or overlays.</span>
-          </div>
         </div>
 
         {/* Category filters */}

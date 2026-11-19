@@ -1004,10 +1004,14 @@ export class ThemeRenderer {
     if (n.isVerse) {
       const lines = splitVerseLines(tokens[verseTokenKey(n.layer.content)] ?? "", content.lineCount);
       isEmpty = lines.length === 0;
+      // Numbered Bible verses flow as one paragraph. Lines without a verse number (song
+      // lyrics, notes, lists) each start on their own line, the way they were typed.
+      const typedLines = lines.length > 1 && lines.every((line) => !line.number);
       lines.forEach((line, i) => {
         const span = d.createElement("span");
         const stack = Boolean(content.stackLines);
-        span.className = lineRise ? "mtl-line is-block" : stack ? "mtl-line is-block is-stack" : "mtl-line";
+        const own = typedLines && !stack;
+        span.className = lineRise || own ? "mtl-line is-block" : stack ? "mtl-line is-block is-stack" : "mtl-line";
         if (line.number && s.verseNumbers !== false) {
           const num = d.createElement("sup");
           num.className = "mtl-num";
@@ -1016,7 +1020,7 @@ export class ThemeRenderer {
           span.appendChild(num);
         }
         appendRich(span, line.body);
-        if (!lineRise && !stack && i < lines.length - 1) span.appendChild(d.createTextNode(" "));
+        if (!lineRise && !stack && !own && i < lines.length - 1) span.appendChild(d.createTextNode(" "));
         inner.appendChild(span);
       });
     } else {

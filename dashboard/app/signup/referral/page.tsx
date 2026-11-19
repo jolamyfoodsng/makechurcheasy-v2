@@ -9,6 +9,7 @@ import { useReferralCodeCheck } from "@/hooks/useReferralCodeCheck";
 import { applyReferralCode, dismissReferralPrompt, getReferrals } from "@/lib/api";
 
 const PENDING_REFERRAL_CODE_KEY = "mce_pending_referral_code";
+const REFERRAL_SKIPPED_KEY = "mce_referral_skipped";
 
 function normalizeReferralCode(value: string): string {
   return value.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
@@ -97,6 +98,11 @@ function ReferralStep() {
     try {
       await applyReferralCode(code);
       await refreshMongoUser().catch(() => undefined);
+      try {
+        localStorage.removeItem(REFERRAL_SKIPPED_KEY);
+      } catch {
+        // Storage unavailable.
+      }
       leave();
     } catch (err: any) {
       setSubmitting(false);
@@ -111,6 +117,11 @@ function ReferralStep() {
       await dismissReferralPrompt();
     } catch {
       // Skipping is best-effort: still let them through even if the dismiss call fails.
+    }
+    try {
+      localStorage.setItem(REFERRAL_SKIPPED_KEY, "1");
+    } catch {
+      // Storage unavailable.
     }
     leave();
   }

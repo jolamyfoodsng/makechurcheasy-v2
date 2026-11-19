@@ -24,12 +24,84 @@ import { useTranslation } from "react-i18next";
 import type { LowerThirdTheme, LTPosition } from "../../lowerthirds/types";
 import { LT_POSITION_LABELS, LT_POSITIONS } from "../../lowerthirds/types";
 import { isSpeakerTheme } from "../../lowerthirds/speakerThemeUtils";
+import type { SlotStyleScope } from "../../lowerthirds/contentSlots";
 import { CYCLES_KEY, CYCLE_PRESETS, DEFAULT_CYCLES, PER_KEY, formatSeconds, getCycleInfo, parseCycles } from "../../lowerthirds/cycleSet";
 
 export interface DockMotionSpeaker {
   name: string;
   role: string;
   isMain?: boolean;
+}
+
+/**
+ * "Apply changes to: All slots | This slot" — style changes go to every memory slot of
+ * the graphic by default; "This slot" keeps them on the open slot only.
+ */
+export function DockSlotScopeToggle({
+  scope,
+  onScopeChange,
+  style,
+}: {
+  scope: SlotStyleScope;
+  onScopeChange: (scope: SlotStyleScope) => void;
+  style?: React.CSSProperties;
+}) {
+  const { t } = useTranslation();
+  const option = (value: SlotStyleScope, label: string, title: string) => {
+    const active = scope === value;
+    return (
+      <button
+        type="button"
+        role="radio"
+        aria-checked={active}
+        title={title}
+        onClick={() => onScopeChange(value)}
+        style={{
+          flex: 1,
+          minWidth: 0,
+          height: 22,
+          padding: "0 6px",
+          border: "none",
+          borderRadius: 2,
+          background: active ? "var(--dock-accent, var(--primary))" : "transparent",
+          color: active ? "#ffffff" : "var(--dock-text-dim, var(--dock-text))",
+          fontFamily: "inherit",
+          fontSize: 10,
+          fontWeight: 600,
+          cursor: "pointer",
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        }}
+      >
+        {label}
+      </button>
+    );
+  };
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 6, ...style }}>
+      <span style={{ fontSize: 10, fontWeight: 600, color: "var(--dock-text)", whiteSpace: "nowrap" }}>
+        {t("lowerThird.applyChangesTo", "Apply changes to")}
+      </span>
+      <div
+        role="radiogroup"
+        aria-label={t("lowerThird.applyChangesTo", "Apply changes to")}
+        style={{
+          display: "flex",
+          flex: 1,
+          gap: 2,
+          padding: 2,
+          minWidth: 0,
+          border: "1px solid var(--dock-border)",
+          borderRadius: 3,
+          background: "var(--dock-input-bg, var(--dock-surface))",
+        }}
+      >
+        {option("all", t("lowerThird.applyAllSlots", "All slots"), t("lowerThird.applyAllSlotsHint", "Size, timing, position and colours change on every memory slot"))}
+        {option("slot", t("lowerThird.applyThisSlot", "This slot"), t("lowerThird.applyThisSlotHint", "Only the open memory slot changes"))}
+      </div>
+    </div>
+  );
 }
 
 interface DockMotionControlsProps {
@@ -41,6 +113,8 @@ interface DockMotionControlsProps {
   onValueChange: (key: string, value: string) => void;
   position: LTPosition;
   onPositionChange: (position: LTPosition) => void;
+  styleScope: SlotStyleScope;
+  onStyleScopeChange: (scope: SlotStyleScope) => void;
 }
 
 const SPEED_OPTIONS = ["0.5", "0.75", "1", "1.25", "1.5", "2"];
@@ -81,6 +155,8 @@ export default function DockMotionControls({
   onValueChange,
   position,
   onPositionChange,
+  styleScope,
+  onStyleScopeChange,
 }: DockMotionControlsProps) {
   const { t } = useTranslation();
   const [customCycles, setCustomCycles] = useState(false);
@@ -120,6 +196,7 @@ export default function DockMotionControls({
         alignItems: "end",
       }}
     >
+      <DockSlotScopeToggle scope={styleScope} onScopeChange={onStyleScopeChange} style={{ gridColumn: "1 / -1" }} />
       {showSpeaker && speakers.length > 0 && (
       <div style={{ gridColumn: "1 / -1" }}>
         <label style={labelStyle} htmlFor="dock-motion-speaker">{t("lowerThird.speaker", "Speaker")}</label>

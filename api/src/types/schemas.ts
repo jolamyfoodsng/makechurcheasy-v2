@@ -483,6 +483,13 @@ export interface ReferralRecord {
   paidCurrency?: string | null;
   paidBillingReference?: string | null;
   paidBillingTransactionId?: string | null;
+  /**
+   * When the team sent the referrer their reward for this referral. A paid referral without it
+   * is still owed, and shows in the daily Telegram payout digest.
+   */
+  payoutPaidAt?: string | null;
+  /** Admin user id that marked the payout as sent. */
+  payoutPaidBy?: string | null;
   createdAt: string;
   updatedAt: string;
 }

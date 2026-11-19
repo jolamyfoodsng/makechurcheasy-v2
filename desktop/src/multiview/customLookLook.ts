@@ -79,6 +79,8 @@ export interface CustomLookSettings {
   lookId: string;
   html: string;
   cameraSlot: MultiviewLookCameraSlot;
+  /** Zoom / focus for the camera in its slot (default: just fills it, centred). */
+  cameraFraming?: { zoom: number; focusX: number; focusY: number };
   cameraSceneName: string;
 }
 
@@ -173,7 +175,7 @@ export async function applyCustomMultiViewLook(
     width: slot.width * canvas.scale,
     height: slot.height * canvas.scale,
   };
-  const fit = calculateFillTransform(sourceWidth, sourceHeight, target);
+  const fit = calculateFillTransform(sourceWidth, sourceHeight, target, settings.cameraFraming);
   await obs.call("SetSceneItemTransform", {
     sceneName,
     sceneItemId: camId,

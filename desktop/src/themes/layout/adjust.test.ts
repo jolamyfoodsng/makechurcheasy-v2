@@ -124,6 +124,27 @@ describe("layout backdrop (Dock background for full-screen layer themes)", () =>
     expect(applyLayoutAdjust(CARD, { backgroundType: "theme" })).toBe(CARD);
   });
 
+  it("Colour (full screen) drops the theme's cards and panels and fills the page with the colour", () => {
+    const CARD: ThemeLayout = {
+      version: 1,
+      format: "fullscreen",
+      swap: "content",
+      layers: [
+        { id: "card", name: "Card", type: "box", anchor: "center", x: 960, y: 540, w: 1640, h: 880, style: { fill: "#ffffff", shadow: "0 10px 30px #000" }, ...anim },
+        { id: "frame", name: "Frame", type: "box", anchor: "center", x: 960, y: 540, w: 1715, h: 956, style: { fill: "#f4f2ec" }, ...anim },
+        { id: "verse", name: "Verse", type: "text", parentId: "card", content: "{text}", anchor: "center", x: 820, y: 440, w: 1400, h: 600, style: { fontSize: 80 }, ...anim },
+      ],
+    };
+    const out = applyLayoutAdjust(CARD, { backgroundType: "color", backgroundColor: "#123456" });
+    const by = (id: string) => out.layers.find((l) => l.id === id)!;
+    expect(by("frame").hidden).toBe(true);
+    expect(by("card").style.fill).toBe("transparent");
+    expect(by("card").style.shadow).toBeUndefined();
+    expect(by("verse").hidden).toBeUndefined();
+    expect(out.layers[0].id).toBe("mce-backdrop");
+    expect(out.layers[0].style.fill).toBe("#123456");
+  });
+
   it("darkness sits right above the theme's own background, below the rest", () => {
     const out = applyLayoutAdjust(FS, { layoutBackdropDarkness: 40 });
     expect(out.layers.map((l) => l.id)).toEqual(["bg", "mce-backdrop-dim", "glow", "verse"]);

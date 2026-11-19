@@ -23,7 +23,8 @@ export type AuditAction =
   | "account_suspend"
   | "account_delete"
   | "role_change"
-  | "trial_action";
+  | "trial_action"
+  | "referral_payout";
 
 export interface AuditEvent {
   adminId: string;

@@ -50,6 +50,11 @@ import {
   scriptureCircleLayoutId,
   SCRIPTURE_CIRCLE_SCENE_NAME,
   type ScriptureCircleTheme,
+  buildScriptureCirclePanelUrl,
+  DEFAULT_LOOK_CAMERA_FRAMING,
+  normalizeLookCameraFraming,
+  reframeLookCamera,
+  type LookCameraFraming,
 } from "../../multiview/scriptureCircleLook";
 import {
   applyScriptureArchLook,
@@ -61,6 +66,7 @@ import {
   scriptureArchLayoutId,
   SCRIPTURE_ARCH_SCENE_NAME,
   type ScriptureArchTheme,
+  buildScriptureArchPanelUrl,
 } from "../../multiview/scriptureArchLook";
 import {
   applyScriptureGoldCircleLook,
@@ -72,6 +78,7 @@ import {
   scriptureGoldCircleLayoutId,
   SCRIPTURE_GOLD_CIRCLE_SCENE_NAME,
   type ScriptureGoldCircleTheme,
+  buildScriptureGoldCirclePanelUrl,
 } from "../../multiview/scriptureGoldCircleLook";
 import {
   listCustomMultiViewLooks,
@@ -163,6 +170,9 @@ interface SavedMultiView {
    *  card (layoutId starts with "multiview-look:"). Overrides the look's saved camera scene for
    *  this card only. Unused by every other layout. */
   customLookCameraSceneName?: string;
+  /** Zoom / position of the camera inside a single-camera look card (Scripture Circle, Arch,
+   *  Gold Circle, custom looks). Overrides the theme's saved framing for this card only. */
+  lookCameraFraming?: LookCameraFraming;
   slotFraming: Record<string, { displayMode: "fill" | "fit" | "custom"; zoom: number; focalX: number; focalY: number }>;
   /** Base64 data-URL thumbnails of assigned scenes */
   slotThumbnails: Record<string, string>;
@@ -3377,6 +3387,221 @@ function MVTemplateDropdown({
 // MV Card — one independent card per saved Multi-View
 // ---------------------------------------------------------------------------
 
+interface LookCameraTarget {
+  sceneName: string;
+  cameraSceneName: string;
+  /** Camera window on the 1920 × 1080 design. */
+  rect: { x: number; y: number; width: number; height: number };
+  /** The theme's own framing, used until the card is adjusted. */
+  baseFraming: LookCameraFraming;
+  /** The look's panel, for the card preview before it is in OBS: a page URL or inline html. */
+  panelUrl?: string;
+  panelHtml?: string;
+  cameraShape?: "rect" | "circle";
+}
+
+function safePanelUrl(build: () => string): string | undefined {
+  try { return build(); } catch { return undefined; }
+}
+
+/** Read a scene as a small image (the real look, camera included). */
+async function captureLookScene(sceneName: string): Promise<string | null> {
+  if (!sceneName || !dockObsClient.isConnected) return null;
+  try {
+    const resp = await dockObsClient.call("GetSourceScreenshot", {
+      sourceName: sceneName,
+      imageFormat: "jpeg",
+      imageWidth: 480,
+      imageHeight: 270,
+      imageCompressionQuality: 70,
+    }) as { imageData?: string };
+    const data = resp.imageData;
+    if (!data) return null;
+    return data.startsWith("data:") ? data : `data:image/jpeg;base64,${data}`;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Card preview for a single-camera look. Once the look is in OBS it shows the real scene
+ * (refreshed every few seconds and right after a camera change); before that it shows the
+ * look's own panel with a placeholder where the camera goes.
+ */
+function LookMiniPreview({
+  target,
+  inObs,
+  framing,
+}: {
+  target: LookCameraTarget | null;
+  inObs: boolean;
+  framing: LookCameraFraming;
+}) {
+  const [shot, setShot] = useState<string | null>(null);
+  const [boxWidth, setBoxWidth] = useState(0);
+  const boxRef = useRef<HTMLDivElement>(null);
+  const sceneName = target?.sceneName ?? "";
+
+  useEffect(() => {
+    const el = boxRef.current;
+    if (!el) return;
+    const update = () => setBoxWidth(el.clientWidth);
+    update();
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(update) : null;
+    ro?.observe(el);
+    return () => ro?.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!inObs || !sceneName) { setShot(null); return; }
+    let cancelled = false;
+    const grab = async () => {
+      if (typeof document !== "undefined" && document.hidden) return;
+      const img = await captureLookScene(sceneName);
+      if (!cancelled && img) setShot(img);
+    };
+    void grab();
+    const id = window.setInterval(() => { void grab(); }, 4000);
+    return () => { cancelled = true; window.clearInterval(id); };
+  }, [inObs, sceneName]);
+
+  // A camera change re-crops in OBS ~80ms later; grab a fresh picture just after.
+  const framingKey = `${framing.zoom}|${framing.focusX}|${framing.focusY}`;
+  useEffect(() => {
+    if (!inObs || !sceneName) return;
+    let cancelled = false;
+    const id = window.setTimeout(() => {
+      void captureLookScene(sceneName).then((img) => { if (!cancelled && img) setShot(img); });
+    }, 350);
+    return () => { cancelled = true; window.clearTimeout(id); };
+  }, [framingKey, inObs, sceneName]);
+
+  const scale = boxWidth > 0 ? boxWidth / CANVAS_W : 0;
+  const rect = target?.rect;
+  return (
+    <div ref={boxRef} className="dock-mv-look-preview" aria-label="Look preview">
+      {shot ? (
+        <img className="dock-mv-look-preview__shot" src={shot} alt="" draggable={false} />
+      ) : (
+        <>
+          {rect && (
+            <div
+              className={`dock-mv-look-preview__camera${target?.cameraShape === "circle" ? " dock-mv-look-preview__camera--circle" : ""}`}
+              style={{
+                left: `${(rect.x / CANVAS_W) * 100}%`,
+                top: `${(rect.y / CANVAS_H) * 100}%`,
+                width: `${(rect.width / CANVAS_W) * 100}%`,
+                height: `${(rect.height / CANVAS_H) * 100}%`,
+              }}
+            >
+              <Icon name="videocam" size={16} />
+              <span>Camera</span>
+            </div>
+          )}
+          {scale > 0 && (target?.panelUrl || target?.panelHtml) && (
+            <iframe
+              className="dock-mv-look-preview__panel"
+              title="Look panel"
+              src={target?.panelHtml ? undefined : target?.panelUrl}
+              srcDoc={target?.panelHtml}
+              sandbox="allow-scripts allow-same-origin"
+              tabIndex={-1}
+              style={{ width: CANVAS_W, height: CANVAS_H, transform: `scale(${scale})` }}
+            />
+          )}
+          <span className="dock-mv-look-preview__note">Press Preview to see it with your camera</span>
+        </>
+      )}
+    </div>
+  );
+}
+
+/** Quick camera controls for a single-camera look: zoom and which part of the picture shows.
+ *  Changes follow live in OBS once the look has been previewed. */
+function LookCameraAdjust({
+  framing,
+  customised,
+  onChange,
+  onReset,
+}: {
+  framing: LookCameraFraming;
+  customised: boolean;
+  onChange: (framing: LookCameraFraming) => void;
+  onReset: () => void;
+}) {
+  const nudge = (dx: number, dy: number) => onChange({
+    ...framing,
+    focusX: Math.min(100, Math.max(0, framing.focusX + dx)),
+    focusY: Math.min(100, Math.max(0, framing.focusY + dy)),
+  });
+  const zoomBy = (dz: number) => onChange({ ...framing, zoom: Math.min(3, Math.max(1, Math.round((framing.zoom + dz) * 100) / 100)) });
+  const panDisabled = framing.zoom <= 1.001;
+  return (
+    <div className="dock-mv-assign-section dock-mv-camera-adjust" role="group" aria-label="Camera">
+      <div className="dock-mv-assign-header">
+        <Icon name="tune" size={13} />
+        <span>Camera</span>
+        <button
+          type="button"
+          className="dock-mv-camera-adjust__reset"
+          onClick={onReset}
+          disabled={!customised}
+          title="Go back to the theme's camera framing"
+        >
+          Reset
+        </button>
+      </div>
+      <div className="dock-mv-camera-adjust__row">
+        <span className="dock-mv-property__label">Zoom</span>
+        <button type="button" className="dock-mv-camera-adjust__step" onClick={() => zoomBy(-0.1)} disabled={framing.zoom <= 1} aria-label="Zoom out" title="Zoom out">
+          <Icon name="remove" size={14} />
+        </button>
+        <input
+          type="range"
+          min={1}
+          max={3}
+          step={0.05}
+          value={framing.zoom}
+          onChange={(e) => onChange({ ...framing, zoom: Number(e.target.value) })}
+          aria-label="Zoom"
+          className="dock-mv-camera-adjust__slider"
+        />
+        <button type="button" className="dock-mv-camera-adjust__step" onClick={() => zoomBy(0.1)} disabled={framing.zoom >= 3} aria-label="Zoom in" title="Zoom in">
+          <Icon name="add" size={14} />
+        </button>
+        <span className="dock-mv-camera-adjust__value">{Math.round(framing.zoom * 100)}%</span>
+      </div>
+      <div className="dock-mv-camera-adjust__pan">
+        <span className="dock-mv-property__label">Move</span>
+        <div className="dock-mv-camera-adjust__pad" title={panDisabled ? "Zoom in first to move the picture" : "Move the picture inside the window"}>
+          <span />
+          <button type="button" className="dock-mv-camera-adjust__step" onClick={() => nudge(0, -10)} disabled={panDisabled || framing.focusY <= 0} aria-label="Show higher">
+            <Icon name="expand_less" size={14} />
+          </button>
+          <span />
+          <button type="button" className="dock-mv-camera-adjust__step" onClick={() => nudge(-10, 0)} disabled={panDisabled || framing.focusX <= 0} aria-label="Show further left">
+            <Icon name="chevron_left" size={14} />
+          </button>
+          <button type="button" className="dock-mv-camera-adjust__step" onClick={() => onChange({ ...framing, focusX: 50, focusY: 50 })} disabled={panDisabled || (framing.focusX === 50 && framing.focusY === 50)} aria-label="Centre" title="Centre">
+            <Icon name="radio_button_checked" size={14} />
+          </button>
+          <button type="button" className="dock-mv-camera-adjust__step" onClick={() => nudge(10, 0)} disabled={panDisabled || framing.focusX >= 100} aria-label="Show further right">
+            <Icon name="chevron_right" size={14} />
+          </button>
+          <span />
+          <button type="button" className="dock-mv-camera-adjust__step" onClick={() => nudge(0, 10)} disabled={panDisabled || framing.focusY >= 100} aria-label="Show lower">
+            <Icon name="keyboard_arrow_down" size={14} />
+          </button>
+          <span />
+        </div>
+        <span className="dock-mv-camera-adjust__hint">
+          {panDisabled ? "Zoom in to move the picture." : "Changes show in OBS straight away after Preview."}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 const MVCard = memo(function MVCard({
   mv,
   index,
@@ -3398,6 +3623,8 @@ const MVCard = memo(function MVCard({
   onAssignScriptureArchCamera,
   onAssignScriptureGoldCircleCamera,
   onAssignCustomLookCamera,
+  resolveLookCamera,
+  onUpdateLookCameraFraming,
   onClearSlot,
   onUpdateFrame,
   onUpdateFrameThickness,
@@ -3434,6 +3661,8 @@ const MVCard = memo(function MVCard({
   onAssignScriptureArchCamera: (id: string, sceneName: string) => void;
   onAssignScriptureGoldCircleCamera: (id: string, sceneName: string) => void;
   onAssignCustomLookCamera: (id: string, sceneName: string) => void;
+  resolveLookCamera: (mv: SavedMultiView) => LookCameraTarget | null;
+  onUpdateLookCameraFraming: (id: string, framing: LookCameraFraming | null) => void;
   onClearSlot: (id: string, slotId: string) => void;
   onUpdateFrame: (id: string, frameId: string | null) => void;
   onUpdateFrameThickness: (id: string, thickness: number) => void;
@@ -3628,7 +3857,17 @@ const MVCard = memo(function MVCard({
       />
 
       {/* Layout Preview — shown below template */}
-      {layout && (
+      {layout && isSingleCameraLook && (() => {
+        const target = resolveLookCamera(mv);
+        return (
+          <LookMiniPreview
+            target={target}
+            inObs={!!target && obsScenes.includes(target.sceneName)}
+            framing={mv.lookCameraFraming ?? target?.baseFraming ?? DEFAULT_LOOK_CAMERA_FRAMING}
+          />
+        );
+      })()}
+      {layout && !isSingleCameraLook && (
         <LayoutMiniPreview
           layout={layout}
           thumbnails={mv.slotThumbnails}
@@ -3874,6 +4113,15 @@ const MVCard = memo(function MVCard({
             </select>
           </div>
         </div>
+      )}
+
+      {layout && isSingleCameraLook && (
+        <LookCameraAdjust
+          framing={mv.lookCameraFraming ?? resolveLookCamera(mv)?.baseFraming ?? DEFAULT_LOOK_CAMERA_FRAMING}
+          customised={Boolean(mv.lookCameraFraming)}
+          onChange={(framing) => onUpdateLookCameraFraming(mv.id, framing)}
+          onReset={() => onUpdateLookCameraFraming(mv.id, null)}
+        />
       )}
 
       {layout && !isSingleCameraLook && (<><div className="dock-mv-assign-section">
@@ -4572,6 +4820,7 @@ function DockMultiviewTab({ isActive = true }: { isActive?: boolean }) {
       scriptureArchCameraSceneName: undefined,
       scriptureGoldCircleCameraSceneName: undefined,
       customLookCameraSceneName: undefined,
+      lookCameraFraming: undefined,
       layoutFrameId: selectedLayout?.defaultFrameId ?? null,
       slotFrames: { ...(selectedLayout?.defaultSlotFrames ?? {}) },
       updatedAt: new Date().toISOString(),
@@ -4836,6 +5085,88 @@ function DockMultiviewTab({ isActive = true }: { isActive?: boolean }) {
     } catch { /* ignore */ }
   }, []);
 
+  // ── Quick camera adjust for single-camera looks ──
+  /** Where a look card's camera sits in OBS, and the framing it starts from. */
+  const resolveLookCamera = useCallback((mv: SavedMultiView): LookCameraTarget | null => {
+    const circleId = parseScriptureCircleThemeId(mv.layoutId);
+    if (circleId) {
+      const theme = scriptureCircleThemes.find((e) => e.id === circleId) ?? getScriptureCircleTheme(circleId);
+      if (!theme) return null;
+      const c = theme.settings.circle;
+      return {
+        sceneName: SCRIPTURE_CIRCLE_SCENE_NAME,
+        cameraSceneName: mv.scriptureCircleCameraSceneName || theme.settings.cameraSceneName,
+        rect: { x: c.x, y: c.y, width: c.diameter, height: c.diameter },
+        baseFraming: theme.settings.camera,
+        panelUrl: safePanelUrl(() => buildScriptureCirclePanelUrl(theme.settings)),
+        cameraShape: "circle",
+      };
+    }
+    const archId = parseScriptureArchThemeId(mv.layoutId);
+    if (archId) {
+      const theme = scriptureArchThemes.find((e) => e.id === archId) ?? getScriptureArchTheme(archId);
+      if (!theme) return null;
+      const w = theme.settings.window;
+      return {
+        sceneName: SCRIPTURE_ARCH_SCENE_NAME,
+        cameraSceneName: mv.scriptureArchCameraSceneName || theme.settings.cameraSceneName,
+        rect: { x: w.x, y: w.y, width: w.width, height: w.height },
+        baseFraming: theme.settings.camera,
+        panelUrl: safePanelUrl(() => buildScriptureArchPanelUrl(theme.settings)),
+      };
+    }
+    const goldId = parseScriptureGoldCircleThemeId(mv.layoutId);
+    if (goldId) {
+      const theme = scriptureGoldCircleThemes.find((e) => e.id === goldId) ?? getScriptureGoldCircleTheme(goldId);
+      if (!theme) return null;
+      const c = theme.settings.circle;
+      return {
+        sceneName: SCRIPTURE_GOLD_CIRCLE_SCENE_NAME,
+        cameraSceneName: mv.scriptureGoldCircleCameraSceneName || theme.settings.cameraSceneName,
+        rect: { x: c.x, y: c.y, width: c.diameter, height: c.diameter },
+        baseFraming: theme.settings.camera,
+        panelUrl: safePanelUrl(() => buildScriptureGoldCirclePanelUrl(theme.settings)),
+        cameraShape: "circle",
+      };
+    }
+    const lookId = parseCustomLookLayoutId(mv.layoutId);
+    if (lookId) {
+      const look = customLooks.find((e) => e.lookId === lookId);
+      const slot = look?.package?.cameraSlot;
+      if (!slot) return null;
+      return {
+        sceneName: customLookSceneName(lookId),
+        cameraSceneName: mv.customLookCameraSceneName || customLookCameraScenes[lookId] || getCustomLookCameraScene(lookId),
+        rect: { x: slot.x, y: slot.y, width: slot.width, height: slot.height },
+        baseFraming: DEFAULT_LOOK_CAMERA_FRAMING,
+        panelHtml: look?.package?.html,
+        cameraShape: slot.shape === "circle" ? "circle" : "rect",
+      };
+    }
+    return null;
+  }, [scriptureCircleThemes, scriptureArchThemes, scriptureGoldCircleThemes, customLooks, customLookCameraScenes]);
+
+  const reframeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleUpdateLookCameraFraming = useCallback((id: string, framing: LookCameraFraming | null) => {
+    const next = savedListRef.current.map(m => m.id === id ? {
+      ...m,
+      lookCameraFraming: framing ? normalizeLookCameraFraming(framing) : undefined,
+      updatedAt: new Date().toISOString(),
+    } : m);
+    commitSavedList(next);
+    const mv = next.find(m => m.id === id);
+    const target = mv ? resolveLookCamera(mv) : null;
+    if (!mv || !target || !obsReady) return;
+    const effective = mv.lookCameraFraming ?? target.baseFraming;
+    // Follow the slider in OBS without rebuilding the look (only the camera crop changes).
+    if (reframeTimerRef.current) clearTimeout(reframeTimerRef.current);
+    reframeTimerRef.current = setTimeout(() => {
+      reframeTimerRef.current = null;
+      void reframeLookCamera(dockObsClient, target.sceneName, target.cameraSceneName, target.rect, effective)
+        .catch((err) => console.warn("[DockMultiview] Camera reframe failed:", err));
+    }, 80);
+  }, [commitSavedList, resolveLookCamera, obsReady]);
+
   const handlePush = useCallback(async (mv: SavedMultiView) => {
     if (!(await requireEntitlement("multiview", 0))) return;
     await ensureObsConnected();
@@ -4856,6 +5187,7 @@ function DockMultiviewTab({ isActive = true }: { isActive?: boolean }) {
         const settings = {
           ...theme.settings,
           cameraSceneName: mv.scriptureCircleCameraSceneName || theme.settings.cameraSceneName,
+          camera: mv.lookCameraFraming ?? theme.settings.camera,
         };
         const { sceneName } = await applyScriptureCircleLook(dockObsClient, settings);
         try { await dockObsClient.call("SetCurrentPreviewScene", { sceneName }); } catch { /* non-critical */ }
@@ -4884,6 +5216,7 @@ function DockMultiviewTab({ isActive = true }: { isActive?: boolean }) {
           lookId: customLookId,
           html: look.package.html,
           cameraSlot: look.package.cameraSlot,
+          cameraFraming: mv.lookCameraFraming,
           cameraSceneName,
         });
         try { await dockObsClient.call("SetCurrentPreviewScene", { sceneName }); } catch { /* non-critical */ }
@@ -4907,6 +5240,7 @@ function DockMultiviewTab({ isActive = true }: { isActive?: boolean }) {
         const settings = {
           ...theme.settings,
           cameraSceneName: mv.scriptureArchCameraSceneName || theme.settings.cameraSceneName,
+          camera: mv.lookCameraFraming ?? theme.settings.camera,
         };
         const { sceneName } = await applyScriptureArchLook(dockObsClient, settings);
         try { await dockObsClient.call("SetCurrentPreviewScene", { sceneName }); } catch { /* non-critical */ }
@@ -4930,6 +5264,7 @@ function DockMultiviewTab({ isActive = true }: { isActive?: boolean }) {
         const settings = {
           ...theme.settings,
           cameraSceneName: mv.scriptureGoldCircleCameraSceneName || theme.settings.cameraSceneName,
+          camera: mv.lookCameraFraming ?? theme.settings.camera,
         };
         const { sceneName } = await applyScriptureGoldCircleLook(dockObsClient, settings);
         try { await dockObsClient.call("SetCurrentPreviewScene", { sceneName }); } catch { /* non-critical */ }
@@ -5321,6 +5656,8 @@ function DockMultiviewTab({ isActive = true }: { isActive?: boolean }) {
             onAssignScriptureArchCamera={handleAssignScriptureArchCamera}
             onAssignScriptureGoldCircleCamera={handleAssignScriptureGoldCircleCamera}
             onAssignCustomLookCamera={handleAssignCustomLookCamera}
+            resolveLookCamera={resolveLookCamera}
+            onUpdateLookCameraFraming={handleUpdateLookCameraFraming}
             onClearSlot={handleRemoveSlot}
             onUpdateFrame={handleUpdateFrame}
             onUpdateFrameThickness={handleUpdateFrameThickness}

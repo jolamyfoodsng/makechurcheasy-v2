@@ -17,14 +17,20 @@ import { isDockTabVisible } from "../dockTabVisibility";
 const PRIMARY_KEY_LABEL = typeof navigator !== "undefined" && /Mac|iPhone|iPad/i.test(`${navigator.platform} ${navigator.userAgent}`) ? "⌘" : "Ctrl";
 import type { ContentSlot, SlotState } from "../../lowerthirds/contentSlots";
 import {
+  applyStylePatchToState,
+  applyStyleToAllSlots,
   deleteSlot,
+  loadSharedSlotStyle,
+  loadSlotStyleScope,
   loadSlots,
   loadActiveSlotIndex,
   saveActiveSlotIndex,
   renameSlot,
   resolveSlotState,
   saveSlot,
+  saveSlotStyleScope,
 } from "../../lowerthirds/contentSlots";
+import type { SlotStylePatch, SlotStyleScope } from "../../lowerthirds/contentSlots";
 import { buildOverlayUrl } from "../../lowerthirds/lowerThirdObsService";
 import { isLogoVariable, resolveOverlayAssetUrl } from "../../lowerthirds/runtimeBranding";
 import { isSpeakerTheme } from "../../lowerthirds/speakerThemeUtils";
@@ -58,7 +64,7 @@ import { applyChurchDefaults, churchAwareDefaults, sameValues } from "../../lowe
 import { getSafeFileName, saveToDisk } from "../dockUploadService";
 import GivingBankFields, { hasGivingBankFields, isGivingBankFieldKey } from "../components/GivingBankFields";
 import Icon from "../DockIcon";
-import DockMotionControls from "./DockMotionControls";
+import DockMotionControls, { DockSlotScopeToggle } from "./DockMotionControls";
 import { PER_KEY, isCycleTheme } from "../../lowerthirds/cycleSet";
 import DockGraphicPreviewModal from "../components/DockGraphicPreviewModal";
 import DockSceneRouteSendControl from "../components/DockSceneRouteSendControl";
@@ -154,6 +160,17 @@ function withLtAppearanceColor(styles: LTCustomStyle, key: LTAppearanceColorKey,
     borderColor1: color,
     borderColor2: color,
   };
+}
+
+const LT_APPEARANCE_STYLE_KEYS = [
+  "bgColor", "bgColor1", "bgColor2", "textColor", "nameColor", "infoColor", "accentColor", "borderColor1", "borderColor2",
+] as const;
+
+/** Just the Appearance colours, to copy to the other memory slots. */
+function pickLtAppearanceColors(styles: LTCustomStyle): Partial<LTCustomStyle> {
+  const picked: Record<string, unknown> = {};
+  for (const key of LT_APPEARANCE_STYLE_KEYS) picked[key] = (styles as unknown as Record<string, unknown>)[key] ?? "";
+  return picked as Partial<LTCustomStyle>;
 }
 
 function withoutLtAppearanceColors(styles: LTCustomStyle): LTCustomStyle {
@@ -253,14 +270,15 @@ function loadInitialSlotState(themeId: string, slotIndex: number, theme: LowerTh
   for (const v of theme.variables) {
     defaults[v.key] = v.defaultValue ?? "";
   }
-  return {
+  // An empty slot starts with the style the other slots share.
+  return applyStylePatchToState({
     variableValues: defaults,
     customStyles: { ...LT_DEFAULT_CUSTOM_STYLE },
     // Graphics saved in Broadcast Graphics start where the user placed them.
     position: (theme as LowerThirdTheme & { defaultPosition?: LTPosition }).defaultPosition || "bottom-left",
     animationIn: (theme.animation?.name as LTAnimationIn) || "slide-left",
     exitStyle: "fade",
-  };
+  }, loadSharedSlotStyle(themeId, editorId));
 }
 
 // ---------------------------------------------------------------------------
@@ -685,6 +703,32 @@ export default function DockLowerThirdEditor({
   const latestRef = useRef({ variableValues, customStyles, position, animationIn, exitStyle, activeSlotIndex, theme });
   latestRef.current = { variableValues, customStyles, position, animationIn, exitStyle, activeSlotIndex, theme };
 
+  // ── Style scope: Size, timing, position and colours go to every slot by default ──
+  const [styleScope, setStyleScope] = useState<SlotStyleScope>(() => loadSlotStyleScope());
+  const handleStyleScopeChange = useCallback((scope: SlotStyleScope) => {
+    setStyleScope(scope);
+    saveSlotStyleScope(scope);
+  }, []);
+  const shareStyle = useCallback((patch: SlotStylePatch) => {
+    if (styleScope !== "all") return;
+    const { theme: currentTheme, activeSlotIndex: currentSlotIdx } = latestRef.current;
+    applyStyleToAllSlots(currentTheme.id, editorId, patch, currentSlotIdx);
+    setSlots(loadSlots(currentTheme.id, editorId));
+  }, [styleScope, editorId]);
+  const handleStyleValueChange = useCallback((key: string, value: string) => {
+    setVariableValues((prev) => ({ ...prev, [key]: value }));
+    shareStyle({ values: { [key]: value } });
+  }, [shareStyle]);
+  const handleStylePositionChange = useCallback((next: LTPosition) => {
+    setPosition(next);
+    shareStyle({ position: next });
+  }, [shareStyle]);
+  const updateAppearance = useCallback((update: (prev: LTCustomStyle) => LTCustomStyle) => {
+    const next = update(latestRef.current.customStyles);
+    setCustomStyles(next);
+    shareStyle({ customStyles: pickLtAppearanceColors(next) });
+  }, [shareStyle]);
+
   // ── Slot handlers ──
   const handleRecallSlot = useCallback((slot: ContentSlot) => {
     const resolved = resolveSlotState(slot);
@@ -851,14 +895,15 @@ export default function DockLowerThirdEditor({
       // Filled slot: load its saved data into the editor
       handleRecallSlot(targetSlot);
     } else {
-      // Empty slot: select it with default values
+      // Empty slot: select it with default text and the style the other slots share
       const init: Record<string, string> = {};
       for (const v of theme.variables) {
         init[v.key] = v.defaultValue ?? "";
       }
-      setVariableValues(init);
-      setCustomStyles({ ...LT_DEFAULT_CUSTOM_STYLE });
-      setPosition("bottom-left");
+      const shared = loadSharedSlotStyle(theme.id, editorId);
+      setVariableValues({ ...init, ...(shared.values ?? {}) });
+      setCustomStyles({ ...LT_DEFAULT_CUSTOM_STYLE, ...(shared.customStyles ?? {}) });
+      setPosition(shared.position ?? "bottom-left");
       setAnimationIn((theme.animation?.name as LTAnimationIn) || "slide-left");
       setExitStyle("fade");
       setSelectedSpeakerIdx(null);
@@ -1311,9 +1356,11 @@ export default function DockLowerThirdEditor({
                 selectedSpeakerIdx={selectedSpeakerIdx}
                 onSelectSpeaker={setSelectedSpeakerIdx}
                 values={variableValues}
-                onValueChange={(key, value) => setVariableValues((prev) => ({ ...prev, [key]: value }))}
+                onValueChange={handleStyleValueChange}
                 position={position}
-                onPositionChange={setPosition}
+                onPositionChange={handleStylePositionChange}
+                styleScope={styleScope}
+                onStyleScopeChange={handleStyleScopeChange}
               />
             ) : (
             <div
@@ -1359,7 +1406,7 @@ export default function DockLowerThirdEditor({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setCustomStyles((prev) => withoutLtAppearanceColors(prev))}
+                  onClick={() => updateAppearance(withoutLtAppearanceColors)}
                   style={{
                     border: "1px solid var(--dock-border)",
                     borderRadius: 3,
@@ -1381,6 +1428,7 @@ export default function DockLowerThirdEditor({
                   aria-label={t("lowerThird.appearance", "Appearance")}
                   style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 }}
                 >
+                  <DockSlotScopeToggle scope={styleScope} onScopeChange={handleStyleScopeChange} style={{ gridColumn: "1 / -1" }} />
                   {LT_APPEARANCE_COLOR_CONTROLS.map((control) => {
                     const explicitColor = getLtAppearanceColor(customStyles, control.key);
                     const baseColor = control.key === "accentColor" ? theme.accentColor : control.fallback;
@@ -1402,7 +1450,7 @@ export default function DockLowerThirdEditor({
                         <input
                           type="color"
                           value={ltColorInputValue(explicitColor || effectiveColor, control.fallback)}
-                          onChange={(event) => setCustomStyles((prev) => withLtAppearanceColor(prev, control.key, event.target.value))}
+                          onChange={(event) => updateAppearance((prev) => withLtAppearanceColor(prev, control.key, event.target.value))}
                           title={control.label}
                           style={{
                             width: 26,

@@ -570,7 +570,12 @@ export function applyLayoutAdjust(layout: ThemeLayout, source: unknown): ThemeLa
     if (offset && !layer.parentId) next = { ...next, y: layer.y + offset };
     return next;
   });
-  const stripped = bgOff ? stripLayoutBackground(layers) : ltFill && ltBackdrop ? applyLowerThirdBackdrop(layers, ltBackdrop) : layers;
+  // Full screen, a picked colour: the colour is the whole background, so the theme's own
+  // panels, cards and frames go too (only the words stay), just like Off.
+  const fsColour = layout.format === "fullscreen" && picked.kind === "color";
+  const stripped = bgOff || fsColour
+    ? stripLayoutBackground(layers)
+    : ltFill && ltBackdrop ? applyLowerThirdBackdrop(layers, ltBackdrop) : layers;
   const grown = growVerseBoxes(stripped, textK * lineK, nextShowHeading !== false);
   const aligned = headingAlign ? alignHeading(grown, layout, headingAlign) : grown;
   const finalLayers = backdropChanged && backdrop ? applyBackdrop(aligned, backdrop) : aligned;

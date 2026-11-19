@@ -10,11 +10,28 @@ import {
   Search,
   TrendingUp,
   Users,
+  Wallet,
   X,
 } from "lucide-react";
-import { getAdminReferrals, type AdminReferralOverview, type ReferralListItem } from "@/lib/api";
+import {
+  getAdminReferrals,
+  setAdminReferralPayoutSent,
+  type AdminReferralOverview,
+  type ReferralListItem,
+} from "@/lib/api";
 
-type StatusFilter = "all" | "signed_up" | "paid";
+type StatusFilter = "all" | "signed_up" | "paid" | "payout_owed";
+
+function isPayoutOwed(row: ReferralListItem): boolean {
+  return row.status === "paid" && !row.payoutPaidAt;
+}
+
+const STATUS_FILTER_LABELS: Record<StatusFilter, string> = {
+  all: "All",
+  signed_up: "Signed Up",
+  paid: "Paid",
+  payout_owed: "Payout Owed",
+};
 
 function formatDate(value: string | null): string {
   if (!value) return "Not yet";
@@ -59,6 +76,7 @@ export default function AdminReferralsPage() {
   const [assigning, setAssigning] = useState(false);
   const [assignError, setAssignError] = useState("");
   const [assignSuccess, setAssignSuccess] = useState("");
+  const [payoutSavingId, setPayoutSavingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -155,11 +173,38 @@ export default function AdminReferralsPage() {
     }
   };
 
+  const togglePayout = async (row: ReferralListItem) => {
+    const sent = isPayoutOwed(row);
+    if (!sent && !window.confirm("Mark this payout as not sent? It will show as owed again.")) return;
+    setPayoutSavingId(row.id);
+    setError("");
+    try {
+      const result = await setAdminReferralPayoutSent(row.id, sent);
+      setData((current) => {
+        if (!current) return current;
+        const referrals = current.referrals.map((item) =>
+          item.id === row.id ? { ...item, payoutPaidAt: result.payoutPaidAt } : item,
+        );
+        return {
+          ...current,
+          stats: { ...current.stats, payoutsOwed: referrals.filter(isPayoutOwed).length },
+          referrals,
+        };
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not update the payout");
+    } finally {
+      setPayoutSavingId(null);
+    }
+  };
+
   const filtered = useMemo(() => {
     const rows = data?.referrals || [];
     const q = search.trim().toLowerCase();
     return rows.filter((row) => {
-      const matchesStatus = statusFilter === "all" || row.status === statusFilter;
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "payout_owed" ? isPayoutOwed(row) : row.status === statusFilter);
       const referrer = row.referrerUser;
       const referred = row.referredUser;
       const matchesSearch =
@@ -199,7 +244,7 @@ export default function AdminReferralsPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-50">Referrals</h1>
           <p className="mt-1 text-sm text-slate-400">
-            Track referral signups and which referrals became paid subscriptions.
+            Track referral signups, which became paid subscriptions, and which referrers you still owe.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -230,7 +275,7 @@ export default function AdminReferralsPage() {
         </div>
       ) : null}
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
         <div className="rounded-2xl border border-slate-700 bg-gray-900 p-5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
@@ -275,6 +320,17 @@ export default function AdminReferralsPage() {
             {data?.stats.conversionRate ?? 0}%
           </p>
         </div>
+        <div className="rounded-2xl border border-slate-700 bg-gray-900 p-5">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+              Payouts Owed
+            </span>
+            <Wallet className="h-5 w-5 text-rose-400" />
+          </div>
+          <p className="mt-3 text-3xl font-bold text-slate-50">
+            {data?.stats.payoutsOwed ?? (data?.referrals || []).filter(isPayoutOwed).length}
+          </p>
+        </div>
       </div>
 
       <div className="rounded-2xl border border-slate-700 bg-gray-900">
@@ -290,7 +346,7 @@ export default function AdminReferralsPage() {
           </div>
 
           <div className="flex rounded-xl border border-slate-700 bg-slate-950 p-1">
-            {(["all", "signed_up", "paid"] as StatusFilter[]).map((status) => (
+            {(["all", "signed_up", "paid", "payout_owed"] as StatusFilter[]).map((status) => (
               <button
                 key={status}
                 type="button"
@@ -301,14 +357,14 @@ export default function AdminReferralsPage() {
                     : "text-slate-400 hover:bg-gray-800 hover:text-slate-100"
                 }`}
               >
-                {status === "all" ? "All" : status === "paid" ? "Paid" : "Signed Up"}
+                {STATUS_FILTER_LABELS[status]}
               </button>
             ))}
           </div>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[940px] text-left text-sm">
+          <table className="w-full min-w-[1100px] text-left text-sm">
             <thead className="border-b border-slate-700 text-xs font-bold uppercase tracking-wider text-slate-500">
               <tr>
                 <th className="px-5 py-3">Referrer</th>
@@ -317,7 +373,8 @@ export default function AdminReferralsPage() {
                 <th className="px-5 py-3">Status</th>
                 <th className="px-5 py-3">Signed Up</th>
                 <th className="px-5 py-3">Paid</th>
-                <th className="px-5 py-3 text-right">Plan</th>
+                <th className="px-5 py-3">Plan</th>
+                <th className="px-5 py-3 text-right">Payout</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800">
@@ -357,8 +414,38 @@ export default function AdminReferralsPage() {
                   </td>
                   <td className="px-5 py-3 text-slate-300">{formatDate(row.createdAt)}</td>
                   <td className="px-5 py-3 text-slate-300">{formatDate(row.paidAt)}</td>
-                  <td className="px-5 py-3 text-right font-semibold capitalize text-slate-100">
+                  <td className="px-5 py-3 font-semibold capitalize text-slate-100">
                     {row.paidPlan || row.referredUser?.plan || "Free"}
+                  </td>
+                  <td className="px-5 py-3 text-right">
+                    {row.status !== "paid" ? (
+                      <span className="text-xs text-slate-500">Not due</span>
+                    ) : (
+                      <div className="flex items-center justify-end gap-3">
+                        <span
+                          className={`inline-flex items-center rounded-full border px-2 py-1 text-xs font-semibold ${
+                            row.payoutPaidAt
+                              ? "border-green-500/30 bg-green-500/10 text-green-300"
+                              : "border-rose-500/30 bg-rose-500/10 text-rose-300"
+                          }`}
+                        >
+                          {row.payoutPaidAt ? `Sent ${formatDate(row.payoutPaidAt)}` : "Owed"}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => void togglePayout(row)}
+                          disabled={payoutSavingId === row.id}
+                          className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition disabled:opacity-50 ${
+                            row.payoutPaidAt
+                              ? "border border-slate-700 text-slate-300 hover:bg-slate-800"
+                              : "bg-violet-600 text-white hover:bg-violet-500"
+                          }`}
+                        >
+                          {payoutSavingId === row.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+                          {row.payoutPaidAt ? "Undo" : "Mark payout sent"}
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}

@@ -647,10 +647,12 @@ export function applyFullscreenQuickThemeSettings(
         : useThemeBg
           ? (theme.settings.backgroundPattern ?? "")
           : quickSettings.backgroundPattern,
-      boxBackground: useNoBg
+      // Off and Colour drop the theme's text box and its picture: only the words stay, on
+      // nothing (Off) or on the picked colour (Colour).
+      boxBackground: useNoBg || useColorBg
         ? "transparent"
-        : (quickSettings.boxBackground || theme.settings.boxBackground || (useColorBg ? quickSettings.backgroundColor : "rgba(15, 23, 42, 0.85)")),
-      boxBackgroundImage: quickSettings.boxBackgroundImage ?? theme.settings.boxBackgroundImage ?? "",
+        : (quickSettings.boxBackground || theme.settings.boxBackground || "rgba(15, 23, 42, 0.85)"),
+      boxBackgroundImage: useNoBg || useColorBg ? "" : (quickSettings.boxBackgroundImage ?? theme.settings.boxBackgroundImage ?? ""),
       boxOpacity: quickSettings.boxOpacity ?? theme.settings.boxOpacity ?? 1,
       borderRadius: quickSettings.borderRadius ?? theme.settings.borderRadius ?? 16,
       referenceBackgroundEnabled: quickSettings.referenceBackgroundEnabled,

@@ -133,6 +133,20 @@ const LAYER_PREVIEW_SAMPLES: Record<"verse" | "song" | "note", { label: string; 
   },
 };
 
+type LayerSampleKey = keyof typeof LAYER_PREVIEW_SAMPLES;
+const LAYER_SAMPLE_TEXT_KEY = "mce-theme-editor-sample-text";
+
+/** The user's own preview words (per sample), kept between visits. */
+function loadCustomLayerSamples(): Partial<Record<LayerSampleKey, { text: string; reference: string }>> {
+  try {
+    const raw = localStorage.getItem(LAYER_SAMPLE_TEXT_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
 const CATEGORY_OPTIONS: Array<{ value: BibleThemeCategory; label: string; icon: string }> = [
   { value: "bible", label: "Bible", icon: "auto_stories" },
   { value: "worship", label: "Worship", icon: "music_note" },
@@ -971,6 +985,28 @@ export default function ThemeCreatorModal({ onClose, onSaved, editTheme, initial
   const [layerMenu, setLayerMenu] = useState<{ x: number; y: number } | null>(null);
   const [draftLayout, setDraftLayout] = useState<ThemeLayout | null>(null);
   const [layerSample, setLayerSample] = useState<"verse" | "song" | "note">("verse");
+  const [customSamples, setCustomSamples] = useState(loadCustomLayerSamples);
+  const [sampleEditorOpen, setSampleEditorOpen] = useState(false);
+  const updateCustomSample = useCallback((key: LayerSampleKey, patch: Partial<{ text: string; reference: string }> | null) => {
+    setCustomSamples((prev) => {
+      const next = { ...prev };
+      if (patch === null) delete next[key];
+      else {
+        const base = prev[key] ?? {
+          text: LAYER_PREVIEW_SAMPLES[key].content.text ?? "",
+          reference: LAYER_PREVIEW_SAMPLES[key].content.reference ?? "",
+        };
+        next[key] = { ...base, ...patch };
+      }
+      try { localStorage.setItem(LAYER_SAMPLE_TEXT_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  }, []);
+  const layerPreviewContent = useMemo<ThemeContent>(() => {
+    const own = customSamples[layerSample];
+    const sample = LAYER_PREVIEW_SAMPLES[layerSample].content;
+    return own ? { ...sample, text: own.text, reference: own.reference } : sample;
+  }, [customSamples, layerSample]);
   const [layerPlaying, setLayerPlaying] = useState(0);
   const layerCanvasRef = useRef<HTMLDivElement>(null);
 
@@ -1721,7 +1757,7 @@ export default function ThemeCreatorModal({ onClose, onSaved, editTheme, initial
                     <ThemeLayoutPreview
                       key={layerPlaying ? `play-${layerPlaying}` : "still"}
                       layout={previewLayout}
-                      content={LAYER_PREVIEW_SAMPLES[layerSample].content}
+                      content={layerPreviewContent}
                       animate={layerPlaying > 0}
                       style={{ width: "1920px", height: "1080px" }}
                     />
@@ -1808,6 +1844,15 @@ export default function ThemeCreatorModal({ onClose, onSaved, editTheme, initial
                     </button>
                   ))}
                 </span>
+                <button
+                  type="button"
+                  className={`tc-zoom-btn${sampleEditorOpen ? " active" : ""}`}
+                  onClick={() => setSampleEditorOpen((open) => !open)}
+                  aria-expanded={sampleEditorOpen}
+                  title="Type your own words to preview this theme with"
+                >
+                  Edit text
+                </button>
                 <button type="button" className="tc-zoom-btn" onClick={playLayerAnimation} title="Play the in-animation">
                   ▶ Play
                 </button>
@@ -1828,6 +1873,42 @@ export default function ThemeCreatorModal({ onClose, onSaved, editTheme, initial
               Grid
             </label>
           </div>
+          {activeLayout && sampleEditorOpen && (() => {
+            const own = customSamples[layerSample];
+            const sample = LAYER_PREVIEW_SAMPLES[layerSample].content;
+            const refLabel = layerSample === "verse" ? "Reference" : layerSample === "song" ? "Song title" : "Heading";
+            return (
+              <div className="le-sample-editor" role="group" aria-label="Preview text">
+                <label className="le-sample-editor__field le-sample-editor__field--text">
+                  <span>{LAYER_PREVIEW_SAMPLES[layerSample].label} text</span>
+                  <textarea
+                    rows={2}
+                    value={own?.text ?? sample.text ?? ""}
+                    onChange={(e) => updateCustomSample(layerSample, { text: e.target.value })}
+                    placeholder={layerSample === "verse" ? "Type a verse…" : layerSample === "song" ? "Type song lines (one per line)…" : "Type a note…"}
+                  />
+                </label>
+                <label className="le-sample-editor__field">
+                  <span>{refLabel}</span>
+                  <input
+                    type="text"
+                    value={own?.reference ?? sample.reference ?? ""}
+                    onChange={(e) => updateCustomSample(layerSample, { reference: e.target.value })}
+                    placeholder={layerSample === "verse" ? "e.g. Psalm 23:1 (KJV)" : ""}
+                  />
+                </label>
+                <button
+                  type="button"
+                  className="tc-zoom-btn"
+                  onClick={() => updateCustomSample(layerSample, null)}
+                  disabled={!own}
+                  title="Go back to the sample words"
+                >
+                  Reset
+                </button>
+              </div>
+            );
+          })()}
 
           <div className="tc-zoom-controls">
             {(["fit", 50, 75, 100, 125] as const).map((mode) => (

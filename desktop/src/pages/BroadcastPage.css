@@ -1333,6 +1333,7 @@
   background: var(--surface-hover);
 }
 
+.broadcast-page .broadcast-dropdown-menu > button:disabled,
 .broadcast-dropdown-menu > button:disabled {
   opacity: 1;
   color: var(--text-disabled);

@@ -78,6 +78,23 @@
 }
 .le-sample-chips { display: inline-flex; gap: 4px; margin-left: 8px; }
 
+/* Preview text: the user's own words for the theme preview */
+.le-sample-editor {
+  display: flex; align-items: flex-end; gap: 8px; padding: 8px 12px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+.le-sample-editor__field { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 0 1 220px; font-size: 12px; color: var(--text-secondary); }
+.le-sample-editor__field--text { flex: 1 1 auto; }
+.le-sample-editor__field textarea,
+.le-sample-editor__field input {
+  width: 100%; box-sizing: border-box; padding: 6px 8px; font: inherit; font-size: 13px;
+  color: var(--text-primary); background: var(--input-bg); border: 1px solid var(--input-border); border-radius: var(--radius);
+  resize: vertical;
+}
+.le-sample-editor__field textarea:focus-visible,
+.le-sample-editor__field input:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+
 /* Heading switch + Box background (Media Library) */
 .le-heading-toggle {
   display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 8px;

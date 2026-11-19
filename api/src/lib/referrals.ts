@@ -2,6 +2,7 @@ import { ObjectId } from "mongodb";
 import { customAlphabet } from "nanoid";
 import clientPromise from "./mongodb";
 import { COLLECTIONS, ensureIndexes } from "./db";
+import { reportReferralUsedToTelegram } from "./referralTelegramNotifications";
 import type { ReferralRecord } from "@/types/schemas";
 
 const referralCodeAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -26,6 +27,8 @@ export interface ReferralListItem {
   paidAmount: number | null;
   paidCurrency: string | null;
   paidBillingReference: string | null;
+  /** When the referrer was paid their reward for this referral; null while still owed. */
+  payoutPaidAt: string | null;
   referredUser: ReferralUserSummary | null;
   referrerUser?: ReferralUserSummary | null;
 }
@@ -102,6 +105,7 @@ function referralItemFromDoc(
     paidAmount: referral.paidAmount ?? null,
     paidCurrency: referral.paidCurrency || null,
     paidBillingReference: referral.paidBillingReference || null,
+    payoutPaidAt: referral.payoutPaidAt || null,
     referredUser: usersById.get(referral.referredUserId) || null,
   };
   if (includeReferrer) {
@@ -374,6 +378,15 @@ export async function applyReferralCode(
     if (marked) referral.status = marked.status;
   }
 
+  // Tell the team on Telegram who used whose code. Fire and forget: never blocks the code.
+  reportReferralUsedToTelegram({
+    code,
+    referrerUserId,
+    referredUserId,
+    status: referral.status,
+    appliedAt: now,
+  });
+
   return { referral, alreadyApplied: false };
 }
 
@@ -469,6 +482,7 @@ export async function getAdminReferralOverview(limit = 500) {
   const paidSignups = referrals.filter((referral) => referral.status === "paid").length;
   const totalSignups = referrals.length;
   const referrers = new Set(referrals.map((referral) => referral.referrerUserId)).size;
+  const payoutsOwed = referrals.filter((referral) => referral.status === "paid" && !referral.payoutPaidAt).length;
 
   return {
     stats: {
@@ -476,6 +490,7 @@ export async function getAdminReferralOverview(limit = 500) {
       paidSignups,
       pendingSignups: Math.max(0, totalSignups - paidSignups),
       referrers,
+      payoutsOwed,
       conversionRate: totalSignups > 0 ? Math.round((paidSignups / totalSignups) * 100) : 0,
     },
     referrals: referrals.map((referral) => referralItemFromDoc(referral, usersById, true)),
@@ -594,3 +609,32 @@ export async function adminAssignReferral(params: {
   };
 }
 
+
+/**
+ * Records (or undoes) that the referrer was paid their reward for one referral. Only a referral
+ * whose church has paid can be paid out. Returns the updated record.
+ */
+export async function setReferralPayoutSent(params: {
+  referralId: string;
+  sent: boolean;
+  adminUserId: string;
+}): Promise<ReferralRecord> {
+  await ensureIndexes();
+  const referralObjectId = toObjectId(params.referralId);
+  if (!referralObjectId) throw new Error("Invalid referral");
+
+  const client = await clientPromise;
+  const referrals = client.db().collection<ReferralRecord>(COLLECTIONS.REFERRALS);
+  const referral = await referrals.findOne({ _id: referralObjectId });
+  if (!referral) throw new Error("Referral not found");
+  if (params.sent && referral.status !== "paid") {
+    throw new Error("This church has not paid yet, so no payout is owed");
+  }
+
+  const now = new Date().toISOString();
+  const update = params.sent
+    ? { $set: { payoutPaidAt: now, payoutPaidBy: params.adminUserId, updatedAt: now } }
+    : { $set: { payoutPaidAt: null, payoutPaidBy: null, updatedAt: now } };
+  await referrals.updateOne({ _id: referralObjectId }, update);
+  return (await referrals.findOne({ _id: referralObjectId })) || { ...referral, ...update.$set };
+}

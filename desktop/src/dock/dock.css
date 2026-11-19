@@ -45374,3 +45374,178 @@ textarea.dock-lt-field-input {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
+
+/* ── Quick camera adjust (single-camera Multi-View looks) ── */
+.dock-mv-camera-adjust {
+  margin-top: 8px;
+}
+
+.dock-mv-camera-adjust__reset {
+  margin-left: auto;
+  height: 20px;
+  padding: 0 6px;
+  border: 1px solid var(--dock-border);
+  border-radius: var(--radius, 4px);
+  background: var(--dock-input-bg, var(--dock-surface));
+  color: var(--dock-text-dim);
+  font: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  cursor: pointer;
+  transition: background-color var(--transition, 150ms), color var(--transition, 150ms);
+}
+
+.dock-mv-camera-adjust__reset:hover:not(:disabled) {
+  background: var(--surface-hover);
+  color: var(--dock-text);
+}
+
+.dock-mv-camera-adjust__reset:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.dock-mv-camera-adjust__row,
+.dock-mv-camera-adjust__pan {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dock-mv-camera-adjust .dock-mv-property__label {
+  width: 40px;
+  flex-shrink: 0;
+  margin-bottom: 0;
+}
+
+.dock-mv-camera-adjust__slider {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--dock-accent, var(--primary));
+}
+
+.dock-mv-camera-adjust__value {
+  width: 34px;
+  flex-shrink: 0;
+  text-align: right;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--dock-text);
+}
+
+.dock-mv-camera-adjust__step {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+  border: 1px solid var(--dock-border);
+  border-radius: var(--radius, 4px);
+  background: var(--dock-input-bg, var(--dock-surface));
+  color: var(--dock-text);
+  cursor: pointer;
+  transition: background-color var(--transition, 150ms), border-color var(--transition, 150ms);
+}
+
+.dock-mv-camera-adjust__step:hover:not(:disabled) {
+  background: var(--surface-hover);
+  border-color: var(--border-strong);
+}
+
+.dock-mv-camera-adjust__step:focus-visible,
+.dock-mv-camera-adjust__reset:focus-visible {
+  outline: 2px solid var(--dock-accent, var(--primary));
+  outline-offset: 1px;
+}
+
+.dock-mv-camera-adjust__step:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.dock-mv-camera-adjust__pan {
+  align-items: flex-start;
+  margin-top: 4px;
+}
+
+.dock-mv-camera-adjust__pad {
+  display: grid;
+  grid-template-columns: repeat(3, 24px);
+  grid-auto-rows: 24px;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.dock-mv-camera-adjust__hint {
+  flex: 1;
+  min-width: 0;
+  padding-left: 4px;
+  align-self: center;
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--dock-text-dim);
+}
+
+/* ── Single-camera look preview (Multi-View card) ── */
+.dock-mv-look-preview {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 1px solid var(--dock-border, var(--border));
+  border-radius: var(--radius, 4px);
+  background: var(--dock-input-bg, var(--dock-surface));
+}
+
+.dock-mv-look-preview__shot {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.dock-mv-look-preview__panel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border: 0;
+  background: transparent;
+  transform-origin: 0 0;
+  pointer-events: none;
+}
+
+.dock-mv-look-preview__camera {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  background: var(--surface-hover);
+  color: var(--dock-text-dim);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.dock-mv-look-preview__camera--circle {
+  border-radius: 50%;
+}
+
+.dock-mv-look-preview__note {
+  position: absolute;
+  left: 4px;
+  bottom: 4px;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm, 3px);
+  background: var(--dock-surface, var(--surface));
+  color: var(--dock-text-dim);
+  font-size: 9px;
+  font-weight: 600;
+  pointer-events: none;
+}

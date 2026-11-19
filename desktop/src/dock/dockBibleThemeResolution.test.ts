@@ -6,6 +6,7 @@ import {
   DOCK_BIBLE_PREFS_KEY,
   resolveDockBibleReferenceLabels,
   resolveDockBibleThemeForOverlayMode,
+  applyFullscreenQuickThemeSettings,
 } from "./dockBibleThemeResolution";
 
 function createMemoryStorage(): Storage {
@@ -206,5 +207,20 @@ describe("dock Bible theme resolution", () => {
     expect(resolved.themeSettings.backgroundPattern).toBe("dots");
     expect(resolved.themeSettings.backgroundImage).toBe("");
     expect(resolved.themeSettings.backgroundVideo).toBe("");
+  });
+
+  it("Colour and Off drop the theme's text box and box picture", () => {
+    const theme = {
+      ...BUILTIN_THEMES[0],
+      settings: { ...BUILTIN_THEMES[0].settings, boxBackground: "rgba(255,0,0,0.8)", boxBackgroundImage: "/uploads/card.png" },
+    };
+    const quick = { boxBackground: "rgba(255,0,0,0.8)", boxBackgroundImage: "/uploads/card.png", fullscreenShadeOpacity: 0 } as never;
+    for (const backgroundType of ["color", "off"] as const) {
+      const out = applyFullscreenQuickThemeSettings(theme, { ...(quick as object), backgroundType, backgroundColor: "#123456" } as never);
+      expect(out.settings.boxBackground).toBe("transparent");
+      expect(out.settings.boxBackgroundImage).toBe("");
+    }
+    const kept = applyFullscreenQuickThemeSettings(theme, { ...(quick as object), backgroundType: "theme" } as never);
+    expect(kept.settings.boxBackgroundImage).toBe("/uploads/card.png");
   });
 });

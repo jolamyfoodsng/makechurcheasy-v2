@@ -191,7 +191,7 @@ async function stageWindows() {
     const destinationLiteral = extracted.replace(/'/g, "''");
     execFileSync("powershell.exe", [
       "-NoProfile", "-NonInteractive", "-Command",
-      `Expand-Archive -LiteralPath '${archiveLiteral}' -DestinationPath '${destinationLiteral}' -Force`,
+      `Add-Type -AssemblyName System.IO.Compression.FileSystem; [System.IO.Compression.ZipFile]::ExtractToDirectory('${archiveLiteral}', '${destinationLiteral}')`,
     ], { stdio: "inherit" });
     const destination = path.join(outputRoot, target.folder);
     resetDirectory(destination);

@@ -443,7 +443,7 @@ async function ensureMovePluginAssets() {
           "-NoProfile",
           "-NonInteractive",
           "-Command",
-          `Expand-Archive -LiteralPath '${escapedArchive}' -DestinationPath '${escapedDestination}' -Force`,
+          `Add-Type -AssemblyName System.IO.Compression.FileSystem; [System.IO.Compression.ZipFile]::ExtractToDirectory('${escapedArchive}', '${escapedDestination}')`,
         ],
         { stdio: "inherit" }
       );

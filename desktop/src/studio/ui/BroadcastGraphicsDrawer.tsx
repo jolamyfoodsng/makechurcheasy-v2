@@ -87,6 +87,12 @@ function defaultsOf(theme: LowerThirdTheme): Record<string, string> {
   return out;
 }
 
+/** Full-screen designs (giving screens, quote cards, logo reveals) always cover the whole output. */
+export function isFullScreenGraphic(theme: LowerThirdTheme): boolean {
+  if ((theme.tags ?? []).some((tag) => /^full[\s-]?screen$/i.test(tag))) return true;
+  return typeof theme.html === "string" && theme.html.includes("pkg-fullscreen");
+}
+
 const hexOr = (value: string | undefined, fallback = "#ffffff") => (value && /^#[0-9a-f]{6}$/i.test(value) ? value : fallback);
 
 const HIDDEN_THEME_IDS = new Set(["lt-sub-05-sub-7", "lt-sub-02-sub-2", "lt-ch-text-give"]);
@@ -335,14 +341,15 @@ export default function BroadcastGraphicsDrawer({ mode: initialMode = "all", liv
     const all = valuesFor(entry);
     const designed = Number(all.kxAutoOut);
     const hold = show.duration === "auto" ? designed : Number(show.duration);
+    const full = isFullScreenGraphic(entry.theme);
     onProject({
       id: entry.key,
       name: entry.name,
       html: buildThemePreviewHtml(asBroadcast(entry.theme), { customVariables: all, backdrop: "transparent" }),
       sandbox: obsPreviewSandbox(asBroadcast(entry.theme)),
       seconds: Number.isFinite(hold) && hold > 0 ? hold : 0,
-      position: show.position,
-      scale: show.size,
+      position: full ? "center" : show.position,
+      scale: full ? 100 : show.size,
     });
   };
 
@@ -511,16 +518,22 @@ export default function BroadcastGraphicsDrawer({ mode: initialMode = "all", liv
               ))}
               <fieldset className="st-bg__group">
                 <legend>On screen</legend>
-                <label className="st-bg__field">
-                  <span>Position</span>
-                  <select className="st-sel" value={show.position} onChange={(e) => setShowOpt({ position: e.target.value })} aria-label="Position on the screen">
-                    {POSITIONS.map(([key, label]) => <option key={key} value={key}>{label}</option>)}
-                  </select>
-                </label>
-                <label className="st-bg__field">
-                  <span>Size · {show.size}%</span>
-                  <input type="range" min={40} max={160} step={5} value={show.size} onChange={(e) => setShowOpt({ size: Number(e.target.value) })} />
-                </label>
+                {isFullScreenGraphic(editing.theme) ? (
+                  <p className="st-bg__fullnote">This graphic fills the whole screen, so it has no position or size.</p>
+                ) : (
+                  <>
+                    <label className="st-bg__field">
+                      <span>Position</span>
+                      <select className="st-sel" value={show.position} onChange={(e) => setShowOpt({ position: e.target.value })} aria-label="Position on the screen">
+                        {POSITIONS.map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+                      </select>
+                    </label>
+                    <label className="st-bg__field">
+                      <span>Size · {show.size}%</span>
+                      <input type="range" min={40} max={160} step={5} value={show.size} onChange={(e) => setShowOpt({ size: Number(e.target.value) })} />
+                    </label>
+                  </>
+                )}
                 <label className="st-bg__field">
                   <span>Stays for</span>
                   <select className="st-sel" value={show.duration} onChange={(e) => setShowOpt({ duration: e.target.value })}>

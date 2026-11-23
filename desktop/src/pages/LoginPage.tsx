@@ -342,7 +342,25 @@ export default function LoginPage() {
               </div>
             )}
 
-
+            <div
+              style={{
+                padding: "10px 12px",
+                borderRadius: "var(--radius)",
+                border: "1px solid var(--primary-soft-border)",
+                background: "var(--primary-soft)",
+                marginBottom: "4px",
+              }}
+            >
+              <p style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-primary)", marginBottom: "2px" }}>
+                {t("login.websiteHint.title", "Sign up or sign in on our website")}
+              </p>
+              <p style={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.5 }}>
+                {t(
+                  "login.websiteHint.body",
+                  "New here? Click Continue in Browser. It opens makechurcheazy.com, where you create a free account or sign in, then this app signs in for you."
+                )}
+              </p>
+            </div>
 
             <button
               onClick={startQrLogin}

@@ -187,8 +187,7 @@ export async function GET(req: NextRequest) {
     const signupLanguage = resolveSignupLanguage(req.headers, normalizedCountry || "US");
 
     // Find or create user
-    // New Google accounts that arrive without a (working) referral code are sent to the "Have a
-    // referral code?" page right after sign-up.
+    // New Google accounts go straight on; a referral code is applied when one came with the link.
     let createdNewAccount = false;
     let referralApplied = false;
     let referralRejected = false;

@@ -30,6 +30,8 @@ import {
 import { hasHeading, isHeadingShown } from "../../themes/layout/heading";
 import type { ThemeContent, ThemeLayout } from "../../themes/layout/types";
 import type { DockFullscreenQuickThemeSettings } from "./DockFullscreenThemeQuickSettings";
+import { useDockTabLabelMode } from "../useDockTabLabelMode";
+import type { DockTabLabelMode } from "../dockObsClient";
 
 const PREVIEW_CONTENT: Record<"bible" | "worship" | "notes", ThemeContent> = {
   bible: SAMPLE_THEME_CONTENT,
@@ -42,6 +44,23 @@ const PREVIEW_CONTENT: Record<"bible" | "worship" | "notes", ThemeContent> = {
     reference: "Point 1",
   },
 };
+
+/** Sample title and section for each tab, so the preview shows what the chosen title will read. */
+const PREVIEW_LABEL_PARTS: Record<"worship" | "notes", { title: string; section: string }> = {
+  worship: { title: "Amazing Grace", section: "Verse 1" },
+  notes: { title: "Sunday Message", section: "Point 1" },
+};
+
+/** The choices offered beside Show title ("Auto" behaves like Both on layer themes; Off is the switch). */
+const TITLE_CONTENT_MODES: readonly DockTabLabelMode[] = ["title", "section", "title-section"];
+
+function previewLabel(tab: "worship" | "notes", mode: DockTabLabelMode): string {
+  const { title, section } = PREVIEW_LABEL_PARTS[tab];
+  if (mode === "title") return title;
+  if (mode === "section") return section;
+  if (mode === "none") return "";
+  return `${title} · ${section}`;
+}
 
 function sliderProgress(value: number, min: number, max: number): CSSProperties {
   const progress = Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100));
@@ -118,15 +137,26 @@ interface Props {
 
 export default function LayoutThemeAdjustPanel({ themeName, layout, quickSettings, onQuickSettingsChange, scope }: Props) {
   const { t } = useTranslation();
+  const isBible = scope === "bible";
+  // Worship / Notes: which words the title line shows (shared with the quick controls' Heading choice).
+  const labelTab = scope === "worship" || scope === "notes" ? scope : "worship";
+  const { labelMode, setLabelMode, labelOptions } = useDockTabLabelMode(labelTab);
+  const canChooseTitleContent = scope === "worship" || scope === "notes";
+  const titleContentMode: DockTabLabelMode = labelMode === "auto" ? "title-section" : labelMode;
   const adjust = readLayoutAdjust(quickSettings);
-  const titleOverride = readLayoutShowTitle(quickSettings);
+  // Bible always shows its reference, so the Show title switch does not apply there.
+  const titleOverride = isBible ? undefined : readLayoutShowTitle(quickSettings);
   const headingAlignOverride = readLayoutHeadingAlign(quickSettings);
-  const canToggleTitle = hasHeading(layout);
+  const hasThemeHeading = hasHeading(layout);
+  const canToggleTitle = hasThemeHeading && !isBible;
   // What the output will do: the Dock's choice, else the theme's own Heading setting.
   const titleShown = titleOverride ?? isHeadingShown(layout);
   const headingAlign = headingAlignOverride ?? layoutHeadingAlignOf(layout);
   const isLowerThird = layout.format === "lower-third";
-  const content = PREVIEW_CONTENT[scope === "global" ? "bible" : scope];
+  const content = useMemo<ThemeContent>(() => {
+    const base = PREVIEW_CONTENT[scope === "global" ? "bible" : scope];
+    return canChooseTitleContent ? { ...base, reference: previewLabel(labelTab, titleContentMode) } : base;
+  }, [scope, canChooseTitleContent, labelTab, titleContentMode]);
   const previewLayout = useMemo(
     () => applyLayoutAdjust(layout, { ...adjust, layoutShowTitle: titleOverride, layoutHeadingAlign: headingAlignOverride }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -136,15 +166,14 @@ export default function LayoutThemeAdjustPanel({ themeName, layout, quickSetting
   const set = (patch: Partial<DockFullscreenQuickThemeSettings>) =>
     onQuickSettingsChange((prev) => ({ ...prev, ...patch }));
 
-  const referenceLabel = scope === "bible"
+  const referenceLabel = isBible
     ? t("bgPicker.layoutRefSize", "Reference size")
     : t("bgPicker.layoutHeadingSize", "Heading size");
 
-  const titleLabel = scope === "bible"
-    ? t("bgPicker.layoutShowReference", "Show reference")
-    : t("bgPicker.layoutShowTitle", "Show title");
+  const titleLabel = t("bgPicker.layoutShowTitle", "Show title");
+  const titleContentLabel = t("bgPicker.layoutTitleContent", "Title shows");
 
-  const alignLabel = scope === "bible"
+  const alignLabel = isBible
     ? t("bgPicker.layoutReferenceAlign", "Reference alignment")
     : t("bgPicker.layoutHeadingAlign", "Heading alignment");
 
@@ -204,6 +233,37 @@ export default function LayoutThemeAdjustPanel({ themeName, layout, quickSetting
       )}
 
       {/* The heading's size and alignment sit with its on / off switch. */}
+      {canToggleTitle && titleShown && canChooseTitleContent && (
+        <div className="dtb-icon-segmented dtb-layout-adjust__field dtb-layout-adjust__choice">
+          <div className="dtb-setting-info">
+            <span className="dtb-position-label">{titleContentLabel}</span>
+          </div>
+          <div
+            className="dtb-icon-segmented__options"
+            role="group"
+            aria-label={titleContentLabel}
+            style={{ "--dtb-icon-segment-count": TITLE_CONTENT_MODES.length } as CSSProperties}
+          >
+            {TITLE_CONTENT_MODES.map((mode) => {
+              const option = labelOptions.find((o) => o.id === mode);
+              const active = titleContentMode === mode;
+              return (
+                <button
+                  key={mode}
+                  type="button"
+                  className={`dtb-icon-segmented__button dtb-layout-adjust__choice-btn${active ? " dtb-icon-segmented__button--active" : ""}`}
+                  onClick={() => setLabelMode(mode)}
+                  title={option?.hint}
+                  aria-pressed={active}
+                >
+                  {option?.label ?? mode}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {(titleShown || !canToggleTitle) && (
         <AdjustSlider
           label={referenceLabel}
@@ -216,8 +276,8 @@ export default function LayoutThemeAdjustPanel({ themeName, layout, quickSetting
         />
       )}
 
-      {canToggleTitle && titleShown && (
-        <div className="dtb-icon-segmented dtb-layout-adjust__field">
+      {hasThemeHeading && (titleShown || !canToggleTitle) && (
+        <div className="dtb-icon-segmented dtb-layout-adjust__field dtb-layout-adjust__choice">
           <div className="dtb-setting-info">
             <span className="dtb-position-label">{alignLabel}</span>
           </div>

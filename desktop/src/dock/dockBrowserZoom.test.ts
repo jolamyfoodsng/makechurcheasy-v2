@@ -1,14 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { getDockBrowserZoomShortcut, isLikelyDockBrowserZoomedIn } from "./dockBrowserZoom";
+import { getDockBrowserZoomShortcut, isLikelyDockBrowserZoomedIn, nextDockZoomBaseline } from "./dockBrowserZoom";
 
 describe("Dock browser zoom detection", () => {
   const baseSignals = {
     devicePixelRatio: 1,
     baselineDevicePixelRatio: 1,
     visualViewportScale: 1,
-    innerWidth: 400,
-    outerWidth: 400,
-    isWindows: true,
   };
 
   it("warns when Chromium reports a page zoom increase from the display baseline", () => {
@@ -26,13 +23,16 @@ describe("Dock browser zoom detection", () => {
     })).toBe(false);
   });
 
-  it("catches a persisted Windows page zoom from the embedded viewport width", () => {
-    expect(isLikelyDockBrowserZoomedIn({
-      ...baseSignals,
-      innerWidth: 320,
-      outerWidth: 400,
-      baselineDevicePixelRatio: null,
-    })).toBe(true);
+  it("stays hidden at 100% on a narrow Windows Dock (the window frame is not zoom)", () => {
+    expect(isLikelyDockBrowserZoomedIn({ ...baseSignals, baselineDevicePixelRatio: null })).toBe(false);
+  });
+
+  it("lowers a baseline that was saved while the page was zoomed in", () => {
+    const saved = { screenKey: "1920x1080", devicePixelRatio: 1.25 };
+    const fixed = nextDockZoomBaseline(saved, 1);
+    expect(fixed.devicePixelRatio).toBe(1);
+    expect(isLikelyDockBrowserZoomedIn({ ...baseSignals, baselineDevicePixelRatio: fixed.devicePixelRatio })).toBe(false);
+    expect(nextDockZoomBaseline(saved, 1.5)).toBe(saved);
   });
 
   it("keeps the warning hidden at the normal zoom baseline", () => {

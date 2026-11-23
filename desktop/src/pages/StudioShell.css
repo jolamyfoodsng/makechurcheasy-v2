@@ -1633,6 +1633,7 @@ html.st-resizing iframe { pointer-events: none !important; }
 .st-bg__editfoot { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
 .st-bg__editfoot .st-linkbtn { margin-right: auto; }
 .st-bg__edit .st-bg__field { grid-template-columns: 110px minmax(0, 1fr); }
+.st-bg__fullnote { margin: 0; font-size: 12.5px; color: var(--st-text-2); }
 
 /* Docs: scroll a page that fills the screen, and read a page in a window */
 .st-docscroll input[type="range"] { width: 90px; }

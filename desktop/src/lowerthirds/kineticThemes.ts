@@ -2935,10 +2935,45 @@ const KINETIC_THEME_DATA: Omit<LowerThirdTheme, "css">[] = [
         "placeholder": "#YourHashtag @YourChurch"
       },
       {
+        "key": "colTimerBg",
+        "label": "Timer box colour",
+        "type": "color",
+        "defaultValue": "#000000",
+        "group": "Style"
+      },
+      {
+        "key": "colTimerText",
+        "label": "Timer text colour",
+        "type": "color",
+        "defaultValue": "#ffffff",
+        "group": "Style"
+      },
+      {
+        "key": "colHeadingBg",
+        "label": "Heading bar colour",
+        "type": "color",
+        "defaultValue": "#ffffff",
+        "group": "Style"
+      },
+      {
+        "key": "colHeadingText",
+        "label": "Heading text colour",
+        "type": "color",
+        "defaultValue": "#000000",
+        "group": "Style"
+      },
+      {
         "key": "colTagline",
         "label": "Tagline bar colour",
         "type": "color",
         "defaultValue": "#f6bba5",
+        "group": "Style"
+      },
+      {
+        "key": "colTaglineText",
+        "label": "Tagline text colour",
+        "type": "color",
+        "defaultValue": "#2a1a16",
         "group": "Style"
       },
       {
@@ -2970,7 +3005,7 @@ const KINETIC_THEME_DATA: Omit<LowerThirdTheme, "css">[] = [
         "group": "Style"
       }
     ],
-    "html": "<div class=\"kx-root\" data-kx=\"ch-moment-timer\" data-state=\"{{state}}\" data-v-timer-mode=\"{{timerMode}}\" data-v-timer-length=\"{{timerLength}}\" data-v-clock-period=\"{{clockPeriod}}\" data-v-heading=\"{{heading}}\" data-v-tagline=\"{{tagline}}\" data-v-handles=\"{{handles}}\" data-v-col-tagline=\"{{colTagline}}\" data-v-kx-color=\"{{kxColor}}\" data-v-kx-speed=\"{{kxSpeed}}\" data-v-kx-scale=\"{{kxScale}}\" data-v-kx-auto-out=\"{{kxAutoOut}}\" data-v-kx-loop=\"{{kxLoop}}\"><div class=\"kx-fallback\"><div class=\"kx-fb-name\">{{timerLength}}</div></div></div>"
+    "html": "<div class=\"kx-root\" data-kx=\"ch-moment-timer\" data-state=\"{{state}}\" data-v-timer-mode=\"{{timerMode}}\" data-v-timer-length=\"{{timerLength}}\" data-v-clock-period=\"{{clockPeriod}}\" data-v-heading=\"{{heading}}\" data-v-tagline=\"{{tagline}}\" data-v-handles=\"{{handles}}\" data-v-col-timer-bg=\"{{colTimerBg}}\" data-v-col-timer-text=\"{{colTimerText}}\" data-v-col-heading-bg=\"{{colHeadingBg}}\" data-v-col-heading-text=\"{{colHeadingText}}\" data-v-col-tagline=\"{{colTagline}}\" data-v-col-tagline-text=\"{{colTaglineText}}\" data-v-kx-color=\"{{kxColor}}\" data-v-kx-speed=\"{{kxSpeed}}\" data-v-kx-scale=\"{{kxScale}}\" data-v-kx-auto-out=\"{{kxAutoOut}}\" data-v-kx-loop=\"{{kxLoop}}\"><div class=\"kx-fallback\"><div class=\"kx-fb-name\">{{timerLength}}</div></div></div>"
   },
   {
     "id": "lt-ch-give-blue",

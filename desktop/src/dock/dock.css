@@ -3059,6 +3059,42 @@ body.dock-modal-open {
   display: inline !important;
 }
 
+/* Recent searches: one per row, newest first, full reference name. */
+.dock-search-dropdown__grid.dock-search-dropdown__grid--list {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px;
+}
+
+.dock-search-dropdown__grid--list .dock-search-dropdown__chip {
+  height: 28px;
+  min-height: 28px;
+  border-radius: var(--radius);
+  background: transparent;
+  border-color: transparent;
+}
+
+.dock-search-dropdown__grid--list .dock-search-dropdown__chip:hover {
+  background: var(--dock-surface-alt, var(--surface-hover));
+  border-color: transparent;
+}
+
+.dock-search-dropdown__grid--list .dock-search-dropdown__chip:focus-visible {
+  outline: 2px solid var(--dock-accent);
+  outline-offset: -2px;
+}
+
+.dock-search-dropdown__grid--list .dock-search-dropdown__chip svg {
+  color: var(--dock-text-muted, var(--text-muted));
+}
+
+.dock-search-dropdown__grid--list .dock-search-dropdown__label--full {
+  display: inline !important;
+}
+
+.dock-search-dropdown__grid--list .dock-search-dropdown__label--short {
+  display: none !important;
+}
+
 .dock-search-dropdown__chip svg {
   flex-shrink: 0;
 }
@@ -44952,6 +44988,39 @@ textarea.dock-lt-field-input {
 
 .dtb-layout-adjust__toggle {
   margin: 2px 0 4px;
+}
+
+/* Heading alignment / Title shows in the Size panel: label on top, buttons full width
+   underneath, like the sliders. The picker's row layout overflowed the narrow panel. */
+.dtb-layout-adjust .dtb-icon-segmented.dtb-layout-adjust__choice,
+.dtb-studio__modal--picker .dtb-layout-adjust .dtb-icon-segmented.dtb-layout-adjust__choice {
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  gap: 6px !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+}
+
+.dtb-layout-adjust .dtb-layout-adjust__choice .dtb-icon-segmented__options,
+.dtb-studio__modal--picker .dtb-layout-adjust .dtb-layout-adjust__choice .dtb-icon-segmented__options {
+  display: grid !important;
+  grid-template-columns: repeat(var(--dtb-icon-segment-count, 3), minmax(0, 1fr)) !important;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  border-radius: var(--radius, 4px) !important;
+}
+
+.dtb-layout-adjust .dtb-layout-adjust__choice .dtb-icon-segmented__button,
+.dtb-studio__modal--picker .dtb-layout-adjust .dtb-layout-adjust__choice .dtb-icon-segmented__button {
+  min-width: 0 !important;
+  padding: 5px 4px !important;
+  border-radius: var(--radius-sm, 3px) !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ── Lower-third tabs (Ministry → Lower Thirds) ── */

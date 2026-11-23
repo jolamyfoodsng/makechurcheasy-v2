@@ -8,9 +8,6 @@ export interface DockBrowserZoomSignals {
   devicePixelRatio: number;
   baselineDevicePixelRatio: number | null;
   visualViewportScale: number | null;
-  innerWidth: number;
-  outerWidth: number;
-  isWindows: boolean;
 }
 
 export interface DockBrowserZoomBaseline {
@@ -31,18 +28,14 @@ export function isLikelyDockBrowserZoomedIn(signals: DockBrowserZoomSignals): bo
   const pinchZoomedIn = Boolean(
     signals.visualViewportScale && signals.visualViewportScale >= ZOOM_TOLERANCE,
   );
+  // outerWidth / innerWidth is not used: on Windows the window frame alone makes it pass the
+  // tolerance on a narrow Dock, so the warning showed at 100%.
+  return deviceZoomedIn || pinchZoomedIn;
+}
 
-  // OBS uses an embedded Chromium viewport on Windows. When the dock opens
-  // with a persisted page zoom, the viewport width ratio can still reveal it
-  // even though there has been no in-session DPR change yet.
-  const embeddedWindowsZoomedIn = Boolean(
-    signals.isWindows &&
-      signals.outerWidth > 0 &&
-      signals.innerWidth > 0 &&
-      signals.outerWidth / signals.innerWidth >= ZOOM_TOLERANCE,
-  );
-
-  return deviceZoomedIn || pinchZoomedIn || embeddedWindowsZoomedIn;
+/** The display's normal pixel ratio is the lowest one seen on it: zooming only ever raises it. */
+export function nextDockZoomBaseline(baseline: DockBrowserZoomBaseline, devicePixelRatio: number): DockBrowserZoomBaseline {
+  return devicePixelRatio < baseline.devicePixelRatio ? { ...baseline, devicePixelRatio } : baseline;
 }
 
 export function getDockBrowserZoomShortcut(platform = ""): string {
@@ -90,9 +83,6 @@ function getSignals(baseline: DockBrowserZoomBaseline | null): DockBrowserZoomSi
     devicePixelRatio,
     baselineDevicePixelRatio: matchingBaseline?.devicePixelRatio ?? null,
     visualViewportScale: window.visualViewport?.scale ?? null,
-    innerWidth: window.innerWidth,
-    outerWidth: window.outerWidth,
-    isWindows: /Win/i.test(`${navigator.platform} ${navigator.userAgent}`),
   };
 }
 
@@ -106,14 +96,22 @@ export function useDockBrowserZoomWarning(): { isZoomedIn: boolean; resetShortcu
       ? window.devicePixelRatio
       : 1;
     const storedBaseline = readBaseline();
-    const baseline = storedBaseline?.screenKey === screenKey
-      ? storedBaseline
+    let baseline = storedBaseline?.screenKey === screenKey
+      ? nextDockZoomBaseline(storedBaseline, currentDpr)
       : { screenKey, devicePixelRatio: currentDpr };
 
-    if (!storedBaseline || storedBaseline.screenKey !== screenKey) saveBaseline(baseline);
+    if (baseline !== storedBaseline) saveBaseline(baseline);
     setResetShortcut(getDockBrowserZoomShortcut(navigator.platform));
 
     const evaluate = () => {
+      const dpr = Number.isFinite(window.devicePixelRatio) && window.devicePixelRatio > 0 ? window.devicePixelRatio : 1;
+      if (getScreenKey() === baseline.screenKey) {
+        const lowered = nextDockZoomBaseline(baseline, dpr);
+        if (lowered !== baseline) {
+          baseline = lowered;
+          saveBaseline(baseline);
+        }
+      }
       setIsZoomedIn(isLikelyDockBrowserZoomedIn(getSignals(baseline)));
     };
 

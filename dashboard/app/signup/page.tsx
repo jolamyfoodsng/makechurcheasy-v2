@@ -153,20 +153,32 @@ function SignupInner() {
     }, 1000);
   }
 
+  // A referral code is optional. A wrong or expired one (often left over from an old link) must never
+  // stop someone signing up: drop it and create the account without it.
+  function dropInvalidReferralCode(): boolean {
+    if (!referralCode || referralCheck.status !== "invalid") return false;
+    setReferralCode("");
+    setReferralServerError("");
+    try {
+      localStorage.removeItem(PENDING_REFERRAL_CODE_KEY);
+    } catch {
+      // Ignore storage errors
+    }
+    return true;
+  }
+
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    if (referralCode && referralCheck.status === "invalid") {
-      setReferralServerError("");
-      document.getElementById("signup-referral-code")?.focus();
-      return;
-    }
+    const droppedReferral = dropInvalidReferralCode();
     setLoading(true);
 
     try {
-      const finalReferralCode = normalizeReferralCode(
-        referralCode || (typeof window !== "undefined" ? localStorage.getItem(PENDING_REFERRAL_CODE_KEY) : "")
-      );
+      const finalReferralCode = droppedReferral
+        ? ""
+        : normalizeReferralCode(
+            referralCode || (typeof window !== "undefined" ? localStorage.getItem(PENDING_REFERRAL_CODE_KEY) : "")
+          );
 
       const result = await signUpWithEmail(
         email,
@@ -212,12 +224,8 @@ function SignupInner() {
 
   async function handleGoogleSignUp() {
     setError("");
-    // A code that came in the link (or was typed) is checked before leaving for Google. With no code,
-    // the page after Google asks for one.
-    if (referralCode && referralCheck.status === "invalid") {
-      document.getElementById("signup-referral-code")?.focus();
-      return;
-    }
+    // A wrong referral code is dropped (it's optional), so it never blocks Google sign-up.
+    dropInvalidReferralCode();
     setLoading(true);
     try {
       const needs2FA = await signInWithGoogle(safeCallbackUrl);
@@ -536,7 +544,7 @@ function SignupInner() {
             {referralError ? (
               <p id="signup-referral-code-error" role="alert" className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-red-600">
                 <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-                {referralError}
+                This referral code isn&apos;t valid. You can still sign up without it.
               </p>
             ) : referralCode && referralCheck.status === "checking" ? (
               <p className="mt-1.5 flex items-center gap-1.5 text-xs text-slate-500">

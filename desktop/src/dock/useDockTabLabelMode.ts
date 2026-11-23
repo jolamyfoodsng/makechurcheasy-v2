@@ -40,6 +40,9 @@ function readMode(tab: "worship" | "notes"): DockTabLabelMode {
   }
 }
 
+/** Several panels show this choice (quick controls, the theme's Size panel); they stay in step. */
+const CHANGE_EVENT = "mce-dock-tab-label-mode-change";
+
 export function useDockTabLabelMode(tab: "worship" | "notes") {
   const [mode, setModeState] = useState<DockTabLabelMode>(() => readMode(tab));
 
@@ -47,12 +50,22 @@ export function useDockTabLabelMode(tab: "worship" | "notes") {
     dockObsClient.setTabLabelMode(tab, mode);
   }, [tab, mode]);
 
+  useEffect(() => {
+    const onChange = (event: Event) => {
+      const detail = (event as CustomEvent<{ tab: string; mode: DockTabLabelMode }>).detail;
+      if (detail?.tab === tab) setModeState(normalizeDockTabLabelMode(detail.mode));
+    };
+    window.addEventListener(CHANGE_EVENT, onChange);
+    return () => window.removeEventListener(CHANGE_EVENT, onChange);
+  }, [tab]);
+
   const setMode = useCallback(
     (next: string) => {
       const value = normalizeDockTabLabelMode(next);
       setModeState(value);
       dockObsClient.setTabLabelMode(tab, value);
       void saveDockPreference(PREF_KEY[tab], { mode: value }).catch(() => undefined);
+      window.dispatchEvent(new CustomEvent(CHANGE_EVENT, { detail: { tab, mode: value } }));
     },
     [tab],
   );

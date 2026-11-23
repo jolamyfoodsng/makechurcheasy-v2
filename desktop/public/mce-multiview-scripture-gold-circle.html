@@ -319,5 +319,19 @@
   } catch (e) { /* BroadcastChannel unavailable in this OBS build */ }
 })();
 </script>
+<script>
+  // OBS shares one browser zoom between the Dock and these sources: fit the 1920x1080 stage to the
+  // page's own viewport so a zoomed Dock never zooms the verse.
+  (function () {
+    var stage = document.getElementById("stage");
+    function fit() {
+      var k = Math.min((window.innerWidth || 1920) / 1920, (window.innerHeight || 1080) / 1080);
+      stage.style.transformOrigin = "0 0";
+      stage.style.transform = k === 1 ? "" : "scale(" + k + ")";
+    }
+    fit();
+    window.addEventListener("resize", fit);
+  })();
+</script>
 </body>
 </html>

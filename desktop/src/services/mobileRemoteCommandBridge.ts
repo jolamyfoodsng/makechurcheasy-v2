@@ -341,7 +341,7 @@ async function getDockBiblePresentationStyle(requestedMode?: string) {
 }
 
 const BIBLE_RECENT_SEARCHES_KEY = "ocs-dock-bible-recent-searches-v1";
-const BIBLE_RECENT_SEARCH_LIMIT = 4;
+const BIBLE_RECENT_SEARCH_LIMIT = 10;
 
 function readRecentBibleSearchesForMobile(): string[] {
   try {

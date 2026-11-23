@@ -52,16 +52,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // A referral code is optional, but one that was typed or came in the link must be real. Say so
-    // now, next to the field, instead of creating the account and quietly ignoring the code.
-    const submittedReferralCode = normalizeReferralCode(referralCode);
+    // A referral code is optional. A wrong or expired one (often left over from an old link) must
+    // never stop someone signing up, so it is dropped and the account is created without it.
+    let submittedReferralCode = normalizeReferralCode(referralCode);
     if (submittedReferralCode) {
       const check = await validateReferralCode(submittedReferralCode);
       if (!check.valid) {
-        return NextResponse.json(
-          { error: check.error || "This referral code isn't valid.", field: "referralCode" },
-          { status: 400 },
-        );
+        console.warn("[signup] Ignoring invalid referral code:", check.error || submittedReferralCode);
+        submittedReferralCode = "";
       }
     }
 

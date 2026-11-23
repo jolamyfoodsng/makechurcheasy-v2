@@ -574,6 +574,8 @@ export function applyFullscreenQuickThemeSettings(
       backgroundType: bgType,
       // Size / position tweaks for layer themes (ignored by legacy themes).
       ...pickLayoutAdjust(quickSettings),
+      // Bible always shows its reference: the Show title switch is for Worship / Notes only.
+      layoutShowTitle: undefined,
       fontSize: quickSettings.fontSize,
       autoFontScale: true,
       fontFamily: quickSettings.fontFamily,

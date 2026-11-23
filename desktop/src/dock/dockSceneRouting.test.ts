@@ -377,7 +377,7 @@ describe("dock scene routing", () => {
     expect(bibleOverlaySource).toContain("document.addEventListener('DOMContentLoaded', fit");
     expect(bibleOverlaySource).toContain("function getVisualScale");
     expect(bibleOverlaySource).toContain("const absoluteFloor = Math.max(fallback, 16)");
-    expect(bibleTabSource).toContain("void handleSyncBibleBrowserSettings({}, safeLineCount);");
+    expect(bibleTabSource).toContain("void handleSyncBibleBrowserSettings({}, safeLineCount, anchorVerse);");
     expect(bibleTabSource).toContain("Line count changes the actual passage layout");
   });
 

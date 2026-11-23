@@ -14,6 +14,7 @@ import {
 } from "../dockThemeRefresh";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
+import { resolveLineCountAnchorVerse, selectLineCountVerses } from "../dockBibleVerseLines";
 import { preloadBibleSearch, searchBible, type SearchResult as BibleKeywordResult } from "../../bible/bibleData";
 import { addFavorite, getFavorites, removeFavorite } from "../../bible/bibleDb";
 import { BUILTIN_THEMES } from "../../bible/themes/builtinThemes";
@@ -308,6 +309,8 @@ type BibleBrowserQuickSettingsPatch = Partial<Pick<
 >>;
 type BibleQuickSettingsSaveContext = DockThemeSettingsSaveContext & {
   lineCount?: number;
+  /** Start the re-sent output at this verse instead of the selected one. */
+  anchorVerse?: number;
 };
 
 const GENERAL_SCENE_PROFILE_ID = "__general__";
@@ -356,7 +359,7 @@ const MIN_DOCK_KEYWORD_SEARCH_LENGTH = 3;
 const DOCK_KEYWORD_SEARCH_LIMIT = 24;
 const DOCK_SEARCH_DEBOUNCE_MS = 600;
 const BIBLE_RECENT_SEARCHES_KEY = "ocs-dock-bible-recent-searches-v1";
-const BIBLE_RECENT_SEARCH_LIMIT = 4;
+const BIBLE_RECENT_SEARCH_LIMIT = 10;
 const HISTORY_PREVIEW_MAX_CHARS = 28;
 
 function getHistoryVersePreview(verseText: string): string {
@@ -1320,6 +1323,8 @@ function applyFullscreenQuickThemeSettings(
       backgroundType: bgType,
       // Size / position tweaks for layer themes (ignored by legacy themes).
       ...pickLayoutAdjust(quickSettings),
+      // Bible always shows its reference: the Show title switch is for Worship / Notes only.
+      layoutShowTitle: undefined,
       fontSize: quickSettings.fontSize,
       autoFontScale: true,
       fontFamily: quickSettings.fontFamily,
@@ -3291,15 +3296,9 @@ function DockBibleTab({
       }
 
       const verses = passage?.verses ?? [];
-      let targetVerse = verse;
-      let startIndex = verses.findIndex((entry) => entry.verse === targetVerse);
-      if (startIndex === -1 && verses.length > 0) {
-        const minV = verses[0]?.verse ?? 1;
-        const maxV = verses[verses.length - 1]?.verse ?? minV;
-        targetVerse = Math.min(Math.max(verse, minV), maxV);
-        startIndex = verses.findIndex((entry) => entry.verse === targetVerse);
-      }
-      if (startIndex === -1) {
+      const picked = selectLineCountVerses(verses, verse, safeLineCount, explicitVerseEnd);
+      if (!picked) {
+        const targetVerse = verse;
         const text = await fetchVerseText(book, chapter, targetVerse, translation);
         return {
           text: text ? formatBibleOutputText([{ verse: targetVerse, text }], text, targetVerse) : "",
@@ -3308,14 +3307,7 @@ function DockBibleTab({
         };
       }
 
-      const explicitEndIndex =
-        explicitVerseEnd && explicitVerseEnd >= targetVerse
-          ? verses.findIndex((entry) => entry.verse === explicitVerseEnd)
-          : -1;
-      const selection =
-        explicitEndIndex >= startIndex
-          ? verses.slice(startIndex, explicitEndIndex + 1)
-          : verses.slice(startIndex, startIndex + safeLineCount);
+      const { startVerse: targetVerse, selection } = picked;
       const verseEnd = selection[selection.length - 1]?.verse ?? targetVerse;
       const text = formatBibleOutputText(selection, "", targetVerse);
       const verseRange = verseEnd === targetVerse ? String(targetVerse) : `${targetVerse}-${verseEnd}`;
@@ -4419,7 +4411,8 @@ function DockBibleTab({
   ) => {
     const isCompareActive = compareEnabled;
     const isVisibleOrCompare = bibleOverlayVisible || isCompareActive;
-    if (!isVisibleOrCompare || !selectedBook || !selectedChapter || !selectedVerse) {
+    const startVerse = context?.anchorVerse ?? selectedVerse;
+    if (!isVisibleOrCompare || !selectedBook || !selectedChapter || !startVerse) {
       const liveOverlayMode = fullscreenOnlyMode ? "fullscreen" : overlayModeRef.current;
       const selectedTheme = context?.selectedTheme ?? null;
       const baseTheme = resolveThemeForOverlayMode(
@@ -4469,7 +4462,7 @@ function DockBibleTab({
       : applyLowerThirdQuickThemeSettings(baseTheme, nextSettings);
     const preset = context?.backgroundPreset ?? backgroundPresetRef.current;
 
-    return goLiveVerse(selectedBook, selectedChapter, selectedVerse, {
+    return goLiveVerse(selectedBook, selectedChapter, startVerse, {
       translation: activeTranslation,
       columnIndex: activeColumnIndex,
       reveal: false,
@@ -4850,15 +4843,16 @@ function DockBibleTab({
   ]);
 
 
-  const refreshCurrentBibleOutputForLineCount = useCallback((lineCount: number) => {
-    if (!bibleOverlayVisible || !selectedBook || !selectedChapter || !selectedVerse) {
+  const refreshCurrentBibleOutputForLineCount = useCallback((lineCount: number, anchorVerse?: number) => {
+    const startVerse = resolveLineCountAnchorVerse(anchorVerse, selectedVerse);
+    if (!bibleOverlayVisible || !selectedBook || !selectedChapter || !startVerse) {
       return Promise.resolve<DockOverlayFontFitMeasurement | null>(null);
     }
     const liveMode: OverlayMode = fullscreenOnlyMode ? "fullscreen" : overlayModeRef.current;
     const activeSettings = liveMode === "fullscreen"
       ? activeFullscreenQuickThemeSettings
       : activeLowerThirdQuickThemeSettings;
-    return refreshCurrentBibleOutputAfterThemeSave(liveMode, activeSettings, { lineCount });
+    return refreshCurrentBibleOutputAfterThemeSave(liveMode, activeSettings, { lineCount, anchorVerse: startVerse });
   }, [
     activeFullscreenQuickThemeSettings,
     activeLowerThirdQuickThemeSettings,
@@ -4874,6 +4868,7 @@ function DockBibleTab({
   const handleSyncBibleBrowserSettings = useCallback(async (
     patch: BibleBrowserQuickSettingsPatch,
     lineCountOverride?: number,
+    anchorVerse?: number,
   ) => {
     manualThemeSettingsSelectionRef.current = true;
     const hasSettingsPatch = Object.keys(patch).length > 0;
@@ -4884,6 +4879,14 @@ function DockBibleTab({
     const isFullscreen = liveMode === "fullscreen";
     let nextFullscreenSettings = activeFullscreenQuickThemeSettings;
     let nextLowerThirdSettings = activeLowerThirdQuickThemeSettings;
+
+    if (nextLineCount !== null && typeof anchorVerse === "number" && anchorVerse !== selectedVerseRef.current) {
+      // Picked from a verse's own menu: that verse becomes the selected one and the
+      // output starts there.
+      setActiveVersePart(null);
+      setSelectedVerse(anchorVerse);
+      selectedVerseRef.current = anchorVerse;
+    }
 
     if (nextLineCount !== null) {
       setVerseLineCount(nextLineCount);
@@ -4955,10 +4958,10 @@ function DockBibleTab({
       ? await refreshCurrentBibleOutputAfterThemeSave(
         liveMode,
         requestedSettings,
-        nextLineCount !== null ? { lineCount: nextLineCount } : undefined,
+        nextLineCount !== null ? { lineCount: nextLineCount, anchorVerse } : undefined,
       )
       : nextLineCount !== null
-        ? await refreshCurrentBibleOutputForLineCount(nextLineCount)
+        ? await refreshCurrentBibleOutputForLineCount(nextLineCount, anchorVerse)
         : null;
 
     if (measurement && !compareEnabled) {
@@ -5252,11 +5255,12 @@ function DockBibleTab({
     setDraftBrowserQuickThemeSettings(null);
   }, [applyBrowserQuickSettingsPatch, browserLayerLayout]);
 
-  const handleBrowserVerseLineCountChange = useCallback((lineCount: number) => {
+  const handleBrowserVerseLineCountChange = useCallback((lineCount: number, anchorVerse?: number) => {
     const safeLineCount = clampVerseLineCount(lineCount);
     // Line count changes the actual passage layout, so apply and re-fit it
     // immediately. Font/style edits can still use the explicit Save flow.
-    void handleSyncBibleBrowserSettings({}, safeLineCount);
+    // From a verse's right-click menu, the output starts at that verse.
+    void handleSyncBibleBrowserSettings({}, safeLineCount, anchorVerse);
   }, [handleSyncBibleBrowserSettings]);
 
   const saveBrowserQuickSettings = useCallback(async () => {
@@ -8650,7 +8654,7 @@ function DockBibleTab({
                         <Icon name="history" size={12} style={{ color: "var(--dock-accent-color, #60a5fa)" }} />
                         <span>{t("bible.recentSearches", "Recent Searches")}</span>
                       </div>
-                      <div className="dock-search-dropdown__grid">
+                      <div className="dock-search-dropdown__grid dock-search-dropdown__grid--list">
                         {recentSearches.map((item) => {
                           const shortLabel = formatCompactBibleReference(item);
                           return (
@@ -9242,7 +9246,7 @@ function DockBibleTab({
                         className="dock-bible-context-menu__select"
                         value={displayedBrowserVerseLineCount}
                         onChange={(e) => {
-                          handleBrowserVerseLineCountChange(Number(e.target.value));
+                          handleBrowserVerseLineCountChange(Number(e.target.value), verseContextMenu.verse);
                           setVerseContextMenu(null);
                         }}
                       >

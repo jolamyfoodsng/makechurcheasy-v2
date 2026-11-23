@@ -1,14 +1,13 @@
-# MakeChurchEazy Release Highlights (v4.3.19)
+# MakeChurchEazy Release Highlights (v4.3.20)
 
-## Billing and subscriptions
-- Improved payment initialization, retry, verification, and webhook handling across supported providers.
-- Aligned subscription status and plan limits across desktop and dashboard experiences.
+## Account access
+- Invalid or expired referral codes no longer block email or Google sign-up.
+- Clarified that sign-up and sign-in take place on the MakeChurchEazy website.
 
-## Broadcast and presentation
-- Expanded built-in broadcast graphics, tickers, and lower-third options.
-- Refined Dock, vMix setup, OBS controls, multiview, Bible, worship, countdown, and rundown workflows.
-- Improved media, theme, and presentation editing controls.
+## Bible and broadcast
+- Added a vertical list of the last 10 Bible searches in Dock.
+- Verse line-count selections now begin at the selected verse.
+- Refined lower thirds, multiview scripture, and Studio graphics workflows.
 
-## Support and reliability
-- Updated licensing, plan-limit, support, and update-notification flows.
-- Improved accessibility and usability across key desktop screens.
+## Support
+- Updated customer-support content and removed Telegram from default support options.

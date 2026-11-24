@@ -59,6 +59,12 @@ function downloadUrl(filename) {
 function rewriteUrl(url) {
   if (!url) return "";
   const value = String(url);
+  const apiAssetPrefix = `https://api.github.com/repos/${sourceRepo}/releases/assets/`;
+  if (value.startsWith(apiAssetPrefix) && /^\d+$/.test(value.slice(apiAssetPrefix.length))) {
+    // Tauri points at the build repository's asset API. Use the public release
+    // filename fallback in normalizeEntry so updater downloads stay public.
+    return "";
+  }
   return value
     .replaceAll(`https://github.com/${sourceRepo}/releases/download/${tag}/`, targetBase)
     .replaceAll(`https://github.com/${sourceRepo}/releases/latest/download/`, `https://github.com/${targetRepo}/releases/latest/download/`)
@@ -106,14 +112,14 @@ if (windowsMsi) {
 if (darwinArm) {
   normalizedPlatforms["darwin-aarch64"] = normalizeEntry(
     ["darwin-aarch64", "darwin-aarch64-app"],
-    "MakeChurchEasy_aarch64.app.tar.gz",
+    `MakeChurchEasy_${version}_aarch64.app.tar.gz`,
   );
 }
 
 if (darwinX64) {
   normalizedPlatforms["darwin-x86_64"] = normalizeEntry(
     ["darwin-x86_64", "darwin-x86_64-app"],
-    "MakeChurchEasy_x64.app.tar.gz",
+    `MakeChurchEasy_${version}_x64.app.tar.gz`,
   );
 }
 
